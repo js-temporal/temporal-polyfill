@@ -11,8 +11,8 @@ const expected = [
   "get options.disambiguation",
   "get disambiguation.toString",
   "call disambiguation.toString",
-  "get timeZone.getAbsoluteFor",
-  "call timeZone.getAbsoluteFor",
+  "get timeZone.getInstantFor",
+  "call timeZone.getInstantFor",
 ];
 
 Object.defineProperty(Temporal.TimeZone, "from", {
@@ -23,7 +23,7 @@ Object.defineProperty(Temporal.TimeZone, "from", {
 });
 
 const dateTime = Temporal.DateTime.from("1975-02-02T14:25:36.123456789");
-const absolute = Temporal.Absolute.fromEpochNanoseconds(-205156799012345679n);
+const instant = Temporal.Instant.fromEpochNanoseconds(-205156799012345679n);
 
 const options = new Proxy({
   disambiguation: {
@@ -47,14 +47,14 @@ const options = new Proxy({
 });
 
 const timeZone = new Proxy({
-  getAbsoluteFor(dateTimeArg, optionsArg) {
-    actual.push("call timeZone.getAbsoluteFor");
+  getInstantFor(dateTimeArg, optionsArg) {
+    actual.push("call timeZone.getInstantFor");
     assert.sameValue(dateTimeArg, dateTime);
     assert.sameValue(typeof optionsArg, "object");
     assert.notSameValue(optionsArg, null);
     assert.notSameValue(optionsArg, options);
     assert.sameValue(optionsArg.disambiguation, "reject");
-    return absolute;
+    return instant;
   },
 }, {
   has(target, property) {
@@ -67,7 +67,7 @@ const timeZone = new Proxy({
   },
 });
 
-const result = dateTime.toAbsolute(timeZone, options);
-assert.sameValue(result, absolute);
+const result = dateTime.toInstant(timeZone, options);
+assert.sameValue(result, instant);
 
 assert.compareArray(actual, expected);
