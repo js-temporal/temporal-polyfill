@@ -1,7 +1,7 @@
 {
-  "name": "proposal-temporal",
+  "name": "temporal-polyfill",
   "version": "0.8.0",
-  "description": "Experimental polyfill for the TC39 Temporal proposal",
+  "description": "Polyfill for Temporal",
   "type": "commonjs",
   "main": "dist/index.js",
   "browser": "dist/index.umd.js",
@@ -19,11 +19,6 @@
     "prepublishOnly": "npm run build",
     "playground": "node --experimental-modules --no-warnings --icu-data-dir node_modules/full-icu -r ./lib/init.js"
   },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/tc39/proposal-temporal.git",
-    "directory": "polyfill"
-  },
   "keywords": [
     "Calendar",
     "Date",
@@ -32,7 +27,6 @@
     "Instant",
     "MonthDay",
     "Polyfill",
-    "TC39",
     "Temporal",
     "Time",
     "Timestamp",
@@ -54,10 +48,6 @@
     "Ujjwal Sharma"
   ],
   "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/tc39/proposal-temporal/issues"
-  },
-  "homepage": "https://tc39.es/proposal-temporal/docs/index.html",
   "files": [
     "index.d.ts",
     "dist",

@@ -14,7 +14,7 @@ const { reporter } = Pretty;
 import { strict as assert } from 'assert';
 const { deepEqual, equal, throws } = assert;
 
-import * as Temporal from 'proposal-temporal';
+import * as Temporal from 'temporal-polyfill';
 
 describe('TimeZone', () => {
   describe('Structure', () => {

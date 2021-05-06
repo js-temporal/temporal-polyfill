@@ -14,7 +14,7 @@ const { reporter } = Pretty;
 import { strict as assert } from 'assert';
 const { equal } = assert;
 
-import * as Temporal from 'proposal-temporal';
+import * as Temporal from 'temporal-polyfill';
 
 describe('Exports', () => {
   const named = Object.keys(Temporal);
