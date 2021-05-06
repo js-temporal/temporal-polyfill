@@ -1,0 +1,17 @@
+name: Run tests
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: use node.js v15.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 15.x
+      - run: npm ci --no-optional
+      - run: npm test
