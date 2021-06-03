@@ -9,9 +9,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: use node.js v15.x
+      - name: use node.js v16.x
         uses: actions/setup-node@v1
         with:
-          node-version: 15.x
+          node-version: 16.x
       - run: npm ci --no-optional
       - run: npm test
