@@ -9,7 +9,7 @@ const { deepEqual, equal, throws } = assert;
 
 import { DateTimeFormat } from '../lib/intl.mjs';
 Intl.DateTimeFormat = DateTimeFormat;
-import * as Temporal from 'temporal-polyfill';
+import * as Temporal from '@js-temporal/polyfill';
 
 describe('Intl', () => {
   // TODO: move these to their respective test files.

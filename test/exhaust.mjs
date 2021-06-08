@@ -1,4 +1,4 @@
-import * as Temporal from 'temporal-polyfill';
+import * as Temporal from '@js-temporal/polyfill';
 
 const all = process.argv[2] === 'all';
 const start = new Temporal.PlainDate(1999, 1, 1);

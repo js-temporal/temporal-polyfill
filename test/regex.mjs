@@ -7,7 +7,7 @@ const { reporter } = Pretty;
 import { strict as assert } from 'assert';
 const { equal, throws } = assert;
 
-import * as Temporal from 'temporal-polyfill';
+import * as Temporal from '@js-temporal/polyfill';
 
 describe('fromString regex', () => {
   describe('instant', () => {

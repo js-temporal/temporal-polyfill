@@ -7,7 +7,7 @@ const { reporter } = Pretty;
 import { strict as assert } from 'assert';
 const { throws, equal, notEqual } = assert;
 
-import * as Temporal from 'temporal-polyfill';
+import * as Temporal from '@js-temporal/polyfill';
 const { PlainMonthDay } = Temporal;
 
 describe('MonthDay', () => {
