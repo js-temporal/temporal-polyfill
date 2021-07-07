@@ -2,19 +2,25 @@
 
 ## Polyfill for [TC39 Proposal: Temporal](https://github.com/tc39/proposal-temporal)
 
-This polyfill is maintained by the champions of the [Temporal proposal](https://github.com/tc39/proposal-temporal) and is intended be ready for production use by the time the Temporal proposal reaches Stage 4.
+This polyfill was kicked off by some of the champions of the [Temporal proposal](https://github.com/tc39/proposal-temporal).
+The goal is to be ready for production use when the Temporal proposal reaches Stage 4, although like with all OSS work progress is dependent on contributors.
+We're eagerly welcoming to contributors who want to help build and maintain this polyfill.
+PRs are always welcome!
 
-This polyfill is compatible with Node.js 12 or later.
+Note that this polyfill is not affiliated with TC39. Links to other polyfills can be found [here](https://github.com/tc39/proposal-temporal/tree/main/#polyfill).
+
+This polyfill is compatible with Node.js 14 or later.
 
 ## Roadmap
 
 * [x] Fork non-production polyfill from [tc39/proposal-temporal repo](https://github.com/tc39/proposal-temporal/tree/main/polyfill)
 * [x] Release initial pre-alpha to NPM at [@js-temporal/polyfill](https://www.npmjs.com/package/@js-temporal/polyfill)
-* [ ] Sync up the code in this repo with the handful of polyfill changes that have recently been made in the [tc39/proposal-temporal](https://github.com/tc39/proposal-temporal) repo
+* [ ] Sync the code in this repo with the handful of polyfill changes that have recently been made in the [tc39/proposal-temporal](https://github.com/tc39/proposal-temporal) repo
 * [ ] Release alpha version to NPM 
 * [ ] Deprecate all other earlier Temporal polyfills
 * [ ] Convert to TypeScript for better maintainability
 * [ ] (Maybe) Optimize performance of slow operations, notably non-ISO calendar calculations
+* [ ] Release production version to NPM
 
 ## Bug Reports and Feedback
 
@@ -30,7 +36,8 @@ A cookbook to help you get started and learn the ins and outs of Temporal is ava
 
 If you find a bug in the documentation, please file a bug over in the [tc39/proposal-temporal issue tracker](https://github.com/tc39/proposal-temporal/issues) issue tracker.
 
-Note that the Temporal documentation is in the process of being migrated to [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript).  
+Note that the Temporal documentation is in the process of being migrated to [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript).
+You can track the progress of the MDN migration [here](https://github.com/tc39/proposal-temporal/issues/1449).
 
 ## Usage
 
@@ -43,19 +50,24 @@ $ npm install @js-temporal/polyfill
 CJS Usage:
 
 ```javascript
-const { Temporal } = require('@js-temporal/polyfill');
+const { Temporal, Intl, toTemporalInstant } = require('@js-temporal/polyfill');
+Date.prototype.toTemporalInstant = toTemporalInstant;
 ```
 
 Import the polyfill as an ES6 module:
 
 ```javascript
-import { Temporal } from '@js-temporal/polyfill/lib/index.mjs';
+import { Temporal, Intl, toTemporalInstant } from '@js-temporal/polyfill/lib/index.mjs';
+Date.prototype.toTemporalInstant = toTemporalInstant;
 ```
 
 Note that this polyfill currently does not install a global `Temporal` object like a real implementation will.
 This behavior avoids hiding the global Temporal object in environments where a real Temporal implementation is present.
-This behavior may change soon as we try to match built-in behavior more closely. 
+See [this issue](https://github.com/tc39/proposal-temporal/issues/778) for more background on this decision.
+Once JS engines start shipping with Temporal, we may decide to change this behavior to match built-in behavior more closely.
+See [#2](https://github.com/js-temporal/temporal-polyfill/issues/2) to provide feedback or track this issue.
 
 ## Contributing / Help Wanted
 
-(Coming soon)
+We're eagerly welcoming to contributors who want to help build and maintain this polyfill.
+PRs are always welcome!
