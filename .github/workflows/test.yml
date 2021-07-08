@@ -5,7 +5,7 @@ on:
     branches:
       - main
 jobs:
-  test:
+  test-node16:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -13,5 +13,15 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 16.x
+      - run: npm ci --no-optional
+      - run: npm test
+  test-node14:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: use node.js v14.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.x
       - run: npm ci --no-optional
       - run: npm test
