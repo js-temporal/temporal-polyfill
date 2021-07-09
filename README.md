@@ -15,9 +15,9 @@ This polyfill is compatible with Node.js 14 or later.
 
 * [x] Fork non-production polyfill from [tc39/proposal-temporal repo](https://github.com/tc39/proposal-temporal/tree/main/polyfill)
 * [x] Release initial pre-alpha to NPM at [@js-temporal/polyfill](https://www.npmjs.com/package/@js-temporal/polyfill)
-* [ ] Sync the code in this repo with the handful of polyfill changes that have recently been made in the [tc39/proposal-temporal](https://github.com/tc39/proposal-temporal) repo
-* [ ] Release alpha version to NPM 
-* [ ] Deprecate all other earlier Temporal polyfills
+* [x] Sync the code in this repo with the handful of polyfill changes that have recently been made in the [tc39/proposal-temporal](https://github.com/tc39/proposal-temporal) repo
+* [x] Release alpha version to NPM 
+* [x] Deprecate all other earlier Temporal polyfills
 * [ ] Convert to TypeScript for better maintainability
 * [ ] (Maybe) Optimize performance of slow operations, notably non-ISO calendar calculations
 * [ ] Release production version to NPM
