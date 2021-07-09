@@ -7,7 +7,9 @@ import fs from 'fs';
 const PKG = JSON.parse(fs.readFileSync('package.json', { encoding: 'utf-8' }));
 export function resolve(specifier, parent, defaultResolve) {
   if (specifier === PKG.name) {
-    specifier = new URL('../lib/temporal.mjs', import.meta.url).toString();
+    specifier = new URL('../tsc-out/temporal.js', import.meta.url).toString();
+  } else if (specifier.startsWith('../lib')) {
+    specifier = new URL(specifier.replace('../lib/', '../tsc-out/'), import.meta.url).toString();
   }
   return defaultResolve(specifier, parent);
 }

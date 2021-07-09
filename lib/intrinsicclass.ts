@@ -1,7 +1,6 @@
-/* global __debug__ */
-
 import ESGetIntrinsic from 'es-abstract/GetIntrinsic.js';
 
+import { DEBUG } from './debug';
 const INTRINSICS = {};
 
 const customUtilInspectFormatters = {
@@ -27,7 +26,7 @@ const customUtilInspectFormatters = {
   }
 };
 
-function defaultUtilInspectFormatter(depth, options) {
+function defaultUtilInspectFormatter(this: any, depth, options) {
   return options.stylize(`${this[Symbol.toStringTag]} <${this}>`, 'special');
 }
 
@@ -38,7 +37,7 @@ export function MakeIntrinsicClass(Class, name) {
     enumerable: false,
     configurable: true
   });
-  if (typeof __debug__ !== 'undefined' && __debug__) {
+  if (DEBUG) {
     Object.defineProperty(Class.prototype, Symbol.for('nodejs.util.inspect.custom'), {
       value: customUtilInspectFormatters[name] || defaultUtilInspectFormatter,
       writable: false,

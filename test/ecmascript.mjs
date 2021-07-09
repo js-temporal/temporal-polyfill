@@ -7,9 +7,9 @@ const { reporter } = Pretty;
 import { strict as assert } from 'assert';
 const { deepEqual, throws } = assert;
 
-import { ES } from '../lib/ecmascript.mjs';
-import { GetSlot, TIMEZONE_ID } from '../lib/slots.mjs';
-import { TimeZone } from '../lib/timezone.mjs';
+import { ES } from '../lib/ecmascript';
+import { GetSlot, TIMEZONE_ID } from '../lib/slots';
+import { TimeZone } from '../lib/timezone';
 
 describe('ECMAScript', () => {
   describe('GetIANATimeZoneDateTimeParts', () => {

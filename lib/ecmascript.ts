@@ -1,5 +1,3 @@
-/* global __debug__ */
-
 const ArrayPrototypePush = Array.prototype.push;
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
 const MathMin = Math.min;
@@ -15,8 +13,8 @@ const ObjectAssign = Object.assign;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
 const ObjectIs = Object.is;
-const ObjectEntries = Object.entries;
 
+import { DEBUG } from './debug';
 import bigInt from 'big-integer';
 import Call from 'es-abstract/2020/Call';
 import GetMethod from 'es-abstract/2020/GetMethod';
@@ -133,7 +131,7 @@ const SINGULAR_PLURAL_UNITS = [
   ['milliseconds', 'millisecond'],
   ['microseconds', 'microsecond'],
   ['nanoseconds', 'nanosecond']
-];
+] as const;
 
 import * as PARSE from './regex';
 
@@ -372,9 +370,9 @@ export const ES = ObjectAssign({}, ES2020, {
     const weeks = ES.ToInteger(match[4]) * sign;
     const days = ES.ToInteger(match[5]) * sign;
     const hours = ES.ToInteger(match[6]) * sign;
-    let fHours = match[7];
+    let fHours: number | string = match[7];
     let minutes = ES.ToInteger(match[8]) * sign;
-    let fMinutes = match[9];
+    let fMinutes: number | string = match[9];
     let seconds = ES.ToInteger(match[10]) * sign;
     const fSeconds = match[11] + '000000000';
     let milliseconds = ES.ToInteger(fSeconds.slice(0, 3)) * sign;
@@ -724,6 +722,8 @@ export const ES = ObjectAssign({}, ES2020, {
       case 8:
       case 9:
         return { precision, unit: 'nanosecond', increment: 10 ** (9 - precision) };
+      default:
+        throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digits}`);
     }
   },
   ToLargestTemporalUnit: (options, fallback, disallowedStrings = [], autoValue) => {
@@ -847,18 +847,18 @@ export const ES = ObjectAssign({}, ES2020, {
     nanoseconds
   ) => {
     const singular = new Map(SINGULAR_PLURAL_UNITS);
-    for (const [prop, v] of ObjectEntries({
-      years,
-      months,
-      weeks,
-      days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds
-    })) {
+    for (const [prop, v] of [
+      ['years', years],
+      ['months', months],
+      ['weeks', weeks],
+      ['days', days],
+      ['hours', hours],
+      ['minutes', minutes],
+      ['seconds', seconds],
+      ['milliseconds', milliseconds],
+      ['microseconds', microseconds],
+      ['nanoseconds', nanoseconds]
+    ]) {
       if (v !== 0) return singular.get(prop);
     }
     return 'nanosecond';
@@ -1326,7 +1326,10 @@ export const ES = ObjectAssign({}, ES2020, {
     if (offsetOpt === 'reject') {
       const offsetStr = ES.FormatTimeZoneOffsetString(offsetNs);
       const timeZoneString = ES.IsTemporalTimeZone(timeZone) ? GetSlot(timeZone, TIMEZONE_ID) : 'time zone';
-      throw new RangeError(`Offset ${offsetStr} is invalid for ${dt} in ${timeZoneString}`);
+      // The tsc emit for this line rewrites to invoke the PlainDateTime's valueOf method, NOT
+      // toString (which is invoked by Node when using template literals directly).
+      // See https://github.com/microsoft/TypeScript/issues/39744 for the proposed fix in tsc emit
+      throw new RangeError(`Offset ${offsetStr} is invalid for ${dt.toString()} in ${timeZoneString}`);
     }
     // fall through: offsetOpt === 'prefer', but the offset doesn't match
     // so fall back to use the time zone instead.
@@ -1400,7 +1403,7 @@ export const ES = ObjectAssign({}, ES2020, {
     SetSlot(result, CALENDAR, calendar);
     SetSlot(result, DATE_BRAND, true);
 
-    if (typeof __debug__ !== 'undefined' && __debug__) {
+    if (DEBUG) {
       ObjectDefineProperty(result, '_repr_', {
         value: `${result[Symbol.toStringTag]} <${ES.TemporalDateToString(result)}>`,
         writable: false,
@@ -1431,7 +1434,7 @@ export const ES = ObjectAssign({}, ES2020, {
     SetSlot(result, ISO_NANOSECOND, ns);
     SetSlot(result, CALENDAR, calendar);
 
-    if (typeof __debug__ !== 'undefined' && __debug__) {
+    if (DEBUG) {
       Object.defineProperty(result, '_repr_', {
         value: `${result[Symbol.toStringTag]} <${ES.TemporalDateTimeToString(result, 'auto')}>`,
         writable: false,
@@ -1457,7 +1460,7 @@ export const ES = ObjectAssign({}, ES2020, {
     SetSlot(result, CALENDAR, calendar);
     SetSlot(result, MONTH_DAY_BRAND, true);
 
-    if (typeof __debug__ !== 'undefined' && __debug__) {
+    if (DEBUG) {
       Object.defineProperty(result, '_repr_', {
         value: `${result[Symbol.toStringTag]} <${ES.TemporalMonthDayToString(result)}>`,
         writable: false,
@@ -1483,7 +1486,7 @@ export const ES = ObjectAssign({}, ES2020, {
     SetSlot(result, CALENDAR, calendar);
     SetSlot(result, YEAR_MONTH_BRAND, true);
 
-    if (typeof __debug__ !== 'undefined' && __debug__) {
+    if (DEBUG) {
       Object.defineProperty(result, '_repr_', {
         value: `${result[Symbol.toStringTag]} <${ES.TemporalYearMonthToString(result)}>`,
         writable: false,
@@ -1510,7 +1513,7 @@ export const ES = ObjectAssign({}, ES2020, {
     const instant = new TemporalInstant(GetSlot(result, EPOCHNANOSECONDS));
     SetSlot(result, INSTANT, instant);
 
-    if (typeof __debug__ !== 'undefined' && __debug__) {
+    if (DEBUG) {
       Object.defineProperty(result, '_repr_', {
         value: `${result[Symbol.toStringTag]} <${ES.TemporalZonedDateTimeToString(result, 'auto')}>`,
         writable: false,
@@ -1913,7 +1916,11 @@ export const ES = ObjectAssign({}, ES2020, {
     if (timeZone !== undefined) timeZoneString = ES.BuiltinTimeZoneGetOffsetStringFor(outputTimeZone, instant);
     return `${year}-${month}-${day}T${hour}:${minute}${seconds}${timeZoneString}`;
   },
-  TemporalDurationToString: (duration, precision = 'auto', options = undefined) => {
+  TemporalDurationToString: (
+    duration,
+    precision: 'auto' | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 = 'auto',
+    options = undefined
+  ) => {
     function formatNumber(num) {
       if (num <= NumberMaxSafeInteger) return num.toString(10);
       return bigInt(num).toString();
@@ -4080,6 +4087,7 @@ export const ES = ObjectAssign({}, ES2020, {
       case 'object':
       case 'number':
       case 'symbol':
+      default:
         throw new TypeError(`cannot convert ${typeof arg} to bigint`);
       case 'string':
         if (!prim.match(/^\s*(?:[+-]?\d+\s*)?$/)) {
@@ -4088,7 +4096,7 @@ export const ES = ObjectAssign({}, ES2020, {
       // eslint: no-fallthrough: false
       case 'bigint':
         try {
-          return bigInt(prim);
+          return bigInt(prim as bigint);
         } catch (e) {
           if (e instanceof Error && e.message.startsWith('Invalid integer')) throw new SyntaxError(e.message);
           throw e;

@@ -6,7 +6,7 @@
 //    ./node_modules/full-icu/ test/validStrings.mjs
 
 import assert from 'assert';
-import { ES } from '../lib/ecmascript.mjs';
+import { ES } from '../lib/ecmascript';
 import timezoneData from 'timezones.json';
 
 const timezoneNames = new Set(timezoneData.reduce((list, entry) => list.concat(entry.utc), []));
