@@ -1,5 +1,4 @@
-/* global __debug__ */
-
+import { DEBUG } from './debug';
 import { ES } from './ecmascript';
 import { DateTimeFormat } from './intl';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
@@ -83,7 +82,7 @@ export class PlainTime {
     SetSlot(this, ISO_NANOSECOND, isoNanosecond);
     SetSlot(this, CALENDAR, ES.GetISO8601Calendar());
 
-    if (typeof __debug__ !== 'undefined' && __debug__) {
+    if (DEBUG) {
       Object.defineProperty(this, '_repr_', {
         value: `${this[Symbol.toStringTag]} <${TemporalTimeToString(this, 'auto')}>`,
         writable: false,

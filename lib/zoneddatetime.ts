@@ -739,7 +739,7 @@ export class ZonedDateTime {
 MakeIntrinsicClass(ZonedDateTime, 'Temporal.ZonedDateTime');
 
 function bigIntIfAvailable(wrapper) {
-  return typeof BigInt === 'undefined' ? wrapper : wrapper.value;
+  return typeof globalThis.BigInt === 'undefined' ? wrapper : wrapper.value;
 }
 
 function dateTime(zdt) {

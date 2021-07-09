@@ -1,5 +1,4 @@
-/* global __debug__ */
-
+import { DEBUG } from './debug';
 import { ES } from './ecmascript';
 import { DateTimeFormat } from './intl';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
@@ -30,7 +29,7 @@ export class Instant {
     CreateSlots(this);
     SetSlot(this, EPOCHNANOSECONDS, ns);
 
-    if (typeof __debug__ !== 'undefined' && __debug__) {
+    if (DEBUG) {
       const repr = ES.TemporalInstantToString(this, undefined, 'auto');
       Object.defineProperty(this, '_repr_', {
         value: `${this[Symbol.toStringTag]} <${repr}>`,
@@ -284,5 +283,5 @@ export class Instant {
 MakeIntrinsicClass(Instant, 'Temporal.Instant');
 
 function bigIntIfAvailable(wrapper) {
-  return typeof BigInt === 'undefined' ? wrapper : wrapper.value;
+  return typeof globalThis.BigInt === 'undefined' ? wrapper : wrapper.value;
 }

@@ -7,7 +7,7 @@ const { reporter } = Pretty;
 import { strict as assert } from 'assert';
 const { deepEqual, equal, throws } = assert;
 
-import { DateTimeFormat } from '../lib/intl.mjs';
+import { DateTimeFormat } from '../lib/intl';
 Intl.DateTimeFormat = DateTimeFormat;
 import * as Temporal from '@js-temporal/polyfill';
 
