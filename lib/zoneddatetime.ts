@@ -1,6 +1,6 @@
-import { ES } from './ecmascript.mjs';
-import { DateTimeFormat } from './intl.mjs';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass.mjs';
+import { ES } from './ecmascript';
+import { DateTimeFormat } from './intl';
+import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import {
   CALENDAR,
   EPOCHNANOSECONDS,
@@ -17,7 +17,7 @@ import {
   TIME_ZONE,
   GetSlot,
   HasSlot
-} from './slots.mjs';
+} from './slots';
 
 import bigInt from 'big-integer';
 

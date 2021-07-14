@@ -1,5 +1,5 @@
-import { ES } from './ecmascript.mjs';
-import { GetIntrinsic } from './intrinsicclass.mjs';
+import { ES } from './ecmascript';
+import { GetIntrinsic } from './intrinsicclass';
 
 const instant = () => {
   const Instant = GetIntrinsic('%Temporal.Instant%');

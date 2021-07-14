@@ -1,8 +1,8 @@
 /* global __debug__ */
 
-import { ES } from './ecmascript.mjs';
-import { GetIntrinsic, MakeIntrinsicClass, DefineIntrinsic } from './intrinsicclass.mjs';
-import { CALENDAR_ID, ISO_YEAR, ISO_MONTH, ISO_DAY, CreateSlots, GetSlot, HasSlot, SetSlot } from './slots.mjs';
+import { ES } from './ecmascript';
+import { GetIntrinsic, MakeIntrinsicClass, DefineIntrinsic } from './intrinsicclass';
+import { CALENDAR_ID, ISO_YEAR, ISO_MONTH, ISO_DAY, CreateSlots, GetSlot, HasSlot, SetSlot } from './slots';
 
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;

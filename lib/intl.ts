@@ -1,5 +1,5 @@
-import { ES } from './ecmascript.mjs';
-import { GetIntrinsic } from './intrinsicclass.mjs';
+import { ES } from './ecmascript';
+import { GetIntrinsic } from './intrinsicclass';
 import {
   GetSlot,
   INSTANT,
@@ -14,8 +14,8 @@ import {
   ISO_NANOSECOND,
   CALENDAR,
   TIME_ZONE
-} from './slots.mjs';
-import { TimeZone } from './timezone.mjs';
+} from './slots';
+import { TimeZone } from './timezone';
 
 const DATE = Symbol('date');
 const YM = Symbol('ym');

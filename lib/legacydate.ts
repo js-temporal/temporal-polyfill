@@ -1,4 +1,4 @@
-import { Instant } from './instant.mjs';
+import { Instant } from './instant';
 
 import bigInt from 'big-integer';
 

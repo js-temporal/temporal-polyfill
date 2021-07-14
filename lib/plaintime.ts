@@ -1,8 +1,8 @@
 /* global __debug__ */
 
-import { ES } from './ecmascript.mjs';
-import { DateTimeFormat } from './intl.mjs';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass.mjs';
+import { ES } from './ecmascript';
+import { DateTimeFormat } from './intl';
+import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 
 import {
   ISO_YEAR,
@@ -21,7 +21,7 @@ import {
   GetSlot,
   HasSlot,
   SetSlot
-} from './slots.mjs';
+} from './slots';
 
 const ObjectAssign = Object.assign;
 

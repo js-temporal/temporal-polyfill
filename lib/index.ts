@@ -5,7 +5,7 @@
 // as `if (typeof Temporal === 'undefined')` in the wild, until browsers start
 // shipping the finalized API.
 
-import * as Temporal from './temporal.mjs';
-import * as Intl from './intl.mjs';
-import { toTemporalInstant } from './legacydate.mjs';
+import * as Temporal from './temporal';
+import * as Intl from './intl';
+import { toTemporalInstant } from './legacydate';
 export { Temporal, Intl, toTemporalInstant };

@@ -1,7 +1,7 @@
 /* global __debug__ */
 
-import { ES } from './ecmascript.mjs';
-import { GetIntrinsic, MakeIntrinsicClass, DefineIntrinsic } from './intrinsicclass.mjs';
+import { ES } from './ecmascript';
+import { GetIntrinsic, MakeIntrinsicClass, DefineIntrinsic } from './intrinsicclass';
 import {
   TIMEZONE_ID,
   EPOCHNANOSECONDS,
@@ -17,7 +17,7 @@ import {
   CreateSlots,
   GetSlot,
   SetSlot
-} from './slots.mjs';
+} from './slots';
 
 export class TimeZone {
   constructor(timeZoneIdentifier) {
