@@ -1,7 +1,7 @@
 /* global __debug__ */
 
-import { ES } from './ecmascript.mjs';
-import { MakeIntrinsicClass } from './intrinsicclass.mjs';
+import { ES } from './ecmascript';
+import { MakeIntrinsicClass } from './intrinsicclass';
 import {
   YEARS,
   MONTHS,
@@ -16,7 +16,7 @@ import {
   CreateSlots,
   GetSlot,
   SetSlot
-} from './slots.mjs';
+} from './slots';
 
 export class Duration {
   constructor(

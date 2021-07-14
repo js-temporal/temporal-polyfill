@@ -1,7 +1,7 @@
-import { ES } from './ecmascript.mjs';
-import { DateTimeFormat } from './intl.mjs';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass.mjs';
-import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, TIME_ZONE, GetSlot, HasSlot } from './slots.mjs';
+import { ES } from './ecmascript';
+import { DateTimeFormat } from './intl';
+import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
+import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, TIME_ZONE, GetSlot, HasSlot } from './slots';
 
 const ObjectCreate = Object.create;
 

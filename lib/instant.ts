@@ -1,9 +1,9 @@
 /* global __debug__ */
 
-import { ES } from './ecmascript.mjs';
-import { DateTimeFormat } from './intl.mjs';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass.mjs';
-import { EPOCHNANOSECONDS, CreateSlots, GetSlot, SetSlot } from './slots.mjs';
+import { ES } from './ecmascript';
+import { DateTimeFormat } from './intl';
+import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
+import { EPOCHNANOSECONDS, CreateSlots, GetSlot, SetSlot } from './slots';
 
 import bigInt from 'big-integer';
 

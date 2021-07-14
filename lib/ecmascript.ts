@@ -29,7 +29,7 @@ import ToString from 'es-abstract/2020/ToString';
 import Type from 'es-abstract/2020/Type';
 import HasOwnProperty from 'es-abstract/2020/HasOwnProperty';
 
-import { GetIntrinsic } from './intrinsicclass.mjs';
+import { GetIntrinsic } from './intrinsicclass';
 import {
   CreateSlots,
   GetSlot,
@@ -63,8 +63,8 @@ import {
   MILLISECONDS,
   MICROSECONDS,
   NANOSECONDS
-} from './slots.mjs';
-import { IsBuiltinCalendar } from './calendar.mjs';
+} from './slots';
+import { IsBuiltinCalendar } from './calendar';
 
 const DAYMILLIS = 86400000;
 const NS_MIN = bigInt(-86400).multiply(1e17);
@@ -135,7 +135,7 @@ const SINGULAR_PLURAL_UNITS = [
   ['nanoseconds', 'nanosecond']
 ];
 
-import * as PARSE from './regex.mjs';
+import * as PARSE from './regex';
 
 const ES2020 = {
   Call,

@@ -1,6 +1,6 @@
-import { ES } from './ecmascript.mjs';
-import { DateTimeFormat } from './intl.mjs';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass.mjs';
+import { ES } from './ecmascript';
+import { DateTimeFormat } from './intl';
+import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import {
   ISO_YEAR,
   ISO_MONTH,
@@ -16,7 +16,7 @@ import {
   EPOCHNANOSECONDS,
   GetSlot,
   HasSlot
-} from './slots.mjs';
+} from './slots';
 
 const DISALLOWED_UNITS = ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'];
 
