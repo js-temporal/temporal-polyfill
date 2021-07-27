@@ -29,6 +29,7 @@ describe('Temporal.Now', () => {
     it('Temporal.Now.timeZone is a function', () => equal(typeof Temporal.Now.timeZone, 'function'));
     it('Temporal.Now.zonedDateTimeISO is a function', () => equal(typeof Temporal.Now.zonedDateTimeISO, 'function'));
     it('Temporal.Now.zonedDateTime is a function', () => equal(typeof Temporal.Now.zonedDateTime, 'function'));
+    it('Temporal.Now has a toStringTag', () => equal(Temporal.Now.toString(), '[object Temporal.Now]'));
   });
   describe('Temporal.Now.instant()', () => {
     it('Temporal.Now.instant() returns an Instant', () => assert(Temporal.Now.instant() instanceof Temporal.Instant));
