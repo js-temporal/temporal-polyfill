@@ -1310,7 +1310,7 @@ export const ES = ObjectAssign({}, ES2020, {
     }
     // fall through: offsetOpt === 'prefer', but the offset doesn't match
     // so fall back to use the time zone instead.
-    const instant = ES.BuiltinTimeZoneGetInstantFor(timeZone, dt, disambiguation);
+    const instant = ES.DisambiguatePossibleInstants(possibleInstants, timeZone, dt, disambiguation);
     return GetSlot(instant, EPOCHNANOSECONDS);
   },
   ToTemporalZonedDateTime: (item, options = ObjectCreate(null)) => {
@@ -1786,8 +1786,11 @@ export const ES = ObjectAssign({}, ES2020, {
     );
   },
   BuiltinTimeZoneGetInstantFor: (timeZone, dateTime, disambiguation) => {
-    const Instant = GetIntrinsic('%Temporal.Instant%');
     const possibleInstants = ES.GetPossibleInstantsFor(timeZone, dateTime);
+    return ES.DisambiguatePossibleInstants(possibleInstants, timeZone, dateTime, disambiguation);
+  },
+  DisambiguatePossibleInstants: (possibleInstants, timeZone, dateTime, disambiguation) => {
+    const Instant = GetIntrinsic('%Temporal.Instant%');
     const numInstants = possibleInstants.length;
 
     if (numInstants === 1) return possibleInstants[0];
