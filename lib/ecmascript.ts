@@ -496,23 +496,16 @@ export const ES = ObjectAssign({}, ES2020, {
       const fSeconds = secs % 1;
 
       if (fSeconds !== 0) {
-        [milliseconds, microseconds, nanoseconds].forEach((val) => {
-          if (val !== 0) throw new RangeError('only the smallest unit can be fractional');
-        });
         const mils = fSeconds * 1000;
         milliseconds = MathTrunc(mils);
         const fMilliseconds = mils % 1;
 
         if (fMilliseconds !== 0) {
-          [microseconds, nanoseconds].forEach((val) => {
-            if (val !== 0) throw new RangeError('only the smallest unit can be fractional');
-          });
           const mics = fMilliseconds * 1000;
           microseconds = MathTrunc(mics);
           const fMicroseconds = mics % 1;
 
           if (fMicroseconds !== 0) {
-            if (nanoseconds !== 0) throw new RangeError('only the smallest unit can be fractional');
             const nans = fMicroseconds * 1000;
             nanoseconds = MathTrunc(nans);
           }
