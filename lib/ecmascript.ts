@@ -92,6 +92,13 @@ const ToPositiveInteger = (value, property) => {
   }
   return value;
 };
+const ToIntegerNoFraction = (value) => {
+  value = ES.ToNumber(value);
+  if (!ES.IsInteger(value)) {
+    throw new RangeError(`unsupported fractional value ${value}`);
+  }
+  return value;
+};
 
 const BUILTIN_CASTS = new Map([
   ['year', ToIntegerThrowOnInfinity],
@@ -104,16 +111,16 @@ const BUILTIN_CASTS = new Map([
   ['millisecond', ToIntegerThrowOnInfinity],
   ['microsecond', ToIntegerThrowOnInfinity],
   ['nanosecond', ToIntegerThrowOnInfinity],
-  ['years', ToInteger],
-  ['months', ToInteger],
-  ['weeks', ToInteger],
-  ['days', ToInteger],
-  ['hours', ToInteger],
-  ['minutes', ToInteger],
-  ['seconds', ToInteger],
-  ['milliseconds', ToInteger],
-  ['microseconds', ToInteger],
-  ['nanoseconds', ToInteger],
+  ['years', ToIntegerNoFraction],
+  ['months', ToIntegerNoFraction],
+  ['weeks', ToIntegerNoFraction],
+  ['days', ToIntegerNoFraction],
+  ['hours', ToIntegerNoFraction],
+  ['minutes', ToIntegerNoFraction],
+  ['seconds', ToIntegerNoFraction],
+  ['milliseconds', ToIntegerNoFraction],
+  ['microseconds', ToIntegerNoFraction],
+  ['nanoseconds', ToIntegerNoFraction],
   ['era', ToString],
   ['eraYear', ToInteger],
   ['offset', ToString]
@@ -183,6 +190,7 @@ function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier) {
 export const ES = ObjectAssign({}, ES2020, {
   ToPositiveInteger: ToPositiveInteger,
   ToIntegerThrowOnInfinity,
+  ToIntegerNoFraction,
   IsTemporalInstant: (item) => HasSlot(item, EPOCHNANOSECONDS) && !HasSlot(item, TIME_ZONE, CALENDAR),
   IsTemporalTimeZone: (item) => HasSlot(item, TIMEZONE_ID),
   IsTemporalCalendar: (item) => HasSlot(item, CALENDAR_ID),
@@ -536,28 +544,18 @@ export const ES = ObjectAssign({}, ES2020, {
         nanoseconds: GetSlot(item, NANOSECONDS)
       };
     }
-    const props = ES.ToPartialRecord(
-      item,
-      [
-        'days',
-        'hours',
-        'microseconds',
-        'milliseconds',
-        'minutes',
-        'months',
-        'nanoseconds',
-        'seconds',
-        'weeks',
-        'years'
-      ],
-      (v) => {
-        v = ES.ToNumber(v);
-        if (MathFloor(v) !== v) {
-          throw new RangeError(`unsupported fractional value ${v}`);
-        }
-        return v;
-      }
-    );
+    const props = ES.ToPartialRecord(item, [
+      'days',
+      'hours',
+      'microseconds',
+      'milliseconds',
+      'minutes',
+      'months',
+      'nanoseconds',
+      'seconds',
+      'weeks',
+      'years'
+    ]);
     if (!props) throw new TypeError('invalid duration-like');
     const {
       years = 0,
