@@ -55,12 +55,22 @@ export default [
   {
     input,
     external,
-    output: [outputEntry(pkg.module, 'es'), outputEntry(pkg.main, 'cjs')],
+    output: [
+      // ESM bundle
+      outputEntry(pkg.module, 'es'),
+      // CJS bundle.
+      // Note that because package.json specifies "type":"module", the name of
+      // this file MUST end in ".cjs" in order to be treated as a CommonJS file.
+      outputEntry(pkg.main, 'cjs')
+    ],
     plugins
   },
   {
     input,
-    output: [outputEntry(pkg.browser, 'umd'), outputEntry(pkg.module.replace('.esm', '.browser.esm'), 'es')],
+    // UMD bundle for using in script tags, etc
+    // Note that some build systems don't like reading UMD files if they end in
+    // '.cjs', so this entry in package.json should end in a .js file extension.
+    output: [outputEntry(pkg.browser, 'umd')],
     plugins
   }
 ];
