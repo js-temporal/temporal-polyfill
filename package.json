@@ -3,7 +3,7 @@
   "version": "0.2.0",
   "description": "Polyfill for Temporal",
   "type": "module",
-  "main": "dist/index.js",
+  "main": "dist/index.cjs",
   "module": "dist/index.esm.js",
   "browser": "dist/index.umd.js",
   "types": "index.d.ts",
