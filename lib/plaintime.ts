@@ -21,6 +21,7 @@ import {
   HasSlot,
   SetSlot
 } from './slots';
+import { Temporal } from '..';
 
 const ObjectAssign = Object.assign;
 
@@ -63,7 +64,7 @@ function TemporalTimeToString(time, precision, options = undefined) {
   return `${hour}:${minute}${seconds}`;
 }
 
-export class PlainTime {
+export class PlainTime implements Temporal.PlainTime {
   constructor(isoHour = 0, isoMinute = 0, isoSecond = 0, isoMillisecond = 0, isoMicrosecond = 0, isoNanosecond = 0) {
     isoHour = ES.ToFiniteInteger(isoHour);
     isoMinute = ES.ToFiniteInteger(isoMinute);
@@ -396,7 +397,7 @@ export class PlainTime {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return new DateTimeFormat(locales, options).format(this);
   }
-  valueOf() {
+  valueOf(): never {
     throw new TypeError('use compare() or equals() to compare Temporal.PlainTime');
   }
 

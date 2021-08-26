@@ -18,12 +18,13 @@ import {
   GetSlot,
   HasSlot
 } from './slots';
+import { Temporal } from '..';
 
 import bigInt from 'big-integer';
 
 const ArrayPrototypePush = Array.prototype.push;
 
-export class ZonedDateTime {
+export class ZonedDateTime implements Temporal.ZonedDateTime {
   constructor(epochNanoseconds, timeZone, calendar = ES.GetISO8601Calendar()) {
     // Note: if the argument is not passed, ToBigInt(undefined) will throw. This check exists only
     //       to improve the error message.
@@ -649,7 +650,7 @@ export class ZonedDateTime {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     return ES.TemporalZonedDateTimeToString(this, 'auto');
   }
-  valueOf() {
+  valueOf(): never {
     throw new TypeError('use compare() or equals() to compare Temporal.ZonedDateTime');
   }
   startOfDay() {

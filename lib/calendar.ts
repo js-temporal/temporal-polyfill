@@ -2,6 +2,7 @@ import { DEBUG } from './debug';
 import { ES } from './ecmascript';
 import { GetIntrinsic, MakeIntrinsicClass, DefineIntrinsic } from './intrinsicclass';
 import { CALENDAR_ID, ISO_YEAR, ISO_MONTH, ISO_DAY, CreateSlots, GetSlot, HasSlot, SetSlot } from './slots';
+import { Temporal } from '..';
 
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
@@ -13,7 +14,7 @@ const ObjectEntries = Object.entries;
 
 const impl = {};
 
-export class Calendar {
+export class Calendar implements Temporal.Calendar {
   constructor(id) {
     // Note: if the argument is not passed, IsBuiltinCalendar("undefined") will fail. This check
     //       exists only to improve the error message.

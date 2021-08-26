@@ -1,5 +1,6 @@
 import { ES } from './ecmascript';
 import { GetIntrinsic } from './intrinsicclass';
+import { Temporal } from '..';
 
 const instant = () => {
   const Instant = GetIntrinsic('%Temporal.Instant%');
@@ -38,7 +39,7 @@ const timeZone = () => {
   return ES.SystemTimeZone();
 };
 
-export const Now = {
+export const Now: typeof Temporal.Now = {
   instant,
   plainDateTime,
   plainDateTimeISO,

@@ -3,6 +3,7 @@ import { ES } from './ecmascript';
 import { DateTimeFormat } from './intl';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import { EPOCHNANOSECONDS, CreateSlots, GetSlot, SetSlot } from './slots';
+import { Temporal } from '..';
 
 import bigInt from 'big-integer';
 
@@ -16,7 +17,7 @@ const MAX_DIFFERENCE_INCREMENTS = {
   nanosecond: 1000
 };
 
-export class Instant {
+export class Instant implements Temporal.Instant {
   constructor(epochNanoseconds) {
     // Note: if the argument is not passed, ToBigInt(undefined) will throw. This check exists only
     //       to improve the error message.
@@ -207,7 +208,7 @@ export class Instant {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     return new DateTimeFormat(locales, options).format(this);
   }
-  valueOf() {
+  valueOf(): never {
     throw new TypeError('use compare() or equals() to compare Temporal.Instant');
   }
   toZonedDateTime(item) {
