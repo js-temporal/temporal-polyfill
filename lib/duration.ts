@@ -16,8 +16,9 @@ import {
   GetSlot,
   SetSlot
 } from './slots';
+import { Temporal } from '..';
 
-export class Duration {
+export class Duration implements Temporal.Duration {
   constructor(
     years = 0,
     months = 0,
@@ -459,7 +460,7 @@ export class Duration {
     console.warn('Temporal.Duration.prototype.toLocaleString() requires Intl.DurationFormat.');
     return ES.TemporalDurationToString(this);
   }
-  valueOf() {
+  valueOf(): never {
     throw new TypeError('use compare() to compare Temporal.Duration');
   }
   static from(item) {

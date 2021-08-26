@@ -17,8 +17,9 @@ import {
   GetSlot,
   SetSlot
 } from './slots';
+import { Temporal } from '..';
 
-export class TimeZone {
+export class TimeZone implements Temporal.TimeZone {
   constructor(timeZoneIdentifier) {
     // Note: if the argument is not passed, GetCanonicalTimeZoneIdentifier(undefined) will throw.
     //       This check exists only to improve the error message.

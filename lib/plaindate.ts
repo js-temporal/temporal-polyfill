@@ -17,10 +17,11 @@ import {
   GetSlot,
   HasSlot
 } from './slots';
+import { Temporal } from '..';
 
 const DISALLOWED_UNITS = ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'];
 
-export class PlainDate {
+export class PlainDate implements Temporal.PlainDate {
   constructor(isoYear, isoMonth, isoDay, calendar = ES.GetISO8601Calendar()) {
     isoYear = ES.ToFiniteInteger(isoYear);
     isoMonth = ES.ToFiniteInteger(isoMonth);
@@ -288,7 +289,7 @@ export class PlainDate {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     return new DateTimeFormat(locales, options).format(this);
   }
-  valueOf() {
+  valueOf(): never {
     throw new TypeError('use compare() or equals() to compare Temporal.PlainDate');
   }
   toPlainDateTime(temporalTime = undefined) {

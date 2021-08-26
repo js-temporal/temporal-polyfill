@@ -2,12 +2,13 @@ import { ES } from './ecmascript';
 import { DateTimeFormat } from './intl';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, TIME_ZONE, GetSlot, HasSlot } from './slots';
+import { Temporal } from '..';
 
 const ObjectCreate = Object.create;
 
 const DISALLOWED_UNITS = ['week', 'day', 'hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'];
 
-export class PlainYearMonth {
+export class PlainYearMonth implements Temporal.PlainYearMonth {
   constructor(isoYear, isoMonth, calendar = ES.GetISO8601Calendar(), referenceISODay = 1) {
     isoYear = ES.ToFiniteInteger(isoYear);
     isoMonth = ES.ToFiniteInteger(isoMonth);
@@ -290,7 +291,7 @@ export class PlainYearMonth {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
     return new DateTimeFormat(locales, options).format(this);
   }
-  valueOf() {
+  valueOf(): never {
     throw new TypeError('use compare() or equals() to compare Temporal.PlainYearMonth');
   }
   toPlainDate(item) {
