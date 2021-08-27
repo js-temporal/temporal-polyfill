@@ -829,10 +829,29 @@ const nonIsoHelperBase: NonIsoHelperBase = {
   addMonthsCalendar(calendarDate, months, overflow, cache) {
     const { day } = calendarDate;
     for (let i = 0, absMonths = MathAbs(months); i < absMonths; i++) {
-      const days = months < 0 ? -this.daysInPreviousMonth(calendarDate, cache) : this.daysInMonth(calendarDate, cache);
+      const { month } = calendarDate;
+      const oldCalendarDate = calendarDate;
+      const days =
+        months < 0
+          ? -Math.max(day, this.daysInPreviousMonth(calendarDate, cache))
+          : this.daysInMonth(calendarDate, cache);
       const isoDate = this.calendarToIsoDate(calendarDate, 'constrain', cache);
-      const addedIso = this.addDaysIso(isoDate, days, cache);
+      let addedIso = this.addDaysIso(isoDate, days, cache);
       calendarDate = this.isoToCalendarDate(addedIso, cache);
+
+      // Normally, we can advance one month by adding the number of days in the
+      // current month. However, if we're at the end of the current month and
+      // the next month has fewer days, then we rolled over to the after-next
+      // month. Below we detect this condition and back up until we're back in
+      // the desired month.
+      if (months > 0) {
+        const monthsInOldYear = this.monthsInYear(oldCalendarDate, cache);
+        while (calendarDate.month - 1 !== month % monthsInOldYear) {
+          addedIso = this.addDaysIso(addedIso, -1, cache);
+          calendarDate = this.isoToCalendarDate(addedIso, cache);
+        }
+      }
+
       if (calendarDate.day !== day) {
         // try to retain the original day-of-month, if possible
         calendarDate = this.regulateDate({ ...calendarDate, day }, 'constrain', cache);
@@ -882,7 +901,7 @@ const nonIsoHelperBase: NonIsoHelperBase = {
         let current;
         let next = yearsAdded;
         do {
-          months++;
+          months += sign;
           current = next;
           next = this.addMonthsCalendar(current, sign, 'constrain', cache);
           if (next.day !== calendarOne.day) {
@@ -890,10 +909,9 @@ const nonIsoHelperBase: NonIsoHelperBase = {
             next = this.regulateDate({ ...next, day: calendarOne.day }, 'constrain', cache);
           }
         } while (this.compareCalendarDates(calendarTwo, next) * sign >= 0);
-        months--; // correct for loop above which overshoots by 1
+        months -= sign; // correct for loop above which overshoots by 1
         const remainingDays = this.calendarDaysUntil(current, calendarTwo, cache);
-        days = remainingDays % 7;
-        weeks = (remainingDays - days) / 7;
+        days = remainingDays;
         break;
       }
     }
