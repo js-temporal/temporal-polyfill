@@ -1,4 +1,4 @@
-import bigInt from 'big-integer';
+import JSBI from 'jsbi';
 import { Temporal } from '..';
 
 import { DEBUG } from './debug';
@@ -7,10 +7,10 @@ type OmitConstructor<T> = { [P in keyof T as T[P] extends new (...args: any[]) =
 
 type TemporalIntrinsics = Omit<typeof Temporal, 'Now' | 'Instant' | 'ZonedDateTime'> & {
   Instant: OmitConstructor<Temporal.Instant> &
-    (new (epochNanoseconds: bigInt.BigInteger) => Temporal.Instant) & { prototype: typeof Temporal.Instant.prototype };
+    (new (epochNanoseconds: JSBI) => Temporal.Instant) & { prototype: typeof Temporal.Instant.prototype };
   ZonedDateTime: OmitConstructor<Temporal.ZonedDateTime> &
     (new (
-      epochNanoseconds: bigInt.BigInteger,
+      epochNanoseconds: JSBI,
       timeZone: Temporal.TimeZoneProtocol | string,
       calendar?: Temporal.CalendarProtocol | string
     ) => Temporal.ZonedDateTime) & {

@@ -18,6 +18,7 @@ import {
 } from './slots';
 import { Temporal } from '..';
 import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
+import JSBI from 'jsbi';
 
 export class Duration implements Temporal.Duration {
   constructor(
@@ -517,7 +518,7 @@ export class Duration implements Temporal.Duration {
     }
     const totalNs1 = ES.TotalDurationNanoseconds(d1, h1, min1, s1, ms1, µs1, ns1, shift1);
     const totalNs2 = ES.TotalDurationNanoseconds(d2, h2, min2, s2, ms2, µs2, ns2, shift2);
-    return ES.ComparisonResult(totalNs1.minus(totalNs2).toJSNumber());
+    return ES.ComparisonResult(JSBI.toNumber(JSBI.subtract(totalNs1, totalNs2)));
   }
   [Symbol.toStringTag]!: 'Temporal.Duration';
 }

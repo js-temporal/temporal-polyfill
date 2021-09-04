@@ -1,4 +1,4 @@
-import bigInt from 'big-integer';
+import JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type { BuiltinCalendarId, AnyTemporalType } from './internaltypes';
 
@@ -54,7 +54,7 @@ interface SlotInfoRecord {
 
 interface Slots extends SlotInfoRecord {
   // Instant
-  [EPOCHNANOSECONDS]: SlotInfo<bigInt.BigInteger, Temporal.Instant | Temporal.ZonedDateTime>; // number? JSBI?
+  [EPOCHNANOSECONDS]: SlotInfo<JSBI, Temporal.Instant | Temporal.ZonedDateTime>; // number? JSBI?
 
   // TimeZone
   [TIMEZONE_ID]: SlotInfo<string, Temporal.TimeZone>;
