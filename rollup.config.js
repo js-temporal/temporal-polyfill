@@ -7,14 +7,16 @@ import { terser } from 'rollup-plugin-terser';
 import { env } from 'process';
 import pkg from './package.json';
 
-const isProduction = env.NODE_ENV === 'production';
+const isPlaygroundBuild = !!env.TEMPORAL_PLAYGROUND;
+const isTest262 = !!env.TEST262;
+const isProduction = env.NODE_ENV === 'production' && !isTest262;
 const libName = 'temporal';
 
 const plugins = [
   typescript({
     typescript: require('typescript')
   }),
-  replace({ exclude: 'node_modules/**', 'globalThis.__debug__': !isProduction, preventAssignment: true }),
+  replace({ exclude: 'node_modules/**', 'globalThis.__debug__': !isTest262 && !isProduction, preventAssignment: true }),
   resolve({ preferBuiltins: false }),
   commonjs(),
   babel({
@@ -51,7 +53,7 @@ function outputEntry(file, format) {
   };
 }
 
-export default [
+let builds = [
   {
     input,
     external,
@@ -74,3 +76,36 @@ export default [
     plugins
   }
 ];
+
+if (isTest262) {
+  builds = [
+    {
+      input: 'lib/init.ts',
+      output: {
+        name: libName,
+        file: 'dist/script.js',
+        format: 'iife',
+        sourcemap: true
+      },
+      plugins
+    }
+  ];
+}
+
+if (isPlaygroundBuild) {
+  builds = [
+    {
+      input: 'lib/init.ts',
+      output: {
+        name: libName,
+        file: 'dist/playground.cjs',
+        format: 'cjs',
+        exports: 'named',
+        sourcemap: true
+      },
+      plugins
+    }
+  ];
+}
+
+export default builds;
