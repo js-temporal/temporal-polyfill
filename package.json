@@ -3,15 +3,24 @@
   "version": "0.2.0",
   "description": "Polyfill for Temporal",
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.esm.js",
-  "browser": "dist/index.umd.js",
-  "types": "index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.esm.js",
+  "browser": "./dist/index.umd.js",
+  "exports": {
+    ".": [
+      {
+       "import": "./dist/index.esm.js",
+       "default": "./dist/index.cjs"
+      },
+      "./dist/index.cjs"
+    ]
+ },
+  "types": "./index.d.ts",
   "scripts": {
     "test": "tsc && node --no-warnings --experimental-modules --experimental-specifier-resolution=node --icu-data-dir node_modules/full-icu --loader ./test/resolve.source.mjs ./test/all.mjs",
     "build": "rollup -c rollup.config.js",
     "prepublishOnly": "npm run build",
-    "playground": "npm run build && node --experimental-modules --no-warnings --icu-data-dir node_modules/full-icu -r ./lib/init.js",
+    "playground": "npm run build && node --experimental-modules --no-warnings --icu-data-dir node_modules/full-icu -r ./lib/init.cjs",
     "lint": "eslint . --ext ts,js,mjs,.d.ts --max-warnings 0 --cache \"$@\"",
     "postlint": "npm run tscheck",
     "pretty": "eslint . --ext ts,js,mjs,.d.ts --fix",
