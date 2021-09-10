@@ -3,3 +3,4 @@ test
 types
 tsconfig.json
 *.sh
+.vscode

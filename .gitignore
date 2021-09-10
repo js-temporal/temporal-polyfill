@@ -2,5 +2,6 @@ node_modules/
 dist/
 tsc-out/
 .eslintcache
-.vscode/
+.vscode/*
+!.vscode/launch.json
 *.tgz
