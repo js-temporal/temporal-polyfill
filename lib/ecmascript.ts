@@ -13,11 +13,10 @@ const ObjectAssign = Object.assign;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
 const ObjectIs = Object.is;
+const ReflectApply = Reflect.apply;
 
 import { DEBUG } from './debug';
 import bigInt from 'big-integer';
-import Call from 'es-abstract/2020/Call.js';
-import GetMethod from 'es-abstract/2020/GetMethod.js';
 import IsInteger from 'es-abstract/2020/IsInteger.js';
 import ToInteger from 'es-abstract/2020/ToInteger.js';
 import ToLength from 'es-abstract/2020/ToLength.js';
@@ -25,7 +24,6 @@ import ToNumber from 'es-abstract/2020/ToNumber.js';
 import ToPrimitive from 'es-abstract/2020/ToPrimitive.js';
 import ToString from 'es-abstract/2020/ToString.js';
 import Type from 'es-abstract/2020/Type.js';
-import HasOwnProperty from 'es-abstract/2020/HasOwnProperty.js';
 
 import { GetIntrinsic } from './intrinsicclass';
 import {
@@ -154,9 +152,6 @@ const SINGULAR_PLURAL_UNITS = [
 import * as PARSE from './regex';
 
 const ES2020 = {
-  Call,
-  GetMethod,
-  HasOwnProperty,
   IsInteger,
   ToInteger,
   ToLength,
@@ -1522,8 +1517,9 @@ export const ES = ObjectAssign({}, ES2020, {
     return new TemporalCalendar('iso8601');
   },
   CalendarFields: (calendar, fieldNames) => {
-    const fields = ES.GetMethod(calendar, 'fields');
-    if (fields !== undefined) fieldNames = ES.Call(fields, calendar, [fieldNames]);
+    if (calendar.fields) {
+      fieldNames = calendar.fields(fieldNames);
+    }
     const result = [];
     for (const name of fieldNames) {
       if (ES.Type(name) !== 'String') throw new TypeError('bad return from calendar.fields()');
@@ -1532,107 +1528,95 @@ export const ES = ObjectAssign({}, ES2020, {
     return result;
   },
   CalendarMergeFields: (calendar, fields, additionalFields) => {
-    const mergeFields = ES.GetMethod(calendar, 'mergeFields');
-    if (mergeFields === undefined) return { ...fields, ...additionalFields };
-    const result = ES.Call(mergeFields, calendar, [fields, additionalFields]);
+    const calMergeFields = calendar.mergeFields;
+    if (!calMergeFields) {
+      return { ...fields, ...additionalFields };
+    }
+    const result = Reflect.apply(calMergeFields, calendar, [fields, additionalFields]);
     if (ES.Type(result) !== 'Object') throw new TypeError('bad return from calendar.mergeFields()');
     return result;
   },
   CalendarDateAdd: (calendar, date, duration, options, dateAdd) => {
     if (dateAdd === undefined) {
-      dateAdd = ES.GetMethod(calendar, 'dateAdd');
+      dateAdd = calendar.dateAdd;
     }
-    const result = ES.Call(dateAdd, calendar, [date, duration, options]);
+    const result = ReflectApply(dateAdd, calendar, [date, duration, options]);
     if (!ES.IsTemporalDate(result)) throw new TypeError('invalid result');
     return result;
   },
   CalendarDateUntil: (calendar, date, otherDate, options, dateUntil) => {
     if (dateUntil === undefined) {
-      dateUntil = ES.GetMethod(calendar, 'dateUntil');
+      dateUntil = calendar.dateUntil;
     }
-    const result = ES.Call(dateUntil, calendar, [date, otherDate, options]);
+    const result = ReflectApply(dateUntil, calendar, [date, otherDate, options]);
     if (!ES.IsTemporalDuration(result)) throw new TypeError('invalid result');
     return result;
   },
   CalendarYear: (calendar, dateLike) => {
-    const year = ES.GetMethod(calendar, 'year');
-    const result = ES.Call(year, calendar, [dateLike]);
+    const result = calendar.year(dateLike);
     if (result === undefined) {
       throw new RangeError('calendar year result must be an integer');
     }
     return ES.ToIntegerThrowOnInfinity(result);
   },
   CalendarMonth: (calendar, dateLike) => {
-    const month = ES.GetMethod(calendar, 'month');
-    const result = ES.Call(month, calendar, [dateLike]);
+    const result = calendar.month(dateLike);
     if (result === undefined) {
       throw new RangeError('calendar month result must be a positive integer');
     }
     return ES.ToPositiveInteger(result);
   },
   CalendarMonthCode: (calendar, dateLike) => {
-    const monthCode = ES.GetMethod(calendar, 'monthCode');
-    const result = ES.Call(monthCode, calendar, [dateLike]);
+    const result = calendar.monthCode(dateLike);
     if (result === undefined) {
       throw new RangeError('calendar monthCode result must be a string');
     }
     return ES.ToString(result);
   },
   CalendarDay: (calendar, dateLike) => {
-    const day = ES.GetMethod(calendar, 'day');
-    const result = ES.Call(day, calendar, [dateLike]);
+    const result = calendar.day(dateLike);
     if (result === undefined) {
       throw new RangeError('calendar day result must be a positive integer');
     }
     return ES.ToPositiveInteger(result);
   },
   CalendarEra: (calendar, dateLike) => {
-    const era = ES.GetMethod(calendar, 'era');
-    let result = ES.Call(era, calendar, [dateLike]);
+    let result = calendar.era(dateLike);
     if (result !== undefined) {
       result = ES.ToString(result);
     }
     return result;
   },
   CalendarEraYear: (calendar, dateLike) => {
-    const eraYear = ES.GetMethod(calendar, 'eraYear');
-    let result = ES.Call(eraYear, calendar, [dateLike]);
+    let result = calendar.eraYear(dateLike);
     if (result !== undefined) {
       result = ES.ToIntegerThrowOnInfinity(result);
     }
     return result;
   },
   CalendarDayOfWeek: (calendar, dateLike) => {
-    const dayOfWeek = ES.GetMethod(calendar, 'dayOfWeek');
-    return ES.Call(dayOfWeek, calendar, [dateLike]);
+    return calendar.dayOfWeek(dateLike);
   },
   CalendarDayOfYear: (calendar, dateLike) => {
-    const dayOfYear = ES.GetMethod(calendar, 'dayOfYear');
-    return ES.Call(dayOfYear, calendar, [dateLike]);
+    return calendar.dayOfYear(dateLike);
   },
   CalendarWeekOfYear: (calendar, dateLike) => {
-    const weekOfYear = ES.GetMethod(calendar, 'weekOfYear');
-    return ES.Call(weekOfYear, calendar, [dateLike]);
+    return calendar.weekOfYear(dateLike);
   },
   CalendarDaysInWeek: (calendar, dateLike) => {
-    const daysInWeek = ES.GetMethod(calendar, 'daysInWeek');
-    return ES.Call(daysInWeek, calendar, [dateLike]);
+    return calendar.daysInWeek(dateLike);
   },
   CalendarDaysInMonth: (calendar, dateLike) => {
-    const daysInMonth = ES.GetMethod(calendar, 'daysInMonth');
-    return ES.Call(daysInMonth, calendar, [dateLike]);
+    return calendar.daysInMonth(dateLike);
   },
   CalendarDaysInYear: (calendar, dateLike) => {
-    const daysInYear = ES.GetMethod(calendar, 'daysInYear');
-    return ES.Call(daysInYear, calendar, [dateLike]);
+    return calendar.daysInYear(dateLike);
   },
   CalendarMonthsInYear: (calendar, dateLike) => {
-    const monthsInYear = ES.GetMethod(calendar, 'monthsInYear');
-    return ES.Call(monthsInYear, calendar, [dateLike]);
+    return calendar.monthsInYear(dateLike);
   },
   CalendarInLeapYear: (calendar, dateLike) => {
-    const inLeapYear = ES.GetMethod(calendar, 'inLeapYear');
-    return ES.Call(inLeapYear, calendar, [dateLike]);
+    return calendar.inLeapYear(dateLike);
   },
 
   ToTemporalCalendar: (calendarLike) => {
@@ -1684,20 +1668,17 @@ export const ES = ObjectAssign({}, ES2020, {
     }
   },
   DateFromFields: (calendar, fields, options) => {
-    const dateFromFields = ES.GetMethod(calendar, 'dateFromFields');
-    const result = ES.Call(dateFromFields, calendar, [fields, options]);
+    const result = calendar.dateFromFields(fields, options);
     if (!ES.IsTemporalDate(result)) throw new TypeError('invalid result');
     return result;
   },
   YearMonthFromFields: (calendar, fields, options) => {
-    const yearMonthFromFields = ES.GetMethod(calendar, 'yearMonthFromFields');
-    const result = ES.Call(yearMonthFromFields, calendar, [fields, options]);
+    const result = calendar.yearMonthFromFields(fields, options);
     if (!ES.IsTemporalYearMonth(result)) throw new TypeError('invalid result');
     return result;
   },
   MonthDayFromFields: (calendar, fields, options) => {
-    const monthDayFromFields = ES.GetMethod(calendar, 'monthDayFromFields');
-    const result = ES.Call(monthDayFromFields, calendar, [fields, options]);
+    const result = calendar.monthDayFromFields(fields, options);
     if (!ES.IsTemporalMonthDay(result)) throw new TypeError('invalid result');
     return result;
   },
@@ -1742,11 +1723,11 @@ export const ES = ObjectAssign({}, ES2020, {
     );
   },
   GetOffsetNanosecondsFor: (timeZone, instant) => {
-    let getOffsetNanosecondsFor = ES.GetMethod(timeZone, 'getOffsetNanosecondsFor');
+    let getOffsetNanosecondsFor = timeZone.getOffsetNanosecondsFor;
     if (getOffsetNanosecondsFor === undefined) {
       getOffsetNanosecondsFor = GetIntrinsic('%Temporal.TimeZone.prototype.getOffsetNanosecondsFor%');
     }
-    const offsetNs = ES.Call(getOffsetNanosecondsFor, timeZone, [instant]);
+    const offsetNs = Reflect.apply(getOffsetNanosecondsFor, timeZone, [instant]);
     if (typeof offsetNs !== 'number') {
       throw new TypeError('bad return from getOffsetNanosecondsFor');
     }
@@ -1916,8 +1897,7 @@ export const ES = ObjectAssign({}, ES2020, {
     }
   },
   GetPossibleInstantsFor: (timeZone, dateTime) => {
-    const getPossibleInstantsFor = ES.GetMethod(timeZone, 'getPossibleInstantsFor');
-    const possibleInstants = ES.Call(getPossibleInstantsFor, timeZone, [dateTime]);
+    const possibleInstants = timeZone.getPossibleInstantsFor(dateTime);
     const result = [];
     for (const instant of possibleInstants) {
       if (!ES.IsTemporalInstant(instant)) {
@@ -2698,8 +2678,8 @@ export const ES = ObjectAssign({}, ES2020, {
         {
           if (!calendar) throw new RangeError('a starting point is required for months balancing');
           // balance years down to months
-          const dateAdd = ES.GetMethod(calendar, 'dateAdd');
-          const dateUntil = ES.GetMethod(calendar, 'dateUntil');
+          const dateAdd = calendar.dateAdd;
+          const dateUntil = calendar.dateUntil;
           while (MathAbs(years) > 0) {
             const addOptions = ObjectCreate(null);
             const newRelativeTo = ES.CalendarDateAdd(calendar, relativeTo, oneYear, addOptions, dateAdd);
@@ -2802,10 +2782,10 @@ export const ES = ObjectAssign({}, ES2020, {
         }
 
         // balance months up to years
-        const dateAdd = ES.GetMethod(calendar, 'dateAdd');
+        const dateAdd = calendar.dateAdd;
         const addOptions = ObjectCreate(null);
         newRelativeTo = ES.CalendarDateAdd(calendar, relativeTo, oneYear, addOptions, dateAdd);
-        const dateUntil = ES.GetMethod(calendar, 'dateUntil');
+        const dateUntil = calendar.dateUntil;
         const untilOptions = ObjectCreate(null);
         untilOptions.largestUnit = 'month';
         let untilResult = ES.CalendarDateUntil(calendar, relativeTo, newRelativeTo, untilOptions, dateUntil);
@@ -3387,7 +3367,7 @@ export const ES = ObjectAssign({}, ES2020, {
       );
       const dateDuration1 = new TemporalDuration(y1, mon1, w1, d1, 0, 0, 0, 0, 0, 0);
       const dateDuration2 = new TemporalDuration(y2, mon2, w2, d2, 0, 0, 0, 0, 0, 0);
-      const dateAdd = ES.GetMethod(calendar, 'dateAdd');
+      const dateAdd = calendar.dateAdd;
       const firstAddOptions = ObjectCreate(null);
       const intermediate = ES.CalendarDateAdd(calendar, datePart, dateDuration1, firstAddOptions, dateAdd);
       const secondAddOptions = ObjectCreate(null);
@@ -3928,7 +3908,7 @@ export const ES = ObjectAssign({}, ES2020, {
         // convert months and weeks to days by calculating difference(
         // relativeTo + years, relativeTo + { years, months, weeks })
         const yearsDuration = new TemporalDuration(years);
-        const dateAdd = ES.GetMethod(calendar, 'dateAdd');
+        const dateAdd = calendar.dateAdd;
         const firstAddOptions = ObjectCreate(null);
         const yearsLater = ES.CalendarDateAdd(calendar, relativeTo, yearsDuration, firstAddOptions, dateAdd);
         const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
@@ -3979,7 +3959,7 @@ export const ES = ObjectAssign({}, ES2020, {
         // convert weeks to days by calculating difference(relativeTo +
         //   { years, months }, relativeTo + { years, months, weeks })
         const yearsMonths = new TemporalDuration(years, months);
-        const dateAdd = ES.GetMethod(calendar, 'dateAdd');
+        const dateAdd = calendar.dateAdd;
         const firstAddOptions = ObjectCreate(null);
         const yearsMonthsLater = ES.CalendarDateAdd(calendar, relativeTo, yearsMonths, firstAddOptions, dateAdd);
         const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);

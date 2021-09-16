@@ -25,6 +25,7 @@
       "es2015.collection",
       "es2015.symbol.wellknown",
       "es2015.core",
+      "ES2015.Reflect",
       "ES2016.Array.Include",
       "ES2017.Intl",
       "ES2017.Object",
