@@ -1,7 +1,26 @@
 import { DEBUG } from './debug';
 import { ES } from './ecmascript';
 import { GetIntrinsic, MakeIntrinsicClass, DefineIntrinsic } from './intrinsicclass';
-import { CALENDAR_ID, ISO_YEAR, ISO_MONTH, ISO_DAY, CreateSlots, GetSlot, HasSlot, SetSlot } from './slots';
+import {
+  CALENDAR_ID,
+  ISO_YEAR,
+  ISO_MONTH,
+  ISO_DAY,
+  YEARS,
+  MONTHS,
+  WEEKS,
+  DAYS,
+  HOURS,
+  MINUTES,
+  SECONDS,
+  MILLISECONDS,
+  MICROSECONDS,
+  NANOSECONDS,
+  CreateSlots,
+  GetSlot,
+  HasSlot,
+  SetSlot
+} from './slots';
 import { Temporal } from '..';
 
 const ArrayIncludes = Array.prototype.includes;
@@ -91,7 +110,25 @@ export class Calendar implements Temporal.Calendar {
     duration = ES.ToTemporalDuration(duration);
     options = ES.GetOptionsObject(options);
     const overflow = ES.ToTemporalOverflow(options);
-    return impl[GetSlot(this, CALENDAR_ID)].dateAdd(date, duration, overflow, this);
+    const { days } = ES.BalanceDuration(
+      GetSlot(duration, DAYS),
+      GetSlot(duration, HOURS),
+      GetSlot(duration, MINUTES),
+      GetSlot(duration, SECONDS),
+      GetSlot(duration, MILLISECONDS),
+      GetSlot(duration, MICROSECONDS),
+      GetSlot(duration, NANOSECONDS),
+      'day'
+    );
+    return impl[GetSlot(this, CALENDAR_ID)].dateAdd(
+      date,
+      GetSlot(duration, YEARS),
+      GetSlot(duration, MONTHS),
+      GetSlot(duration, WEEKS),
+      days,
+      overflow,
+      this
+    );
   }
   dateUntil(one, two, options = undefined) {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
@@ -249,8 +286,7 @@ impl['iso8601'] = {
     }
     return merged;
   },
-  dateAdd(date, duration, overflow, calendar) {
-    const { years, months, weeks, days } = duration;
+  dateAdd(date, years, months, weeks, days, overflow, calendar) {
     let year = GetSlot(date, ISO_YEAR);
     let month = GetSlot(date, ISO_MONTH);
     let day = GetSlot(date, ISO_DAY);
@@ -1975,8 +2011,16 @@ const nonIsoGeneralImpl = {
     }
     return { ...original, ...additionalFieldsCopy };
   },
-  dateAdd(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, date, duration, overflow, calendar) {
-    const { years, months, weeks, days } = duration;
+  dateAdd(
+    this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase },
+    date,
+    years,
+    months,
+    weeks,
+    days,
+    overflow,
+    calendar
+  ) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     const added = this.helper.addCalendar(calendarDate, { years, months, weeks, days }, overflow, cache);
