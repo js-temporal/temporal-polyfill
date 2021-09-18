@@ -37,7 +37,7 @@
     // "strictNullChecks": true,
     // "strictPropertyInitialization": true,
     "stripInternal": true,
-    "target": "es5",
+    "target": "es2015",
     "outDir": "tsc-out/",
     "types": []
   },
