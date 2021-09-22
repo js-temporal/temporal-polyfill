@@ -417,6 +417,7 @@ export class PlainDate implements Temporal.PlainDate {
       GetSlot(two, ISO_DAY)
     );
   }
+  [Symbol.toStringTag]!: 'Temporal.PlainDate';
 }
 
 MakeIntrinsicClass(PlainDate, 'Temporal.PlainDate');

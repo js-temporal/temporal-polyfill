@@ -514,6 +514,7 @@ export class PlainTime implements Temporal.PlainTime {
     }
     return 0;
   }
+  [Symbol.toStringTag]!: 'Temporal.PlainTime';
 }
 
 MakeIntrinsicClass(PlainTime, 'Temporal.PlainTime');

@@ -48,7 +48,8 @@ export const Now: typeof Temporal.Now = {
   plainTimeISO,
   timeZone,
   zonedDateTime,
-  zonedDateTimeISO
+  zonedDateTimeISO,
+  [Symbol.toStringTag]: 'Temporal.Now'
 };
 Object.defineProperty(Now, Symbol.toStringTag, {
   value: 'Temporal.Now',

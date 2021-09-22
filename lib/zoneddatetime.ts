@@ -771,6 +771,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (bigInt(ns1).greater(ns2)) return 1;
     return 0;
   }
+  [Symbol.toStringTag]!: 'Temporal.ZonedDateTime';
 }
 
 MakeIntrinsicClass(ZonedDateTime, 'Temporal.ZonedDateTime');
