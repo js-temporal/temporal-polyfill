@@ -279,6 +279,7 @@ export class Instant implements Temporal.Instant {
     if (bigInt(one).greater(two)) return 1;
     return 0;
   }
+  [Symbol.toStringTag]!: 'Temporal.Instant';
 }
 
 MakeIntrinsicClass(Instant, 'Temporal.Instant');

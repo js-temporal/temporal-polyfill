@@ -505,6 +505,7 @@ export class Duration implements Temporal.Duration {
     ns2 = ES.TotalDurationNanoseconds(d2, h2, min2, s2, ms2, µs2, ns2, shift2);
     return ES.ComparisonResult(ns1.minus(ns2).toJSNumber());
   }
+  [Symbol.toStringTag]!: 'Temporal.Duration';
 }
 
 MakeIntrinsicClass(Duration, 'Temporal.Duration');
