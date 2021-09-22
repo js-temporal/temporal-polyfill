@@ -42,6 +42,8 @@ const descriptor = (value) => {
 
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
 const ObjectAssign = Object.assign;
+const ObjectHasOwnProperty = Object.prototype.hasOwnProperty;
+const ReflectApply = Reflect.apply;
 
 // Construction of built-in Intl.DateTimeFormat objects is sloooooow,
 // so we'll only create those instances when we need them.
@@ -90,7 +92,9 @@ export function DateTimeFormat(
   if (hasOptions) {
     const clonedResolved = ObjectAssign({}, ro);
     for (const prop in clonedResolved) {
-      if (!ES.HasOwnProperty(options, prop)) delete clonedResolved[prop];
+      if (!ReflectApply(ObjectHasOwnProperty, options, [prop])) {
+        delete clonedResolved[prop];
+      }
     }
     this[OPTIONS] = clonedResolved;
   } else {

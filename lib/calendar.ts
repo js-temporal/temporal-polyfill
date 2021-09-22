@@ -31,6 +31,7 @@ const MathFloor = Math.floor;
 const ObjectAssign = Object.assign;
 const ObjectEntries = Object.entries;
 const ObjectKeys = Object.keys;
+const ReflectApply = Reflect.apply;
 
 const impl = {};
 
@@ -1565,7 +1566,8 @@ const makeHelperGregorian = (id, originalEras) => {
       if (month === undefined) calendarDate = { ...calendarDate, month: monthCodeNumberPart(monthCode) };
       this.validateCalendarDate(calendarDate);
       calendarDate = this.completeEraYear(calendarDate);
-      calendarDate = ES.Call(nonIsoHelperBase.adjustCalendarDate, this, [calendarDate, cache, overflow]);
+      // TODO this can become `super` later.
+      calendarDate = ReflectApply(nonIsoHelperBase.adjustCalendarDate, this, [calendarDate, cache, overflow]);
       return calendarDate;
     },
     estimateIsoDate(this: typeof helperGregorian & NonIsoHelperBase, calendarDate) {
