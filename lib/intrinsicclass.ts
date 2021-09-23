@@ -1,9 +1,33 @@
-import ESGetIntrinsic from 'es-abstract/GetIntrinsic.js';
+import { Temporal } from '.';
 
 import { DEBUG } from './debug';
-const INTRINSICS = {};
 
-const customUtilInspectFormatters = {
+type TemporalIntrinsics = Omit<typeof Temporal, 'Now'>;
+type TemporalIntrinsicRegistrations = {
+  [key in keyof TemporalIntrinsics as `Temporal.${key}`]: TemporalIntrinsics[key];
+};
+type TemporalIntrinsicPrototypeRegistrations = {
+  [key in keyof TemporalIntrinsics as `Temporal.${key}.prototype`]: TemporalIntrinsics[key]['prototype'];
+};
+type TemporalIntrinsicRegisteredKeys = {
+  [key in keyof TemporalIntrinsicRegistrations as `%${key}%`]: TemporalIntrinsicRegistrations[key];
+};
+
+interface StandaloneIntrinsics {
+  'Temporal.Calendar.from': typeof Temporal.Calendar.from;
+  'Temporal.TimeZone.prototype.getOffsetNanosecondsFor': typeof Temporal.TimeZone.prototype.getOffsetNanosecondsFor;
+}
+type RegisteredStandaloneIntrinsics = { [key in keyof StandaloneIntrinsics as `%${key}%`]: StandaloneIntrinsics[key] };
+const INTRINSICS: Partial<TemporalIntrinsicRegisteredKeys & RegisteredStandaloneIntrinsics> = {};
+
+type customFormatFunction<T> = (
+  this: T,
+  depth: number,
+  options: { stylize: (value: unknown, type: 'number' | 'special') => string }
+) => string;
+const customUtilInspectFormatters: Partial<
+  { [key in keyof TemporalIntrinsicRegistrations]: customFormatFunction<TemporalIntrinsicRegistrations[key]> }
+> = {
   ['Temporal.Duration'](depth, options) {
     const descr = options.stylize(`${this[Symbol.toStringTag]} <${this}>`, 'special');
     if (depth < 1) return descr;
@@ -30,7 +54,10 @@ function defaultUtilInspectFormatter(this: any, depth, options) {
   return options.stylize(`${this[Symbol.toStringTag]} <${this}>`, 'special');
 }
 
-export function MakeIntrinsicClass(Class, name) {
+export function MakeIntrinsicClass(
+  Class: TemporalIntrinsicRegistrations[typeof name],
+  name: keyof TemporalIntrinsicRegistrations
+) {
   Object.defineProperty(Class.prototype, Symbol.toStringTag, {
     value: name,
     writable: false,
@@ -62,12 +89,25 @@ export function MakeIntrinsicClass(Class, name) {
   DefineIntrinsic(`${name}.prototype`, Class.prototype);
 }
 
-export function DefineIntrinsic(name, value) {
+type IntrinsicDefinitionKeys =
+  | keyof TemporalIntrinsicRegistrations
+  | keyof TemporalIntrinsicPrototypeRegistrations
+  | keyof StandaloneIntrinsics;
+export function DefineIntrinsic<KeyT extends keyof TemporalIntrinsicRegistrations>(
+  name: KeyT,
+  value: TemporalIntrinsicRegistrations[KeyT]
+);
+export function DefineIntrinsic<KeyT extends keyof TemporalIntrinsicPrototypeRegistrations>(
+  name: KeyT,
+  value: TemporalIntrinsicPrototypeRegistrations[KeyT]
+);
+export function DefineIntrinsic<KeyT extends keyof StandaloneIntrinsics>(name: KeyT, value: StandaloneIntrinsics[KeyT]);
+export function DefineIntrinsic<KeyT>(name: KeyT, value: never);
+export function DefineIntrinsic<KeyT extends IntrinsicDefinitionKeys>(name: KeyT, value: unknown) {
   const key = `%${name}%`;
   if (INTRINSICS[key] !== undefined) throw new Error(`intrinsic ${name} already exists`);
   INTRINSICS[key] = value;
 }
-
-export function GetIntrinsic(intrinsic) {
-  return intrinsic in INTRINSICS ? INTRINSICS[intrinsic] : ESGetIntrinsic(intrinsic);
+export function GetIntrinsic<KeyT extends keyof typeof INTRINSICS>(intrinsic: KeyT): typeof INTRINSICS[KeyT] {
+  return INTRINSICS[intrinsic];
 }
