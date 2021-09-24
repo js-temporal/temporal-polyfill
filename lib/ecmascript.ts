@@ -8,6 +8,7 @@ const MathSign = Math.sign;
 const MathTrunc = Math.trunc;
 const NumberIsNaN = Number.isNaN;
 const NumberIsFinite = Number.isFinite;
+const NumberCtor = Number;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
 const ObjectAssign = Object.assign;
 const ObjectCreate = Object.create;
@@ -17,13 +18,6 @@ const ReflectApply = Reflect.apply;
 
 import { DEBUG } from './debug';
 import bigInt from 'big-integer';
-import IsInteger from 'es-abstract/2020/IsInteger.js';
-import ToInteger from 'es-abstract/2020/ToInteger.js';
-import ToLength from 'es-abstract/2020/ToLength.js';
-import ToNumber from 'es-abstract/2020/ToNumber.js';
-import ToPrimitive from 'es-abstract/2020/ToPrimitive.js';
-import ToString from 'es-abstract/2020/ToString.js';
-import Type from 'es-abstract/2020/Type.js';
 
 import { GetIntrinsic } from './intrinsicclass';
 import {
@@ -69,6 +63,53 @@ const YEAR_MIN = -271821;
 const YEAR_MAX = 275760;
 const BEFORE_FIRST_DST = bigInt(-388152).multiply(1e13); // 1847-01-01T00:00:00Z
 
+function IsInteger(value: unknown): value is number {
+  if (typeof value !== 'number' || !NumberIsFinite(value)) return false;
+  const abs = MathAbs(value);
+  return MathFloor(abs) === abs;
+}
+
+function Type(value: unknown): string {
+  if (value === null) return 'Null';
+  switch (typeof value) {
+    case 'symbol':
+      return 'Symbol';
+    case 'bigint':
+      return 'BigInt';
+    case 'undefined':
+      return 'undefined';
+    case 'function':
+    case 'object':
+      return 'Object';
+    case 'number':
+      return 'Number';
+    case 'boolean':
+      return 'Boolean';
+    case 'string':
+      return 'String';
+  }
+}
+
+function ToNumber(value: unknown): number {
+  if (typeof value === 'bigint') throw new TypeError('Cannot convert BigInt to number');
+  return NumberCtor(value);
+}
+
+function ToInteger(value: unknown): number {
+  const num = ToNumber(value);
+  if (NumberIsNaN(num)) return 0;
+  const integer = MathTrunc(num);
+  if (num === 0) return 0;
+  return integer;
+}
+
+function ToString(value: unknown): string {
+  if (typeof value === 'symbol') {
+    throw new TypeError('Cannot convert a Symbol value to a String');
+  }
+  return String(value);
+}
+
 const ToIntegerThrowOnInfinity = (value) => {
   const integer = ES.ToInteger(value);
   if (!NumberIsFinite(integer)) {
@@ -77,7 +118,7 @@ const ToIntegerThrowOnInfinity = (value) => {
   return integer;
 };
 
-const ToPositiveInteger = (value, property) => {
+const ToPositiveInteger = (value, property?: string) => {
   value = ToInteger(value);
   if (!NumberIsFinite(value)) {
     throw new RangeError('infinity is out of range');
@@ -154,9 +195,7 @@ import * as PARSE from './regex';
 const ES2020 = {
   IsInteger,
   ToInteger,
-  ToLength,
   ToNumber,
-  ToPrimitive,
   ToString,
   Type
 };
@@ -4121,7 +4160,13 @@ export const ES = ObjectAssign({}, ES2020, {
       return arg;
     }
 
-    const prim = ES.ToPrimitive(arg, Number);
+    let prim = arg;
+    if (typeof arg === 'object') {
+      const toPrimFn = arg[Symbol.toPrimitive];
+      if (toPrimFn && typeof toPrimFn === 'function') {
+        prim = ReflectApply(toPrimFn, arg, ['number']);
+      }
+    }
     switch (typeof prim) {
       case 'undefined':
       case 'object':
