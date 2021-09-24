@@ -9,12 +9,12 @@
   "exports": {
     ".": [
       {
-       "import": "./dist/index.esm.js",
-       "default": "./dist/index.cjs"
+        "import": "./dist/index.esm.js",
+        "default": "./dist/index.cjs"
       },
       "./dist/index.cjs"
     ]
- },
+  },
   "types": "./index.d.ts",
   "scripts": {
     "test": "tsc && node --no-warnings --experimental-modules --experimental-specifier-resolution=node --icu-data-dir node_modules/full-icu --loader ./test/resolve.source.mjs ./test/all.mjs",
@@ -64,7 +64,6 @@
   ],
   "dependencies": {
     "big-integer": "^1.6.48",
-    "es-abstract": "^1.18.5",
     "tslib": "^2.3.0"
   },
   "devDependencies": {
