@@ -1,4 +1,4 @@
-import { ES } from './ecmascript';
+import * as ES from './ecmascript';
 import { DateTimeFormat } from './intl';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 
@@ -31,7 +31,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     millisecond = 0,
     microsecond = 0,
     nanosecond = 0,
-    calendar = ES.GetISO8601Calendar()
+    calendar: Temporal.CalendarProtocol | string = ES.GetISO8601Calendar()
   ) {
     isoYear = ES.ToIntegerThrowOnInfinity(isoYear);
     isoMonth = ES.ToIntegerThrowOnInfinity(isoMonth);

@@ -1,4 +1,4 @@
-import { ES } from './ecmascript';
+import * as ES from './ecmascript';
 import { DateTimeFormat } from './intl';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, TIME_ZONE, GetSlot, HasSlot } from './slots';
