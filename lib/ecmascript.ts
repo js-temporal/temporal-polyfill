@@ -961,20 +961,6 @@ export function ToPartialRecord(bag, fields, callerCast?: (value: unknown) => un
   return any ? any : false;
 }
 
-interface TemporalFields {
-  day?: number;
-  hour?: number;
-  microsecond?: number;
-  millisecond?: number;
-  minute?: number;
-  month?: string;
-  monthCode?: string;
-  nanosecond?: number;
-  second?: number;
-  year?: number;
-  timeZone?: string;
-  offset?: string;
-}
 export function PrepareTemporalFields(bag, fields) {
   if (Type(bag) !== 'Object') return undefined;
   const result = {};
@@ -1004,8 +990,8 @@ export function PrepareTemporalFields(bag, fields) {
   return result;
 }
 
+// field access in the following operations is intentionally alphabetical
 export function ToTemporalDateFields(bag, fieldNames) {
-  // field access in the following operations is intentionally alphabetical
   const entries = [
     ['day', undefined],
     ['month', undefined],
@@ -1139,7 +1125,7 @@ export function ToTemporalDate(item, options = ObjectCreate(null)) {
 }
 
 export function InterpretTemporalDateTimeFields(calendar, fields, options) {
-  let { hour, minute, second, millisecond, microsecond, nanosecond } = (ToTemporalTimeRecord(fields) as any);
+  let { hour, minute, second, millisecond, microsecond, nanosecond } = ToTemporalTimeRecord(fields) as any;
   const overflow = ToTemporalOverflow(options);
   const date = DateFromFields(calendar, fields, options);
   const year = GetSlot(date, ISO_YEAR);
@@ -1313,7 +1299,7 @@ export function ToTemporalTime(item, overflow = 'constrain') {
     if (ToString(calendar) !== 'iso8601') {
       throw new RangeError('PlainTime can only have iso8601 calendar');
     }
-    ({ hour, minute, second, millisecond, microsecond, nanosecond } = (ToTemporalTimeRecord(item)) as any);
+    ({ hour, minute, second, millisecond, microsecond, nanosecond } = ToTemporalTimeRecord(item) as any);
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = RegulateTime(
       hour,
       minute,
@@ -3832,7 +3818,7 @@ export function RoundISODateTime(
   increment,
   unit,
   roundingMode,
-  dayLengthNs: bigInt.BigInteger | number = 86400e9
+  dayLengthNs = DAY_NANOS
 ) {
   let deltaDays = 0;
   ({ deltaDays, hour, minute, second, millisecond, microsecond, nanosecond } = RoundTime(
@@ -3861,7 +3847,7 @@ export function RoundTime(
   increment,
   unit,
   roundingMode,
-  dayLengthNs: bigInt.BigInteger | number = 86400e9
+  dayLengthNs = DAY_NANOS
 ) {
   let quantity = bigInt.zero;
   switch (unit) {
@@ -3884,8 +3870,8 @@ export function RoundTime(
     case 'nanosecond':
       quantity = quantity.multiply(1000).plus(nanosecond);
   }
-  const nsPerUnit = unit === 'day' ? dayLengthNs : nsPerTimeUnit[unit];
-  const rounded = RoundNumberToIncrement(quantity, nsPerUnit * increment, roundingMode);
+  const nsPerUnit = unit === 'day' ? dayLengthNs : bigInt(nsPerTimeUnit[unit]);
+  const rounded = RoundNumberToIncrement(quantity, nsPerUnit.multiply(increment), roundingMode);
   const result = rounded.divide(nsPerUnit).toJSNumber();
   switch (unit) {
     case 'day':
@@ -4376,7 +4362,7 @@ export function ToBigInt(arg) {
 // Note: This method returns values with bogus nanoseconds based on the previous iteration's
 // milliseconds. That way there is a guarantee that the full nanoseconds are always going to be
 // increasing at least and that the microsecond and nanosecond fields are likely to be non-zero.
-export const SystemUTCEpochNanoSeconds = (() => {
+export const SystemUTCEpochNanoSeconds: () => bigInt.BigInteger = (() => {
   let ns = Date.now() % 1e6;
   return () => {
     const ms = Date.now();
