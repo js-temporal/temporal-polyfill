@@ -1,18 +1,24 @@
 #!/bin/bash
 set -e
-cd "$(dirname "$0")"
-if [ ! -d "tc39" ]; then
-  git clone --depth=1 https://github.com/tc39/proposal-temporal.git tc39
-else
-  cd ./tc39
-  git fetch origin
-  git merge --ff-only origin/main
-fi
 
-cd ../ && TEST262=1 npm run build
-cd tc39/polyfill && npm install
-if [ ! -z "$TESTS" ]; then
-  PRELUDE=../../../dist/script.js npm run test262 "$TESTS"
+TESTS=${@:-"**/*.js"}
+TIMEOUT=${TIMEOUT:-10000}
+
+if [ "$(uname)" = 'Darwin' ]; then
+  threads=$(sysctl -n hw.logicalcpu)
 else
-  PRELUDE=../../../dist/script.js npm run test262
+  threads=$(nproc --ignore 1)
 fi
+if [ $threads -gt 8 ]; then threads=8; fi
+
+cd "$(dirname "$0")"/../test262/test/
+test262-harness \
+  -t $threads \
+  -r json \
+  --reporter-keys file,rawResult,result,scenario \
+  --test262Dir .. \
+  --prelude "../../dist/script.js" \
+  --timeout "$TIMEOUT" \
+  --preprocessor ../../test/preprocessor.test262.cjs \
+  "*/Temporal/$TESTS" \
+  | ../../test/parseResults.js

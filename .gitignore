@@ -5,4 +5,3 @@ tsc-out/
 .vscode/*
 !.vscode/launch.json
 *.tgz
-test/tc39
