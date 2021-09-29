@@ -408,21 +408,11 @@ export function ParseTemporalMonthDayString(isoString) {
   return { month, day, calendar, referenceISOYear };
 }
 
-export function ParseTemporalTimeZoneString(stringIdent): Partial<{
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
-  second: number;
-  millisecond: number;
-  microsecond: number;
-  nanosecond: number;
-  ianaName: string;
-  offset: any;
-  z: boolean;
-  calendar: string;
-}> {
+export function ParseTemporalTimeZoneString(stringIdent): {
+  ianaName?: string | undefined;
+  offset?: string | undefined;
+  z?: boolean | undefined;
+} {
   try {
     let canonicalIdent = GetCanonicalTimeZoneIdentifier(stringIdent);
     if (canonicalIdent) {
