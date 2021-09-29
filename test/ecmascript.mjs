@@ -7,7 +7,7 @@ const { reporter } = Pretty;
 import { strict as assert } from 'assert';
 const { deepEqual, throws } = assert;
 
-import { ES } from '../lib/ecmascript';
+import * as ES from '../lib/ecmascript';
 import { GetSlot, TIMEZONE_ID } from '../lib/slots';
 import { TimeZone } from '../lib/timezone';
 

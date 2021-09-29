@@ -1,5 +1,5 @@
 import { DEBUG } from './debug';
-import { ES } from './ecmascript';
+import * as ES from './ecmascript';
 import { DateTimeFormat } from './intl';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import { EPOCHNANOSECONDS, CreateSlots, GetSlot, SetSlot } from './slots';

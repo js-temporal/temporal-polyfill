@@ -1,4 +1,4 @@
-import { ES } from './ecmascript';
+import * as ES from './ecmascript';
 import { DateTimeFormat } from './intl';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import {
@@ -22,7 +22,7 @@ import { Temporal } from '..';
 const DISALLOWED_UNITS = ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'];
 
 export class PlainDate implements Temporal.PlainDate {
-  constructor(isoYear, isoMonth, isoDay, calendar = ES.GetISO8601Calendar()) {
+  constructor(isoYear, isoMonth, isoDay, calendar: Temporal.CalendarProtocol | string = ES.GetISO8601Calendar()) {
     isoYear = ES.ToIntegerThrowOnInfinity(isoYear);
     isoMonth = ES.ToIntegerThrowOnInfinity(isoMonth);
     isoDay = ES.ToIntegerThrowOnInfinity(isoDay);

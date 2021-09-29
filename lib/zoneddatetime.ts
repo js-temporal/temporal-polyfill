@@ -1,4 +1,4 @@
-import { ES } from './ecmascript';
+import * as ES from './ecmascript';
 import { DateTimeFormat } from './intl';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import {
@@ -207,7 +207,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!props) {
       throw new TypeError('invalid zoned-date-time-like');
     }
-    let fields = ES.ToTemporalZonedDateTimeFields(this, fieldNames);
+    let fields = ES.ToTemporalZonedDateTimeFields(this, fieldNames) as any;
     fields = ES.CalendarMergeFields(calendar, fields, props);
     fields = ES.ToTemporalZonedDateTimeFields(fields, fieldNames);
     const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
@@ -615,7 +615,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       roundingIncrement,
       smallestUnit,
       roundingMode,
-      dayLengthNs
+      // Days are guaranteed to be shorter than Number.MAX_SAFE_INTEGER
+      // (which can hold up to 104 days in nanoseconds)
+      dayLengthNs.toJSNumber()
     ));
 
     // Now reset all DateTime fields but leave the TimeZone. The offset will

@@ -1,4 +1,4 @@
-import { ES } from './ecmascript';
+import * as ES from './ecmascript';
 import { GetIntrinsic } from './intrinsicclass';
 import { Temporal } from '..';
 

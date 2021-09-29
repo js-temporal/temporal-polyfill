@@ -814,7 +814,7 @@ export namespace Temporal {
       one: Temporal.PlainDate | PlainDateLike | string,
       two: Temporal.PlainDate | PlainDateLike | string
     ): ComparisonResult;
-    constructor(isoYear: number, isoMonth: number, isoDay: number, calendar?: CalendarProtocol);
+    constructor(isoYear: number, isoMonth: number, isoDay: number, calendar?: CalendarProtocol | string);
     readonly era: string | undefined;
     readonly eraYear: number | undefined;
     readonly year: number;
@@ -937,7 +937,7 @@ export namespace Temporal {
       millisecond?: number,
       microsecond?: number,
       nanosecond?: number,
-      calendar?: CalendarProtocol
+      calendar?: CalendarProtocol | string
     );
     readonly era: string | undefined;
     readonly eraYear: number | undefined;
