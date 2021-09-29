@@ -937,7 +937,7 @@ export namespace Temporal {
       millisecond?: number,
       microsecond?: number,
       nanosecond?: number,
-      calendar?: CalendarProtocol
+      calendar?: CalendarProtocol | string
     );
     readonly era: string | undefined;
     readonly eraYear: number | undefined;

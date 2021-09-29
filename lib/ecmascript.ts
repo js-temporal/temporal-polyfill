@@ -3818,7 +3818,7 @@ export function RoundISODateTime(
   increment,
   unit,
   roundingMode,
-  dayLengthNs = DAY_NANOS
+  dayLengthNs = 86400e9
 ) {
   let deltaDays = 0;
   ({ deltaDays, hour, minute, second, millisecond, microsecond, nanosecond } = RoundTime(
@@ -3847,7 +3847,7 @@ export function RoundTime(
   increment,
   unit,
   roundingMode,
-  dayLengthNs = DAY_NANOS
+  dayLengthNs = 86400e9
 ) {
   let quantity = bigInt.zero;
   switch (unit) {
@@ -3870,8 +3870,8 @@ export function RoundTime(
     case 'nanosecond':
       quantity = quantity.multiply(1000).plus(nanosecond);
   }
-  const nsPerUnit = unit === 'day' ? dayLengthNs : bigInt(nsPerTimeUnit[unit]);
-  const rounded = RoundNumberToIncrement(quantity, nsPerUnit.multiply(increment), roundingMode);
+  const nsPerUnit = unit === 'day' ? dayLengthNs : nsPerTimeUnit[unit];
+  const rounded = RoundNumberToIncrement(quantity, bigInt(nsPerUnit).multiply(increment), roundingMode);
   const result = rounded.divide(nsPerUnit).toJSNumber();
   switch (unit) {
     case 'day':

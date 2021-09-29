@@ -615,7 +615,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       roundingIncrement,
       smallestUnit,
       roundingMode,
-      dayLengthNs
+      // Days are guaranteed to be shorter than Number.MAX_SAFE_INTEGER
+      // (which can hold up to 104 days in nanoseconds)
+      dayLengthNs.toJSNumber()
     ));
 
     // Now reset all DateTime fields but leave the TimeZone. The offset will
