@@ -3861,7 +3861,7 @@ export function RoundTime(
       quantity = quantity.multiply(1000).plus(nanosecond);
   }
   const nsPerUnit = unit === 'day' ? dayLengthNs : nsPerTimeUnit[unit];
-  const rounded = RoundNumberToIncrement(quantity, bigInt(nsPerUnit).multiply(increment), roundingMode);
+  const rounded = RoundNumberToIncrement(quantity, nsPerUnit * increment, roundingMode);
   const result = rounded.divide(nsPerUnit).toJSNumber();
   switch (unit) {
     case 'day':
