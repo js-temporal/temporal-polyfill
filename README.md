@@ -16,11 +16,13 @@ This polyfill is compatible with Node.js 14 or later.
 * [x] Fork non-production polyfill from [tc39/proposal-temporal repo](https://github.com/tc39/proposal-temporal/tree/main/polyfill)
 * [x] Release initial pre-alpha to NPM at [@js-temporal/polyfill](https://www.npmjs.com/package/@js-temporal/polyfill)
 * [x] Sync the code in this repo with the handful of polyfill changes that have recently been made in the [tc39/proposal-temporal](https://github.com/tc39/proposal-temporal) repo
-* [x] Release alpha version to NPM 
+* [x] Release alpha version to NPM
 * [x] Deprecate all other earlier Temporal polyfills
 * [x] Optimize slow operations by reducing calls to Intl.DateTimeFormat constructor (see #7, #8, #10, #12)
-* [ ] Convert to TypeScript for better maintainability
-* [ ] (maybe) Optimize performance of other slow operations
+* [x] Convert to TypeScript for better maintainability
+* [x] Improve typing of sources for better maintainability
+* [ ] Migrate to JSBI for improved compile-time safety around BigInt operations.
+* [ ] Optimize performance of other slow operations
 * [ ] Release production version to NPM
 
 ## Bug Reports and Feedback
@@ -58,7 +60,7 @@ Date.prototype.toTemporalInstant = toTemporalInstant;
 Import the polyfill as an ES6 module:
 
 ```javascript
-import { Temporal, Intl, toTemporalInstant } from '@js-temporal/polyfill/lib/index.mjs';
+import { Temporal, Intl, toTemporalInstant } from '@js-temporal/polyfill';
 Date.prototype.toTemporalInstant = toTemporalInstant;
 ```
 
