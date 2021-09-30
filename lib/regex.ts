@@ -1,16 +1,16 @@
 const tzComponent = /\.[-A-Za-z_]|\.\.[-A-Za-z._]{1,12}|\.[-A-Za-z_][-A-Za-z._]{0,12}|[A-Za-z_][-A-Za-z._]{0,13}/;
 const offsetNoCapture = /(?:[+\u2212-][0-2][0-9](?::?[0-5][0-9](?::?[0-5][0-9](?:[.,]\d{1,9})?)?)?)/;
-export const timeZoneID = new RegExp(
+const timeZoneID = new RegExp(
   `(?:(?:${tzComponent.source})(?:\\/(?:${tzComponent.source}))*|Etc/GMT[-+]\\d{1,2}|${offsetNoCapture.source})`
 );
 
 const calComponent = /[A-Za-z0-9]{3,8}/;
-export const calendarID = new RegExp(`(?:${calComponent.source}(?:-${calComponent.source})*)`);
+const calendarID = new RegExp(`(?:${calComponent.source}(?:-${calComponent.source})*)`);
 
 const yearpart = /(?:[+\u2212-]\d{6}|\d{4})/;
 const monthpart = /(?:0[1-9]|1[0-2])/;
 const daypart = /(?:0[1-9]|[12]\d|3[01])/;
-export const datesplit = new RegExp(
+const datesplit = new RegExp(
   `(${yearpart.source})(?:-(${monthpart.source})-(${daypart.source})|(${monthpart.source})(${daypart.source}))`
 );
 const timesplit = /(\d{2})(?::(\d{2})(?::(\d{2})(?:[.,](\d{1,9}))?)?|(\d{2})(?:(\d{2})(?:[.,](\d{1,9}))?)?)?/;
