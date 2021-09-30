@@ -25,9 +25,9 @@ type customFormatFunction<T> = (
   depth: number,
   options: { stylize: (value: unknown, type: 'number' | 'special') => string }
 ) => string;
-const customUtilInspectFormatters: Partial<
-  { [key in keyof TemporalIntrinsicRegistrations]: customFormatFunction<TemporalIntrinsicRegistrations[key]> }
-> = {
+const customUtilInspectFormatters: Partial<{
+  [key in keyof TemporalIntrinsicRegistrations]: customFormatFunction<TemporalIntrinsicRegistrations[key]>;
+}> = {
   ['Temporal.Duration'](depth, options) {
     const descr = options.stylize(`${this[Symbol.toStringTag]} <${this}>`, 'special');
     if (depth < 1) return descr;
