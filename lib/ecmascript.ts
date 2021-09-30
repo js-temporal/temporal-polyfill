@@ -478,39 +478,6 @@ export function ParseTemporalInstant(isoString) {
   return epochNs.subtract(offsetNs);
 }
 
-export function RegulateISODateTime(
-  year,
-  month,
-  day,
-  hour,
-  minute,
-  second,
-  millisecond,
-  microsecond,
-  nanosecond,
-  overflow
-) {
-  switch (overflow) {
-    case 'reject':
-      RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
-      break;
-    case 'constrain':
-      ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = ConstrainISODateTime(
-        year,
-        month,
-        day,
-        hour,
-        minute,
-        second,
-        millisecond,
-        microsecond,
-        nanosecond
-      ));
-      break;
-  }
-  return { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond };
-}
-
 export function RegulateISODate(year, month, day, overflow) {
   switch (overflow) {
     case 'reject':
@@ -655,10 +622,6 @@ export function ToLimitedTemporalDuration(item, disallowedProperties = []) {
     }
   }
   return record;
-}
-
-export function ToTemporalDurationOverflow(options) {
-  return GetOption(options, 'overflow', ['constrain', 'balance'], 'constrain');
 }
 
 export function ToTemporalOverflow(options) {
@@ -923,13 +886,6 @@ export function DefaultTemporalLargestUnit(
 export function LargerOfTwoTemporalUnits(unit1, unit2) {
   if (ALLOWED_UNITS.indexOf(unit1) > ALLOWED_UNITS.indexOf(unit2)) return unit2;
   return unit1;
-}
-
-export function CastIfDefined(value, cast) {
-  if (value !== undefined) {
-    return cast(value);
-  }
-  return value;
 }
 
 export function ToPartialRecord(bag, fields, callerCast?: (value: unknown) => unknown) {
@@ -1771,12 +1727,6 @@ export function GetTemporalCalendarWithISODefault(item) {
   const { calendar } = item;
   if (calendar === undefined) return GetISO8601Calendar();
   return ToTemporalCalendar(calendar);
-}
-
-export function CalendarCompare(one, two) {
-  const cal1 = ToString(one);
-  const cal2 = ToString(two);
-  return cal1 < cal2 ? -1 : cal1 > cal2 ? 1 : 0;
 }
 
 export function CalendarEquals(one, two) {
@@ -3066,19 +3016,6 @@ export function ConstrainTime(hour, minute, second, millisecond, microsecond, na
   return { hour, minute, second, millisecond, microsecond, nanosecond };
 }
 
-export function ConstrainISODateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond) {
-  ({ year, month, day } = ConstrainISODate(year, month, day));
-  ({ hour, minute, second, millisecond, microsecond, nanosecond } = ConstrainTime(
-    hour,
-    minute,
-    second,
-    millisecond,
-    microsecond,
-    nanosecond
-  ));
-  return { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond };
-}
-
 export function RejectToRange(value, min, max) {
   if (value < min || value > max) throw new RangeError(`value out of range: ${min} <= ${value} <= ${max}`);
 }
@@ -3478,17 +3415,6 @@ export function AddTime(
     nanosecond
   ));
   return { deltaDays, hour, minute, second, millisecond, microsecond, nanosecond };
-}
-
-export function SubtractDate(year, month, day, years, months, weeks, days, overflow) {
-  days += 7 * weeks;
-  day -= days;
-  ({ year, month, day } = BalanceISODate(year, month, day));
-  month -= months;
-  year -= years;
-  ({ year, month } = BalanceISOYearMonth(year, month));
-  ({ year, month, day } = RegulateISODate(year, month, day, overflow));
-  return { year, month, day };
 }
 
 export function AddDuration(
@@ -4295,11 +4221,6 @@ export function CompareISODate(y1, m1, d1, y2, m2, d2) {
     if (x !== y) return ComparisonResult(x - y);
   }
   return 0;
-}
-
-export function AssertPositiveInteger(num) {
-  if (!NumberIsFinite(num) || MathAbs(num) !== num) throw new RangeError(`invalid positive integer: ${num}`);
-  return num;
 }
 
 export function NonNegativeModulo(x, y) {
