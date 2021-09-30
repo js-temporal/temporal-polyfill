@@ -36,7 +36,8 @@ rules:
   curly:
     - error
     - multi-line
-  func-call-spacing: error
+  func-call-spacing: off
+  '@typescript-eslint/func-call-spacing': error
   function-call-argument-newline:
     - error
     - consistent

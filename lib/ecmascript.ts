@@ -2322,6 +2322,7 @@ function GetISOPartsFromEpoch(epochNanoseconds) {
   return { epochMilliseconds, year, month, day, hour, minute, second, millisecond, microsecond, nanosecond };
 }
 
+// ts-prune-ignore-next TODO: remove this after tests are converted to TS
 export function GetIANATimeZoneDateTimeParts(epochNanoseconds, id) {
   const { epochMilliseconds, millisecond, microsecond, nanosecond } = GetISOPartsFromEpoch(epochNanoseconds);
   const { year, month, day, hour, minute, second } = GetFormatterParts(id, epochMilliseconds);
@@ -2376,6 +2377,7 @@ export function GetIANATimeZonePreviousTransition(epochNanoseconds, id) {
   return result;
 }
 
+// ts-prune-ignore-next TODO: remove this after tests are converted to TS
 export function GetFormatterParts(timeZone, epochMilliseconds) {
   const formatter = getIntlDateTimeFormatEnUsForTimeZone(timeZone);
   // FIXME: can this use formatToParts instead?
