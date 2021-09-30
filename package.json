@@ -25,6 +25,7 @@
     "playground": "TEMPORAL_PLAYGROUND=1 npm run build && node --experimental-modules --no-warnings --icu-data-dir node_modules/full-icu -r ./dist/playground.cjs",
     "lint": "eslint . --ext ts,js,mjs,.d.ts --max-warnings 0 --cache \"$@\"",
     "postlint": "npm run tscheck",
+    "prune": "ts-prune -e -i test/tc39 -i \"(lib/index|lib/init|index.d).ts\"",
     "pretty": "eslint . --ext ts,js,mjs,.d.ts --fix",
     "tscheck": "tsc index.d.ts --noEmit --strict --lib ESNext"
   },
@@ -88,6 +89,7 @@
     "rollup-plugin-dts": "^3.0.2",
     "rollup-plugin-terser": "^7.0.2",
     "timezones.json": "^1.5.2",
+    "ts-prune": "^0.10.1",
     "typescript": "^4.3.5"
   },
   "engines": {

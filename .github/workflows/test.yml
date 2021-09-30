@@ -28,12 +28,12 @@ jobs:
   test-test262:
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v2
-    - name: use node.js v16.x
-      uses: actions/setup-node@v1
-      with:
-        node-version: 16.x
-    - run: npm ci
-    - run: npm run test262
-      env:
-        HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      - uses: actions/checkout@v2
+      - name: use node.js v16.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16.x
+      - run: npm ci
+      - run: npm run test262
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
