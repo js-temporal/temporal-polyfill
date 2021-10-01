@@ -663,25 +663,25 @@ export namespace Temporal {
     ): boolean;
     dateFromFields(
       fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
-      options: AssignmentOptions
+      options?: AssignmentOptions
     ): Temporal.PlainDate;
     yearMonthFromFields(
       fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined },
-      options: AssignmentOptions
+      options?: AssignmentOptions
     ): Temporal.PlainYearMonth;
     monthDayFromFields(
       fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
-      options: AssignmentOptions
+      options?: AssignmentOptions
     ): Temporal.PlainMonthDay;
     dateAdd?(
       date: Temporal.PlainDate | PlainDateLike | string,
       duration: Temporal.Duration | DurationLike | string,
-      options: ArithmeticOptions
+      options?: ArithmeticOptions
     ): Temporal.PlainDate;
     dateUntil?(
       one: Temporal.PlainDate | PlainDateLike | string,
       two: Temporal.PlainDate | PlainDateLike | string,
-      options: DifferenceOptions<
+      options?: DifferenceOptions<
         | 'year'
         | 'month'
         | 'week'
@@ -749,20 +749,20 @@ export namespace Temporal {
     ): boolean;
     dateFromFields(
       fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
-      options: AssignmentOptions
+      options?: AssignmentOptions
     ): Temporal.PlainDate;
     yearMonthFromFields(
       fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined },
-      options: AssignmentOptions
+      options?: AssignmentOptions
     ): Temporal.PlainYearMonth;
     monthDayFromFields(
       fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
-      options: AssignmentOptions
+      options?: AssignmentOptions
     ): Temporal.PlainMonthDay;
     dateAdd(
       date: Temporal.PlainDate | PlainDateLike | string,
       duration: Temporal.Duration | DurationLike | string,
-      options: ArithmeticOptions
+      options?: ArithmeticOptions
     ): Temporal.PlainDate;
     dateUntil(
       one: Temporal.PlainDate | PlainDateLike | string,
