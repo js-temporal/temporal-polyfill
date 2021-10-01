@@ -1071,7 +1071,7 @@ export namespace Temporal {
       item: Temporal.PlainMonthDay | PlainMonthDayLike | string,
       options?: AssignmentOptions
     ): Temporal.PlainMonthDay;
-    constructor(isoMonth: number, isoDay: number, calendar?: CalendarProtocol, referenceISOYear?: number);
+    constructor(isoMonth: number, isoDay: number, calendar?: CalendarProtocol | string, referenceISOYear?: number);
     readonly monthCode: string;
     readonly day: number;
     readonly calendar: CalendarProtocol;
@@ -1305,7 +1305,7 @@ export namespace Temporal {
       one: Temporal.PlainYearMonth | PlainYearMonthLike | string,
       two: Temporal.PlainYearMonth | PlainYearMonthLike | string
     ): ComparisonResult;
-    constructor(isoYear: number, isoMonth: number, calendar?: CalendarProtocol, referenceISODay?: number);
+    constructor(isoYear: number, isoMonth: number, calendar?: CalendarProtocol | string, referenceISODay?: number);
     readonly era: string | undefined;
     readonly eraYear: number | undefined;
     readonly year: number;
