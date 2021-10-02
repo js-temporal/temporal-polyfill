@@ -2090,11 +2090,18 @@ export function TemporalDurationToString(
   if (minutes) timeParts.push(`${formatNumber(MathAbs(minutes))}M`);
 
   const secondParts = [];
+  let remainingNanos: bigInt.BigInteger;
+  let remainingMicros: bigInt.BigInteger;
+  let remainingMillis: bigInt.BigInteger;
+  let remainingSeconds: bigInt.BigInteger;
   let total = TotalDurationNanoseconds(0, 0, 0, seconds, ms, µs, ns, 0);
-  ({ quotient: total, remainder: ns } = total.divmod(1000));
-  ({ quotient: total, remainder: µs } = total.divmod(1000));
-  ({ quotient: seconds, remainder: ms } = total.divmod(1000));
-  const fraction = MathAbs(ms.toJSNumber()) * 1e6 + MathAbs(µs.toJSNumber()) * 1e3 + MathAbs(ns.toJSNumber());
+  ({ quotient: total, remainder: remainingNanos } = total.divmod(1000));
+  ({ quotient: total, remainder: remainingMicros } = total.divmod(1000));
+  ({ quotient: remainingSeconds, remainder: remainingMillis } = total.divmod(1000));
+  const fraction =
+    MathAbs(remainingMillis.toJSNumber()) * 1e6 +
+    MathAbs(remainingMicros.toJSNumber()) * 1e3 +
+    MathAbs(remainingNanos.toJSNumber());
   let decimalPart;
   if (precision === 'auto') {
     if (fraction !== 0) {
@@ -2107,7 +2114,7 @@ export function TemporalDurationToString(
     decimalPart = `${fraction}`.padStart(9, '0').slice(0, precision);
   }
   if (decimalPart) secondParts.unshift('.', decimalPart);
-  if (!seconds.isZero() || secondParts.length) secondParts.unshift(seconds.abs().toString());
+  if (!remainingSeconds.isZero() || secondParts.length) secondParts.unshift(remainingSeconds.abs().toString());
   if (secondParts.length) timeParts.push(`${secondParts.join('')}S`);
   if (timeParts.length) timeParts.unshift('T');
   if (!dateParts.length && !timeParts.length) return 'PT0S';
@@ -2152,15 +2159,15 @@ export function TemporalDateTimeToString(dateTime, precision, showCalendar = 'au
     ));
   }
 
-  year = ISOYearString(year);
-  month = ISODateTimePartString(month);
-  day = ISODateTimePartString(day);
-  hour = ISODateTimePartString(hour);
-  minute = ISODateTimePartString(minute);
+  const years = ISOYearString(year);
+  const months = ISODateTimePartString(month);
+  const days = ISODateTimePartString(day);
+  const hours = ISODateTimePartString(hour);
+  const minutes = ISODateTimePartString(minute);
   const seconds = FormatSecondsStringPart(second, millisecond, microsecond, nanosecond, precision);
   const calendarID = ToString(GetSlot(dateTime, CALENDAR));
   const calendar = FormatCalendarAnnotation(calendarID, showCalendar);
-  return `${year}-${month}-${day}T${hour}:${minute}${seconds}${calendar}`;
+  return `${years}-${months}-${days}T${hours}:${minutes}${seconds}${calendar}`;
 }
 
 export function TemporalMonthDayToString(monthDay, showCalendar = 'auto') {

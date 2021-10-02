@@ -1,3 +1,6 @@
+import { Temporal } from '.';
+import bigInt from 'big-integer';
+
 // Instant
 export const EPOCHNANOSECONDS = 'slot-epochNanoSeconds';
 
@@ -39,8 +42,52 @@ export const NANOSECONDS = 'slot-nanoseconds';
 // Calendar
 export const CALENDAR_ID = 'slot-calendar-identifier';
 
+interface Slots {
+  // Instant
+  [EPOCHNANOSECONDS]: bigInt.BigInteger; // number? JSBI?
+
+  // TimeZone
+  [TIMEZONE_ID]: string;
+
+  // DateTime, Date, Time, YearMonth, MonthDay
+  [ISO_YEAR]: number;
+  [ISO_MONTH]: number;
+  [ISO_DAY]: number;
+  [ISO_HOUR]: number;
+  [ISO_MINUTE]: number;
+  [ISO_SECOND]: number;
+  [ISO_MILLISECOND]: number;
+  [ISO_MICROSECOND]: number;
+  [ISO_NANOSECOND]: number;
+  [CALENDAR]: Temporal.Calendar;
+
+  // Date, YearMonth, MonthDay common slots
+  [DATE_BRAND]: unknown;
+  [YEAR_MONTH_BRAND]: unknown;
+  [MONTH_DAY_BRAND]: unknown;
+
+  // ZonedDateTime
+  [INSTANT]: Temporal.Instant;
+  [TIME_ZONE]: Temporal.TimeZone;
+
+  // Duration
+  [YEARS]: number;
+  [MONTHS]: number;
+  [WEEKS]: number;
+  [DAYS]: number;
+  [HOURS]: number;
+  [MINUTES]: number;
+  [SECONDS]: number;
+  [MILLISECONDS]: number;
+  [MICROSECONDS]: number;
+  [NANOSECONDS]: number;
+
+  // Calendar
+  [CALENDAR_ID]: string;
+}
+
 const slots = new WeakMap();
-export function CreateSlots(container) {
+export function CreateSlots(container): void {
   slots.set(container, Object.create(null));
 }
 function GetSlots(container) {
@@ -51,9 +98,9 @@ export function HasSlot(container, ...ids) {
   const myslots = GetSlots(container);
   return !!myslots && ids.reduce((all, id) => all && id in myslots, true);
 }
-export function GetSlot(container, id) {
+export function GetSlot<KeyT extends keyof Slots>(container, id: KeyT): Slots[KeyT] {
   return GetSlots(container)[id];
 }
-export function SetSlot(container, id, value) {
+export function SetSlot<KeyT extends keyof Slots>(container: unknown, id: KeyT, value: Slots[KeyT]): void {
   GetSlots(container)[id] = value;
 }

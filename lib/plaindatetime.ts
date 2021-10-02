@@ -589,7 +589,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       ISO_MILLISECOND,
       ISO_MICROSECOND,
       ISO_NANOSECOND
-    ]) {
+    ] as const) {
       const val1 = GetSlot(this, slot);
       const val2 = GetSlot(other, slot);
       if (val1 !== val2) return false;
@@ -694,7 +694,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       ISO_MILLISECOND,
       ISO_MICROSECOND,
       ISO_NANOSECOND
-    ]) {
+    ] as const) {
       const val1 = GetSlot(one, slot);
       const val2 = GetSlot(two, slot);
       if (val1 !== val2) return ES.ComparisonResult(val1 - val2);

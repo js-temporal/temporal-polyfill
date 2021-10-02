@@ -58,10 +58,10 @@ function TemporalTimeToString(time, precision, options = undefined) {
     ));
   }
 
-  hour = ES.ISODateTimePartString(hour);
-  minute = ES.ISODateTimePartString(minute);
+  const hours = ES.ISODateTimePartString(hour);
+  const minutes = ES.ISODateTimePartString(minute);
   const seconds = ES.FormatSecondsStringPart(second, millisecond, microsecond, nanosecond, precision);
-  return `${hour}:${minute}${seconds}`;
+  return `${hours}:${minutes}${seconds}`;
 }
 
 export class PlainTime implements Temporal.PlainTime {
@@ -374,7 +374,7 @@ export class PlainTime implements Temporal.PlainTime {
   equals(other) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     other = ES.ToTemporalTime(other);
-    for (const slot of [ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND]) {
+    for (const slot of [ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND] as const) {
       const val1 = GetSlot(this, slot);
       const val2 = GetSlot(other, slot);
       if (val1 !== val2) return false;
@@ -507,7 +507,7 @@ export class PlainTime implements Temporal.PlainTime {
   static compare(one, two) {
     one = ES.ToTemporalTime(one);
     two = ES.ToTemporalTime(two);
-    for (const slot of [ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND]) {
+    for (const slot of [ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND] as const) {
       const val1 = GetSlot(one, slot);
       const val2 = GetSlot(two, slot);
       if (val1 !== val2) return ES.ComparisonResult(val1 - val2);

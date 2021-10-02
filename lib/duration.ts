@@ -484,7 +484,7 @@ export class Duration implements Temporal.Duration {
     const s1 = GetSlot(one, SECONDS);
     const ms1 = GetSlot(one, MILLISECONDS);
     const µs1 = GetSlot(one, MICROSECONDS);
-    let ns1 = GetSlot(one, NANOSECONDS);
+    const ns1 = GetSlot(one, NANOSECONDS);
     const y2 = GetSlot(two, YEARS);
     const mon2 = GetSlot(two, MONTHS);
     const w2 = GetSlot(two, WEEKS);
@@ -494,16 +494,16 @@ export class Duration implements Temporal.Duration {
     const s2 = GetSlot(two, SECONDS);
     const ms2 = GetSlot(two, MILLISECONDS);
     const µs2 = GetSlot(two, MICROSECONDS);
-    let ns2 = GetSlot(two, NANOSECONDS);
+    const ns2 = GetSlot(two, NANOSECONDS);
     const shift1 = ES.CalculateOffsetShift(relativeTo, y1, mon1, w1, d1, h1, min1, s1, ms1, µs1, ns1);
     const shift2 = ES.CalculateOffsetShift(relativeTo, y2, mon2, w2, d2, h2, min2, s2, ms2, µs2, ns2);
     if (y1 !== 0 || y2 !== 0 || mon1 !== 0 || mon2 !== 0 || w1 !== 0 || w2 !== 0) {
       ({ days: d1 } = ES.UnbalanceDurationRelative(y1, mon1, w1, d1, 'day', relativeTo));
       ({ days: d2 } = ES.UnbalanceDurationRelative(y2, mon2, w2, d2, 'day', relativeTo));
     }
-    ns1 = ES.TotalDurationNanoseconds(d1, h1, min1, s1, ms1, µs1, ns1, shift1);
-    ns2 = ES.TotalDurationNanoseconds(d2, h2, min2, s2, ms2, µs2, ns2, shift2);
-    return ES.ComparisonResult(ns1.minus(ns2).toJSNumber());
+    const totalNanos1 = ES.TotalDurationNanoseconds(d1, h1, min1, s1, ms1, µs1, ns1, shift1);
+    const totalNanos2 = ES.TotalDurationNanoseconds(d2, h2, min2, s2, ms2, µs2, ns2, shift2);
+    return ES.ComparisonResult(totalNanos1.minus(totalNanos2).toJSNumber());
   }
   [Symbol.toStringTag]!: 'Temporal.Duration';
 }

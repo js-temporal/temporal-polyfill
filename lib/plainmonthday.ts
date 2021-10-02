@@ -68,7 +68,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   equals(other) {
     if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     other = ES.ToTemporalMonthDay(other);
-    for (const slot of [ISO_MONTH, ISO_DAY, ISO_YEAR]) {
+    for (const slot of [ISO_MONTH, ISO_DAY, ISO_YEAR] as const) {
       const val1 = GetSlot(this, slot);
       const val2 = GetSlot(other, slot);
       if (val1 !== val2) return false;

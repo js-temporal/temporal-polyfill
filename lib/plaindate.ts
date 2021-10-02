@@ -263,7 +263,7 @@ export class PlainDate implements Temporal.PlainDate {
   equals(other) {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     other = ES.ToTemporalDate(other);
-    for (const slot of [ISO_YEAR, ISO_MONTH, ISO_DAY]) {
+    for (const slot of [ISO_YEAR, ISO_MONTH, ISO_DAY] as const) {
       const val1 = GetSlot(this, slot);
       const val2 = GetSlot(other, slot);
       if (val1 !== val2) return false;
