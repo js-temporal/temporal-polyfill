@@ -95,10 +95,10 @@ export class Instant implements Temporal.Instant {
     );
     return new Instant(ns);
   }
-  until(other, options = undefined) {
+  until(otherParam, optionsParam = undefined) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    other = ES.ToTemporalInstant(other);
-    options = ES.GetOptionsObject(options);
+    const other = ES.ToTemporalInstant(otherParam);
+    const options = ES.GetOptionsObject(optionsParam);
     const smallestUnit = ES.ToSmallestTemporalUnit(options, 'nanosecond', DISALLOWED_UNITS);
     const defaultLargestUnit = ES.LargerOfTwoTemporalUnits('second', smallestUnit);
     const largestUnit = ES.ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, defaultLargestUnit);
@@ -128,10 +128,10 @@ export class Instant implements Temporal.Instant {
     const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  since(other, options = undefined) {
+  since(otherParam, optionsParam = undefined) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    other = ES.ToTemporalInstant(other);
-    options = ES.GetOptionsObject(options);
+    const other = ES.ToTemporalInstant(otherParam);
+    const options = ES.GetOptionsObject(optionsParam);
     const smallestUnit = ES.ToSmallestTemporalUnit(options, 'nanosecond', DISALLOWED_UNITS);
     const defaultLargestUnit = ES.LargerOfTwoTemporalUnits('second', smallestUnit);
     const largestUnit = ES.ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, defaultLargestUnit);
@@ -161,10 +161,10 @@ export class Instant implements Temporal.Instant {
     const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  round(options) {
+  round(optionsParam) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    if (options === undefined) throw new TypeError('options parameter is required');
-    options = ES.GetOptionsObject(options);
+    if (optionsParam === undefined) throw new TypeError('options parameter is required');
+    const options = ES.GetOptionsObject(optionsParam);
     const smallestUnit = ES.ToSmallestTemporalUnit(options, undefined, DISALLOWED_UNITS);
     if (smallestUnit === undefined) throw new RangeError('smallestUnit is required');
     const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
@@ -181,16 +181,16 @@ export class Instant implements Temporal.Instant {
     const roundedNs = ES.RoundInstant(ns, roundingIncrement, smallestUnit, roundingMode);
     return new Instant(roundedNs);
   }
-  equals(other) {
+  equals(otherParam) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    other = ES.ToTemporalInstant(other);
+    const other = ES.ToTemporalInstant(otherParam);
     const one = GetSlot(this, EPOCHNANOSECONDS);
     const two = GetSlot(other, EPOCHNANOSECONDS);
     return bigInt(one).equals(two);
   }
-  toString(options = undefined) {
+  toString(optionsParam = undefined) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    options = ES.GetOptionsObject(options);
+    const options = ES.GetOptionsObject(optionsParam);
     let timeZone = options.timeZone;
     if (timeZone !== undefined) timeZone = ES.ToTemporalTimeZone(timeZone);
     const { precision, unit, increment } = ES.ToSecondsStringPrecision(options);
@@ -228,7 +228,8 @@ export class Instant implements Temporal.Instant {
     const timeZone = ES.ToTemporalTimeZone(temporalTimeZoneLike);
     return ES.CreateTemporalZonedDateTime(GetSlot(this, EPOCHNANOSECONDS), timeZone, calendar);
   }
-  toZonedDateTimeISO(item) {
+  toZonedDateTimeISO(itemParam) {
+    let item = itemParam;
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     if (ES.IsObject(item)) {
       const timeZoneProperty = item.timeZone;
@@ -241,26 +242,26 @@ export class Instant implements Temporal.Instant {
     return ES.CreateTemporalZonedDateTime(GetSlot(this, EPOCHNANOSECONDS), timeZone, calendar);
   }
 
-  static fromEpochSeconds(epochSeconds) {
-    epochSeconds = ES.ToNumber(epochSeconds);
+  static fromEpochSeconds(epochSecondsParam) {
+    const epochSeconds = ES.ToNumber(epochSecondsParam);
     const epochNanoseconds = bigInt(epochSeconds).multiply(1e9);
     ES.ValidateEpochNanoseconds(epochNanoseconds);
     return new Instant(epochNanoseconds);
   }
-  static fromEpochMilliseconds(epochMilliseconds) {
-    epochMilliseconds = ES.ToNumber(epochMilliseconds);
+  static fromEpochMilliseconds(epochMillisecondsParam) {
+    const epochMilliseconds = ES.ToNumber(epochMillisecondsParam);
     const epochNanoseconds = bigInt(epochMilliseconds).multiply(1e6);
     ES.ValidateEpochNanoseconds(epochNanoseconds);
     return new Instant(epochNanoseconds);
   }
-  static fromEpochMicroseconds(epochMicroseconds) {
-    epochMicroseconds = ES.ToBigInt(epochMicroseconds);
+  static fromEpochMicroseconds(epochMicrosecondsParam) {
+    const epochMicroseconds = ES.ToBigInt(epochMicrosecondsParam);
     const epochNanoseconds = epochMicroseconds.multiply(1e3);
     ES.ValidateEpochNanoseconds(epochNanoseconds);
     return new Instant(epochNanoseconds);
   }
-  static fromEpochNanoseconds(epochNanoseconds) {
-    epochNanoseconds = ES.ToBigInt(epochNanoseconds);
+  static fromEpochNanoseconds(epochNanosecondsParam) {
+    const epochNanoseconds = ES.ToBigInt(epochNanosecondsParam);
     ES.ValidateEpochNanoseconds(epochNanoseconds);
     return new Instant(epochNanoseconds);
   }
@@ -270,13 +271,13 @@ export class Instant implements Temporal.Instant {
     }
     return ES.ToTemporalInstant(item);
   }
-  static compare(one, two) {
-    one = ES.ToTemporalInstant(one);
-    two = ES.ToTemporalInstant(two);
-    one = GetSlot(one, EPOCHNANOSECONDS);
-    two = GetSlot(two, EPOCHNANOSECONDS);
-    if (bigInt(one).lesser(two)) return -1;
-    if (bigInt(one).greater(two)) return 1;
+  static compare(oneParam, twoParam) {
+    const one = ES.ToTemporalInstant(oneParam);
+    const two = ES.ToTemporalInstant(twoParam);
+    const oneNs = GetSlot(one, EPOCHNANOSECONDS);
+    const twoNs = GetSlot(two, EPOCHNANOSECONDS);
+    if (bigInt(oneNs).lesser(twoNs)) return -1;
+    if (bigInt(oneNs).greater(twoNs)) return 1;
     return 0;
   }
   [Symbol.toStringTag]!: 'Temporal.Instant';

@@ -20,14 +20,14 @@ import {
 import { Temporal } from '..';
 
 export class TimeZone implements Temporal.TimeZone {
-  constructor(timeZoneIdentifier) {
+  constructor(timeZoneIdentifierParam) {
     // Note: if the argument is not passed, GetCanonicalTimeZoneIdentifier(undefined) will throw.
     //       This check exists only to improve the error message.
     if (arguments.length < 1) {
       throw new RangeError('missing argument: identifier is required');
     }
 
-    timeZoneIdentifier = ES.GetCanonicalTimeZoneIdentifier(timeZoneIdentifier);
+    const timeZoneIdentifier = ES.GetCanonicalTimeZoneIdentifier(timeZoneIdentifierParam);
     CreateSlots(this);
     SetSlot(this, TIMEZONE_ID, timeZoneIdentifier);
 
@@ -43,9 +43,9 @@ export class TimeZone implements Temporal.TimeZone {
   get id() {
     return ES.ToString(this);
   }
-  getOffsetNanosecondsFor(instant) {
+  getOffsetNanosecondsFor(instantParam) {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    instant = ES.ToTemporalInstant(instant);
+    const instant = ES.ToTemporalInstant(instantParam);
     const id = GetSlot(this, TIMEZONE_ID);
 
     const offsetNs = ES.ParseOffsetString(id);
@@ -53,26 +53,26 @@ export class TimeZone implements Temporal.TimeZone {
 
     return ES.GetIANATimeZoneOffsetNanoseconds(GetSlot(instant, EPOCHNANOSECONDS), id);
   }
-  getOffsetStringFor(instant) {
+  getOffsetStringFor(instantParam) {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    instant = ES.ToTemporalInstant(instant);
+    const instant = ES.ToTemporalInstant(instantParam);
     return ES.BuiltinTimeZoneGetOffsetStringFor(this, instant);
   }
-  getPlainDateTimeFor(instant, calendar = ES.GetISO8601Calendar()) {
-    instant = ES.ToTemporalInstant(instant);
-    calendar = ES.ToTemporalCalendar(calendar);
+  getPlainDateTimeFor(instantParam, calendarParam = ES.GetISO8601Calendar()) {
+    const instant = ES.ToTemporalInstant(instantParam);
+    const calendar = ES.ToTemporalCalendar(calendarParam);
     return ES.BuiltinTimeZoneGetPlainDateTimeFor(this, instant, calendar);
   }
-  getInstantFor(dateTime, options = undefined) {
+  getInstantFor(dateTimeParam, optionsParam = undefined) {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    dateTime = ES.ToTemporalDateTime(dateTime);
-    options = ES.GetOptionsObject(options);
+    const dateTime = ES.ToTemporalDateTime(dateTimeParam);
+    const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
     return ES.BuiltinTimeZoneGetInstantFor(this, dateTime, disambiguation);
   }
-  getPossibleInstantsFor(dateTime) {
+  getPossibleInstantsFor(dateTimeParam) {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    dateTime = ES.ToTemporalDateTime(dateTime);
+    const dateTime = ES.ToTemporalDateTime(dateTimeParam);
     const Instant = GetIntrinsic('%Temporal.Instant%');
     const id = GetSlot(this, TIMEZONE_ID);
 
@@ -107,9 +107,9 @@ export class TimeZone implements Temporal.TimeZone {
     );
     return possibleEpochNs.map((ns) => new Instant(ns));
   }
-  getNextTransition(startingPoint) {
+  getNextTransition(startingPointParam) {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    startingPoint = ES.ToTemporalInstant(startingPoint);
+    const startingPoint = ES.ToTemporalInstant(startingPointParam);
     const id = GetSlot(this, TIMEZONE_ID);
 
     // Offset time zones or UTC have no transitions
@@ -122,9 +122,9 @@ export class TimeZone implements Temporal.TimeZone {
     epochNanoseconds = ES.GetIANATimeZoneNextTransition(epochNanoseconds, id);
     return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
   }
-  getPreviousTransition(startingPoint) {
+  getPreviousTransition(startingPointParam) {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    startingPoint = ES.ToTemporalInstant(startingPoint);
+    const startingPoint = ES.ToTemporalInstant(startingPointParam);
     const id = GetSlot(this, TIMEZONE_ID);
 
     // Offset time zones or UTC have no transitions

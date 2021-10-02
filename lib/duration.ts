@@ -20,27 +20,27 @@ import { Temporal } from '..';
 
 export class Duration implements Temporal.Duration {
   constructor(
-    years = 0,
-    months = 0,
-    weeks = 0,
-    days = 0,
-    hours = 0,
-    minutes = 0,
-    seconds = 0,
-    milliseconds = 0,
-    microseconds = 0,
-    nanoseconds = 0
+    yearsParam = 0,
+    monthsParam = 0,
+    weeksParam = 0,
+    daysParam = 0,
+    hoursParam = 0,
+    minutesParam = 0,
+    secondsParam = 0,
+    millisecondsParam = 0,
+    microsecondsParam = 0,
+    nanosecondsParam = 0
   ) {
-    years = ES.ToIntegerThrowOnInfinity(years);
-    months = ES.ToIntegerThrowOnInfinity(months);
-    weeks = ES.ToIntegerThrowOnInfinity(weeks);
-    days = ES.ToIntegerThrowOnInfinity(days);
-    hours = ES.ToIntegerThrowOnInfinity(hours);
-    minutes = ES.ToIntegerThrowOnInfinity(minutes);
-    seconds = ES.ToIntegerThrowOnInfinity(seconds);
-    milliseconds = ES.ToIntegerThrowOnInfinity(milliseconds);
-    microseconds = ES.ToIntegerThrowOnInfinity(microseconds);
-    nanoseconds = ES.ToIntegerThrowOnInfinity(nanoseconds);
+    const years = ES.ToIntegerThrowOnInfinity(yearsParam);
+    const months = ES.ToIntegerThrowOnInfinity(monthsParam);
+    const weeks = ES.ToIntegerThrowOnInfinity(weeksParam);
+    const days = ES.ToIntegerThrowOnInfinity(daysParam);
+    const hours = ES.ToIntegerThrowOnInfinity(hoursParam);
+    const minutes = ES.ToIntegerThrowOnInfinity(minutesParam);
+    const seconds = ES.ToIntegerThrowOnInfinity(secondsParam);
+    const milliseconds = ES.ToIntegerThrowOnInfinity(millisecondsParam);
+    const microseconds = ES.ToIntegerThrowOnInfinity(microsecondsParam);
+    const nanoseconds = ES.ToIntegerThrowOnInfinity(nanosecondsParam);
 
     const sign = ES.DurationSign(
       years,
@@ -203,11 +203,11 @@ export class Duration implements Temporal.Duration {
       Math.abs(GetSlot(this, NANOSECONDS))
     );
   }
-  add(other, options = undefined) {
+  add(other, optionsParam = undefined) {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       ES.ToLimitedTemporalDuration(other);
-    options = ES.GetOptionsObject(options);
+    const options = ES.GetOptionsObject(optionsParam);
     const relativeTo = ES.ToRelativeTemporalObject(options);
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.AddDuration(
       GetSlot(this, YEARS),
@@ -234,11 +234,11 @@ export class Duration implements Temporal.Duration {
     ));
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  subtract(other, options = undefined) {
+  subtract(other, optionsParam = undefined) {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       ES.ToLimitedTemporalDuration(other);
-    options = ES.GetOptionsObject(options);
+    const options = ES.GetOptionsObject(optionsParam);
     const relativeTo = ES.ToRelativeTemporalObject(options);
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.AddDuration(
       GetSlot(this, YEARS),
@@ -265,9 +265,9 @@ export class Duration implements Temporal.Duration {
     ));
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  round(options) {
+  round(optionsParam) {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    if (options === undefined) throw new TypeError('options parameter is required');
+    if (optionsParam === undefined) throw new TypeError('options parameter is required');
     let years = GetSlot(this, YEARS);
     let months = GetSlot(this, MONTHS);
     let weeks = GetSlot(this, WEEKS);
@@ -291,7 +291,7 @@ export class Duration implements Temporal.Duration {
       microseconds,
       nanoseconds
     );
-    options = ES.GetOptionsObject(options);
+    const options = ES.GetOptionsObject(optionsParam);
     let smallestUnit = ES.ToSmallestTemporalUnit(options, undefined);
     let smallestUnitPresent = true;
     if (!smallestUnit) {
@@ -374,7 +374,7 @@ export class Duration implements Temporal.Duration {
 
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  total(options) {
+  total(optionsParam) {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     let years = GetSlot(this, YEARS);
     let months = GetSlot(this, MONTHS);
@@ -387,8 +387,8 @@ export class Duration implements Temporal.Duration {
     let microseconds = GetSlot(this, MICROSECONDS);
     let nanoseconds = GetSlot(this, NANOSECONDS);
 
-    if (options === undefined) throw new TypeError('options argument is required');
-    options = ES.GetOptionsObject(options);
+    if (optionsParam === undefined) throw new TypeError('options argument is required');
+    const options = ES.GetOptionsObject(optionsParam);
     const unit = ES.ToTemporalDurationTotalUnit(options);
     if (unit === undefined) throw new RangeError('unit option is required');
     const relativeTo = ES.ToRelativeTemporalObject(options);
@@ -430,9 +430,9 @@ export class Duration implements Temporal.Duration {
     );
     return total;
   }
-  toString(options = undefined) {
+  toString(optionsParam = undefined) {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    options = ES.GetOptionsObject(options);
+    const options = ES.GetOptionsObject(optionsParam);
     const { precision, unit, increment } = ES.ToSecondsStringPrecision(options);
     if (precision === 'minute') throw new RangeError('smallestUnit must not be "minute"');
     const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
@@ -470,10 +470,10 @@ export class Duration implements Temporal.Duration {
     }
     return ES.ToTemporalDuration(item);
   }
-  static compare(one, two, options = undefined) {
-    one = ES.ToTemporalDuration(one);
-    two = ES.ToTemporalDuration(two);
-    options = ES.GetOptionsObject(options);
+  static compare(oneParam, twoParam, optionsParam = undefined) {
+    const one = ES.ToTemporalDuration(oneParam);
+    const two = ES.ToTemporalDuration(twoParam);
+    const options = ES.GetOptionsObject(optionsParam);
     const relativeTo = ES.ToRelativeTemporalObject(options);
     const y1 = GetSlot(one, YEARS);
     const mon1 = GetSlot(one, MONTHS);
