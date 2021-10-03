@@ -100,7 +100,7 @@ export class PlainDate implements Temporal.PlainDate {
   }
   with(temporalDateLike, options = undefined) {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(temporalDateLike) !== 'Object') {
+    if (!ES.IsObject(temporalDateLike)) {
       throw new TypeError('invalid argument');
     }
     if (HasSlot(temporalDateLike, CALENDAR) || HasSlot(temporalDateLike, TIME_ZONE)) {
@@ -321,7 +321,7 @@ export class PlainDate implements Temporal.PlainDate {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
 
     let timeZone, temporalTime;
-    if (ES.Type(item) === 'Object') {
+    if (ES.IsObject(item)) {
       const timeZoneLike = item.timeZone;
       if (timeZoneLike === undefined) {
         timeZone = ES.ToTemporalTimeZone(item);

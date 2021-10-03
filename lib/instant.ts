@@ -213,7 +213,7 @@ export class Instant implements Temporal.Instant {
   }
   toZonedDateTime(item) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(item) !== 'Object') {
+    if (!ES.IsObject(item)) {
       throw new TypeError('invalid argument in toZonedDateTime');
     }
     const calendarLike = item.calendar;
@@ -230,7 +230,7 @@ export class Instant implements Temporal.Instant {
   }
   toZonedDateTimeISO(item) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(item) === 'Object') {
+    if (ES.IsObject(item)) {
       const timeZoneProperty = item.timeZone;
       if (timeZoneProperty !== undefined) {
         item = timeZoneProperty;

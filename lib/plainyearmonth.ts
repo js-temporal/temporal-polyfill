@@ -67,7 +67,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   }
   with(temporalYearMonthLike, options = undefined) {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(temporalYearMonthLike) !== 'Object') {
+    if (!ES.IsObject(temporalYearMonthLike)) {
       throw new TypeError('invalid argument');
     }
     if (HasSlot(temporalYearMonthLike, CALENDAR) || HasSlot(temporalYearMonthLike, TIME_ZONE)) {
@@ -299,7 +299,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   }
   toPlainDate(item) {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(item) !== 'Object') throw new TypeError('argument should be an object');
+    if (!ES.IsObject(item)) throw new TypeError('argument should be an object');
     const calendar = GetSlot(this, CALENDAR);
 
     const receiverFieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);

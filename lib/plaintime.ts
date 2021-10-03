@@ -124,7 +124,7 @@ export class PlainTime implements Temporal.PlainTime {
 
   with(temporalTimeLike, options = undefined) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(temporalTimeLike) !== 'Object') {
+    if (!ES.IsObject(temporalTimeLike)) {
       throw new TypeError('invalid argument');
     }
     if (HasSlot(temporalTimeLike, CALENDAR) || HasSlot(temporalTimeLike, TIME_ZONE)) {
@@ -433,7 +433,7 @@ export class PlainTime implements Temporal.PlainTime {
   toZonedDateTime(item) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
 
-    if (ES.Type(item) !== 'Object') {
+    if (!ES.IsObject(item)) {
       throw new TypeError('invalid argument');
     }
 

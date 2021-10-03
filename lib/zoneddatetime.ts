@@ -171,7 +171,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
   with(temporalZonedDateTimeLike, options = undefined) {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(temporalZonedDateTimeLike) !== 'Object') {
+    if (!ES.IsObject(temporalZonedDateTimeLike)) {
       throw new TypeError('invalid zoned-date-time-like');
     }
     if (HasSlot(temporalZonedDateTimeLike, CALENDAR) || HasSlot(temporalZonedDateTimeLike, TIME_ZONE)) {
