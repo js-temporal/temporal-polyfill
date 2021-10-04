@@ -18,6 +18,7 @@ const ReflectApply = Reflect.apply;
 import { DEBUG } from './debug';
 import bigInt from 'big-integer';
 
+import type { Temporal } from '..';
 import { GetIntrinsic } from './intrinsicclass';
 import {
   CreateSlots,
@@ -68,25 +69,14 @@ function IsInteger(value: unknown): value is number {
   return MathFloor(abs) === abs;
 }
 
-export function Type(value: unknown): string {
-  if (value === null) return 'Null';
-  switch (typeof value) {
-    case 'symbol':
-      return 'Symbol';
-    case 'bigint':
-      return 'BigInt';
-    case 'undefined':
-      return 'undefined';
-    case 'function':
-    case 'object':
-      return 'Object';
-    case 'number':
-      return 'Number';
-    case 'boolean':
-      return 'Boolean';
-    case 'string':
-      return 'String';
-  }
+// For unknown values, this narrows the result to a Record. But for union types
+// like `Temporal.DurationLike | string`, it'll strip the primitive types while
+// leaving the object type(s) unchanged.
+export function IsObject<T>(
+  value: T
+): value is Exclude<T, string | null | undefined | number | bigint | symbol | boolean>;
+export function IsObject(value: unknown): value is Record<string | number | symbol, unknown> {
+  return (typeof value === 'object' && value !== null) || typeof value === 'function';
 }
 
 export function ToNumber(value: unknown): number {
@@ -109,7 +99,7 @@ export function ToString(value: unknown): string {
   return String(value);
 }
 
-export function ToIntegerThrowOnInfinity(value) {
+export function ToIntegerThrowOnInfinity(value): number {
   const integer = ToInteger(value);
   if (!NumberIsFinite(integer)) {
     throw new RangeError('infinity is out of range');
@@ -117,8 +107,8 @@ export function ToIntegerThrowOnInfinity(value) {
   return integer;
 }
 
-export function ToPositiveInteger(value, property?: string) {
-  value = ToInteger(value);
+export function ToPositiveInteger(valueParam: unknown, property?: string): number {
+  const value = ToInteger(valueParam);
   if (!NumberIsFinite(value)) {
     throw new RangeError('infinity is out of range');
   }
@@ -131,15 +121,15 @@ export function ToPositiveInteger(value, property?: string) {
   return value;
 }
 
-function ToIntegerNoFraction(value) {
-  value = ToNumber(value);
+function ToIntegerNoFraction(valueParam: unknown): number {
+  const value = ToNumber(valueParam);
   if (!IsInteger(value)) {
     throw new RangeError(`unsupported fractional value ${value}`);
   }
   return value;
 }
 
-const BUILTIN_CASTS = new Map([
+const BUILTIN_CASTS = new Map<string, (v: unknown) => number | string>([
   ['year', ToIntegerThrowOnInfinity],
   ['month', ToPositiveInteger],
   ['monthCode', ToString],
@@ -213,29 +203,29 @@ function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier) {
   return instance;
 }
 
-export function IsTemporalInstant(item) {
+export function IsTemporalInstant(item: unknown): item is Temporal.Instant {
   return HasSlot(item, EPOCHNANOSECONDS) && !HasSlot(item, TIME_ZONE, CALENDAR);
 }
 
-export function IsTemporalTimeZone(item) {
+export function IsTemporalTimeZone(item: unknown): item is Temporal.TimeZone {
   return HasSlot(item, TIMEZONE_ID);
 }
-export function IsTemporalCalendar(item) {
+export function IsTemporalCalendar(item: unknown): item is Temporal.Calendar {
   return HasSlot(item, CALENDAR_ID);
 }
-export function IsTemporalDuration(item) {
+export function IsTemporalDuration(item: unknown): item is Temporal.Duration {
   return HasSlot(item, YEARS, MONTHS, DAYS, HOURS, MINUTES, SECONDS, MILLISECONDS, MICROSECONDS, NANOSECONDS);
 }
-export function IsTemporalDate(item) {
+export function IsTemporalDate(item: unknown): item is Temporal.PlainDate {
   return HasSlot(item, DATE_BRAND);
 }
-export function IsTemporalTime(item) {
+export function IsTemporalTime(item: unknown): item is Temporal.PlainTime {
   return (
     HasSlot(item, ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND) &&
     !HasSlot(item, ISO_YEAR, ISO_MONTH, ISO_DAY)
   );
 }
-export function IsTemporalDateTime(item) {
+export function IsTemporalDateTime(item: unknown): item is Temporal.PlainDateTime {
   return HasSlot(
     item,
     ISO_YEAR,
@@ -249,13 +239,13 @@ export function IsTemporalDateTime(item) {
     ISO_NANOSECOND
   );
 }
-export function IsTemporalYearMonth(item) {
+export function IsTemporalYearMonth(item: unknown): item is Temporal.PlainYearMonth {
   return HasSlot(item, YEAR_MONTH_BRAND);
 }
-export function IsTemporalMonthDay(item) {
+export function IsTemporalMonthDay(item: unknown): item is Temporal.PlainMonthDay {
   return HasSlot(item, MONTH_DAY_BRAND);
 }
-export function IsTemporalZonedDateTime(item) {
+export function IsTemporalZonedDateTime(item: unknown): item is Temporal.ZonedDateTime {
   return HasSlot(item, EPOCHNANOSECONDS, TIME_ZONE, CALENDAR);
 }
 function TemporalTimeZoneFromString(stringIdent) {
@@ -606,7 +596,7 @@ function ToTemporalDurationRecord(item) {
 
 export function ToLimitedTemporalDuration(item, disallowedProperties = []) {
   let record;
-  if (Type(item) === 'Object') {
+  if (IsObject(item)) {
     record = ToTemporalDurationRecord(item);
   } else {
     const str = ToString(item);
@@ -711,7 +701,7 @@ export function ToSecondsStringPrecision(options): {
   }
   let digits = options.fractionalSecondDigits;
   if (digits === undefined) digits = 'auto';
-  if (Type(digits) !== 'Number') {
+  if (typeof digits !== 'number') {
     digits = ToString(digits);
     if (digits === 'auto') return { precision: 'auto', unit: 'nanosecond', increment: 1 };
     throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digits}`);
@@ -780,7 +770,7 @@ export function ToRelativeTemporalObject(options) {
 
   let offsetBehaviour = 'option';
   let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, timeZone, offset;
-  if (Type(relativeTo) === 'Object') {
+  if (IsObject(relativeTo)) {
     if (IsTemporalZonedDateTime(relativeTo) || IsTemporalDateTime(relativeTo)) return relativeTo;
     if (IsTemporalDate(relativeTo)) {
       return CreateTemporalDateTime(
@@ -889,7 +879,7 @@ export function LargerOfTwoTemporalUnits(unit1, unit2) {
 }
 
 export function ToPartialRecord(bag, fields, callerCast?: (value: unknown) => unknown) {
-  if (Type(bag) !== 'Object') return false;
+  if (!IsObject(bag)) return false;
   let any;
   for (const property of fields) {
     const value = bag[property];
@@ -908,7 +898,7 @@ export function ToPartialRecord(bag, fields, callerCast?: (value: unknown) => un
 }
 
 export function PrepareTemporalFields(bag, fields) {
-  if (Type(bag) !== 'Object') return undefined;
+  if (!IsObject(bag)) return undefined;
   const result = {};
   let any = false;
   for (const fieldRecord of fields) {
@@ -1042,7 +1032,7 @@ export function ToTemporalZonedDateTimeFields(bag, fieldNames) {
 }
 
 export function ToTemporalDate(item, options = ObjectCreate(null)) {
-  if (Type(item) === 'Object') {
+  if (IsObject(item)) {
     if (IsTemporalDate(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
       item = BuiltinTimeZoneGetPlainDateTimeFor(
@@ -1091,7 +1081,7 @@ export function InterpretTemporalDateTimeFields(calendar, fields, options) {
 
 export function ToTemporalDateTime(item, options = ObjectCreate(null)) {
   let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar;
-  if (Type(item) === 'Object') {
+  if (IsObject(item)) {
     if (IsTemporalDateTime(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
       return BuiltinTimeZoneGetPlainDateTimeFor(
@@ -1147,7 +1137,7 @@ export function ToTemporalDateTime(item, options = ObjectCreate(null)) {
 
 export function ToTemporalDuration(item) {
   let years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds;
-  if (Type(item) === 'Object') {
+  if (IsObject(item)) {
     if (IsTemporalDuration(item)) return item;
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       ToTemporalDurationRecord(item));
@@ -1182,7 +1172,7 @@ export function ToTemporalInstant(item) {
 }
 
 export function ToTemporalMonthDay(item, options = ObjectCreate(null)) {
-  if (Type(item) === 'Object') {
+  if (IsObject(item)) {
     if (IsTemporalMonthDay(item)) return item;
     let calendar, calendarAbsent;
     if (HasSlot(item, CALENDAR)) {
@@ -1221,7 +1211,7 @@ export function ToTemporalMonthDay(item, options = ObjectCreate(null)) {
 
 export function ToTemporalTime(item, overflow = 'constrain') {
   let hour, minute, second, millisecond, microsecond, nanosecond, calendar;
-  if (Type(item) === 'Object') {
+  if (IsObject(item)) {
     if (IsTemporalTime(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
       item = BuiltinTimeZoneGetPlainDateTimeFor(
@@ -1269,7 +1259,7 @@ export function ToTemporalTime(item, overflow = 'constrain') {
 }
 
 export function ToTemporalYearMonth(item, options = ObjectCreate(null)) {
-  if (Type(item) === 'Object') {
+  if (IsObject(item)) {
     if (IsTemporalYearMonth(item)) return item;
     const calendar = GetTemporalCalendarWithISODefault(item);
     const fieldNames = CalendarFields(calendar, ['month', 'monthCode', 'year']);
@@ -1353,7 +1343,7 @@ export function InterpretISODateTimeOffset(
 export function ToTemporalZonedDateTime(item, options = ObjectCreate(null)) {
   let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, timeZone, offset, calendar;
   let offsetBehaviour = 'option';
-  if (Type(item) === 'Object') {
+  if (IsObject(item)) {
     if (IsTemporalZonedDateTime(item)) return item;
     calendar = GetTemporalCalendarWithISODefault(item);
     const fieldNames = CalendarFields(calendar, [
@@ -1588,7 +1578,7 @@ export function CalendarFields(calendar, fieldNames) {
   }
   const result = [];
   for (const name of fieldNames) {
-    if (Type(name) !== 'String') throw new TypeError('bad return from calendar.fields()');
+    if (typeof name !== 'string') throw new TypeError('bad return from calendar.fields()');
     ArrayPrototypePush.call(result, name);
   }
   return result;
@@ -1600,7 +1590,7 @@ export function CalendarMergeFields(calendar, fields, additionalFields) {
     return { ...fields, ...additionalFields };
   }
   const result = Reflect.apply(calMergeFields, calendar, [fields, additionalFields]);
-  if (Type(result) !== 'Object') throw new TypeError('bad return from calendar.mergeFields()');
+  if (!IsObject(result)) throw new TypeError('bad return from calendar.mergeFields()');
   return result;
 }
 
@@ -1703,11 +1693,11 @@ export function CalendarInLeapYear(calendar, dateLike) {
 }
 
 export function ToTemporalCalendar(calendarLike) {
-  if (Type(calendarLike) === 'Object') {
+  if (IsObject(calendarLike)) {
     if (HasSlot(calendarLike, CALENDAR)) return GetSlot(calendarLike, CALENDAR);
     if (!('calendar' in calendarLike)) return calendarLike;
     calendarLike = calendarLike.calendar;
-    if (Type(calendarLike) === 'Object' && !('calendar' in calendarLike)) return calendarLike;
+    if (IsObject(calendarLike) && !('calendar' in calendarLike)) return calendarLike;
   }
   const identifier = ToString(calendarLike);
   const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
@@ -1768,11 +1758,11 @@ export function MonthDayFromFields(calendar, fields, options?: any) {
 }
 
 export function ToTemporalTimeZone(temporalTimeZoneLike) {
-  if (Type(temporalTimeZoneLike) === 'Object') {
+  if (IsObject(temporalTimeZoneLike)) {
     if (IsTemporalZonedDateTime(temporalTimeZoneLike)) return GetSlot(temporalTimeZoneLike, TIME_ZONE);
     if (!('timeZone' in temporalTimeZoneLike)) return temporalTimeZoneLike;
     temporalTimeZoneLike = temporalTimeZoneLike.timeZone;
-    if (Type(temporalTimeZoneLike) === 'Object' && !('timeZone' in temporalTimeZoneLike)) {
+    if (IsObject(temporalTimeZoneLike) && !('timeZone' in temporalTimeZoneLike)) {
       return temporalTimeZoneLike;
     }
   }
@@ -4296,7 +4286,7 @@ export function ComparisonResult(value) {
 }
 export function GetOptionsObject(options) {
   if (options === undefined) return ObjectCreate(null);
-  if (Type(options) === 'Object') return options;
+  if (IsObject(options)) return options;
   throw new TypeError(`Options parameter must be an object, not ${options === null ? 'null' : `a ${typeof options}`}`);
 }
 

@@ -62,19 +62,19 @@ export class Calendar implements Temporal.Calendar {
   }
   dateFromFields(fields, options = undefined) {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(fields) !== 'Object') throw new TypeError('invalid fields');
+    if (!ES.IsObject(fields)) throw new TypeError('invalid fields');
     options = ES.GetOptionsObject(options);
     return impl[GetSlot(this, CALENDAR_ID)].dateFromFields(fields, options, this);
   }
   yearMonthFromFields(fields, options = undefined) {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(fields) !== 'Object') throw new TypeError('invalid fields');
+    if (!ES.IsObject(fields)) throw new TypeError('invalid fields');
     options = ES.GetOptionsObject(options);
     return impl[GetSlot(this, CALENDAR_ID)].yearMonthFromFields(fields, options, this);
   }
   monthDayFromFields(fields, options = undefined) {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(fields) !== 'Object') throw new TypeError('invalid fields');
+    if (!ES.IsObject(fields)) throw new TypeError('invalid fields');
     options = ES.GetOptionsObject(options);
     return impl[GetSlot(this, CALENDAR_ID)].monthDayFromFields(fields, options, this);
   }
@@ -94,7 +94,7 @@ export class Calendar implements Temporal.Calendar {
       'nanosecond'
     ]);
     for (const name of fields) {
-      if (ES.Type(name) !== 'String') throw new TypeError('invalid fields');
+      if (typeof name !== 'string') throw new TypeError('invalid fields');
       if (!allowed.has(name)) throw new RangeError(`invalid field name ${name}`);
       allowed.delete(name);
       ArrayPrototypePush.call(fieldsArray, name);
@@ -658,7 +658,7 @@ const nonIsoHelperBase: NonIsoHelperBase = {
     if (day === undefined) throw new RangeError('Missing day');
     if (monthCode !== undefined) {
       if (typeof monthCode !== 'string') {
-        throw new RangeError(`monthCode must be a string, not ${ES.Type(monthCode).toLowerCase()}`);
+        throw new RangeError(`monthCode must be a string, not ${typeof monthCode}`);
       }
       if (!/^M([01]?\d)(L?)$/.test(monthCode)) throw new RangeError(`Invalid monthCode: ${monthCode}`);
     }

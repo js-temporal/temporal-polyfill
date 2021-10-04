@@ -152,7 +152,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   }
   with(temporalDateTimeLike, options = undefined) {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
-    if (ES.Type(temporalDateTimeLike) !== 'Object') {
+    if (!ES.IsObject(temporalDateTimeLike)) {
       throw new TypeError('invalid argument');
     }
     if (HasSlot(temporalDateTimeLike, CALENDAR) || HasSlot(temporalDateTimeLike, TIME_ZONE)) {
