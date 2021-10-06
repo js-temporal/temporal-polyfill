@@ -3,7 +3,7 @@
 # being manually executed.
 set -e
 
-TESTS=${@:-"**/*.js"}
+TESTS=${TESTS:-"*/Temporal/**/*.js"}
 TIMEOUT=${TIMEOUT:-10000}
 
 if [ "$(uname)" = 'Darwin' ]; then
@@ -27,5 +27,5 @@ test262-harness \
   --prelude "../../dist/script.js" \
   --timeout "$TIMEOUT" \
   --preprocessor ../../test/preprocessor.test262.cjs \
-  "*/Temporal/$TESTS" \
+  "$TESTS" \
   | ../../test/parseResults.js
