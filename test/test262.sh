@@ -2,8 +2,14 @@
 # Note that this script is only expected to be run via `npm run test262`, not by
 # being manually executed.
 set -e
+TESTS_FROM_ENV="$TESTS"
+TESTS="**/*.js"
+if [ $# -ne 0 ]; then
+  TESTS="$@";
+elif [ ! -z "$TESTS_FROM_ENV" ]; then
+  TESTS="$TESTS_FROM_ENV";
+fi
 
-TESTS=${TESTS:-"*/Temporal/**/*.js"}
 TIMEOUT=${TIMEOUT:-10000}
 
 if [ "$(uname)" = 'Darwin' ]; then
@@ -27,5 +33,5 @@ test262-harness \
   --prelude "../../dist/script.js" \
   --timeout "$TIMEOUT" \
   --preprocessor ../../test/preprocessor.test262.cjs \
-  "$TESTS" \
+  "*/Temporal/$TESTS" \
   | ../../test/parseResults.js
