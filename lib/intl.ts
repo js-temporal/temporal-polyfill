@@ -69,11 +69,11 @@ function getResolvedTimeZoneLazy(obj) {
 export function DateTimeFormat(
   this: Intl.DateTimeFormat,
   locale = undefined,
-  options: Partial<Intl.DateTimeFormatOptions> = {}
+  optionsParam: Partial<Intl.DateTimeFormatOptions> = {}
 ): void {
-  if (!(this instanceof DateTimeFormat)) return new DateTimeFormat(locale, options);
-  const hasOptions = typeof options !== 'undefined';
-  options = hasOptions ? ObjectAssign({}, options) : {};
+  if (!(this instanceof DateTimeFormat)) return new DateTimeFormat(locale, optionsParam);
+  const hasOptions = typeof optionsParam !== 'undefined';
+  const options = hasOptions ? ObjectAssign({}, optionsParam) : {};
   const original = new IntlDateTimeFormat(locale, options);
   const ro = original.resolvedOptions();
 
@@ -200,8 +200,8 @@ function formatRangeToParts(this: typeof DateTimeFormat, a, b) {
   return this[ORIGINAL].formatRangeToParts(a, b);
 }
 
-function amend(options = {}, amended = {}) {
-  options = ObjectAssign({}, options);
+function amend(optionsParam = {}, amended = {}) {
+  const options = ObjectAssign({}, optionsParam);
   for (const opt of [
     'year',
     'month',
@@ -221,8 +221,8 @@ function amend(options = {}, amended = {}) {
   return options;
 }
 
-function timeAmend(options) {
-  options = amend(options, {
+function timeAmend(optionsParam) {
+  let options = amend(optionsParam, {
     year: false,
     month: false,
     day: false,
@@ -240,8 +240,8 @@ function timeAmend(options) {
   return options;
 }
 
-function yearMonthAmend(options) {
-  options = amend(options, {
+function yearMonthAmend(optionsParam) {
+  let options = amend(optionsParam, {
     day: false,
     hour: false,
     minute: false,
@@ -258,8 +258,8 @@ function yearMonthAmend(options) {
   return options;
 }
 
-function monthDayAmend(options) {
-  options = amend(options, {
+function monthDayAmend(optionsParam) {
+  let options = amend(optionsParam, {
     year: false,
     hour: false,
     minute: false,
@@ -276,8 +276,8 @@ function monthDayAmend(options) {
   return options;
 }
 
-function dateAmend(options) {
-  options = amend(options, {
+function dateAmend(optionsParam) {
+  let options = amend(optionsParam, {
     hour: false,
     minute: false,
     second: false,
@@ -295,8 +295,8 @@ function dateAmend(options) {
   return options;
 }
 
-function datetimeAmend(options) {
-  options = amend(options, { timeZoneName: false });
+function datetimeAmend(optionsParam) {
+  let options = amend(optionsParam, { timeZoneName: false });
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
     options = ObjectAssign({}, options, {
       year: 'numeric',
@@ -310,7 +310,8 @@ function datetimeAmend(options) {
   return options;
 }
 
-function zonedDateTimeAmend(options) {
+function zonedDateTimeAmend(optionsParam) {
+  let options = optionsParam;
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
     options = ObjectAssign({}, options, {
       year: 'numeric',
@@ -325,7 +326,8 @@ function zonedDateTimeAmend(options) {
   return options;
 }
 
-function instantAmend(options) {
+function instantAmend(optionsParam) {
+  let options = optionsParam;
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
     options = ObjectAssign({}, options, {
       year: 'numeric',

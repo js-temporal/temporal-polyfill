@@ -65,13 +65,20 @@ function TemporalTimeToString(time, precision, options = undefined) {
 }
 
 export class PlainTime implements Temporal.PlainTime {
-  constructor(isoHour = 0, isoMinute = 0, isoSecond = 0, isoMillisecond = 0, isoMicrosecond = 0, isoNanosecond = 0) {
-    isoHour = ES.ToIntegerThrowOnInfinity(isoHour);
-    isoMinute = ES.ToIntegerThrowOnInfinity(isoMinute);
-    isoSecond = ES.ToIntegerThrowOnInfinity(isoSecond);
-    isoMillisecond = ES.ToIntegerThrowOnInfinity(isoMillisecond);
-    isoMicrosecond = ES.ToIntegerThrowOnInfinity(isoMicrosecond);
-    isoNanosecond = ES.ToIntegerThrowOnInfinity(isoNanosecond);
+  constructor(
+    isoHourParam = 0,
+    isoMinuteParam = 0,
+    isoSecondParam = 0,
+    isoMillisecondParam = 0,
+    isoMicrosecondParam = 0,
+    isoNanosecondParam = 0
+  ) {
+    const isoHour = ES.ToIntegerThrowOnInfinity(isoHourParam);
+    const isoMinute = ES.ToIntegerThrowOnInfinity(isoMinuteParam);
+    const isoSecond = ES.ToIntegerThrowOnInfinity(isoSecondParam);
+    const isoMillisecond = ES.ToIntegerThrowOnInfinity(isoMillisecondParam);
+    const isoMicrosecond = ES.ToIntegerThrowOnInfinity(isoMicrosecondParam);
+    const isoNanosecond = ES.ToIntegerThrowOnInfinity(isoNanosecondParam);
 
     ES.RejectTime(isoHour, isoMinute, isoSecond, isoMillisecond, isoMicrosecond, isoNanosecond);
     CreateSlots(this);
@@ -122,7 +129,7 @@ export class PlainTime implements Temporal.PlainTime {
     return GetSlot(this, ISO_NANOSECOND);
   }
 
-  with(temporalTimeLike, options = undefined) {
+  with(temporalTimeLike, optionsParam = undefined) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(temporalTimeLike)) {
       throw new TypeError('invalid argument');
@@ -137,7 +144,7 @@ export class PlainTime implements Temporal.PlainTime {
       throw new TypeError('with() does not support a timeZone property');
     }
 
-    options = ES.GetOptionsObject(options);
+    const options = ES.GetOptionsObject(optionsParam);
     const overflow = ES.ToTemporalOverflow(options);
 
     const props = ES.ToPartialRecord(temporalTimeLike, [
@@ -234,10 +241,10 @@ export class PlainTime implements Temporal.PlainTime {
     ));
     return new PlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
   }
-  until(other, options = undefined) {
+  until(otherParam, optionsParam = undefined) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    other = ES.ToTemporalTime(other);
-    options = ES.GetOptionsObject(options);
+    const other = ES.ToTemporalTime(otherParam);
+    const options = ES.GetOptionsObject(optionsParam);
     const largestUnit = ES.ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, 'hour');
     const smallestUnit = ES.ToSmallestTemporalUnit(options, 'nanosecond', DISALLOWED_UNITS);
     ES.ValidateTemporalUnitRange(largestUnit, smallestUnit);
@@ -285,10 +292,10 @@ export class PlainTime implements Temporal.PlainTime {
     const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  since(other, options = undefined) {
+  since(otherParam, optionsParam = undefined) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    other = ES.ToTemporalTime(other);
-    options = ES.GetOptionsObject(options);
+    const other = ES.ToTemporalTime(otherParam);
+    const options = ES.GetOptionsObject(optionsParam);
     const largestUnit = ES.ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, 'hour');
     const smallestUnit = ES.ToSmallestTemporalUnit(options, 'nanosecond', DISALLOWED_UNITS);
     ES.ValidateTemporalUnitRange(largestUnit, smallestUnit);
@@ -342,10 +349,10 @@ export class PlainTime implements Temporal.PlainTime {
     const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  round(options) {
+  round(optionsParam) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    if (options === undefined) throw new TypeError('options parameter is required');
-    options = ES.GetOptionsObject(options);
+    if (optionsParam === undefined) throw new TypeError('options parameter is required');
+    const options = ES.GetOptionsObject(optionsParam);
     const smallestUnit = ES.ToSmallestTemporalUnit(options, undefined, DISALLOWED_UNITS);
     if (smallestUnit === undefined) throw new RangeError('smallestUnit is required');
     const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
@@ -371,9 +378,9 @@ export class PlainTime implements Temporal.PlainTime {
 
     return new PlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
   }
-  equals(other) {
+  equals(otherParam) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    other = ES.ToTemporalTime(other);
+    const other = ES.ToTemporalTime(otherParam);
     for (const slot of [ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND]) {
       const val1 = GetSlot(this, slot);
       const val2 = GetSlot(other, slot);
@@ -382,9 +389,9 @@ export class PlainTime implements Temporal.PlainTime {
     return true;
   }
 
-  toString(options = undefined) {
+  toString(optionsParam = undefined) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    options = ES.GetOptionsObject(options);
+    const options = ES.GetOptionsObject(optionsParam);
     const { precision, unit, increment } = ES.ToSecondsStringPrecision(options);
     const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
     return TemporalTimeToString(this, precision, { unit, increment, roundingMode });
@@ -401,10 +408,10 @@ export class PlainTime implements Temporal.PlainTime {
     throw new TypeError('use compare() or equals() to compare Temporal.PlainTime');
   }
 
-  toPlainDateTime(temporalDate) {
+  toPlainDateTime(temporalDateParam) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
 
-    temporalDate = ES.ToTemporalDate(temporalDate);
+    const temporalDate = ES.ToTemporalDate(temporalDateParam);
     const year = GetSlot(temporalDate, ISO_YEAR);
     const month = GetSlot(temporalDate, ISO_MONTH);
     const day = GetSlot(temporalDate, ISO_DAY);
@@ -489,8 +496,8 @@ export class PlainTime implements Temporal.PlainTime {
     };
   }
 
-  static from(item, options = undefined) {
-    options = ES.GetOptionsObject(options);
+  static from(item, optionsParam = undefined) {
+    const options = ES.GetOptionsObject(optionsParam);
     const overflow = ES.ToTemporalOverflow(options);
     if (ES.IsTemporalTime(item)) {
       return new PlainTime(
@@ -504,9 +511,9 @@ export class PlainTime implements Temporal.PlainTime {
     }
     return ES.ToTemporalTime(item, overflow);
   }
-  static compare(one, two) {
-    one = ES.ToTemporalTime(one);
-    two = ES.ToTemporalTime(two);
+  static compare(oneParam, twoParam) {
+    const one = ES.ToTemporalTime(oneParam);
+    const two = ES.ToTemporalTime(twoParam);
     for (const slot of [ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND]) {
       const val1 = GetSlot(one, slot);
       const val2 = GetSlot(two, slot);

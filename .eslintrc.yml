@@ -56,6 +56,9 @@ rules:
     - error
     - max: 1
   no-trailing-spaces: error
+  no-param-reassign:
+    - error
+    - props: false
   object-curly-spacing:
     - error
     - always
@@ -88,3 +91,10 @@ overrides:
       - test/validStrings.mjs
     rules:
       no-console: off
+  - files:
+      - test/*.mjs
+      - test/**/*
+      # TODO Fix these files!
+      - lib/ecmascript.ts
+    rules:
+      no-param-reassign: off
