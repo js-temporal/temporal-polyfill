@@ -9,6 +9,7 @@ const MathTrunc = Math.trunc;
 const NumberIsNaN = Number.isNaN;
 const NumberIsFinite = Number.isFinite;
 const NumberCtor = Number;
+const StringCtor = String;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
@@ -96,7 +97,7 @@ export function ToString(value: unknown): string {
   if (typeof value === 'symbol') {
     throw new TypeError('Cannot convert a Symbol value to a String');
   }
-  return String(value);
+  return StringCtor(value);
 }
 
 export function ToIntegerThrowOnInfinity(value): number {
@@ -188,7 +189,7 @@ function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier) {
   let instance = IntlDateTimeFormatEnUsCache.get(timeZoneIdentifier);
   if (instance === undefined) {
     instance = new IntlDateTimeFormat('en-us', {
-      timeZone: String(timeZoneIdentifier),
+      timeZone: StringCtor(timeZoneIdentifier),
       hour12: false,
       era: 'short',
       year: 'numeric',
@@ -2225,7 +2226,7 @@ export function TemporalZonedDateTimeToString(
 }
 
 export function ParseOffsetString(string) {
-  const match = OFFSET.exec(String(string));
+  const match = OFFSET.exec(StringCtor(string));
   if (!match) return null;
   const sign = match[1] === '-' || match[1] === '\u2212' ? -1 : +1;
   const hours = +match[2];
@@ -2238,7 +2239,7 @@ export function ParseOffsetString(string) {
 export function GetCanonicalTimeZoneIdentifier(timeZoneIdentifier) {
   const offsetNs = ParseOffsetString(timeZoneIdentifier);
   if (offsetNs !== null) return FormatTimeZoneOffsetString(offsetNs);
-  const formatter = getIntlDateTimeFormatEnUsForTimeZone(String(timeZoneIdentifier));
+  const formatter = getIntlDateTimeFormatEnUsForTimeZone(StringCtor(timeZoneIdentifier));
   return formatter.resolvedOptions().timeZone;
 }
 
