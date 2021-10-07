@@ -139,7 +139,7 @@ export class TimeZone implements Temporal.TimeZone {
   }
   toString() {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    return String(GetSlot(this, TIMEZONE_ID));
+    return ES.ToString(GetSlot(this, TIMEZONE_ID));
   }
   toJSON() {
     return ES.ToString(this);
