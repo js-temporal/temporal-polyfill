@@ -25,7 +25,11 @@ import bigInt from 'big-integer';
 const ArrayPrototypePush = Array.prototype.push;
 
 export class ZonedDateTime implements Temporal.ZonedDateTime {
-  constructor(epochNanosecondsParam, timeZoneParam, calendarParam = ES.GetISO8601Calendar()) {
+  constructor(
+    epochNanosecondsParam: bigInt.BigInteger,
+    timeZoneParam: Temporal.TimeZoneProtocol | string,
+    calendarParam: Temporal.CalendarProtocol | string = ES.GetISO8601Calendar()
+  ) {
     // Note: if the argument is not passed, ToBigInt(undefined) will throw. This check exists only
     //       to improve the error message.
     //       ToTemporalTimeZone(undefined) will end up calling TimeZone.from("undefined"), which
@@ -201,7 +205,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       'nanosecond',
       'second',
       'year'
-    ]);
+    ] as const);
     ArrayPrototypePush.call(fieldNames, 'offset');
     const props = ES.ToPartialRecord(temporalZonedDateTimeLike, fieldNames);
     if (!props) {
@@ -362,7 +366,10 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     );
     return ES.CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
   }
-  until(otherParam, optionsParam = undefined) {
+  until(
+    otherParam: Parameters<Temporal.ZonedDateTime['until']>[0],
+    optionsParam: Parameters<Temporal.ZonedDateTime['until']>[1] = undefined
+  ) {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalZonedDateTime(otherParam);
     const calendar = GetSlot(this, CALENDAR);
@@ -393,7 +400,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
         ns1,
         ns2,
         roundingIncrement,
-        smallestUnit,
+        smallestUnit as Temporal.TimeUnit,
         roundingMode
       ));
       ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceDuration(
@@ -456,7 +463,10 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  since(otherParam, optionsParam = undefined) {
+  since(
+    otherParam: Parameters<Temporal.ZonedDateTime['since']>[0],
+    optionsParam: Parameters<Temporal.ZonedDateTime['since']>[1] = undefined
+  ) {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalZonedDateTime(otherParam);
     const calendar = GetSlot(this, CALENDAR);
@@ -488,7 +498,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
         ns1,
         ns2,
         roundingIncrement,
-        smallestUnit,
+        smallestUnit as Temporal.TimeUnit,
         roundingMode
       ));
       ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceDuration(
@@ -562,7 +572,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       -nanoseconds
     );
   }
-  round(optionsParam) {
+  round(optionsParam: Parameters<Temporal.ZonedDateTime['round']>[0]) {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     if (optionsParam === undefined) throw new TypeError('options parameter is required');
     const options = ES.GetOptionsObject(optionsParam);
@@ -720,14 +730,14 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   toPlainYearMonth() {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
+    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
     const fields = ES.ToTemporalYearMonthFields(this, fieldNames);
     return ES.YearMonthFromFields(calendar, fields);
   }
   toPlainMonthDay() {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode']);
+    const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode'] as const);
     const fields = ES.ToTemporalMonthDayFields(this, fieldNames);
     return ES.MonthDayFromFields(calendar, fields);
   }

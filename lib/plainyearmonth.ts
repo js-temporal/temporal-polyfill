@@ -6,10 +6,24 @@ import { Temporal } from '..';
 
 const ObjectCreate = Object.create;
 
-const DISALLOWED_UNITS = ['week', 'day', 'hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'];
+const DISALLOWED_UNITS = [
+  'week',
+  'day',
+  'hour',
+  'minute',
+  'second',
+  'millisecond',
+  'microsecond',
+  'nanosecond'
+] as const;
 
 export class PlainYearMonth implements Temporal.PlainYearMonth {
-  constructor(isoYearParam, isoMonthParam, calendarParam = ES.GetISO8601Calendar(), referenceISODayParam = 1) {
+  constructor(
+    isoYearParam,
+    isoMonthParam,
+    calendarParam: Temporal.CalendarProtocol | string = ES.GetISO8601Calendar(),
+    referenceISODayParam = 1
+  ) {
     const isoYear = ES.ToIntegerThrowOnInfinity(isoYearParam);
     const isoMonth = ES.ToIntegerThrowOnInfinity(isoMonthParam);
     const calendar = ES.ToTemporalCalendar(calendarParam);
@@ -81,7 +95,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     }
 
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['month', 'monthCode', 'year']);
+    const fieldNames = ES.CalendarFields(calendar, ['month', 'monthCode', 'year'] as const);
     const props = ES.ToPartialRecord(temporalYearMonthLike, fieldNames);
     if (!props) {
       throw new TypeError('invalid year-month-like');
@@ -103,7 +117,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
+    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
     const fields = ES.ToTemporalYearMonthFields(this, fieldNames);
     const sign = ES.DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
     const day = sign < 0 ? ES.ToPositiveInteger(ES.CalendarDaysInMonth(calendar, this)) : 1;
@@ -135,7 +149,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
+    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
     const fields = ES.ToTemporalYearMonthFields(this, fieldNames);
     const sign = ES.DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
     const day = sign < 0 ? ES.ToPositiveInteger(ES.CalendarDaysInMonth(calendar, this)) : 1;
@@ -165,7 +179,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
     const roundingIncrement = ES.ToTemporalRoundingIncrement(options, undefined, false);
 
-    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
+    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
     const otherFields = ES.ToTemporalYearMonthFields(other, fieldNames);
     const thisFields = ES.ToTemporalYearMonthFields(this, fieldNames);
     const otherDate = ES.DateFromFields(calendar, { ...otherFields, day: 1 });
@@ -227,7 +241,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
     const roundingIncrement = ES.ToTemporalRoundingIncrement(options, undefined, false);
 
-    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
+    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
     const otherFields = ES.ToTemporalYearMonthFields(other, fieldNames);
     const thisFields = ES.ToTemporalYearMonthFields(this, fieldNames);
     const otherDate = ES.DateFromFields(calendar, { ...otherFields, day: 1 });
@@ -302,15 +316,18 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     if (!ES.IsObject(item)) throw new TypeError('argument should be an object');
     const calendar = GetSlot(this, CALENDAR);
 
-    const receiverFieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
+    const receiverFieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
     const fields = ES.ToTemporalYearMonthFields(this, receiverFieldNames);
 
     const inputFieldNames = ES.CalendarFields(calendar, ['day']);
-    const inputEntries = [['day']];
+    const inputEntries = [['day']] as const;
     // Add extra fields from the calendar at the end
     inputFieldNames.forEach((fieldName) => {
       if (!inputEntries.some(([name]) => name === fieldName)) {
-        inputEntries.push([fieldName, undefined]);
+        (inputEntries as unknown as Array<typeof inputEntries[number]>).push([
+          fieldName,
+          undefined
+        ] as unknown as typeof inputEntries[number]); // Make TS ignore extra fields
       }
     });
     const inputFields = ES.PrepareTemporalFields(item, inputEntries);

@@ -178,7 +178,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       'nanosecond',
       'second',
       'year'
-    ]);
+    ] as const);
     const props = ES.ToPartialRecord(temporalDateTimeLike, fieldNames);
     if (!props) {
       throw new TypeError('invalid date-time-like');
@@ -521,7 +521,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       -nanoseconds
     );
   }
-  round(optionsParam) {
+  round(optionsParam: Parameters<Temporal.PlainDateTime['round']>[0]) {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     if (optionsParam === undefined) throw new TypeError('options parameter is required');
     const options = ES.GetOptionsObject(optionsParam);
@@ -631,14 +631,14 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   toPlainYearMonth() {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
+    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
     const fields = ES.ToTemporalYearMonthFields(this, fieldNames);
     return ES.YearMonthFromFields(calendar, fields);
   }
   toPlainMonthDay() {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode']);
+    const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode'] as const);
     const fields = ES.ToTemporalMonthDayFields(this, fieldNames);
     return ES.MonthDayFromFields(calendar, fields);
   }
@@ -694,7 +694,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       ISO_MILLISECOND,
       ISO_MICROSECOND,
       ISO_NANOSECOND
-    ]) {
+    ] as const) {
       const val1 = GetSlot(one, slot);
       const val2 = GetSlot(two, slot);
       if (val1 !== val2) return ES.ComparisonResult(val1 - val2);

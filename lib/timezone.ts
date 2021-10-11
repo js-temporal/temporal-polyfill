@@ -20,7 +20,7 @@ import {
 import { Temporal } from '..';
 
 export class TimeZone implements Temporal.TimeZone {
-  constructor(timeZoneIdentifierParam) {
+  constructor(timeZoneIdentifierParam: string) {
     // Note: if the argument is not passed, GetCanonicalTimeZoneIdentifier(undefined) will throw.
     //       This check exists only to improve the error message.
     if (arguments.length < 1) {
@@ -58,7 +58,7 @@ export class TimeZone implements Temporal.TimeZone {
     const instant = ES.ToTemporalInstant(instantParam);
     return ES.BuiltinTimeZoneGetOffsetStringFor(this, instant);
   }
-  getPlainDateTimeFor(instantParam, calendarParam = ES.GetISO8601Calendar()) {
+  getPlainDateTimeFor(instantParam, calendarParam: Temporal.CalendarProtocol | string = ES.GetISO8601Calendar()) {
     const instant = ES.ToTemporalInstant(instantParam);
     const calendar = ES.ToTemporalCalendar(calendarParam);
     return ES.BuiltinTimeZoneGetPlainDateTimeFor(this, instant, calendar);
@@ -144,7 +144,7 @@ export class TimeZone implements Temporal.TimeZone {
   toJSON() {
     return ES.ToString(this);
   }
-  static from(item) {
+  static from(item: string | Temporal.TimeZoneProtocol) {
     return ES.ToTemporalTimeZone(item);
   }
   [Symbol.toStringTag]!: 'Temporal.TimeZone';

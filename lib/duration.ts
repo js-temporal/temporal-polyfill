@@ -501,9 +501,9 @@ export class Duration implements Temporal.Duration {
       ({ days: d1 } = ES.UnbalanceDurationRelative(y1, mon1, w1, d1, 'day', relativeTo));
       ({ days: d2 } = ES.UnbalanceDurationRelative(y2, mon2, w2, d2, 'day', relativeTo));
     }
-    ns1 = ES.TotalDurationNanoseconds(d1, h1, min1, s1, ms1, µs1, ns1, shift1);
-    ns2 = ES.TotalDurationNanoseconds(d2, h2, min2, s2, ms2, µs2, ns2, shift2);
-    return ES.ComparisonResult(ns1.minus(ns2).toJSNumber());
+    const totalNs1 = ES.TotalDurationNanoseconds(d1, h1, min1, s1, ms1, µs1, ns1, shift1);
+    const totalNs2 = ES.TotalDurationNanoseconds(d2, h2, min2, s2, ms2, µs2, ns2, shift2);
+    return ES.ComparisonResult(totalNs1.minus(totalNs2).toJSNumber());
   }
   [Symbol.toStringTag]!: 'Temporal.Duration';
 }
