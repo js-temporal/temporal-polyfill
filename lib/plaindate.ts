@@ -19,7 +19,7 @@ import {
 } from './slots';
 import { Temporal } from '..';
 
-const DISALLOWED_UNITS = ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'];
+const DISALLOWED_UNITS = ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'] as const;
 
 export class PlainDate implements Temporal.PlainDate {
   constructor(
@@ -119,7 +119,7 @@ export class PlainDate implements Temporal.PlainDate {
     }
 
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
+    const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
     const props = ES.ToPartialRecord(temporalDateLike, fieldNames);
     if (!props) {
       throw new TypeError('invalid date-like');
@@ -377,14 +377,14 @@ export class PlainDate implements Temporal.PlainDate {
   toPlainYearMonth() {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
+    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
     const fields = ES.ToTemporalYearMonthFields(this, fieldNames);
     return ES.YearMonthFromFields(calendar, fields);
   }
   toPlainMonthDay() {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode']);
+    const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode'] as const);
     const fields = ES.ToTemporalMonthDayFields(this, fieldNames);
     return ES.MonthDayFromFields(calendar, fields);
   }

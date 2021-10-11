@@ -1,8 +1,24 @@
-import { Temporal } from '.';
+import bigInt from 'big-integer';
+import { Temporal } from '..';
 
 import { DEBUG } from './debug';
 
-type TemporalIntrinsics = Omit<typeof Temporal, 'Now'>;
+type OmitConstructor<T> = { [P in keyof T as T[P] extends new (...args: any[]) => any ? P : never]: T[P] };
+
+type TemporalIntrinsics = Omit<typeof Temporal, 'Now' | 'Instant' | 'ZonedDateTime'> & {
+  Instant: OmitConstructor<Temporal.Instant> &
+    (new (epochNanoseconds: bigInt.BigInteger) => Temporal.Instant) & { prototype: typeof Temporal.Instant.prototype };
+  ZonedDateTime: OmitConstructor<Temporal.ZonedDateTime> &
+    (new (
+      epochNanoseconds: bigInt.BigInteger,
+      timeZone: Temporal.TimeZoneProtocol | string,
+      calendar?: Temporal.CalendarProtocol | string
+    ) => Temporal.ZonedDateTime) & {
+      prototype: typeof Temporal.ZonedDateTime.prototype;
+      from: typeof Temporal.ZonedDateTime.from;
+      compare: typeof Temporal.ZonedDateTime.compare;
+    };
+};
 type TemporalIntrinsicRegistrations = {
   [key in keyof TemporalIntrinsics as `Temporal.${key}`]: TemporalIntrinsics[key];
 };
@@ -12,13 +28,18 @@ type TemporalIntrinsicPrototypeRegistrations = {
 type TemporalIntrinsicRegisteredKeys = {
   [key in keyof TemporalIntrinsicRegistrations as `%${key}%`]: TemporalIntrinsicRegistrations[key];
 };
+type TemporalIntrinsicPrototypeRegisteredKeys = {
+  [key in keyof TemporalIntrinsicPrototypeRegistrations as `%${key}%`]: TemporalIntrinsicPrototypeRegistrations[key];
+};
 
 interface StandaloneIntrinsics {
   'Temporal.Calendar.from': typeof Temporal.Calendar.from;
   'Temporal.TimeZone.prototype.getOffsetNanosecondsFor': typeof Temporal.TimeZone.prototype.getOffsetNanosecondsFor;
 }
 type RegisteredStandaloneIntrinsics = { [key in keyof StandaloneIntrinsics as `%${key}%`]: StandaloneIntrinsics[key] };
-const INTRINSICS: Partial<TemporalIntrinsicRegisteredKeys & RegisteredStandaloneIntrinsics> = {};
+const INTRINSICS: Partial<TemporalIntrinsicRegisteredKeys> &
+  Partial<TemporalIntrinsicPrototypeRegisteredKeys> &
+  Partial<RegisteredStandaloneIntrinsics> = {};
 
 type customFormatFunction<T> = (
   this: T,
@@ -26,7 +47,9 @@ type customFormatFunction<T> = (
   options: { stylize: (value: unknown, type: 'number' | 'special') => string }
 ) => string;
 const customUtilInspectFormatters: Partial<{
-  [key in keyof TemporalIntrinsicRegistrations]: customFormatFunction<TemporalIntrinsicRegistrations[key]>;
+  [key in keyof TemporalIntrinsicRegistrations]: customFormatFunction<
+    InstanceType<TemporalIntrinsicRegistrations[key]>
+  >;
 }> = {
   ['Temporal.Duration'](depth, options) {
     const descr = options.stylize(`${this[Symbol.toStringTag]} <${this}>`, 'special');
@@ -43,14 +66,15 @@ const customUtilInspectFormatters: Partial<{
       'milliseconds',
       'microseconds',
       'nanoseconds'
-    ]) {
+    ] as const) {
       if (this[prop] !== 0) entries.push(`  ${prop}: ${options.stylize(this[prop], 'number')}`);
     }
     return descr + ' {\n' + entries.join(',\n') + '\n}';
   }
 };
 
-function defaultUtilInspectFormatter(this: any, depth, options) {
+type InspectFormatterOptions = { stylize: (str: string, styleType: string) => string };
+function defaultUtilInspectFormatter(this: any, depth: number, options: InspectFormatterOptions) {
   return options.stylize(`${this[Symbol.toStringTag]} <${this}>`, 'special');
 }
 
@@ -96,15 +120,18 @@ type IntrinsicDefinitionKeys =
 export function DefineIntrinsic<KeyT extends keyof TemporalIntrinsicRegistrations>(
   name: KeyT,
   value: TemporalIntrinsicRegistrations[KeyT]
-);
+): void;
 export function DefineIntrinsic<KeyT extends keyof TemporalIntrinsicPrototypeRegistrations>(
   name: KeyT,
   value: TemporalIntrinsicPrototypeRegistrations[KeyT]
-);
-export function DefineIntrinsic<KeyT extends keyof StandaloneIntrinsics>(name: KeyT, value: StandaloneIntrinsics[KeyT]);
-export function DefineIntrinsic<KeyT>(name: KeyT, value: never);
-export function DefineIntrinsic<KeyT extends IntrinsicDefinitionKeys>(name: KeyT, value: unknown) {
-  const key = `%${name}%`;
+): void;
+export function DefineIntrinsic<KeyT extends keyof StandaloneIntrinsics>(
+  name: KeyT,
+  value: StandaloneIntrinsics[KeyT]
+): void;
+export function DefineIntrinsic<KeyT>(name: KeyT, value: never): void;
+export function DefineIntrinsic<KeyT extends IntrinsicDefinitionKeys>(name: KeyT, value: unknown): void {
+  const key: `%${IntrinsicDefinitionKeys}%` = `%${name}%`;
   if (INTRINSICS[key] !== undefined) throw new Error(`intrinsic ${name} already exists`);
   INTRINSICS[key] = value;
 }

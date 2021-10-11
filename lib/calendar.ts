@@ -22,6 +22,7 @@ import {
   SetSlot
 } from './slots';
 import { Temporal } from '..';
+import type { BuiltinCalendarId } from './internaltypes';
 
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
@@ -33,10 +34,81 @@ const ObjectEntries = Object.entries;
 const ObjectKeys = Object.keys;
 const ReflectApply = Reflect.apply;
 
-const impl = {};
+interface CalendarImpl {
+  year(date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth): number;
+  month(date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth | Temporal.PlainMonthDay): number;
+  monthCode(
+    date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth | Temporal.PlainMonthDay
+  ): string;
+  day(date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainMonthDay): number;
+  era(date: Temporal.PlainDate | Temporal.PlainDateTime): string | undefined;
+  eraYear(date: Temporal.PlainDate | Temporal.PlainDateTime): number | undefined;
+  dayOfWeek(date: Temporal.PlainDate | Temporal.PlainDateTime): number;
+  dayOfYear(date: Temporal.PlainDate | Temporal.PlainDateTime): number;
+  weekOfYear(date: Temporal.PlainDate | Temporal.PlainDateTime): number;
+  daysInWeek(date: Temporal.PlainDate | Temporal.PlainDateTime): number;
+  daysInMonth(date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth): number;
+  daysInYear(date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth): number;
+  monthsInYear(date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth): number;
+  inLeapYear(date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth): boolean;
+  /*
+    TODO: the types below are the actual types used in index.d.ts, and AFAIK they're enforced by
+    the implementation too. But we'll need to do some type improvements throughout this file
+    before these types can be used, so we'll leave them here commented out until that later work is done.
+
+    dateFromFields(
+      fields: Temporal.EitherMonthCodeOrMonthAndYear & { day: number },
+      options?: Temporal.AssignmentOptions,
+      calendar: Temporal.Calendar
+    ): Temporal.PlainDate;
+    yearMonthFromFields(
+      fields: Temporal.EitherYearOrEraAndEraYear & ({ month: number } | { monthCode: string }),
+      options: Temporal.AssignmentOptions,
+      calendar: Temporal.Calendar
+    ): Temporal.PlainYearMonth;
+    monthDayFromFields(
+      fields: Temporal.EitherMonthCodeOrMonthAndYear & { day: number },
+      options: Temporal.AssignmentOptions,
+      calendar: Temporal.Calendar
+    ): Temporal.PlainMonthDay;
+  */
+  dateFromFields(
+    fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
+    options: Temporal.AssignmentOptions,
+    calendar: Temporal.Calendar
+  ): Temporal.PlainDate;
+  yearMonthFromFields(
+    fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined },
+    options: Temporal.AssignmentOptions,
+    calendar: Temporal.Calendar
+  ): Temporal.PlainYearMonth;
+  monthDayFromFields(
+    fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
+    options: Temporal.AssignmentOptions,
+    calendar: Temporal.Calendar
+  ): Temporal.PlainMonthDay;
+  dateAdd(
+    date: Temporal.PlainDate,
+    years: number,
+    months: number,
+    weeks: number,
+    days: number,
+    overflow: Temporal.ArithmeticOptions['overflow'],
+    calendar: Temporal.Calendar
+  ): Temporal.PlainDate;
+  dateUntil(
+    one: Temporal.PlainDate,
+    two: Temporal.PlainDate,
+    largestUnit: 'year' | 'month' | 'week' | 'day'
+  ): { years: number; months: number; weeks: number; days: number };
+  fields(fields: Iterable<string>): Iterable<string>;
+  mergeFields(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown>;
+}
+
+const impl = {} as Record<BuiltinCalendarId, CalendarImpl>;
 
 export class Calendar implements Temporal.Calendar {
-  constructor(idParam) {
+  constructor(idParam: string) {
     // Note: if the argument is not passed, IsBuiltinCalendar("undefined") will fail. This check
     //       exists only to improve the error message.
     if (arguments.length < 1) {
@@ -60,27 +132,36 @@ export class Calendar implements Temporal.Calendar {
   get id() {
     return ES.ToString(this);
   }
-  dateFromFields(fields, optionsParam = undefined) {
+  dateFromFields(
+    fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
+    optionsParam: Temporal.AssignmentOptions = undefined
+  ) {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(fields)) throw new TypeError('invalid fields');
     const options = ES.GetOptionsObject(optionsParam);
     return impl[GetSlot(this, CALENDAR_ID)].dateFromFields(fields, options, this);
   }
-  yearMonthFromFields(fields, optionsParam = undefined) {
+  yearMonthFromFields(
+    fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined },
+    optionsParam: Temporal.AssignmentOptions = undefined
+  ) {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(fields)) throw new TypeError('invalid fields');
     const options = ES.GetOptionsObject(optionsParam);
     return impl[GetSlot(this, CALENDAR_ID)].yearMonthFromFields(fields, options, this);
   }
-  monthDayFromFields(fields, optionsParam = undefined) {
+  monthDayFromFields(
+    fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
+    optionsParam: Temporal.AssignmentOptions = undefined
+  ) {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(fields)) throw new TypeError('invalid fields');
     const options = ES.GetOptionsObject(optionsParam);
     return impl[GetSlot(this, CALENDAR_ID)].monthDayFromFields(fields, options, this);
   }
-  fields(fields) {
+  fields(fields: Iterable<string>): Iterable<string> {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
-    const fieldsArray = [];
+    const fieldsArray = [] as string[];
     const allowed = new Set([
       'year',
       'month',
@@ -101,11 +182,15 @@ export class Calendar implements Temporal.Calendar {
     }
     return impl[GetSlot(this, CALENDAR_ID)].fields(fieldsArray);
   }
-  mergeFields(fields, additionalFields) {
+  mergeFields(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown> {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     return impl[GetSlot(this, CALENDAR_ID)].mergeFields(fields, additionalFields);
   }
-  dateAdd(dateParam, durationParam, optionsParam = undefined) {
+  dateAdd(
+    dateParam: Temporal.PlainDate | Temporal.PlainDateLike | string,
+    durationParam: Temporal.Duration | Temporal.DurationLike | string,
+    optionsParam: Temporal.ArithmeticOptions = undefined
+  ) {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     const date = ES.ToTemporalDate(dateParam);
     const duration = ES.ToTemporalDuration(durationParam);
@@ -131,7 +216,11 @@ export class Calendar implements Temporal.Calendar {
       this
     );
   }
-  dateUntil(oneParam, twoParam, optionsParam = undefined) {
+  dateUntil(
+    oneParam,
+    twoParam,
+    optionsParam: Temporal.DifferenceOptions<'year' | 'month' | 'week' | 'day'> = undefined
+  ) {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     const one = ES.ToTemporalDate(oneParam);
     const two = ES.ToTemporalDate(twoParam);
@@ -139,7 +228,7 @@ export class Calendar implements Temporal.Calendar {
     const largestUnit = ES.ToLargestTemporalUnit(
       options,
       'auto',
-      ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'],
+      ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'] as const,
       'day'
     );
     const { years, months, weeks, days } = impl[GetSlot(this, CALENDAR_ID)].dateUntil(one, two, largestUnit);
@@ -2177,8 +2266,8 @@ impl['buddhist'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperBuddhist 
 impl['japanese'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperJapanese });
 impl['gregory'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperGregory });
 
-const BUILTIN_CALENDAR_IDS = Object.keys(impl);
+const BUILTIN_CALENDAR_IDS = Object.keys(impl) as BuiltinCalendarId[];
 
-export function IsBuiltinCalendar(id) {
+export function IsBuiltinCalendar(id: string): id is BuiltinCalendarId {
   return ArrayIncludes.call(BUILTIN_CALENDAR_IDS, id);
 }

@@ -7,7 +7,12 @@ import { Temporal } from '..';
 const ObjectCreate = Object.create;
 
 export class PlainMonthDay implements Temporal.PlainMonthDay {
-  constructor(isoMonthParam, isoDayParam, calendarParam = ES.GetISO8601Calendar(), referenceISOYearParam = 1972) {
+  constructor(
+    isoMonthParam,
+    isoDayParam,
+    calendarParam: Temporal.CalendarProtocol | string = ES.GetISO8601Calendar(),
+    referenceISOYearParam = 1972
+  ) {
     const isoMonth = ES.ToIntegerThrowOnInfinity(isoMonthParam);
     const isoDay = ES.ToIntegerThrowOnInfinity(isoDayParam);
     const calendar = ES.ToTemporalCalendar(calendarParam);
@@ -53,7 +58,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     }
 
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
+    const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
     const props = ES.ToPartialRecord(temporalMonthDayLike, fieldNames);
     if (!props) {
       throw new TypeError('invalid month-day-like');
@@ -97,15 +102,18 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     if (!ES.IsObject(item)) throw new TypeError('argument should be an object');
     const calendar = GetSlot(this, CALENDAR);
 
-    const receiverFieldNames = ES.CalendarFields(calendar, ['day', 'monthCode']);
+    const receiverFieldNames = ES.CalendarFields(calendar, ['day', 'monthCode'] as const);
     const fields = ES.ToTemporalMonthDayFields(this, receiverFieldNames);
 
     const inputFieldNames = ES.CalendarFields(calendar, ['year']);
-    const inputEntries = [['year', undefined]];
+    const inputEntries = [['year', undefined]] as const;
     // Add extra fields from the calendar at the end
     inputFieldNames.forEach((fieldName) => {
       if (!inputEntries.some(([name]) => name === fieldName)) {
-        inputEntries.push([fieldName, undefined]);
+        (inputEntries as unknown as Array<typeof inputEntries[number]>).push([
+          fieldName,
+          undefined
+        ] as typeof inputEntries[number]); // Make TS ignore extra fields
       }
     });
     const inputFields = ES.PrepareTemporalFields(item, inputEntries);

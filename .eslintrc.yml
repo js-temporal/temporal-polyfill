@@ -94,7 +94,5 @@ overrides:
   - files:
       - test/*.mjs
       - test/**/*
-      # TODO Fix these files!
-      - lib/ecmascript.ts
     rules:
       no-param-reassign: off

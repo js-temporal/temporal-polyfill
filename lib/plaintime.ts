@@ -25,7 +25,7 @@ import { Temporal } from '..';
 
 const ObjectAssign = Object.assign;
 
-const DISALLOWED_UNITS = ['year', 'month', 'week', 'day'];
+const DISALLOWED_UNITS = ['year', 'month', 'week', 'day'] as const;
 const MAX_INCREMENTS = {
   hour: 24,
   minute: 60,
@@ -58,10 +58,10 @@ function TemporalTimeToString(time, precision, options = undefined) {
     ));
   }
 
-  hour = ES.ISODateTimePartString(hour);
-  minute = ES.ISODateTimePartString(minute);
+  const hourString = ES.ISODateTimePartString(hour);
+  const minuteString = ES.ISODateTimePartString(minute);
   const seconds = ES.FormatSecondsStringPart(second, millisecond, microsecond, nanosecond, precision);
-  return `${hour}:${minute}${seconds}`;
+  return `${hourString}:${minuteString}${seconds}`;
 }
 
 export class PlainTime implements Temporal.PlainTime {
@@ -349,7 +349,7 @@ export class PlainTime implements Temporal.PlainTime {
     const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  round(optionsParam) {
+  round(optionsParam: Parameters<Temporal.PlainTime['round']>[0]) {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     if (optionsParam === undefined) throw new TypeError('options parameter is required');
     const options = ES.GetOptionsObject(optionsParam);
@@ -486,7 +486,7 @@ export class PlainTime implements Temporal.PlainTime {
   getISOFields() {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return {
-      calendar: GetSlot(this, CALENDAR),
+      calendar: GetSlot(this, CALENDAR) as Temporal.Calendar,
       isoHour: GetSlot(this, ISO_HOUR),
       isoMicrosecond: GetSlot(this, ISO_MICROSECOND),
       isoMillisecond: GetSlot(this, ISO_MILLISECOND),
@@ -514,7 +514,7 @@ export class PlainTime implements Temporal.PlainTime {
   static compare(oneParam, twoParam) {
     const one = ES.ToTemporalTime(oneParam);
     const two = ES.ToTemporalTime(twoParam);
-    for (const slot of [ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND]) {
+    for (const slot of [ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND] as const) {
       const val1 = GetSlot(one, slot);
       const val2 = GetSlot(two, slot);
       if (val1 !== val2) return ES.ComparisonResult(val1 - val2);

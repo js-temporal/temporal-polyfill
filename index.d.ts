@@ -17,7 +17,7 @@ export namespace Temporal {
      *
      * The default is `'constrain'`.
      */
-    overflow: 'constrain' | 'reject';
+    overflow?: 'constrain' | 'reject';
   };
 
   /**
@@ -36,7 +36,7 @@ export namespace Temporal {
      *
      * The default is `'constrain'`.
      */
-    overflow: 'constrain' | 'balance';
+    overflow?: 'constrain' | 'balance';
   };
 
   /**
@@ -66,7 +66,7 @@ export namespace Temporal {
      * The default is `'compatible'`.
      *
      * */
-    disambiguation: 'compatible' | 'earlier' | 'later' | 'reject';
+    disambiguation?: 'compatible' | 'earlier' | 'later' | 'reject';
   };
 
   type OffsetDisambiguationOptions = {
@@ -102,7 +102,7 @@ export namespace Temporal {
      * be used to choose the correct instant. However, if the offset is used
      * then the `disambiguation` option will be ignored.
      */
-    offset: 'use' | 'prefer' | 'ignore' | 'reject';
+    offset?: 'use' | 'prefer' | 'ignore' | 'reject';
   };
 
   export type ZonedDateTimeAssignmentOptions = Partial<
@@ -121,25 +121,41 @@ export namespace Temporal {
      *
      * The default is `'constrain'`.
      */
-    overflow: 'constrain' | 'reject';
+    overflow?: 'constrain' | 'reject';
   };
+
+  export type DateUnit = 'year' | 'month' | 'week' | 'day';
+  export type TimeUnit = 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond';
+  export type DateTimeUnit = DateUnit | TimeUnit;
+
+  /**
+   * When the name of a unit is provided to a Temporal API as a string, it is
+   * usually singular, e.g. 'day' or 'hour'. But plural unit names like 'days'
+   * or 'hours' are aso accepted too.
+   * */
+  export type PluralUnit<T extends DateTimeUnit> = {
+    year: 'years';
+    month: 'months';
+    week: 'weeks';
+    day: 'days';
+    hour: 'hours';
+    minute: 'minutes';
+    second: 'seconds';
+    millisecond: 'milliseconds';
+    microsecond: 'microseconds';
+    nanosecond: 'nanoseconds';
+  }[T];
+
+  export type LargestUnitOption<T extends DateTimeUnit> = 'auto' | T | PluralUnit<T>;
+  export type SmallestUnitOption<T extends DateTimeUnit> = T | PluralUnit<T>;
+  export type TotalUnitOption<T extends DateTimeUnit> = T | PluralUnit<T>;
 
   /**
    * Options for outputting precision in toString() on types with seconds
    */
   export type ToStringPrecisionOptions = {
     fractionalSecondDigits?: 'auto' | 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9;
-    smallestUnit?:
-      | 'minute'
-      | 'second'
-      | 'millisecond'
-      | 'microsecond'
-      | 'nanosecond'
-      | /** @deprecated */ 'minutes'
-      | /** @deprecated */ 'seconds'
-      | /** @deprecated */ 'milliseconds'
-      | /** @deprecated */ 'microseconds'
-      | /** @deprecated */ 'nanoseconds';
+    smallestUnit?: SmallestUnitOption<'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>;
 
     /**
      * Controls how rounding is performed:
@@ -159,15 +175,15 @@ export namespace Temporal {
   };
 
   export type ShowCalendarOption = {
-    calendarName: 'auto' | 'always' | 'never';
+    calendarName?: 'auto' | 'always' | 'never';
   };
 
   export type CalendarTypeToStringOptions = Partial<ToStringPrecisionOptions & ShowCalendarOption>;
 
   export type ZonedDateTimeToStringOptions = Partial<
     CalendarTypeToStringOptions & {
-      timeZoneName: 'auto' | 'never';
-      offset: 'auto' | 'never';
+      timeZoneName?: 'auto' | 'never';
+      offset?: 'auto' | 'never';
     }
   >;
 
@@ -181,7 +197,7 @@ export namespace Temporal {
    * Options to control the result of `until()` and `since()` methods in
    * `Temporal` types.
    */
-  export interface DifferenceOptions<T extends string> {
+  export interface DifferenceOptions<T extends DateTimeUnit> {
     /**
      * The largest unit to allow in the resulting `Temporal.Duration` object.
      *
@@ -194,14 +210,14 @@ export namespace Temporal {
      * The default is always `'auto'`, though the meaning of this depends on the
      * type being used.
      */
-    largestUnit?: 'auto' | T;
+    largestUnit?: LargestUnitOption<T>;
 
     /**
      * The unit to round to. For example, to round to the nearest minute, use
      * `smallestUnit: 'minute'`. This option is required for `round()` and
      * optional for `until()` and `since()`.
      */
-    smallestUnit?: T;
+    smallestUnit?: SmallestUnitOption<T>;
 
     /**
      * Allows rounding to an integer number of units. For example, to round to
@@ -232,7 +248,7 @@ export namespace Temporal {
   /**
    * Options to control rounding behavior
    */
-  export interface RoundOptions<T extends string> {
+  export interface RoundOptions<T extends DateTimeUnit> {
     /**
      * The unit to round to. For example, to round to the nearest minute, use
      * `smallestUnit: 'minute'`. This option is required.
@@ -278,55 +294,13 @@ export namespace Temporal {
      * If `smallestUnit` is larger, then `smallestUnit` will be used as
      * `largestUnit`, superseding a caller-supplied or default value.
      */
-    largestUnit:
-      | 'auto'
-      | 'year'
-      | 'month'
-      | 'week'
-      | 'day'
-      | 'hour'
-      | 'minute'
-      | 'second'
-      | 'millisecond'
-      | 'microsecond'
-      | 'nanosecond'
-      | /** @deprecated */ 'years'
-      | /** @deprecated */ 'months'
-      | /** @deprecated */ 'weeks'
-      | /** @deprecated */ 'days'
-      | /** @deprecated */ 'hours'
-      | /** @deprecated */ 'minutes'
-      | /** @deprecated */ 'seconds'
-      | /** @deprecated */ 'milliseconds'
-      | /** @deprecated */ 'microseconds'
-      | /** @deprecated */ 'nanoseconds';
+    largestUnit: LargestUnitOption<DateTimeUnit>;
 
     /**
      * The unit to round to. For example, to round to the nearest minute, use
      * `smallestUnit: 'minute'`. This option is required.
      */
-    smallestUnit:
-      | 'year'
-      | 'month'
-      | 'week'
-      | 'day'
-      | 'hour'
-      | 'minute'
-      | 'second'
-      | 'millisecond'
-      | 'microsecond'
-      | 'nanosecond'
-      | /** @deprecated */ 'years'
-      | /** @deprecated */ 'months'
-      | /** @deprecated */ 'weeks'
-      | /** @deprecated */ 'days'
-      | /** @deprecated */ 'hours'
-      | /** @deprecated */ 'minutes'
-      | /** @deprecated */ 'seconds'
-      | /** @deprecated */ 'milliseconds'
-      | /** @deprecated */ 'microseconds'
-      | /** @deprecated */ 'nanoseconds';
-
+    smallestUnit: SmallestUnitOption<DateTimeUnit>;
     /**
      * Allows rounding to an integer number of units. For example, to round to
      * increments of a half hour, use `{ smallestUnit: 'minute',
@@ -385,27 +359,9 @@ export namespace Temporal {
     /**
      * The unit to convert the duration to. This option is required.
      */
-    unit:
-      | 'year'
-      | 'month'
-      | 'week'
-      | 'day'
-      | 'hour'
-      | 'minute'
-      | 'second'
-      | 'millisecond'
-      | 'microsecond'
-      | 'nanosecond'
-      | /** @deprecated */ 'years'
-      | /** @deprecated */ 'months'
-      | /** @deprecated */ 'weeks'
-      | /** @deprecated */ 'days'
-      | /** @deprecated */ 'hours'
-      | /** @deprecated */ 'minutes'
-      | /** @deprecated */ 'seconds'
-      | /** @deprecated */ 'milliseconds'
-      | /** @deprecated */ 'microseconds'
-      | /** @deprecated */ 'nanoseconds';
+    unit: TotalUnitOption<
+      'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'
+    >;
 
     /**
      * The starting point to use when variable-length units (years, months,
@@ -558,53 +514,14 @@ export namespace Temporal {
     ): Temporal.Instant;
     until(
       other: Temporal.Instant | string,
-      options?: DifferenceOptions<
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
-      >
+      options?: DifferenceOptions<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>
     ): Temporal.Duration;
     since(
       other: Temporal.Instant | string,
-      options?: DifferenceOptions<
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
-      >
+      options?: DifferenceOptions<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>
     ): Temporal.Duration;
     round(
-      options: RoundOptions<
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
-      >
+      options: RoundOptions<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>
     ): Temporal.Instant;
     toZonedDateTime(calendarAndTimeZone: {
       timeZone: TimeZoneProtocol | string;
@@ -619,6 +536,9 @@ export namespace Temporal {
     valueOf(): never;
     readonly [Symbol.toStringTag]: 'Temporal.Instant';
   }
+
+  type EitherYearOrEraAndEraYear = { era: string; eraYear: number } | { year: number };
+  type EitherMonthCodeOrMonthAndYear = (EitherYearOrEraAndEraYear & { month: number }) | { monthCode: string };
 
   export interface CalendarProtocol {
     id?: string;
@@ -662,15 +582,15 @@ export namespace Temporal {
       date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth | PlainDateLike | string
     ): boolean;
     dateFromFields(
-      fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
+      fields: EitherMonthCodeOrMonthAndYear & { day: number },
       options?: AssignmentOptions
     ): Temporal.PlainDate;
     yearMonthFromFields(
-      fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined },
+      fields: EitherYearOrEraAndEraYear & ({ month: number } | { monthCode: string }),
       options?: AssignmentOptions
     ): Temporal.PlainYearMonth;
     monthDayFromFields(
-      fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
+      fields: EitherMonthCodeOrMonthAndYear & { day: number },
       options?: AssignmentOptions
     ): Temporal.PlainMonthDay;
     dateAdd?(
@@ -681,16 +601,7 @@ export namespace Temporal {
     dateUntil?(
       one: Temporal.PlainDate | PlainDateLike | string,
       two: Temporal.PlainDate | PlainDateLike | string,
-      options?: DifferenceOptions<
-        | 'year'
-        | 'month'
-        | 'week'
-        | 'day'
-        | /** @deprecated */ 'years'
-        | /** @deprecated */ 'months'
-        | /** @deprecated */ 'weeks'
-        | /** @deprecated */ 'days'
-      >
+      options?: DifferenceOptions<'year' | 'month' | 'week' | 'day'>
     ): Temporal.Duration;
     fields?(fields: Iterable<string>): Iterable<string>;
     mergeFields?(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown>;
@@ -706,7 +617,7 @@ export namespace Temporal {
    * See https://tc39.es/proposal-temporal/docs/calendar.html for more details.
    */
   export class Calendar implements Omit<Required<CalendarProtocol>, 'calendar'> {
-    static from(item: CalendarProtocol | string): Temporal.Calendar;
+    static from(item: CalendarProtocol | string): Temporal.Calendar | CalendarProtocol;
     constructor(calendarIdentifier: string);
     readonly id: string;
     year(date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth | PlainDateLike | string): number;
@@ -748,15 +659,15 @@ export namespace Temporal {
       date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth | PlainDateLike | string
     ): boolean;
     dateFromFields(
-      fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
+      fields: EitherMonthCodeOrMonthAndYear & { day: number },
       options?: AssignmentOptions
     ): Temporal.PlainDate;
     yearMonthFromFields(
-      fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined },
+      fields: EitherYearOrEraAndEraYear & ({ month: number } | { monthCode: string }),
       options?: AssignmentOptions
     ): Temporal.PlainYearMonth;
     monthDayFromFields(
-      fields: { year: number | undefined; month: number | undefined; monthCode: string | undefined; day: number },
+      fields: EitherMonthCodeOrMonthAndYear & { day: number },
       options?: AssignmentOptions
     ): Temporal.PlainMonthDay;
     dateAdd(
@@ -767,16 +678,7 @@ export namespace Temporal {
     dateUntil(
       one: Temporal.PlainDate | PlainDateLike | string,
       two: Temporal.PlainDate | PlainDateLike | string,
-      options?: DifferenceOptions<
-        | 'year'
-        | 'month'
-        | 'week'
-        | 'day'
-        | /** @deprecated */ 'years'
-        | /** @deprecated */ 'months'
-        | /** @deprecated */ 'weeks'
-        | /** @deprecated */ 'days'
-      >
+      options?: DifferenceOptions<'year' | 'month' | 'week' | 'day'>
     ): Temporal.Duration;
     fields(fields: Iterable<string>): Iterable<string>;
     mergeFields(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown>;
@@ -785,6 +687,8 @@ export namespace Temporal {
   }
 
   export type PlainDateLike = {
+    era?: string | undefined;
+    eraYear?: number | undefined;
     year?: number;
     month?: number;
     monthCode?: string;
@@ -837,29 +741,11 @@ export namespace Temporal {
     subtract(durationLike: Temporal.Duration | DurationLike | string, options?: ArithmeticOptions): Temporal.PlainDate;
     until(
       other: Temporal.PlainDate | PlainDateLike | string,
-      options?: DifferenceOptions<
-        | 'year'
-        | 'month'
-        | 'week'
-        | 'day'
-        | /** @deprecated */ 'years'
-        | /** @deprecated */ 'months'
-        | /** @deprecated */ 'weeks'
-        | /** @deprecated */ 'days'
-      >
+      options?: DifferenceOptions<'year' | 'month' | 'week' | 'day'>
     ): Temporal.Duration;
     since(
       other: Temporal.PlainDate | PlainDateLike | string,
-      options?: DifferenceOptions<
-        | 'year'
-        | 'month'
-        | 'week'
-        | 'day'
-        | /** @deprecated */ 'years'
-        | /** @deprecated */ 'months'
-        | /** @deprecated */ 'weeks'
-        | /** @deprecated */ 'days'
-      >
+      options?: DifferenceOptions<'year' | 'month' | 'week' | 'day'>
     ): Temporal.Duration;
     toPlainDateTime(temporalTime?: Temporal.PlainTime | PlainTimeLike | string): Temporal.PlainDateTime;
     toZonedDateTime(
@@ -882,6 +768,8 @@ export namespace Temporal {
   }
 
   export type PlainDateTimeLike = {
+    era?: string | undefined;
+    eraYear?: number | undefined;
     year?: number;
     month?: number;
     monthCode?: string;
@@ -973,70 +861,17 @@ export namespace Temporal {
     until(
       other: Temporal.PlainDateTime | PlainDateTimeLike | string,
       options?: DifferenceOptions<
-        | 'year'
-        | 'month'
-        | 'week'
-        | 'day'
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'years'
-        | /** @deprecated */ 'months'
-        | /** @deprecated */ 'weeks'
-        | /** @deprecated */ 'days'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
+        'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'
       >
     ): Temporal.Duration;
     since(
       other: Temporal.PlainDateTime | PlainDateTimeLike | string,
       options?: DifferenceOptions<
-        | 'year'
-        | 'month'
-        | 'week'
-        | 'day'
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'years'
-        | /** @deprecated */ 'months'
-        | /** @deprecated */ 'weeks'
-        | /** @deprecated */ 'days'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
+        'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'
       >
     ): Temporal.Duration;
     round(
-      options: RoundOptions<
-        | 'day'
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'days'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
-      >
+      options: RoundOptions<'day' | 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>
     ): Temporal.PlainDateTime;
     toZonedDateTime(tzLike: TimeZoneProtocol | string, options?: ToInstantOptions): Temporal.ZonedDateTime;
     toPlainDate(): Temporal.PlainDate;
@@ -1052,6 +887,8 @@ export namespace Temporal {
   }
 
   export type PlainMonthDayLike = {
+    era?: string | undefined;
+    eraYear?: number | undefined;
     year?: number;
     month?: number;
     monthCode?: string;
@@ -1163,53 +1000,14 @@ export namespace Temporal {
     ): Temporal.PlainTime;
     until(
       other: Temporal.PlainTime | PlainTimeLike | string,
-      options?: DifferenceOptions<
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
-      >
+      options?: DifferenceOptions<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>
     ): Temporal.Duration;
     since(
       other: Temporal.PlainTime | PlainTimeLike | string,
-      options?: DifferenceOptions<
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
-      >
+      options?: DifferenceOptions<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>
     ): Temporal.Duration;
     round(
-      options: RoundOptions<
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
-      >
+      options: RoundOptions<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>
     ): Temporal.PlainTime;
     toPlainDateTime(temporalDate: Temporal.PlainDate | PlainDateLike | string): Temporal.PlainDateTime;
     toZonedDateTime(timeZoneAndDate: {
@@ -1261,7 +1059,7 @@ export namespace Temporal {
    * See https://tc39.es/proposal-temporal/docs/timezone.html for more details.
    */
   export class TimeZone implements Omit<Required<TimeZoneProtocol>, 'timeZone'> {
-    static from(timeZone: Temporal.TimeZone | string): Temporal.TimeZone;
+    static from(timeZone: TimeZoneProtocol | string): Temporal.TimeZone | TimeZoneProtocol;
     constructor(timeZoneIdentifier: string);
     readonly id: string;
     getOffsetNanosecondsFor(instant: Temporal.Instant | string): number;
@@ -1283,6 +1081,8 @@ export namespace Temporal {
   }
 
   export type PlainYearMonthLike = {
+    era?: string | undefined;
+    eraYear?: number | undefined;
     year?: number;
     month?: number;
     monthCode?: string;
@@ -1325,11 +1125,11 @@ export namespace Temporal {
     ): Temporal.PlainYearMonth;
     until(
       other: Temporal.PlainYearMonth | PlainYearMonthLike | string,
-      options?: DifferenceOptions<'year' | 'month' | /** @deprecated */ 'years' | /** @deprecated */ 'months'>
+      options?: DifferenceOptions<'year' | 'month'>
     ): Temporal.Duration;
     since(
       other: Temporal.PlainYearMonth | PlainYearMonthLike | string,
-      options?: DifferenceOptions<'year' | 'month' | /** @deprecated */ 'years' | /** @deprecated */ 'months'>
+      options?: DifferenceOptions<'year' | 'month'>
     ): Temporal.Duration;
     toPlainDate(day: { day: number }): Temporal.PlainDate;
     getISOFields(): PlainDateISOFields;
@@ -1341,6 +1141,8 @@ export namespace Temporal {
   }
 
   export type ZonedDateTimeLike = {
+    era?: string | undefined;
+    eraYear?: number | undefined;
     year?: number;
     month?: number;
     monthCode?: string;
@@ -1424,69 +1226,18 @@ export namespace Temporal {
     until(
       other: Temporal.ZonedDateTime | ZonedDateTimeLike | string,
       options?: Temporal.DifferenceOptions<
-        | 'year'
-        | 'month'
-        | 'week'
-        | 'day'
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'years'
-        | /** @deprecated */ 'months'
-        | /** @deprecated */ 'weeks'
-        | /** @deprecated */ 'days'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
+        'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'
       >
     ): Temporal.Duration;
     since(
       other: Temporal.ZonedDateTime | ZonedDateTimeLike | string,
       options?: Temporal.DifferenceOptions<
-        | 'year'
-        | 'month'
-        | 'week'
-        | 'day'
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'years'
-        | /** @deprecated */ 'months'
-        | /** @deprecated */ 'weeks'
-        | /** @deprecated */ 'days'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
+        'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'
       >
     ): Temporal.Duration;
     round(
       options: Temporal.RoundOptions<
-        | 'day'
-        | 'hour'
-        | 'minute'
-        | 'second'
-        | 'millisecond'
-        | 'microsecond'
-        | 'nanosecond'
-        | /** @deprecated */ 'days'
-        | /** @deprecated */ 'hours'
-        | /** @deprecated */ 'minutes'
-        | /** @deprecated */ 'seconds'
-        | /** @deprecated */ 'milliseconds'
-        | /** @deprecated */ 'microseconds'
-        | /** @deprecated */ 'nanoseconds'
+        'day' | 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'
       >
     ): Temporal.ZonedDateTime;
     startOfDay(): Temporal.ZonedDateTime;

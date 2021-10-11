@@ -7,7 +7,7 @@ import { Temporal } from '..';
 
 import bigInt from 'big-integer';
 
-const DISALLOWED_UNITS = ['year', 'month', 'week', 'day'];
+const DISALLOWED_UNITS = ['year', 'month', 'week', 'day'] as const;
 const MAX_DIFFERENCE_INCREMENTS = {
   hour: 24,
   minute: 60,
@@ -95,7 +95,7 @@ export class Instant implements Temporal.Instant {
     );
     return new Instant(ns);
   }
-  until(otherParam, optionsParam = undefined) {
+  until(otherParam, optionsParam: Parameters<Temporal.Instant['until']>[1] = undefined) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalInstant(otherParam);
     const options = ES.GetOptionsObject(optionsParam);
@@ -128,7 +128,7 @@ export class Instant implements Temporal.Instant {
     const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  since(otherParam, optionsParam = undefined) {
+  since(otherParam, optionsParam: Parameters<Temporal.Instant['since']>[1] = undefined) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalInstant(otherParam);
     const options = ES.GetOptionsObject(optionsParam);
@@ -161,7 +161,7 @@ export class Instant implements Temporal.Instant {
     const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  round(optionsParam) {
+  round(optionsParam: Parameters<Temporal.Instant['round']>[0]) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     if (optionsParam === undefined) throw new TypeError('options parameter is required');
     const options = ES.GetOptionsObject(optionsParam);
