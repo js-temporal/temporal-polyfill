@@ -18,6 +18,7 @@ import {
   SetSlot
 } from './slots';
 import { Temporal } from '..';
+import type { TimeZoneParams as Params, TimeZoneReturn as Return } from './internaltypes';
 
 export class TimeZone implements Temporal.TimeZone {
   constructor(timeZoneIdentifierParam: string) {
@@ -40,10 +41,10 @@ export class TimeZone implements Temporal.TimeZone {
       });
     }
   }
-  get id() {
+  get id(): Return['id'] {
     return ES.ToString(this);
   }
-  getOffsetNanosecondsFor(instantParam) {
+  getOffsetNanosecondsFor(instantParam: Params['getOffsetNanosecondsFor'][0]): Return['getOffsetNanosecondsFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const instant = ES.ToTemporalInstant(instantParam);
     const id = GetSlot(this, TIMEZONE_ID);
@@ -53,24 +54,30 @@ export class TimeZone implements Temporal.TimeZone {
 
     return ES.GetIANATimeZoneOffsetNanoseconds(GetSlot(instant, EPOCHNANOSECONDS), id);
   }
-  getOffsetStringFor(instantParam) {
+  getOffsetStringFor(instantParam: Params['getOffsetStringFor'][0]): Return['getOffsetStringFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const instant = ES.ToTemporalInstant(instantParam);
     return ES.BuiltinTimeZoneGetOffsetStringFor(this, instant);
   }
-  getPlainDateTimeFor(instantParam, calendarParam: Temporal.CalendarProtocol | string = ES.GetISO8601Calendar()) {
+  getPlainDateTimeFor(
+    instantParam: Params['getPlainDateTimeFor'][0],
+    calendarParam: Params['getPlainDateTimeFor'][1] = ES.GetISO8601Calendar()
+  ): Return['getPlainDateTimeFor'] {
     const instant = ES.ToTemporalInstant(instantParam);
     const calendar = ES.ToTemporalCalendar(calendarParam);
     return ES.BuiltinTimeZoneGetPlainDateTimeFor(this, instant, calendar);
   }
-  getInstantFor(dateTimeParam, optionsParam = undefined) {
+  getInstantFor(
+    dateTimeParam: Params['getInstantFor'][0],
+    optionsParam: Params['getInstantFor'][1] = undefined
+  ): Return['getInstantFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const dateTime = ES.ToTemporalDateTime(dateTimeParam);
     const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
     return ES.BuiltinTimeZoneGetInstantFor(this, dateTime, disambiguation);
   }
-  getPossibleInstantsFor(dateTimeParam) {
+  getPossibleInstantsFor(dateTimeParam: Params['getPossibleInstantsFor'][0]): Return['getPossibleInstantsFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const dateTime = ES.ToTemporalDateTime(dateTimeParam);
     const Instant = GetIntrinsic('%Temporal.Instant%');
@@ -107,7 +114,7 @@ export class TimeZone implements Temporal.TimeZone {
     );
     return possibleEpochNs.map((ns) => new Instant(ns));
   }
-  getNextTransition(startingPointParam) {
+  getNextTransition(startingPointParam: Params['getNextTransition'][0]): Return['getNextTransition'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const startingPoint = ES.ToTemporalInstant(startingPointParam);
     const id = GetSlot(this, TIMEZONE_ID);
@@ -122,7 +129,7 @@ export class TimeZone implements Temporal.TimeZone {
     epochNanoseconds = ES.GetIANATimeZoneNextTransition(epochNanoseconds, id);
     return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
   }
-  getPreviousTransition(startingPointParam) {
+  getPreviousTransition(startingPointParam: Params['getPreviousTransition'][0]): Return['getPreviousTransition'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const startingPoint = ES.ToTemporalInstant(startingPointParam);
     const id = GetSlot(this, TIMEZONE_ID);
@@ -137,14 +144,14 @@ export class TimeZone implements Temporal.TimeZone {
     epochNanoseconds = ES.GetIANATimeZonePreviousTransition(epochNanoseconds, id);
     return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
   }
-  toString() {
+  toString(): string {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     return ES.ToString(GetSlot(this, TIMEZONE_ID));
   }
-  toJSON() {
+  toJSON(): Return['toJSON'] {
     return ES.ToString(this);
   }
-  static from(item: string | Temporal.TimeZoneProtocol) {
+  static from(item: Params['from'][0]): Return['from'] {
     return ES.ToTemporalTimeZone(item);
   }
   [Symbol.toStringTag]!: 'Temporal.TimeZone';

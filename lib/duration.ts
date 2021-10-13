@@ -17,19 +17,20 @@ import {
   SetSlot
 } from './slots';
 import { Temporal } from '..';
+import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
 
 export class Duration implements Temporal.Duration {
   constructor(
-    yearsParam = 0,
-    monthsParam = 0,
-    weeksParam = 0,
-    daysParam = 0,
-    hoursParam = 0,
-    minutesParam = 0,
-    secondsParam = 0,
-    millisecondsParam = 0,
-    microsecondsParam = 0,
-    nanosecondsParam = 0
+    yearsParam: Params['constructor'][0] = 0,
+    monthsParam: Params['constructor'][1] = 0,
+    weeksParam: Params['constructor'][2] = 0,
+    daysParam: Params['constructor'][3] = 0,
+    hoursParam: Params['constructor'][4] = 0,
+    minutesParam: Params['constructor'][5] = 0,
+    secondsParam: Params['constructor'][6] = 0,
+    millisecondsParam: Params['constructor'][7] = 0,
+    microsecondsParam: Params['constructor'][8] = 0,
+    nanosecondsParam: Params['constructor'][9] = 0
   ) {
     const years = ES.ToIntegerThrowOnInfinity(yearsParam);
     const months = ES.ToIntegerThrowOnInfinity(monthsParam);
@@ -81,47 +82,47 @@ export class Duration implements Temporal.Duration {
       });
     }
   }
-  get years() {
+  get years(): Return['years'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, YEARS);
   }
-  get months() {
+  get months(): Return['months'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, MONTHS);
   }
-  get weeks() {
+  get weeks(): Return['weeks'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, WEEKS);
   }
-  get days() {
+  get days(): Return['days'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, DAYS);
   }
-  get hours() {
+  get hours(): Return['hours'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, HOURS);
   }
-  get minutes() {
+  get minutes(): Return['minutes'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, MINUTES);
   }
-  get seconds() {
+  get seconds(): Return['seconds'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, SECONDS);
   }
-  get milliseconds() {
+  get milliseconds(): Return['milliseconds'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, MILLISECONDS);
   }
-  get microseconds() {
+  get microseconds(): Return['microseconds'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, MICROSECONDS);
   }
-  get nanoseconds() {
+  get nanoseconds(): Return['nanoseconds'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, NANOSECONDS);
   }
-  get sign() {
+  get sign(): Return['sign'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return ES.DurationSign(
       GetSlot(this, YEARS),
@@ -136,7 +137,7 @@ export class Duration implements Temporal.Duration {
       GetSlot(this, NANOSECONDS)
     );
   }
-  get blank() {
+  get blank(): Return['blank'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return (
       ES.DurationSign(
@@ -153,7 +154,7 @@ export class Duration implements Temporal.Duration {
       ) === 0
     );
   }
-  with(durationLike) {
+  with(durationLike: Params['with'][0]): Return['with'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     const props = ES.ToPartialRecord(durationLike, [
       'days',
@@ -184,11 +185,11 @@ export class Duration implements Temporal.Duration {
     } = props;
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  negated() {
+  negated(): Return['negated'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return ES.CreateNegatedTemporalDuration(this);
   }
-  abs() {
+  abs(): Return['abs'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return new Duration(
       Math.abs(GetSlot(this, YEARS)),
@@ -203,7 +204,7 @@ export class Duration implements Temporal.Duration {
       Math.abs(GetSlot(this, NANOSECONDS))
     );
   }
-  add(other, optionsParam = undefined) {
+  add(other: Params['add'][0], optionsParam: Params['add'][1] = undefined) {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       ES.ToLimitedTemporalDuration(other);
@@ -234,7 +235,7 @@ export class Duration implements Temporal.Duration {
     ));
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  subtract(other, optionsParam = undefined) {
+  subtract(other: Params['subtract'][0], optionsParam: Params['subtract'][1] = undefined) {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       ES.ToLimitedTemporalDuration(other);
@@ -265,7 +266,7 @@ export class Duration implements Temporal.Duration {
     ));
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  round(optionsParam) {
+  round(optionsParam: Params['round'][0]): Return['round'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     if (optionsParam === undefined) throw new TypeError('options parameter is required');
     let years = GetSlot(this, YEARS);
@@ -374,7 +375,7 @@ export class Duration implements Temporal.Duration {
 
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  total(optionsParam) {
+  total(optionsParam: Params['total'][0]): Return['total'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     let years = GetSlot(this, YEARS);
     let months = GetSlot(this, MONTHS);
@@ -430,7 +431,7 @@ export class Duration implements Temporal.Duration {
     );
     return total;
   }
-  toString(optionsParam = undefined) {
+  toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
     const { precision, unit, increment } = ES.ToSecondsStringPrecision(options);
@@ -438,11 +439,14 @@ export class Duration implements Temporal.Duration {
     const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
     return ES.TemporalDurationToString(this, precision, { unit, increment, roundingMode });
   }
-  toJSON() {
+  toJSON(): Return['toJSON'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return ES.TemporalDurationToString(this);
   }
-  toLocaleString(locales = undefined, options = undefined) {
+  toLocaleString(
+    locales: Params['toLocaleString'][0] = undefined,
+    options: Params['toLocaleString'][1] = undefined
+  ): string {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     if (typeof Intl !== 'undefined' && typeof (Intl as any).DurationFormat !== 'undefined') {
       return new (Intl as any).DurationFormat(locales, options).format(this);
@@ -453,7 +457,7 @@ export class Duration implements Temporal.Duration {
   valueOf(): never {
     throw new TypeError('use compare() to compare Temporal.Duration');
   }
-  static from(item) {
+  static from(item: Params['from'][0]): Return['from'] {
     if (ES.IsTemporalDuration(item)) {
       return new Duration(
         GetSlot(item, YEARS),
@@ -470,7 +474,11 @@ export class Duration implements Temporal.Duration {
     }
     return ES.ToTemporalDuration(item);
   }
-  static compare(oneParam, twoParam, optionsParam = undefined) {
+  static compare(
+    oneParam: Params['compare'][0],
+    twoParam: Params['compare'][1],
+    optionsParam: Params['compare'][2] = undefined
+  ) {
     const one = ES.ToTemporalDuration(oneParam);
     const two = ES.ToTemporalDuration(twoParam);
     const options = ES.GetOptionsObject(optionsParam);

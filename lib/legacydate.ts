@@ -8,6 +8,6 @@ export function toTemporalInstant(this: Date) {
   return new Instant(bigIntIfAvailable(epochNanoseconds));
 }
 
-function bigIntIfAvailable(wrapper) {
-  return typeof globalThis.BigInt === 'undefined' ? wrapper : wrapper.value;
+function bigIntIfAvailable(wrapper: bigInt.BigInteger | bigint) {
+  return typeof (globalThis as any).BigInt === 'undefined' ? wrapper : (wrapper as any).value;
 }

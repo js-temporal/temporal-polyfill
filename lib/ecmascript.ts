@@ -20,7 +20,24 @@ import { DEBUG } from './debug';
 import bigInt from 'big-integer';
 
 import type { Temporal } from '..';
-import type { AnyTemporalLikeType, PrimitivePropertyNames, UnitSmallerThanOrEqualTo } from './internaltypes';
+import type {
+  AnyTemporalLikeType,
+  PrimitivePropertyNames,
+  UnitSmallerThanOrEqualTo,
+  CalendarProtocolParams,
+  TimeZoneProtocolParams,
+  InstantParams,
+  PlainMonthDayParams,
+  ZonedDateTimeParams,
+  CalendarParams,
+  TimeZoneParams,
+  PlainDateParams,
+  PlainTimeParams,
+  DurationParams,
+  PlainDateTimeParams,
+  PlainYearMonthParams,
+  FieldRecord
+} from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
 import {
   CreateSlots,
@@ -647,7 +664,7 @@ export function ToLimitedTemporalDuration(
   item: Temporal.DurationLike | string,
   disallowedProperties: (keyof Temporal.DurationLike)[] = []
 ) {
-  let record;
+  let record: Required<Temporal.DurationLike>;
   if (IsObject(item)) {
     record = ToTemporalDurationRecord(item);
   } else {
@@ -1015,7 +1032,7 @@ export function LargerOfTwoTemporalUnits<T1 extends Temporal.DateTimeUnit, T2 ex
   return unit1;
 }
 
-export function ToPartialRecord<B extends Temporal.DurationLike>(
+export function ToPartialRecord<B extends AnyTemporalLikeType>(
   bag: B,
   fields: readonly (keyof B)[],
   callerCast?: (value: unknown) => unknown
@@ -1037,8 +1054,6 @@ export function ToPartialRecord<B extends Temporal.DurationLike>(
   }
   return any ? any : false;
 }
-
-type FieldRecord<B extends AnyTemporalLikeType> = readonly [keyof B, 0 | undefined] | readonly [keyof B];
 
 export function PrepareTemporalFields<B extends AnyTemporalLikeType>(
   bag: B,
@@ -1200,8 +1215,8 @@ export function ToTemporalZonedDateTimeFields(
 }
 
 export function ToTemporalDate(
-  itemParam: Parameters<typeof Temporal.PlainDate['from']>[0],
-  options = ObjectCreate(null)
+  itemParam: PlainDateParams['from'][0],
+  options: PlainDateParams['from'][1] = ObjectCreate(null)
 ) {
   let item = itemParam;
   if (IsObject(item)) {
@@ -1256,8 +1271,8 @@ export function InterpretTemporalDateTimeFields(
 }
 
 export function ToTemporalDateTime(
-  item: Parameters<typeof Temporal.PlainDateTime['from']>[0],
-  options = ObjectCreate(null)
+  item: PlainDateTimeParams['from'][0],
+  options: PlainDateTimeParams['from'][1] = ObjectCreate(null)
 ) {
   let year: number,
     month: number,
@@ -1323,7 +1338,7 @@ export function ToTemporalDateTime(
   return CreateTemporalDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar);
 }
 
-export function ToTemporalDuration(item: Temporal.Duration | Temporal.DurationLike | string) {
+export function ToTemporalDuration(item: DurationParams['from'][0]) {
   let years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds;
   if (IsObject(item)) {
     if (IsTemporalDuration(item)) return item;
@@ -1348,7 +1363,7 @@ export function ToTemporalDuration(item: Temporal.Duration | Temporal.DurationLi
   );
 }
 
-export function ToTemporalInstant(item: Parameters<typeof Temporal.Instant['from']>[0]) {
+export function ToTemporalInstant(item: InstantParams['from'][0]) {
   if (IsTemporalInstant(item)) return item;
   if (IsTemporalZonedDateTime(item)) {
     const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
@@ -1360,8 +1375,8 @@ export function ToTemporalInstant(item: Parameters<typeof Temporal.Instant['from
 }
 
 export function ToTemporalMonthDay(
-  item: Parameters<typeof Temporal.PlainMonthDay['from']>[0],
-  options: Temporal.AssignmentOptions = ObjectCreate(null)
+  item: PlainMonthDayParams['from'][0],
+  options: PlainMonthDayParams['from'][1] = ObjectCreate(null)
 ) {
   if (IsObject(item)) {
     if (IsTemporalMonthDay(item)) return item;
@@ -1389,9 +1404,9 @@ export function ToTemporalMonthDay(
   ToTemporalOverflow(options); // validate and ignore
   let { month, day, referenceISOYear, calendar: maybeStringCalendar } = ParseTemporalMonthDayString(ToString(item));
   // TODO: should this be a ternary?
-  let calendar: Temporal.CalendarProtocol;
-  if (maybeStringCalendar === undefined) maybeStringCalendar = GetISO8601Calendar();
-  calendar = ToTemporalCalendar(maybeStringCalendar);
+  let calendar: Temporal.CalendarProtocol | string = maybeStringCalendar;
+  if (calendar === undefined) calendar = GetISO8601Calendar();
+  calendar = ToTemporalCalendar(calendar);
 
   if (referenceISOYear === undefined) {
     RejectISODate(1972, month, day);
@@ -1403,8 +1418,8 @@ export function ToTemporalMonthDay(
 }
 
 export function ToTemporalTime(
-  itemParam: Temporal.PlainTimeLike,
-  overflow: Temporal.AssignmentOptions['overflow'] = 'constrain'
+  itemParam: PlainTimeParams['from'][0],
+  overflow: PlainTimeParams['from'][1]['overflow'] = 'constrain'
 ) {
   let item = itemParam;
   let hour, minute, second, millisecond, microsecond, nanosecond, calendar;
@@ -1456,8 +1471,8 @@ export function ToTemporalTime(
 }
 
 export function ToTemporalYearMonth(
-  item: Temporal.PlainYearMonth | Temporal.PlainYearMonthLike | string,
-  options = ObjectCreate(null)
+  item: PlainYearMonthParams['from'][0],
+  options: PlainYearMonthParams['from'][1] = ObjectCreate(null)
 ) {
   if (IsObject(item)) {
     if (IsTemporalYearMonth(item)) return item;
@@ -1470,9 +1485,9 @@ export function ToTemporalYearMonth(
   ToTemporalOverflow(options); // validate and ignore
   let { year, month, referenceISODay, calendar: maybeStringCalendar } = ParseTemporalYearMonthString(ToString(item));
   // TODO: replace with ternary?
-  let calendar: Temporal.CalendarProtocol;
-  if (maybeStringCalendar === undefined) maybeStringCalendar = GetISO8601Calendar();
-  calendar = ToTemporalCalendar(maybeStringCalendar);
+  let calendar: Temporal.CalendarProtocol | string = maybeStringCalendar;
+  if (calendar === undefined) calendar = GetISO8601Calendar();
+  calendar = ToTemporalCalendar(calendar);
 
   if (referenceISODay === undefined) {
     RejectISODate(year, month, 1);
@@ -1545,8 +1560,8 @@ export function InterpretISODateTimeOffset(
 }
 
 export function ToTemporalZonedDateTime(
-  item: Parameters<typeof Temporal.ZonedDateTime['from']>[0],
-  options = ObjectCreate(null)
+  item: ZonedDateTimeParams['from'][0],
+  options: ZonedDateTimeParams['from'][1] = ObjectCreate(null)
 ) {
   let year: number,
     month: number,
@@ -1875,9 +1890,9 @@ export function CalendarMergeFields(
 
 export function CalendarDateAdd(
   calendar: Temporal.CalendarProtocol,
-  date: Parameters<Temporal.CalendarProtocol['dateAdd']>[0],
-  duration: Parameters<Temporal.CalendarProtocol['dateAdd']>[1],
-  options: Parameters<Temporal.CalendarProtocol['dateAdd']>[2],
+  date: CalendarProtocolParams['dateAdd'][0],
+  duration: CalendarProtocolParams['dateAdd'][1],
+  options: CalendarProtocolParams['dateAdd'][2],
   dateAddParam?: Temporal.CalendarProtocol['dateAdd']
 ) {
   let dateAdd = dateAddParam;
@@ -1891,9 +1906,9 @@ export function CalendarDateAdd(
 
 export function CalendarDateUntil(
   calendar: Temporal.CalendarProtocol,
-  date: Parameters<Temporal.CalendarProtocol['dateUntil']>[0],
-  otherDate: Parameters<Temporal.CalendarProtocol['dateUntil']>[1],
-  options: Parameters<Temporal.CalendarProtocol['dateUntil']>[2],
+  date: CalendarProtocolParams['dateUntil'][0],
+  otherDate: CalendarProtocolParams['dateUntil'][1],
+  options: CalendarProtocolParams['dateUntil'][2],
   dateUntilParam?: Temporal.CalendarProtocol['dateUntil']
 ) {
   let dateUntil = dateUntilParam;
@@ -1905,10 +1920,7 @@ export function CalendarDateUntil(
   return result;
 }
 
-export function CalendarYear(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['year']>[0]
-) {
+export function CalendarYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['year'][0]) {
   const result = calendar.year(dateLike);
   if (result === undefined) {
     throw new RangeError('calendar year result must be an integer');
@@ -1916,10 +1928,7 @@ export function CalendarYear(
   return ToIntegerThrowOnInfinity(result);
 }
 
-export function CalendarMonth(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['month']>[0]
-) {
+export function CalendarMonth(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['month'][0]) {
   const result = calendar.month(dateLike);
   if (result === undefined) {
     throw new RangeError('calendar month result must be a positive integer');
@@ -1929,7 +1938,7 @@ export function CalendarMonth(
 
 export function CalendarMonthCode(
   calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['monthCode']>[0]
+  dateLike: CalendarProtocolParams['monthCode'][0]
 ) {
   const result = calendar.monthCode(dateLike);
   if (result === undefined) {
@@ -1938,10 +1947,7 @@ export function CalendarMonthCode(
   return ToString(result);
 }
 
-export function CalendarDay(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['day']>[0]
-) {
+export function CalendarDay(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['day'][0]) {
   const result = calendar.day(dateLike);
   if (result === undefined) {
     throw new RangeError('calendar day result must be a positive integer');
@@ -1949,10 +1955,7 @@ export function CalendarDay(
   return ToPositiveInteger(result);
 }
 
-export function CalendarEra(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['era']>[0]
-) {
+export function CalendarEra(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
   let result = calendar.era(dateLike);
   if (result !== undefined) {
     result = ToString(result);
@@ -1960,10 +1963,7 @@ export function CalendarEra(
   return result;
 }
 
-export function CalendarEraYear(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['eraYear']>[0]
-) {
+export function CalendarEraYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['eraYear'][0]) {
   let result = calendar.eraYear(dateLike);
   if (result !== undefined) {
     result = ToIntegerThrowOnInfinity(result);
@@ -1973,61 +1973,61 @@ export function CalendarEraYear(
 
 export function CalendarDayOfWeek(
   calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['dayOfWeek']>[0]
+  dateLike: CalendarProtocolParams['dayOfWeek'][0]
 ) {
   return calendar.dayOfWeek(dateLike);
 }
 
 export function CalendarDayOfYear(
   calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['dayOfYear']>[0]
+  dateLike: CalendarProtocolParams['dayOfYear'][0]
 ) {
   return calendar.dayOfYear(dateLike);
 }
 
 export function CalendarWeekOfYear(
   calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['weekOfYear']>[0]
+  dateLike: CalendarProtocolParams['weekOfYear'][0]
 ) {
   return calendar.weekOfYear(dateLike);
 }
 
 export function CalendarDaysInWeek(
   calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['daysInWeek']>[0]
+  dateLike: CalendarProtocolParams['daysInWeek'][0]
 ) {
   return calendar.daysInWeek(dateLike);
 }
 
 export function CalendarDaysInMonth(
   calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['daysInMonth']>[0]
+  dateLike: CalendarProtocolParams['daysInMonth'][0]
 ) {
   return calendar.daysInMonth(dateLike);
 }
 
 export function CalendarDaysInYear(
   calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['daysInYear']>[0]
+  dateLike: CalendarProtocolParams['daysInYear'][0]
 ) {
   return calendar.daysInYear(dateLike);
 }
 
 export function CalendarMonthsInYear(
   calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['monthsInYear']>[0]
+  dateLike: CalendarProtocolParams['monthsInYear'][0]
 ) {
   return calendar.monthsInYear(dateLike);
 }
 
 export function CalendarInLeapYear(
   calendar: Temporal.CalendarProtocol,
-  dateLike: Parameters<Temporal.CalendarProtocol['inLeapYear']>[0]
+  dateLike: CalendarProtocolParams['inLeapYear'][0]
 ) {
   return calendar.inLeapYear(dateLike);
 }
 
-export function ToTemporalCalendar(calendarLikeParam: Parameters<typeof Temporal.Calendar['from']>[0]) {
+export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0]) {
   let calendarLike = calendarLikeParam;
   if (IsObject(calendarLike)) {
     if (HasSlot(calendarLike, CALENDAR)) return GetSlot(calendarLike, CALENDAR);
@@ -2079,8 +2079,8 @@ export function ConsolidateCalendars(one: Temporal.CalendarProtocol, two: Tempor
 
 export function DateFromFields(
   calendar: Temporal.CalendarProtocol,
-  fields: Parameters<Temporal.CalendarProtocol['dateFromFields']>[0],
-  options?: Partial<Parameters<Temporal.CalendarProtocol['dateFromFields']>[1]>
+  fields: CalendarProtocolParams['dateFromFields'][0],
+  options?: Partial<CalendarProtocolParams['dateFromFields'][1]>
 ) {
   const result = calendar.dateFromFields(fields, options);
   if (!IsTemporalDate(result)) throw new TypeError('invalid result');
@@ -2089,8 +2089,8 @@ export function DateFromFields(
 
 export function YearMonthFromFields(
   calendar: Temporal.CalendarProtocol,
-  fields: Parameters<Temporal.CalendarProtocol['yearMonthFromFields']>[0],
-  options?: Parameters<Temporal.CalendarProtocol['yearMonthFromFields']>[1]
+  fields: CalendarProtocolParams['yearMonthFromFields'][0],
+  options?: CalendarProtocolParams['yearMonthFromFields'][1]
 ) {
   const result = calendar.yearMonthFromFields(fields, options);
   if (!IsTemporalYearMonth(result)) throw new TypeError('invalid result');
@@ -2099,15 +2099,15 @@ export function YearMonthFromFields(
 
 export function MonthDayFromFields(
   calendar: Temporal.CalendarProtocol,
-  fields: Parameters<Temporal.CalendarProtocol['monthDayFromFields']>[0],
-  options?: Parameters<Temporal.CalendarProtocol['monthDayFromFields']>[1]
+  fields: CalendarProtocolParams['monthDayFromFields'][0],
+  options?: CalendarProtocolParams['monthDayFromFields'][1]
 ) {
   const result = calendar.monthDayFromFields(fields, options);
   if (!IsTemporalMonthDay(result)) throw new TypeError('invalid result');
   return result;
 }
 
-export function ToTemporalTimeZone(temporalTimeZoneLikeParam: Parameters<typeof Temporal.TimeZone['from']>[0]) {
+export function ToTemporalTimeZone(temporalTimeZoneLikeParam: TimeZoneParams['from'][0]) {
   let temporalTimeZoneLike = temporalTimeZoneLikeParam;
   if (IsObject(temporalTimeZoneLike)) {
     if (IsTemporalZonedDateTime(temporalTimeZoneLike)) return GetSlot(temporalTimeZoneLike, TIME_ZONE);
@@ -2153,7 +2153,7 @@ export function TemporalDateTimeToTime(dateTime: Temporal.PlainDateTime) {
 
 export function GetOffsetNanosecondsFor(
   timeZone: Temporal.TimeZoneProtocol,
-  instant: Parameters<Temporal.TimeZoneProtocol['getOffsetNanosecondsFor']>[0]
+  instant: TimeZoneProtocolParams['getOffsetNanosecondsFor'][0]
 ) {
   let getOffsetNanosecondsFor = timeZone.getOffsetNanosecondsFor;
   if (getOffsetNanosecondsFor === undefined) {
@@ -2337,7 +2337,7 @@ function DisambiguatePossibleInstants(
 
 function GetPossibleInstantsFor(
   timeZone: Temporal.TimeZoneProtocol,
-  dateTime: Parameters<Temporal.TimeZoneProtocol['getPossibleInstantsFor']>[0]
+  dateTime: TimeZoneProtocolParams['getPossibleInstantsFor'][0]
 ) {
   const possibleInstants = timeZone.getPossibleInstantsFor(dateTime);
   const result: Temporal.Instant[] = [];
