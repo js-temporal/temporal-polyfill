@@ -1,9 +1,10 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { DateTimeFormat } from './intl';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import { EPOCHNANOSECONDS, CreateSlots, GetSlot, SetSlot } from './slots';
 import { Temporal } from '..';
+import { DateTimeFormat } from './intl';
+import type { InstantParams as Params, InstantReturn as Return } from './internaltypes';
 
 import bigInt from 'big-integer';
 
@@ -18,7 +19,7 @@ const MAX_DIFFERENCE_INCREMENTS = {
 };
 
 export class Instant implements Temporal.Instant {
-  constructor(epochNanoseconds) {
+  constructor(epochNanoseconds: bigint | bigInt.BigInteger) {
     // Note: if the argument is not passed, ToBigInt(undefined) will throw. This check exists only
     //       to improve the error message.
     if (arguments.length < 1) {
@@ -41,27 +42,27 @@ export class Instant implements Temporal.Instant {
     }
   }
 
-  get epochSeconds() {
+  get epochSeconds(): Return['epochSeconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
     return +value.divide(1e9);
   }
-  get epochMilliseconds() {
+  get epochMilliseconds(): Return['epochMilliseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const value = bigInt(GetSlot(this, EPOCHNANOSECONDS));
     return +value.divide(1e6);
   }
-  get epochMicroseconds() {
+  get epochMicroseconds(): Return['epochMicroseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
     return bigIntIfAvailable(value.divide(1e3));
   }
-  get epochNanoseconds() {
+  get epochNanoseconds(): Return['epochNanoseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     return bigIntIfAvailable(GetSlot(this, EPOCHNANOSECONDS));
   }
 
-  add(temporalDurationLike) {
+  add(temporalDurationLike: Params['add'][0]): Return['add'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.ToLimitedTemporalDuration(
       temporalDurationLike,
@@ -78,7 +79,7 @@ export class Instant implements Temporal.Instant {
     );
     return new Instant(ns);
   }
-  subtract(temporalDurationLike) {
+  subtract(temporalDurationLike: Params['subtract'][0]): Return['subtract'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.ToLimitedTemporalDuration(
       temporalDurationLike,
@@ -95,7 +96,7 @@ export class Instant implements Temporal.Instant {
     );
     return new Instant(ns);
   }
-  until(otherParam, optionsParam: Parameters<Temporal.Instant['until']>[1] = undefined) {
+  until(otherParam: Params['until'][0], optionsParam: Params['until'][1] = undefined) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalInstant(otherParam);
     const options = ES.GetOptionsObject(optionsParam);
@@ -128,7 +129,7 @@ export class Instant implements Temporal.Instant {
     const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  since(otherParam, optionsParam: Parameters<Temporal.Instant['since']>[1] = undefined) {
+  since(otherParam: Params['since'][0], optionsParam: Params['since'][1] = undefined) {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalInstant(otherParam);
     const options = ES.GetOptionsObject(optionsParam);
@@ -161,7 +162,7 @@ export class Instant implements Temporal.Instant {
     const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
-  round(optionsParam: Parameters<Temporal.Instant['round']>[0]) {
+  round(optionsParam: Params['round'][0]): Return['round'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     if (optionsParam === undefined) throw new TypeError('options parameter is required');
     const options = ES.GetOptionsObject(optionsParam);
@@ -181,37 +182,41 @@ export class Instant implements Temporal.Instant {
     const roundedNs = ES.RoundInstant(ns, roundingIncrement, smallestUnit, roundingMode);
     return new Instant(roundedNs);
   }
-  equals(otherParam) {
+  equals(otherParam: Params['equals'][0]): Return['equals'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalInstant(otherParam);
     const one = GetSlot(this, EPOCHNANOSECONDS);
     const two = GetSlot(other, EPOCHNANOSECONDS);
     return bigInt(one).equals(two);
   }
-  toString(optionsParam = undefined) {
+  toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
     let timeZone = options.timeZone;
     if (timeZone !== undefined) timeZone = ES.ToTemporalTimeZone(timeZone);
+    // Although TS doesn't acknowledge it, below here `timeZone` is a Temporal.TimeZoneProtocol
     const { precision, unit, increment } = ES.ToSecondsStringPrecision(options);
     const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
     const ns = GetSlot(this, EPOCHNANOSECONDS);
     const roundedNs = ES.RoundInstant(ns, increment, unit, roundingMode);
     const roundedInstant = new Instant(roundedNs);
-    return ES.TemporalInstantToString(roundedInstant, timeZone, precision);
+    return ES.TemporalInstantToString(roundedInstant, timeZone as Temporal.TimeZoneProtocol, precision);
   }
-  toJSON() {
+  toJSON(): string {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     return ES.TemporalInstantToString(this, undefined, 'auto');
   }
-  toLocaleString(locales = undefined, options = undefined) {
+  toLocaleString(
+    locales: Params['toLocaleString'][0] = undefined,
+    options: Params['toLocaleString'][1] = undefined
+  ): string {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     return new DateTimeFormat(locales, options).format(this);
   }
   valueOf(): never {
     throw new TypeError('use compare() or equals() to compare Temporal.Instant');
   }
-  toZonedDateTime(item) {
+  toZonedDateTime(item: Params['toZonedDateTime'][0]): Return['toZonedDateTime'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(item)) {
       throw new TypeError('invalid argument in toZonedDateTime');
@@ -228,7 +233,7 @@ export class Instant implements Temporal.Instant {
     const timeZone = ES.ToTemporalTimeZone(temporalTimeZoneLike);
     return ES.CreateTemporalZonedDateTime(GetSlot(this, EPOCHNANOSECONDS), timeZone, calendar);
   }
-  toZonedDateTimeISO(itemParam) {
+  toZonedDateTimeISO(itemParam: Params['toZonedDateTimeISO'][0]): Return['toZonedDateTimeISO'] {
     let item = itemParam;
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     if (ES.IsObject(item)) {
@@ -237,41 +242,47 @@ export class Instant implements Temporal.Instant {
         item = timeZoneProperty;
       }
     }
-    const timeZone = ES.ToTemporalTimeZone(item);
+    const timeZone = ES.ToTemporalTimeZone(item as string | Temporal.TimeZoneProtocol);
     const calendar = ES.GetISO8601Calendar();
     return ES.CreateTemporalZonedDateTime(GetSlot(this, EPOCHNANOSECONDS), timeZone, calendar);
   }
 
-  static fromEpochSeconds(epochSecondsParam) {
+  static fromEpochSeconds(epochSecondsParam: Params['fromEpochSeconds'][0]): Return['fromEpochSeconds'] {
     const epochSeconds = ES.ToNumber(epochSecondsParam);
     const epochNanoseconds = bigInt(epochSeconds).multiply(1e9);
     ES.ValidateEpochNanoseconds(epochNanoseconds);
     return new Instant(epochNanoseconds);
   }
-  static fromEpochMilliseconds(epochMillisecondsParam) {
+  static fromEpochMilliseconds(
+    epochMillisecondsParam: Params['fromEpochMilliseconds'][0]
+  ): Return['fromEpochMilliseconds'] {
     const epochMilliseconds = ES.ToNumber(epochMillisecondsParam);
     const epochNanoseconds = bigInt(epochMilliseconds).multiply(1e6);
     ES.ValidateEpochNanoseconds(epochNanoseconds);
     return new Instant(epochNanoseconds);
   }
-  static fromEpochMicroseconds(epochMicrosecondsParam) {
+  static fromEpochMicroseconds(
+    epochMicrosecondsParam: Params['fromEpochMicroseconds'][0]
+  ): Return['fromEpochMicroseconds'] {
     const epochMicroseconds = ES.ToBigInt(epochMicrosecondsParam);
     const epochNanoseconds = epochMicroseconds.multiply(1e3);
     ES.ValidateEpochNanoseconds(epochNanoseconds);
     return new Instant(epochNanoseconds);
   }
-  static fromEpochNanoseconds(epochNanosecondsParam) {
+  static fromEpochNanoseconds(
+    epochNanosecondsParam: Params['fromEpochNanoseconds'][0]
+  ): Return['fromEpochNanoseconds'] {
     const epochNanoseconds = ES.ToBigInt(epochNanosecondsParam);
     ES.ValidateEpochNanoseconds(epochNanoseconds);
     return new Instant(epochNanoseconds);
   }
-  static from(item) {
+  static from(item: Params['from'][0]): Return['from'] {
     if (ES.IsTemporalInstant(item)) {
       return new Instant(GetSlot(item, EPOCHNANOSECONDS));
     }
     return ES.ToTemporalInstant(item);
   }
-  static compare(oneParam, twoParam) {
+  static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {
     const one = ES.ToTemporalInstant(oneParam);
     const two = ES.ToTemporalInstant(twoParam);
     const oneNs = GetSlot(one, EPOCHNANOSECONDS);
@@ -285,6 +296,6 @@ export class Instant implements Temporal.Instant {
 
 MakeIntrinsicClass(Instant, 'Temporal.Instant');
 
-function bigIntIfAvailable(wrapper) {
-  return typeof globalThis.BigInt === 'undefined' ? wrapper : wrapper.value;
+function bigIntIfAvailable(wrapper: bigInt.BigInteger | bigint) {
+  return typeof (globalThis as any).BigInt === 'undefined' ? wrapper : (wrapper as any).value;
 }

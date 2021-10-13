@@ -606,6 +606,7 @@ export namespace Temporal {
     fields?(fields: Iterable<string>): Iterable<string>;
     mergeFields?(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown>;
     toString(): string;
+    toJSON?(): string;
   }
 
   /**
@@ -683,6 +684,7 @@ export namespace Temporal {
     fields(fields: Iterable<string>): Iterable<string>;
     mergeFields(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown>;
     toString(): string;
+    toJSON(): string;
     readonly [Symbol.toStringTag]: 'Temporal.Calendar';
   }
 
@@ -990,14 +992,8 @@ export namespace Temporal {
     readonly calendar: Temporal.Calendar;
     equals(other: Temporal.PlainTime | PlainTimeLike | string): boolean;
     with(timeLike: Temporal.PlainTime | PlainTimeLike, options?: AssignmentOptions): Temporal.PlainTime;
-    add(
-      durationLike: Temporal.PlainTime | Temporal.Duration | DurationLike | string,
-      options?: ArithmeticOptions
-    ): Temporal.PlainTime;
-    subtract(
-      durationLike: Temporal.PlainTime | Temporal.Duration | DurationLike | string,
-      options?: ArithmeticOptions
-    ): Temporal.PlainTime;
+    add(durationLike: Temporal.Duration | DurationLike | string, options?: ArithmeticOptions): Temporal.PlainTime;
+    subtract(durationLike: Temporal.Duration | DurationLike | string, options?: ArithmeticOptions): Temporal.PlainTime;
     until(
       other: Temporal.PlainTime | PlainTimeLike | string,
       options?: DifferenceOptions<'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>
@@ -1195,7 +1191,7 @@ export namespace Temporal {
     readonly millisecond: number;
     readonly microsecond: number;
     readonly nanosecond: number;
-    readonly timeZone: Temporal.TimeZone;
+    readonly timeZone: Temporal.TimeZoneProtocol;
     readonly calendar: CalendarProtocol;
     readonly dayOfWeek: number;
     readonly dayOfYear: number;
@@ -1404,7 +1400,7 @@ export namespace Temporal {
   };
 }
 
-declare namespace IntlPolyfill {
+declare namespace Intl {
   type Formattable =
     | Date
     | Temporal.Instant
@@ -1415,11 +1411,11 @@ declare namespace IntlPolyfill {
     | Temporal.PlainYearMonth
     | Temporal.PlainMonthDay;
 
-  interface DateTimeFormatRangePart extends Intl.DateTimeFormatPart {
+  interface DateTimeFormatRangePart extends globalThis.Intl.DateTimeFormatPart {
     source: 'shared' | 'startRange' | 'endRange';
   }
 
-  export interface DateTimeFormat extends Intl.DateTimeFormat {
+  export interface DateTimeFormat extends globalThis.Intl.DateTimeFormat {
     /**
      * Format a date into a string according to the locale and formatting
      * options of this `Intl.DateTimeFormat` object.
@@ -1434,7 +1430,7 @@ declare namespace IntlPolyfill {
      *
      * @param date The date to format.
      */
-    formatToParts(date?: Formattable | number): Intl.DateTimeFormatPart[];
+    formatToParts(date?: Formattable | number): globalThis.Intl.DateTimeFormatPart[];
 
     /**
      * Format a date range in the most concise way based on the locale and
@@ -1459,23 +1455,31 @@ declare namespace IntlPolyfill {
     formatRangeToParts(startDate: Date | number, endDate: Date | number): DateTimeFormatRangePart[];
   }
 
+  export interface DateTimeFormatOptions extends Omit<globalThis.Intl.DateTimeFormatOptions, 'timeZone'> {
+    timeZone?: string | Temporal.TimeZoneProtocol;
+    // TODO: remove the props below after TS lib declarations are updated
+    dayPeriod?: 'narrow' | 'short' | 'long';
+    dateStyle?: 'full' | 'long' | 'medium' | 'short';
+    timeStyle?: 'full' | 'long' | 'medium' | 'short';
+  }
+
   export const DateTimeFormat: {
     /**
      * Creates `Intl.DateTimeFormat` objects that enable language-sensitive
      * date and time formatting.
      */
-    new (locales?: string | string[], options?: Intl.DateTimeFormatOptions): DateTimeFormat;
-    (locales?: string | string[], options?: Intl.DateTimeFormatOptions): DateTimeFormat;
+    new (locales?: string | string[], options?: DateTimeFormatOptions): DateTimeFormat;
+    (locales?: string | string[], options?: DateTimeFormatOptions): DateTimeFormat;
 
     /**
      * Get an array containing those of the provided locales that are supported
      * in date and time formatting without having to fall back to the runtime's
      * default locale.
      */
-    supportedLocalesOf(locales: string | string[], options?: Intl.DateTimeFormatOptions): string[];
+    supportedLocalesOf(locales: string | string[], options?: DateTimeFormatOptions): string[];
   };
 }
 
-export { IntlPolyfill as Intl };
+export { Intl as Intl };
 
 export function toTemporalInstant(this: Date): Temporal.Instant;

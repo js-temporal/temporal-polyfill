@@ -12,14 +12,15 @@ Object.defineProperty(globalThis, 'Temporal', {
   enumerable: false,
   configurable: true
 });
-copy(globalThis.Temporal, Temporal);
-Object.defineProperty(globalThis.Temporal, Symbol.toStringTag, {
+const globalTemporal = (globalThis as any).Temporal;
+copy(globalTemporal, Temporal);
+Object.defineProperty(globalTemporal, Symbol.toStringTag, {
   value: 'Temporal',
   writable: false,
   enumerable: false,
   configurable: true
 });
-copy(globalThis.Temporal.Now, Temporal.Now);
+copy(globalTemporal.Now, Temporal.Now);
 copy(globalThis.Intl, Intl);
 Object.defineProperty(globalThis.Date.prototype, 'toTemporalInstant', {
   value: toTemporalInstant,
@@ -28,7 +29,7 @@ Object.defineProperty(globalThis.Date.prototype, 'toTemporalInstant', {
   configurable: true
 });
 
-function copy(target, source) {
+function copy(target: Record<string | number | symbol, unknown>, source: Record<string | number | symbol, unknown>) {
   for (const prop of Object.getOwnPropertyNames(source)) {
     Object.defineProperty(target, prop, {
       value: source[prop],
