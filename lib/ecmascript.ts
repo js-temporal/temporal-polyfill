@@ -925,7 +925,7 @@ export function ToRelativeTemporalObject(options: {
     | Temporal.PlainDateTimeLike
     | string
     | undefined;
-}): Temporal.ZonedDateTime | Temporal.PlainDateTime | undefined {
+}): Temporal.ZonedDateTime | Temporal.PlainDate | undefined {
   const relativeTo = options.relativeTo;
   // TODO: `as undefined` below should not be needed.  Verify that it can be
   // removed after strictNullChecks is enabled.
@@ -935,21 +935,8 @@ export function ToRelativeTemporalObject(options: {
   let matchMinutes = false;
   let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, timeZone, offset;
   if (IsObject(relativeTo)) {
-    if (IsTemporalZonedDateTime(relativeTo) || IsTemporalDateTime(relativeTo)) return relativeTo;
-    if (IsTemporalDate(relativeTo)) {
-      return CreateTemporalDateTime(
-        GetSlot(relativeTo, ISO_YEAR),
-        GetSlot(relativeTo, ISO_MONTH),
-        GetSlot(relativeTo, ISO_DAY),
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        GetSlot(relativeTo, CALENDAR)
-      );
-    }
+    if (IsTemporalZonedDateTime(relativeTo) || IsTemporalDate(relativeTo)) return relativeTo;
+    if (IsTemporalDateTime(relativeTo)) return TemporalDateTimeToDate(relativeTo);
     calendar = GetTemporalCalendarWithISODefault(relativeTo);
     const fieldNames = CalendarFields(calendar, [
       'day',
@@ -1014,7 +1001,7 @@ export function ToRelativeTemporalObject(options: {
     );
     return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
   }
-  return CreateTemporalDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar);
+  return CreateTemporalDate(year, month, day, calendar);
 }
 
 export function ValidateTemporalUnitRange(largestUnit: Temporal.DateTimeUnit, smallestUnit: Temporal.DateTimeUnit) {
@@ -1246,7 +1233,7 @@ function ToTemporalZonedDateTimeFields(
 export function ToTemporalDate(
   itemParam: PlainDateParams['from'][0],
   options: PlainDateParams['from'][1] = ObjectCreate(null)
-) {
+): Temporal.PlainDate {
   let item = itemParam;
   if (IsObject(item)) {
     if (IsTemporalDate(item)) return item;
@@ -3326,9 +3313,9 @@ export function UnbalanceDurationRelative(
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
 
   let calendar;
-  let relativeTo: Temporal.PlainDateTime;
+  let relativeTo: Temporal.PlainDate;
   if (relativeToParam) {
-    relativeTo = ToTemporalDateTime(relativeToParam);
+    relativeTo = ToTemporalDate(relativeToParam);
     calendar = GetSlot(relativeTo, CALENDAR);
   }
 
@@ -3428,9 +3415,9 @@ export function BalanceDurationRelative(
   if (sign === 0) return { years, months, weeks, days };
 
   let calendar;
-  let relativeTo: Temporal.PlainDateTime;
+  let relativeTo: Temporal.PlainDate;
   if (relativeToParam) {
-    relativeTo = ToTemporalDateTime(relativeToParam);
+    relativeTo = ToTemporalDate(relativeToParam);
     calendar = GetSlot(relativeTo, CALENDAR);
   }
 
@@ -4131,28 +4118,22 @@ export function AddDuration(
       ns1 + ns2,
       largestUnit
     ));
-  } else if (IsTemporalDateTime(relativeTo)) {
+  } else if (IsTemporalDate(relativeTo)) {
     const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
     const calendar = GetSlot(relativeTo, CALENDAR);
 
-    const datePart = CreateTemporalDate(
-      GetSlot(relativeTo, ISO_YEAR),
-      GetSlot(relativeTo, ISO_MONTH),
-      GetSlot(relativeTo, ISO_DAY),
-      calendar
-    );
     const dateDuration1 = new TemporalDuration(y1, mon1, w1, d1, 0, 0, 0, 0, 0, 0);
     const dateDuration2 = new TemporalDuration(y2, mon2, w2, d2, 0, 0, 0, 0, 0, 0);
     const dateAdd = calendar.dateAdd;
     const firstAddOptions = ObjectCreate(null);
-    const intermediate = CalendarDateAdd(calendar, datePart, dateDuration1, firstAddOptions, dateAdd);
+    const intermediate = CalendarDateAdd(calendar, relativeTo, dateDuration1, firstAddOptions, dateAdd);
     const secondAddOptions = ObjectCreate(null);
     const end = CalendarDateAdd(calendar, intermediate, dateDuration2, secondAddOptions, dateAdd);
 
     const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit);
     const differenceOptions = ObjectCreate(null);
     differenceOptions.largestUnit = dateLargestUnit;
-    ({ years, months, weeks, days } = CalendarDateUntil(calendar, datePart, end, differenceOptions));
+    ({ years, months, weeks, days } = CalendarDateUntil(calendar, relativeTo, end, differenceOptions));
     // Signs of date part and time part may not agree; balance them together
     ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
       days,
@@ -4515,19 +4496,7 @@ function MoveRelativeDate(
   const options = ObjectCreate(null);
   const later = CalendarDateAdd(calendar, relativeToParam, duration, options);
   const days = DaysUntil(relativeToParam, later);
-  const relativeTo = CreateTemporalDateTime(
-    GetSlot(later, ISO_YEAR),
-    GetSlot(later, ISO_MONTH),
-    GetSlot(later, ISO_DAY),
-    GetSlot(relativeToParam, ISO_HOUR),
-    GetSlot(relativeToParam, ISO_MINUTE),
-    GetSlot(relativeToParam, ISO_SECOND),
-    GetSlot(relativeToParam, ISO_MILLISECOND),
-    GetSlot(relativeToParam, ISO_MICROSECOND),
-    GetSlot(relativeToParam, ISO_NANOSECOND),
-    GetSlot(relativeToParam, CALENDAR)
-  );
-  return { relativeTo, days };
+  return { relativeTo: later, days };
 }
 
 export function MoveRelativeZonedDateTime(
@@ -4717,17 +4686,18 @@ export function RoundDuration(
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   let calendar, zdtRelative;
   // if it's a ZDT, it will be reassigned to a PDT below.
-  let relativeTo = relativeToParam as Temporal.PlainDateTime;
+  let relativeTo: Parameters<typeof MoveRelativeDate>[1] = relativeToParam;
   if (relativeToParam) {
     if (IsTemporalZonedDateTime(relativeTo)) {
       zdtRelative = relativeTo;
-      relativeTo = BuiltinTimeZoneGetPlainDateTimeFor(
+      const pdt = BuiltinTimeZoneGetPlainDateTimeFor(
         GetSlot(relativeTo, TIME_ZONE),
         GetSlot(relativeTo, INSTANT),
         GetSlot(relativeTo, CALENDAR)
       );
-    } else if (!IsTemporalDateTime(relativeTo)) {
-      throw new TypeError('starting point must be PlainDateTime or ZonedDateTime');
+      relativeTo = TemporalDateTimeToDate(pdt);
+    } else if (!IsTemporalDate(relativeTo)) {
+      throw new TypeError('starting point must be PlainDate or ZonedDateTime');
     }
     calendar = GetSlot(relativeTo, CALENDAR);
   }
@@ -4783,20 +4753,6 @@ export function RoundDuration(
       const daysPassed = DaysUntil(oldRelativeTo, relativeToDateOnly);
       days -= daysPassed;
       const oneYear = new TemporalDuration(days < 0 ? -1 : 1);
-      // This conversion is needed because of an issue in the spec that's likely to change.
-      // See https://github.com/tc39/proposal-temporal/issues/1821.
-      relativeTo = CreateTemporalDateTime(
-        GetSlot(relativeToDateOnly, ISO_YEAR),
-        GetSlot(relativeToDateOnly, ISO_MONTH),
-        GetSlot(relativeToDateOnly, ISO_DAY),
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        GetSlot(relativeTo, CALENDAR)
-      );
       let { days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear);
 
       // Note that `nanoseconds` below (here and in similar code for months,
@@ -4828,20 +4784,6 @@ export function RoundDuration(
       const secondAddOptions = ObjectCreate(null);
       const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, secondAddOptions, dateAdd);
       const weeksInDays = DaysUntil(yearsMonthsLater, yearsMonthsWeeksLater);
-      // This conversion is needed because of an issue in the spec that's likely to change.
-      // See https://github.com/tc39/proposal-temporal/issues/1821.
-      relativeTo = CreateTemporalDateTime(
-        GetSlot(yearsMonthsLater, ISO_YEAR),
-        GetSlot(yearsMonthsLater, ISO_MONTH),
-        GetSlot(yearsMonthsLater, ISO_DAY),
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        GetSlot(yearsMonthsLater, CALENDAR)
-      );
       days += weeksInDays;
 
       // Months may be different lengths of days depending on the calendar,
