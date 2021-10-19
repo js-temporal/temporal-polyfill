@@ -3,11 +3,17 @@
 # being manually executed.
 set -e
 TESTS_FROM_ENV="$TESTS"
-TESTS="**/*.js"
+TESTS="*/Temporal/**/*.js"
 if [ $# -ne 0 ]; then
-  TESTS="$@";
+  TESTS="*/Temporal/$@";
 elif [ ! -z "$TESTS_FROM_ENV" ]; then
-  TESTS="$TESTS_FROM_ENV";
+  # VSCode launch.json passes the full path to the current file in some cases,
+  # so pass that on.
+  if [[ "$TESTS_FROM_ENV" =~ ^/.* ]]; then
+    TESTS="$TESTS_FROM_ENV";
+  else
+    TESTS="*/Temporal/$TESTS_FROM_ENV";
+  fi
 fi
 
 TIMEOUT=${TIMEOUT:-10000}
@@ -33,5 +39,5 @@ test262-harness \
   --prelude "../../dist/script.js" \
   --timeout "$TIMEOUT" \
   --preprocessor ../../test/preprocessor.test262.cjs \
-  "*/Temporal/$TESTS" \
+  "$TESTS" \
   | ../../test/parseResults.js
