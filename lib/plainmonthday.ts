@@ -129,6 +129,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     });
     mergedFields = ES.PrepareTemporalFields(mergedFields, mergedEntries);
     const options = ObjectCreate(null);
+    options.overflow = 'reject';
     return ES.DateFromFields(calendar, mergedFields, options);
   }
   getISOFields(): Return['getISOFields'] {
