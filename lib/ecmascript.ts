@@ -935,7 +935,18 @@ export function ToRelativeTemporalObject(options: {
       );
     }
     calendar = GetTemporalCalendarWithISODefault(relativeTo);
-    const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
+    const fieldNames = CalendarFields(calendar, [
+        'day',
+        'hour',
+        'microsecond',
+        'millisecond',
+        'minute',
+        'month',
+        'monthCode',
+        'nanosecond',
+        'second',
+        'year'
+      ] as const);
     const fields = ToTemporalDateTimeFields(relativeTo, fieldNames);
     const dateOptions = ObjectCreate(null);
     dateOptions.overflow = 'constrain';
