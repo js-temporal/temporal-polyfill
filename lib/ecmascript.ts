@@ -928,6 +928,7 @@ export function ToRelativeTemporalObject(options: {
   if (relativeTo === undefined) return relativeTo as undefined;
 
   let offsetBehaviour: OffsetBehaviour = 'option';
+  let matchMinutes = false;
   let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, timeZone, offset;
   if (IsObject(relativeTo)) {
     if (IsTemporalZonedDateTime(relativeTo) || IsTemporalDateTime(relativeTo)) return relativeTo;
@@ -984,6 +985,7 @@ export function ToRelativeTemporalObject(options: {
     }
     if (!calendar) calendar = GetISO8601Calendar();
     calendar = ToTemporalCalendar(calendar);
+    matchMinutes = true;
   }
   if (timeZone) {
     timeZone = ToTemporalTimeZone(timeZone);
@@ -1003,7 +1005,8 @@ export function ToRelativeTemporalObject(options: {
       offsetNs,
       timeZone,
       'compatible',
-      'reject'
+      'reject',
+      matchMinutes
     );
     return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
   }
@@ -1536,7 +1539,8 @@ export function InterpretISODateTimeOffset(
   offsetNs: number,
   timeZone: Temporal.TimeZoneProtocol,
   disambiguation: Temporal.ToInstantOptions['disambiguation'],
-  offsetOpt: Temporal.OffsetDisambiguationOptions['offset']
+  offsetOpt: Temporal.OffsetDisambiguationOptions['offset'],
+  matchMinute: boolean
 ) {
   const DateTime = GetIntrinsic('%Temporal.PlainDateTime%');
   const dt = new DateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
@@ -1562,7 +1566,14 @@ export function InterpretISODateTimeOffset(
   const possibleInstants = GetPossibleInstantsFor(timeZone, dt);
   for (const candidate of possibleInstants) {
     const candidateOffset = GetOffsetNanosecondsFor(timeZone, candidate);
-    if (candidateOffset === offsetNs) return GetSlot(candidate, EPOCHNANOSECONDS);
+    const roundedCandidateOffset = RoundNumberToIncrement(
+      bigInt(candidateOffset),
+      60e9,
+      'halfExpand'
+    ).toJSNumber();
+    if (candidateOffset === offsetNs || (matchMinute && roundedCandidateOffset === offsetNs)) {
+      return GetSlot(candidate, EPOCHNANOSECONDS);
+    }
   }
 
   // the user-provided offset doesn't match any instants for this time
@@ -1597,6 +1608,7 @@ export function ToTemporalZonedDateTime(
     timeZone,
     offset: string,
     calendar: string | Temporal.CalendarProtocol;
+  let matchMinute = false;
   let offsetBehaviour: OffsetBehaviour = 'option';
   if (IsObject(item)) {
     if (IsTemporalZonedDateTime(item)) return item;
@@ -1641,6 +1653,7 @@ export function ToTemporalZonedDateTime(
     timeZone = new TemporalTimeZone(ianaName);
     if (!calendar) calendar = GetISO8601Calendar();
     calendar = ToTemporalCalendar(calendar);
+    matchMinute = true; // ISO strings may specify offset with less precision
   }
   let offsetNs = 0;
   if (offsetBehaviour === 'option') offsetNs = ParseOffsetString(offset);
@@ -1660,7 +1673,8 @@ export function ToTemporalZonedDateTime(
     offsetNs,
     timeZone,
     disambiguation,
-    offsetOpt
+    offsetOpt,
+    matchMinute
   );
   return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
 }
