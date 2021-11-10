@@ -1,6 +1,6 @@
 import * as ES from './ecmascript';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
-import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, TIME_ZONE, GetSlot, HasSlot } from './slots';
+import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, GetSlot } from './slots';
 import { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { FieldRecord, PlainYearMonthParams as Params, PlainYearMonthReturn as Return } from './internaltypes';
@@ -85,15 +85,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     if (!ES.IsObject(temporalYearMonthLike)) {
       throw new TypeError('invalid argument');
     }
-    if (HasSlot(temporalYearMonthLike, CALENDAR) || HasSlot(temporalYearMonthLike, TIME_ZONE)) {
-      throw new TypeError('with() does not support a calendar or timeZone property');
-    }
-    if (temporalYearMonthLike.calendar !== undefined) {
-      throw new TypeError('with() does not support a calendar property');
-    }
-    if ((temporalYearMonthLike as Temporal.ZonedDateTimeLike).timeZone !== undefined) {
-      throw new TypeError('with() does not support a timeZone property');
-    }
+    ES.RejectObjectWithCalendarOrTimeZone(temporalYearMonthLike);
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['month', 'monthCode', 'year'] as const);

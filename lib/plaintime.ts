@@ -13,11 +13,9 @@ import {
   ISO_MICROSECOND,
   ISO_NANOSECOND,
   CALENDAR,
-  TIME_ZONE,
   EPOCHNANOSECONDS,
   CreateSlots,
   GetSlot,
-  HasSlot,
   SetSlot
 } from './slots';
 import { Temporal } from '..';
@@ -146,15 +144,7 @@ export class PlainTime implements Temporal.PlainTime {
     if (!ES.IsObject(temporalTimeLike)) {
       throw new TypeError('invalid argument');
     }
-    if (HasSlot(temporalTimeLike, CALENDAR) || HasSlot(temporalTimeLike, TIME_ZONE)) {
-      throw new TypeError('with() does not support a calendar or timeZone property');
-    }
-    if (temporalTimeLike.calendar !== undefined) {
-      throw new TypeError('with() does not support a calendar property');
-    }
-    if ((temporalTimeLike as Temporal.ZonedDateTimeLike).timeZone !== undefined) {
-      throw new TypeError('with() does not support a timeZone property');
-    }
+    ES.RejectObjectWithCalendarOrTimeZone(temporalTimeLike);
 
     const options = ES.GetOptionsObject(optionsParam);
     const overflow = ES.ToTemporalOverflow(options);

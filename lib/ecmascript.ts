@@ -268,6 +268,17 @@ export function IsTemporalMonthDay(item: unknown): item is Temporal.PlainMonthDa
 export function IsTemporalZonedDateTime(item: unknown): item is Temporal.ZonedDateTime {
   return HasSlot(item, EPOCHNANOSECONDS, TIME_ZONE, CALENDAR);
 }
+export function RejectObjectWithCalendarOrTimeZone(item: AnyTemporalLikeType) {
+  if (HasSlot(item, CALENDAR) || HasSlot(item, TIME_ZONE)) {
+    throw new TypeError('with() does not support a calendar or timeZone property');
+  }
+  if ((item as any).calendar !== undefined) {
+    throw new TypeError('with() does not support a calendar property');
+  }
+  if((item as any).timeZone !== undefined) {
+    throw new TypeError('with() does not support a timeZone property');
+  }
+}
 function TemporalTimeZoneFromString(stringIdent: string) {
   // TODO: why aren't these three variables destructured to include `undefined` as possible types?
   let { ianaName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
