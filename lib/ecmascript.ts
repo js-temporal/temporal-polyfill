@@ -275,7 +275,7 @@ export function RejectObjectWithCalendarOrTimeZone(item: AnyTemporalLikeType) {
   if ((item as any).calendar !== undefined) {
     throw new TypeError('with() does not support a calendar property');
   }
-  if((item as any).timeZone !== undefined) {
+  if ((item as any).timeZone !== undefined) {
     throw new TypeError('with() does not support a timeZone property');
   }
 }
@@ -948,17 +948,17 @@ export function ToRelativeTemporalObject(options: {
     }
     calendar = GetTemporalCalendarWithISODefault(relativeTo);
     const fieldNames = CalendarFields(calendar, [
-        'day',
-        'hour',
-        'microsecond',
-        'millisecond',
-        'minute',
-        'month',
-        'monthCode',
-        'nanosecond',
-        'second',
-        'year'
-      ] as const);
+      'day',
+      'hour',
+      'microsecond',
+      'millisecond',
+      'minute',
+      'month',
+      'monthCode',
+      'nanosecond',
+      'second',
+      'year'
+    ] as const);
     const fields = ToTemporalDateTimeFields(relativeTo, fieldNames);
     const dateOptions = ObjectCreate(null);
     dateOptions.overflow = 'constrain';
@@ -1566,11 +1566,7 @@ export function InterpretISODateTimeOffset(
   const possibleInstants = GetPossibleInstantsFor(timeZone, dt);
   for (const candidate of possibleInstants) {
     const candidateOffset = GetOffsetNanosecondsFor(timeZone, candidate);
-    const roundedCandidateOffset = RoundNumberToIncrement(
-      bigInt(candidateOffset),
-      60e9,
-      'halfExpand'
-    ).toJSNumber();
+    const roundedCandidateOffset = RoundNumberToIncrement(bigInt(candidateOffset), 60e9, 'halfExpand').toJSNumber();
     if (candidateOffset === offsetNs || (matchMinute && roundedCandidateOffset === offsetNs)) {
       return GetSlot(candidate, EPOCHNANOSECONDS);
     }
@@ -2729,16 +2725,16 @@ function FormatTimeZoneOffsetString(offsetNanosecondsParam: number): string {
 }
 
 export function FormatISOTimeZoneOffsetString(offsetNanosecondsParam: number): string {
-    let offsetNanoseconds = RoundNumberToIncrement(bigInt(offsetNanosecondsParam), 60e9, 'halfExpand').toJSNumber();
-    const sign = offsetNanoseconds < 0 ? '-' : '+';
-    offsetNanoseconds = MathAbs(offsetNanoseconds);
-    const minutes = (offsetNanoseconds / 60e9) % 60;
-    const hours = MathFloor(offsetNanoseconds / 3600e9);
+  let offsetNanoseconds = RoundNumberToIncrement(bigInt(offsetNanosecondsParam), 60e9, 'halfExpand').toJSNumber();
+  const sign = offsetNanoseconds < 0 ? '-' : '+';
+  offsetNanoseconds = MathAbs(offsetNanoseconds);
+  const minutes = (offsetNanoseconds / 60e9) % 60;
+  const hours = MathFloor(offsetNanoseconds / 3600e9);
 
-    const hourString = ISODateTimePartString(hours);
-    const minuteString = ISODateTimePartString(minutes);
-    return `${sign}${hourString}:${minuteString}`;
-  }
+  const hourString = ISODateTimePartString(hours);
+  const minuteString = ISODateTimePartString(minutes);
+  return `${sign}${hourString}:${minuteString}`;
+}
 export function GetEpochFromISOParts(
   year: number,
   month: number,
