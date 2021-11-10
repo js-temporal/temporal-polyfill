@@ -299,10 +299,9 @@ describe('MonthDay', () => {
     it('needs at least a year property on the object in the ISO calendar', () => {
       throws(() => md.toPlainDate({ something: 'nothing' }), TypeError);
     });
-    it("constrains if the MonthDay doesn't exist in the year", () => {
+    it("throws if the MonthDay doesn't exist in the year", () => {
       const leapDay = PlainMonthDay.from('02-29');
-      equal(`${leapDay.toPlainDate({ year: 2019 })}`, '2019-02-28');
-      equal(`${leapDay.toPlainDate({ year: 2019 }, { overflow: 'constrain' })}`, '2019-02-28');
+      throws(() => leapDay.toPlainDate({ year: 2019 }), RangeError);
     });
   });
   describe('MonthDay.toString()', () => {
