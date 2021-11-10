@@ -2436,7 +2436,10 @@ export function TemporalInstantToString(
     precision
   );
   let timeZoneString = 'Z';
-  if (timeZone !== undefined) timeZoneString = BuiltinTimeZoneGetOffsetStringFor(outputTimeZone, instant);
+  if (timeZone !== undefined) {
+    const offsetNs = GetOffsetNanosecondsFor(outputTimeZone, instant);
+    timeZoneString = FormatISOTimeZoneOffsetString(offsetNs);
+  }
   return `${year}-${month}-${day}T${hour}:${minute}${seconds}${timeZoneString}`;
 }
 
@@ -2651,7 +2654,10 @@ export function TemporalZonedDateTimeToString(
     precision
   );
   let result = `${year}-${month}-${day}T${hour}:${minute}${seconds}`;
-  if (showOffset !== 'never') result += BuiltinTimeZoneGetOffsetStringFor(tz, instant);
+  if (showOffset !== 'never') {
+    const offsetNs = GetOffsetNanosecondsFor(tz, instant);
+    result += FormatISOTimeZoneOffsetString(offsetNs);
+  }
   if (showTimeZone !== 'never') result += `[${tz}]`;
   const calendarID = ToString(GetSlot(zdt, CALENDAR));
   result += FormatCalendarAnnotation(calendarID, showCalendar);
@@ -2708,6 +2714,17 @@ function FormatTimeZoneOffsetString(offsetNanosecondsParam: number): string {
   return `${sign}${hourString}:${minuteString}${post}`;
 }
 
+export function FormatISOTimeZoneOffsetString(offsetNanosecondsParam: number): string {
+    let offsetNanoseconds = RoundNumberToIncrement(bigInt(offsetNanosecondsParam), 60e9, 'halfExpand').toJSNumber();
+    const sign = offsetNanoseconds < 0 ? '-' : '+';
+    offsetNanoseconds = MathAbs(offsetNanoseconds);
+    const minutes = (offsetNanoseconds / 60e9) % 60;
+    const hours = MathFloor(offsetNanoseconds / 3600e9);
+
+    const hourString = ISODateTimePartString(hours);
+    const minuteString = ISODateTimePartString(minutes);
+    return `${sign}${hourString}:${minuteString}`;
+  }
 export function GetEpochFromISOParts(
   year: number,
   month: number,
