@@ -1212,7 +1212,7 @@ export function ToTemporalYearMonthFields(
   return PrepareTemporalFields(bag, entries);
 }
 
-export function ToTemporalZonedDateTimeFields(
+function ToTemporalZonedDateTimeFields(
   bag: Temporal.ZonedDateTimeLike,
   fieldNames: readonly (keyof Temporal.ZonedDateTimeLike)[]
 ) {
@@ -2724,7 +2724,7 @@ function FormatTimeZoneOffsetString(offsetNanosecondsParam: number): string {
   return `${sign}${hourString}:${minuteString}${post}`;
 }
 
-export function FormatISOTimeZoneOffsetString(offsetNanosecondsParam: number): string {
+function FormatISOTimeZoneOffsetString(offsetNanosecondsParam: number): string {
   let offsetNanoseconds = RoundNumberToIncrement(bigInt(offsetNanosecondsParam), 60e9, 'halfExpand').toJSNumber();
   const sign = offsetNanoseconds < 0 ? '-' : '+';
   offsetNanoseconds = MathAbs(offsetNanoseconds);

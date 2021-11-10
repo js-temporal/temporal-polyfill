@@ -203,7 +203,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!props) {
       throw new TypeError('invalid zoned-date-time-like');
     }
-    const entries = [
+    // Unlike ToTemporalZonedDateTimeFields, the offset property will be required.
+    const entries: ([keyof Temporal.ZonedDateTimeLike, 0 | undefined] | ['timeZone'] | ['offset'])[] = [
       ['day', undefined],
       ['hour', 0],
       ['microsecond', 0],
