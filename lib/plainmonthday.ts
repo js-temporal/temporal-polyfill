@@ -1,6 +1,6 @@
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
-import { ISO_MONTH, ISO_DAY, ISO_YEAR, CALENDAR, TIME_ZONE, GetSlot, HasSlot } from './slots';
+import { ISO_MONTH, ISO_DAY, ISO_YEAR, CALENDAR, GetSlot } from './slots';
 import { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { FieldRecord, PlainMonthDayParams as Params, PlainMonthDayReturn as Return } from './internaltypes';
@@ -48,15 +48,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     if (!ES.IsObject(temporalMonthDayLike)) {
       throw new TypeError('invalid argument');
     }
-    if (HasSlot(temporalMonthDayLike, CALENDAR) || HasSlot(temporalMonthDayLike, TIME_ZONE)) {
-      throw new TypeError('with() does not support a calendar or timeZone property');
-    }
-    if (temporalMonthDayLike.calendar !== undefined) {
-      throw new TypeError('with() does not support a calendar property');
-    }
-    if ((temporalMonthDayLike as Temporal.ZonedDateTimeLike).timeZone !== undefined) {
-      throw new TypeError('with() does not support a timeZone property');
-    }
+    ES.RejectObjectWithCalendarOrTimeZone(temporalMonthDayLike);
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
@@ -129,6 +121,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     });
     mergedFields = ES.PrepareTemporalFields(mergedFields, mergedEntries);
     const options = ObjectCreate(null);
+    options.overflow = 'reject';
     return ES.DateFromFields(calendar, mergedFields, options);
   }
   getISOFields(): Return['getISOFields'] {

@@ -268,6 +268,17 @@ export function IsTemporalMonthDay(item: unknown): item is Temporal.PlainMonthDa
 export function IsTemporalZonedDateTime(item: unknown): item is Temporal.ZonedDateTime {
   return HasSlot(item, EPOCHNANOSECONDS, TIME_ZONE, CALENDAR);
 }
+export function RejectObjectWithCalendarOrTimeZone(item: AnyTemporalLikeType) {
+  if (HasSlot(item, CALENDAR) || HasSlot(item, TIME_ZONE)) {
+    throw new TypeError('with() does not support a calendar or timeZone property');
+  }
+  if ((item as any).calendar !== undefined) {
+    throw new TypeError('with() does not support a calendar property');
+  }
+  if ((item as any).timeZone !== undefined) {
+    throw new TypeError('with() does not support a timeZone property');
+  }
+}
 function TemporalTimeZoneFromString(stringIdent: string) {
   // TODO: why aren't these three variables destructured to include `undefined` as possible types?
   let { ianaName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
@@ -917,6 +928,7 @@ export function ToRelativeTemporalObject(options: {
   if (relativeTo === undefined) return relativeTo as undefined;
 
   let offsetBehaviour: OffsetBehaviour = 'option';
+  let matchMinutes = false;
   let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, timeZone, offset;
   if (IsObject(relativeTo)) {
     if (IsTemporalZonedDateTime(relativeTo) || IsTemporalDateTime(relativeTo)) return relativeTo;
@@ -935,7 +947,18 @@ export function ToRelativeTemporalObject(options: {
       );
     }
     calendar = GetTemporalCalendarWithISODefault(relativeTo);
-    const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
+    const fieldNames = CalendarFields(calendar, [
+      'day',
+      'hour',
+      'microsecond',
+      'millisecond',
+      'minute',
+      'month',
+      'monthCode',
+      'nanosecond',
+      'second',
+      'year'
+    ] as const);
     const fields = ToTemporalDateTimeFields(relativeTo, fieldNames);
     const dateOptions = ObjectCreate(null);
     dateOptions.overflow = 'constrain';
@@ -962,6 +985,7 @@ export function ToRelativeTemporalObject(options: {
     }
     if (!calendar) calendar = GetISO8601Calendar();
     calendar = ToTemporalCalendar(calendar);
+    matchMinutes = true;
   }
   if (timeZone) {
     timeZone = ToTemporalTimeZone(timeZone);
@@ -981,7 +1005,8 @@ export function ToRelativeTemporalObject(options: {
       offsetNs,
       timeZone,
       'compatible',
-      'reject'
+      'reject',
+      matchMinutes
     );
     return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
   }
@@ -1187,7 +1212,7 @@ export function ToTemporalYearMonthFields(
   return PrepareTemporalFields(bag, entries);
 }
 
-export function ToTemporalZonedDateTimeFields(
+function ToTemporalZonedDateTimeFields(
   bag: Temporal.ZonedDateTimeLike,
   fieldNames: readonly (keyof Temporal.ZonedDateTimeLike)[]
 ) {
@@ -1514,7 +1539,8 @@ export function InterpretISODateTimeOffset(
   offsetNs: number,
   timeZone: Temporal.TimeZoneProtocol,
   disambiguation: Temporal.ToInstantOptions['disambiguation'],
-  offsetOpt: Temporal.OffsetDisambiguationOptions['offset']
+  offsetOpt: Temporal.OffsetDisambiguationOptions['offset'],
+  matchMinute: boolean
 ) {
   const DateTime = GetIntrinsic('%Temporal.PlainDateTime%');
   const dt = new DateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
@@ -1540,7 +1566,10 @@ export function InterpretISODateTimeOffset(
   const possibleInstants = GetPossibleInstantsFor(timeZone, dt);
   for (const candidate of possibleInstants) {
     const candidateOffset = GetOffsetNanosecondsFor(timeZone, candidate);
-    if (candidateOffset === offsetNs) return GetSlot(candidate, EPOCHNANOSECONDS);
+    const roundedCandidateOffset = RoundNumberToIncrement(bigInt(candidateOffset), 60e9, 'halfExpand').toJSNumber();
+    if (candidateOffset === offsetNs || (matchMinute && roundedCandidateOffset === offsetNs)) {
+      return GetSlot(candidate, EPOCHNANOSECONDS);
+    }
   }
 
   // the user-provided offset doesn't match any instants for this time
@@ -1575,6 +1604,7 @@ export function ToTemporalZonedDateTime(
     timeZone,
     offset: string,
     calendar: string | Temporal.CalendarProtocol;
+  let matchMinute = false;
   let offsetBehaviour: OffsetBehaviour = 'option';
   if (IsObject(item)) {
     if (IsTemporalZonedDateTime(item)) return item;
@@ -1619,6 +1649,7 @@ export function ToTemporalZonedDateTime(
     timeZone = new TemporalTimeZone(ianaName);
     if (!calendar) calendar = GetISO8601Calendar();
     calendar = ToTemporalCalendar(calendar);
+    matchMinute = true; // ISO strings may specify offset with less precision
   }
   let offsetNs = 0;
   if (offsetBehaviour === 'option') offsetNs = ParseOffsetString(offset);
@@ -1638,7 +1669,8 @@ export function ToTemporalZonedDateTime(
     offsetNs,
     timeZone,
     disambiguation,
-    offsetOpt
+    offsetOpt,
+    matchMinute
   );
   return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
 }
@@ -2414,7 +2446,10 @@ export function TemporalInstantToString(
     precision
   );
   let timeZoneString = 'Z';
-  if (timeZone !== undefined) timeZoneString = BuiltinTimeZoneGetOffsetStringFor(outputTimeZone, instant);
+  if (timeZone !== undefined) {
+    const offsetNs = GetOffsetNanosecondsFor(outputTimeZone, instant);
+    timeZoneString = FormatISOTimeZoneOffsetString(offsetNs);
+  }
   return `${year}-${month}-${day}T${hour}:${minute}${seconds}${timeZoneString}`;
 }
 
@@ -2629,7 +2664,10 @@ export function TemporalZonedDateTimeToString(
     precision
   );
   let result = `${year}-${month}-${day}T${hour}:${minute}${seconds}`;
-  if (showOffset !== 'never') result += BuiltinTimeZoneGetOffsetStringFor(tz, instant);
+  if (showOffset !== 'never') {
+    const offsetNs = GetOffsetNanosecondsFor(tz, instant);
+    result += FormatISOTimeZoneOffsetString(offsetNs);
+  }
   if (showTimeZone !== 'never') result += `[${tz}]`;
   const calendarID = ToString(GetSlot(zdt, CALENDAR));
   result += FormatCalendarAnnotation(calendarID, showCalendar);
@@ -2686,6 +2724,17 @@ function FormatTimeZoneOffsetString(offsetNanosecondsParam: number): string {
   return `${sign}${hourString}:${minuteString}${post}`;
 }
 
+function FormatISOTimeZoneOffsetString(offsetNanosecondsParam: number): string {
+  let offsetNanoseconds = RoundNumberToIncrement(bigInt(offsetNanosecondsParam), 60e9, 'halfExpand').toJSNumber();
+  const sign = offsetNanoseconds < 0 ? '-' : '+';
+  offsetNanoseconds = MathAbs(offsetNanoseconds);
+  const minutes = (offsetNanoseconds / 60e9) % 60;
+  const hours = MathFloor(offsetNanoseconds / 3600e9);
+
+  const hourString = ISODateTimePartString(hours);
+  const minuteString = ISODateTimePartString(minutes);
+  return `${sign}${hourString}:${minuteString}`;
+}
 export function GetEpochFromISOParts(
   year: number,
   month: number,

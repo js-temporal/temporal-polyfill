@@ -14,8 +14,7 @@ import {
   ISO_NANOSECOND,
   ISO_SECOND,
   TIME_ZONE,
-  GetSlot,
-  HasSlot
+  GetSlot
 } from './slots';
 import { Temporal } from '..';
 import { DateTimeFormat } from './intl';
@@ -179,15 +178,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!ES.IsObject(temporalZonedDateTimeLike)) {
       throw new TypeError('invalid zoned-date-time-like');
     }
-    if (HasSlot(temporalZonedDateTimeLike, CALENDAR) || HasSlot(temporalZonedDateTimeLike, TIME_ZONE)) {
-      throw new TypeError('with() does not support a calendar or timeZone property');
-    }
-    if (temporalZonedDateTimeLike.calendar !== undefined) {
-      throw new TypeError('calendar invalid for with(). use withCalendar()');
-    }
-    if (temporalZonedDateTimeLike.timeZone !== undefined) {
-      throw new TypeError('timeZone invalid for with(). use withTimeZone()');
-    }
+    ES.RejectObjectWithCalendarOrTimeZone(temporalZonedDateTimeLike);
 
     const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
@@ -212,9 +203,30 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!props) {
       throw new TypeError('invalid zoned-date-time-like');
     }
-    let fields = ES.ToTemporalZonedDateTimeFields(this, fieldNames) as any;
+    // Unlike ToTemporalZonedDateTimeFields, the offset property will be required.
+    const entries: ([keyof Temporal.ZonedDateTimeLike, 0 | undefined] | ['timeZone'] | ['offset'])[] = [
+      ['day', undefined],
+      ['hour', 0],
+      ['microsecond', 0],
+      ['millisecond', 0],
+      ['minute', 0],
+      ['month', undefined],
+      ['monthCode', undefined],
+      ['nanosecond', 0],
+      ['second', 0],
+      ['year', undefined],
+      ['offset'],
+      ['timeZone']
+    ];
+    // Add extra fields from the calendar at the end
+    fieldNames.forEach((fieldName) => {
+      if (!entries.some(([name]) => name === fieldName)) {
+        entries.push([fieldName, undefined]);
+      }
+    });
+    let fields = ES.PrepareTemporalFields(this, entries as any);
     fields = ES.CalendarMergeFields(calendar, fields, props);
-    fields = ES.ToTemporalZonedDateTimeFields(fields, fieldNames);
+    fields = ES.PrepareTemporalFields(fields, entries as any);
     const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
       ES.InterpretTemporalDateTimeFields(calendar, fields, options);
     const offsetNs = ES.ParseOffsetString(fields.offset);
@@ -232,7 +244,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       offsetNs,
       timeZone,
       disambiguation,
-      offset
+      offset,
+      /* matchMinute = */ false
     );
 
     return ES.CreateTemporalZonedDateTime(epochNanoseconds, GetSlot(this, TIME_ZONE), calendar);
@@ -648,7 +661,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       offsetNs,
       timeZone,
       'compatible',
-      'prefer'
+      'prefer',
+      /* matchMinute = */ false
     );
 
     return ES.CreateTemporalZonedDateTime(epochNanoseconds, timeZone, GetSlot(this, CALENDAR));

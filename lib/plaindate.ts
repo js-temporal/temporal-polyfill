@@ -11,10 +11,8 @@ import {
   ISO_MICROSECOND,
   ISO_NANOSECOND,
   CALENDAR,
-  TIME_ZONE,
   EPOCHNANOSECONDS,
-  GetSlot,
-  HasSlot
+  GetSlot
 } from './slots';
 import { Temporal } from '..';
 import { DateTimeFormat } from './intl';
@@ -109,15 +107,7 @@ export class PlainDate implements Temporal.PlainDate {
     if (!ES.IsObject(temporalDateLike)) {
       throw new TypeError('invalid argument');
     }
-    if (HasSlot(temporalDateLike, CALENDAR) || HasSlot(temporalDateLike, TIME_ZONE)) {
-      throw new TypeError('with() does not support a calendar or timeZone property');
-    }
-    if (temporalDateLike.calendar !== undefined) {
-      throw new TypeError('with() does not support a calendar property');
-    }
-    if ((temporalDateLike as Temporal.ZonedDateTimeLike).timeZone !== undefined) {
-      throw new TypeError('with() does not support a timeZone property');
-    }
+    ES.RejectObjectWithCalendarOrTimeZone(temporalDateLike);
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
