@@ -586,7 +586,10 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   round(optionsParam: Params['round'][0]): Return['round'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     if (optionsParam === undefined) throw new TypeError('options parameter is required');
-    const options = ES.GetOptionsObject(optionsParam);
+    const options =
+      typeof optionsParam === 'string'
+        ? (ES.CreateOnePropObject('smallestUnit', optionsParam) as Exclude<typeof optionsParam, string>)
+        : ES.GetOptionsObject(optionsParam);
     const smallestUnit = ES.ToSmallestTemporalUnit(options, undefined, ['year', 'month', 'week']);
     if (smallestUnit === undefined) throw new RangeError('smallestUnit is required');
     const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
