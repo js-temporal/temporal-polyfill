@@ -157,11 +157,6 @@ describe('TimeZone', () => {
       it(`TimeZone.from(${isoString}) is a time zone`, () => equal(typeof tz, 'object'));
       it(`TimeZone.from(${isoString}) has ID ${id}`, () => equal(tz.id, id));
     }
-    it('offset disagreeing with IANA name throws', () => {
-      throws(() => Temporal.TimeZone.from('1994-11-05T08:15:30-05:00[UTC]'), RangeError);
-      throws(() => Temporal.TimeZone.from('1994-11-05T13:15:30+00:00[America/New_York]'), RangeError);
-      throws(() => Temporal.TimeZone.from('1994-11-05T13:15:30-03[Europe/Brussels]'), RangeError);
-    });
     it('offset out of range throws', () => {
       throws(() => Temporal.TimeZone.from('1994-11-05T08:15:30+25:00'), RangeError);
       throws(() => Temporal.TimeZone.from('1994-11-05T13:15:30-25:00'), RangeError);
