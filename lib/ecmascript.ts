@@ -837,7 +837,7 @@ export function ToSecondsStringPrecision(options: Temporal.ToStringPrecisionOpti
 }
 
 export function ToLargestTemporalUnit<Allowed extends Temporal.DateTimeUnit, Disallowed extends Temporal.DateTimeUnit>(
-  options: { largestUnit?: Temporal.LargestUnitOption<Allowed> },
+  options: { largestUnit?: Temporal.LargestUnit<Allowed> },
   fallback: Allowed | 'auto',
   disallowedStrings?: ReadonlyArray<Disallowed>
 ): Allowed | 'auto';
@@ -846,7 +846,7 @@ export function ToLargestTemporalUnit<
   Disallowed extends Temporal.DateTimeUnit,
   IfAuto extends Allowed | undefined = Allowed
 >(
-  options: { largestUnit?: Temporal.LargestUnitOption<Allowed> },
+  options: { largestUnit?: Temporal.LargestUnit<Allowed> },
   fallback: Allowed | 'auto',
   disallowedStrings: ReadonlyArray<Disallowed>,
   autoValue?: IfAuto
@@ -856,7 +856,7 @@ export function ToLargestTemporalUnit<
   Disallowed extends Temporal.DateTimeUnit,
   IfAuto extends Allowed | undefined = Allowed
 >(
-  options: { largestUnit?: Temporal.LargestUnitOption<Allowed> },
+  options: { largestUnit?: Temporal.LargestUnit<Allowed> },
   fallback: Allowed | 'auto',
   disallowedStrings: ReadonlyArray<Disallowed> = [],
   autoValue?: IfAuto
@@ -882,7 +882,7 @@ export function ToSmallestTemporalUnit<
   Fallback extends Allowed,
   Disallowed extends Temporal.DateTimeUnit
 >(
-  options: { smallestUnit?: Temporal.SmallestUnitOption<Allowed> },
+  options: { smallestUnit?: Temporal.SmallestUnit<Allowed> },
   fallback: Fallback,
   disallowedStrings: ReadonlyArray<Disallowed> = []
 ): Allowed {
@@ -5063,6 +5063,12 @@ export function GetOptionsObject<T>(options: T) {
   if (options === undefined) return ObjectCreate(null) as T;
   if (IsObject(options) && options !== null) return options;
   throw new TypeError(`Options parameter must be an object, not ${options === null ? 'null' : `${typeof options}`}`);
+}
+
+export function CreateOnePropObject<K extends string, V extends unknown>(propName: K, propValue: V): { [k in K]: V } {
+  const o = ObjectCreate(null);
+  o[propName] = propValue;
+  return o;
 }
 
 function GetOption<P extends string, O extends Partial<Record<P, unknown>>>(

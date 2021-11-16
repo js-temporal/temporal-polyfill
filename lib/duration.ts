@@ -292,7 +292,10 @@ export class Duration implements Temporal.Duration {
       microseconds,
       nanoseconds
     );
-    const options = ES.GetOptionsObject(optionsParam);
+    const options =
+      typeof optionsParam === 'string'
+        ? (ES.CreateOnePropObject('smallestUnit', optionsParam) as Exclude<typeof optionsParam, string>)
+        : ES.GetOptionsObject(optionsParam);
     let smallestUnit = ES.ToSmallestTemporalUnit(options, undefined);
     let smallestUnitPresent = true;
     if (!smallestUnit) {
@@ -389,7 +392,10 @@ export class Duration implements Temporal.Duration {
     let nanoseconds = GetSlot(this, NANOSECONDS);
 
     if (optionsParam === undefined) throw new TypeError('options argument is required');
-    const options = ES.GetOptionsObject(optionsParam);
+    const options =
+      typeof optionsParam === 'string'
+        ? (ES.CreateOnePropObject('unit', optionsParam) as Exclude<typeof optionsParam, string>)
+        : ES.GetOptionsObject(optionsParam);
     const unit = ES.ToTemporalDurationTotalUnit(options);
     if (unit === undefined) throw new RangeError('unit option is required');
     const relativeTo = ES.ToRelativeTemporalObject(options);
