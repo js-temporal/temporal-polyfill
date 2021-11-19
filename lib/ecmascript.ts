@@ -140,12 +140,16 @@ export function ToPositiveInteger(valueParam: unknown, property?: string): numbe
   return value;
 }
 
-function ToIntegerNoFraction(valueParam: unknown): number {
+export function ToIntegerWithoutRounding(valueParam: unknown): number {
   const value = ToNumber(valueParam);
+  if (NumberIsNaN(value)) return 0;
+  if (!NumberIsFinite(value)) {
+    throw new RangeError('infinity is out of range');
+  }
   if (!IsInteger(value)) {
     throw new RangeError(`unsupported fractional value ${value}`);
   }
-  return value;
+  return ToInteger(value); // ℝ(value) in spec text; converts -0 to 0
 }
 
 const BUILTIN_CASTS = new Map<PrimitivePropertyNames, (v: unknown) => string | number>([
@@ -159,16 +163,16 @@ const BUILTIN_CASTS = new Map<PrimitivePropertyNames, (v: unknown) => string | n
   ['millisecond', ToIntegerThrowOnInfinity],
   ['microsecond', ToIntegerThrowOnInfinity],
   ['nanosecond', ToIntegerThrowOnInfinity],
-  ['years', ToIntegerNoFraction],
-  ['months', ToIntegerNoFraction],
-  ['weeks', ToIntegerNoFraction],
-  ['days', ToIntegerNoFraction],
-  ['hours', ToIntegerNoFraction],
-  ['minutes', ToIntegerNoFraction],
-  ['seconds', ToIntegerNoFraction],
-  ['milliseconds', ToIntegerNoFraction],
-  ['microseconds', ToIntegerNoFraction],
-  ['nanoseconds', ToIntegerNoFraction],
+  ['years', ToIntegerWithoutRounding],
+  ['months', ToIntegerWithoutRounding],
+  ['weeks', ToIntegerWithoutRounding],
+  ['days', ToIntegerWithoutRounding],
+  ['hours', ToIntegerWithoutRounding],
+  ['minutes', ToIntegerWithoutRounding],
+  ['seconds', ToIntegerWithoutRounding],
+  ['milliseconds', ToIntegerWithoutRounding],
+  ['microseconds', ToIntegerWithoutRounding],
+  ['nanoseconds', ToIntegerWithoutRounding],
   ['era', ToString],
   ['eraYear', ToInteger],
   ['offset', ToString]

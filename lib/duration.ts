@@ -32,16 +32,16 @@ export class Duration implements Temporal.Duration {
     microsecondsParam: Params['constructor'][8] = 0,
     nanosecondsParam: Params['constructor'][9] = 0
   ) {
-    const years = ES.ToIntegerThrowOnInfinity(yearsParam);
-    const months = ES.ToIntegerThrowOnInfinity(monthsParam);
-    const weeks = ES.ToIntegerThrowOnInfinity(weeksParam);
-    const days = ES.ToIntegerThrowOnInfinity(daysParam);
-    const hours = ES.ToIntegerThrowOnInfinity(hoursParam);
-    const minutes = ES.ToIntegerThrowOnInfinity(minutesParam);
-    const seconds = ES.ToIntegerThrowOnInfinity(secondsParam);
-    const milliseconds = ES.ToIntegerThrowOnInfinity(millisecondsParam);
-    const microseconds = ES.ToIntegerThrowOnInfinity(microsecondsParam);
-    const nanoseconds = ES.ToIntegerThrowOnInfinity(nanosecondsParam);
+    const years = ES.ToIntegerWithoutRounding(yearsParam);
+    const months = ES.ToIntegerWithoutRounding(monthsParam);
+    const weeks = ES.ToIntegerWithoutRounding(weeksParam);
+    const days = ES.ToIntegerWithoutRounding(daysParam);
+    const hours = ES.ToIntegerWithoutRounding(hoursParam);
+    const minutes = ES.ToIntegerWithoutRounding(minutesParam);
+    const seconds = ES.ToIntegerWithoutRounding(secondsParam);
+    const milliseconds = ES.ToIntegerWithoutRounding(millisecondsParam);
+    const microseconds = ES.ToIntegerWithoutRounding(microsecondsParam);
+    const nanoseconds = ES.ToIntegerWithoutRounding(nanosecondsParam);
 
     const sign = ES.DurationSign(
       years,
