@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 
-const { stdin, stdout, exit } = process;
+const { stdin, stdout, exit, env } = process;
 import fs from 'fs';
+
+const isProduction = env.NODE_ENV === 'production';
+const isTranspiledBuild = !!env.TRANSPILE;
 
 const PREFIXES = [
   ['FAIL', 'PASS'],
@@ -12,12 +15,21 @@ let testOutput = '';
 const now = Date.now();
 
 const expectedFailures = new Set();
-const lines = fs.readFileSync('../../test/expected-failures.txt', { encoding: 'utf-8' });
-for (let line of lines.split('\n')) {
-  line = line.trim();
-  if (!line) continue;
-  if (line.startsWith('#')) continue;
-  expectedFailures.add(line);
+function includeExpectedFailures(file) {
+  const lines = fs.readFileSync(file, { encoding: 'utf-8' });
+  for (let line of lines.split('\n')) {
+    line = line.trim();
+    if (!line) continue;
+    if (line.startsWith('#')) continue;
+    expectedFailures.add(line);
+  }
+}
+
+includeExpectedFailures('../../test/expected-failures.txt');
+if (isProduction) {
+  includeExpectedFailures(
+    isTranspiledBuild ? '../../test/expected-failures-es5.txt' : '../../test/expected-failures-opt.txt'
+  );
 }
 
 stdin.setEncoding('utf8');

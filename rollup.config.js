@@ -8,7 +8,8 @@ import pkg from './package.json';
 
 const isPlaygroundBuild = !!env.TEMPORAL_PLAYGROUND;
 const isTest262Build = !!env.TEST262;
-const isProduction = env.NODE_ENV === 'production' && !isTest262Build;
+const isProduction = env.NODE_ENV === 'production';
+const isTranspiledBuild = !!env.TRANSPILE;
 const libName = 'temporal';
 
 function withPlugins(
@@ -27,7 +28,22 @@ function withPlugins(
     basePlugins.push(babel(options.babelConfig));
   }
   if (options.optimize) {
-    basePlugins.push(terser());
+    basePlugins.push(
+      terser({
+        keep_classnames: true,
+        keep_fnames: true,
+        ecma: 2015,
+        compress: {
+          keep_fargs: true,
+          keep_classnames: true,
+          keep_fnames: true
+        },
+        mangle: {
+          keep_classnames: true,
+          keep_fnames: true
+        }
+      })
+    );
   }
   return basePlugins;
 }
@@ -76,7 +92,9 @@ if (isTest262Build) {
         sourcemap: true
       },
       plugins: withPlugins({
-        debugBuild: false // Test262 tests don't pass in debug builds
+        debugBuild: false, // Test262 tests don't pass in debug builds
+        optimize: isProduction,
+        babelConfig: isTranspiledBuild ? es5BundleBabelConfig : undefined
       })
     }
   ];

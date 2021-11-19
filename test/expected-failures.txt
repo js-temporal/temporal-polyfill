@@ -1,3 +1,8 @@
+# Failures in this file are expected to fail for all forms of Test262 testing.
+# To record expected test failures for the transpiled or optimized builds of the
+# polyfill, see expected-failures-transpiled.txt and
+# expected-failures-optimized.txt respectively.
+
 # Blocked on https://github.com/tc39/test262/pull/3304
 built-ins/Temporal/Instant/prototype/round/options-wrong-type.js
 built-ins/Temporal/Duration/prototype/total/options-wrong-type.js
