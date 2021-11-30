@@ -1,40 +1,54 @@
 import commonjs from '@rollup/plugin-commonjs';
-import resolve from '@rollup/plugin-node-resolve';
+import { nodeResolve } from '@rollup/plugin-node-resolve';
 import babel from '@rollup/plugin-babel';
 import replace from '@rollup/plugin-replace';
-import typescript from '@rollup/plugin-typescript';
 import { terser } from 'rollup-plugin-terser';
 import { env } from 'process';
 import pkg from './package.json';
 
 const isPlaygroundBuild = !!env.TEMPORAL_PLAYGROUND;
-const isTest262 = !!env.TEST262;
-const isProduction = env.NODE_ENV === 'production' && !isTest262;
+const isTest262Build = !!env.TEST262;
+const isProduction = env.NODE_ENV === 'production';
+const isTranspiledBuild = !!env.TRANSPILE;
 const libName = 'temporal';
 
-const plugins = [
-  typescript({
-    typescript: require('typescript')
-  }),
-  replace({ exclude: 'node_modules/**', 'globalThis.__debug__': !isTest262 && !isProduction, preventAssignment: true }),
-  resolve({ preferBuiltins: false }),
-  commonjs(),
-  babel({
-    exclude: 'node_modules/**',
-    babelHelpers: 'external',
-    presets: [
-      [
-        '@babel/preset-env',
-        {
-          targets: '> 0.25%, not dead'
+function withPlugins(
+  options = {
+    babelConfig: undefined,
+    optimize: false,
+    debugBuild: true
+  }
+) {
+  const basePlugins = [
+    replace({ exclude: 'node_modules/**', 'globalThis.__debug__': options.debugBuild, preventAssignment: true }),
+    commonjs(),
+    nodeResolve({ preferBuiltins: false })
+  ];
+  if (options.babelConfig) {
+    basePlugins.push(babel(options.babelConfig));
+  }
+  if (options.optimize) {
+    basePlugins.push(
+      terser({
+        keep_classnames: true,
+        keep_fnames: true,
+        ecma: 2015,
+        compress: {
+          keep_fargs: true,
+          keep_classnames: true,
+          keep_fnames: true
+        },
+        mangle: {
+          keep_classnames: true,
+          keep_fnames: true
         }
-      ]
-    ]
-  }),
-  isProduction && terser()
-].filter(Boolean);
+      })
+    );
+  }
+  return basePlugins;
+}
 
-const input = 'lib/index.ts';
+const input = 'tsc-out/index.js';
 
 const external = [
   // Some dependencies (e.g. es-abstract) are imported using sub-paths, so the
@@ -53,8 +67,61 @@ function outputEntry(file, format) {
   };
 }
 
-let builds = [
-  {
+const es5BundleBabelConfig = {
+  babelHelpers: 'bundled',
+  presets: [
+    [
+      '@babel/preset-env',
+      {
+        targets: '> 0.25%, not dead, ie 11'
+      }
+    ]
+  ]
+};
+
+let builds = [];
+
+if (isTest262Build) {
+  builds = [
+    {
+      input: 'tsc-out/init.js',
+      output: {
+        name: libName,
+        file: 'dist/script.js',
+        format: 'iife',
+        sourcemap: true
+      },
+      plugins: withPlugins({
+        debugBuild: false, // Test262 tests don't pass in debug builds
+        optimize: isProduction,
+        babelConfig: isTranspiledBuild ? es5BundleBabelConfig : undefined
+      })
+    }
+  ];
+} else if (isPlaygroundBuild) {
+  builds = [
+    {
+      input: 'tsc-out/init.js',
+      output: {
+        name: libName,
+        file: 'dist/playground.cjs',
+        format: 'cjs',
+        exports: 'named',
+        sourcemap: true
+      },
+      plugins: withPlugins({
+        debugBuild: true
+      })
+    }
+  ];
+} else {
+  // Production / production-like builds
+
+  // - an ES2020 CJS bundle for "main"
+  // - an ES2020 ESM bundle for "module"
+  // Note that all dependencies are marked as external and won't be included in
+  // these bundles.
+  const modernBuildDef = {
     input,
     external,
     output: [
@@ -65,47 +132,32 @@ let builds = [
       // this file MUST end in ".cjs" in order to be treated as a CommonJS file.
       outputEntry(pkg.main, 'cjs')
     ],
-    plugins
-  },
-  {
+    plugins: withPlugins({
+      debugBuild: !isProduction,
+      optimize: isProduction
+      // Here is where we could insert the JSBI -> native BigInt plugin if we
+      // could find a way to provide a separate bundle for modern browsers
+      // that can use native BigInt.
+      // Maybe use node's exports + a user-defined condition?
+      // https://nodejs.org/api/packages.html#resolving-user-conditions
+    })
+  };
+  // A legacy build that
+  // - bundles all our dependencies (big-integer) into this file
+  // - transpiles down to ES5
+  const legacyUMDBuildDef = {
     input,
     // UMD bundle for using in script tags, etc
     // Note that some build systems don't like reading UMD files if they end in
     // '.cjs', so this entry in package.json should end in a .js file extension.
     output: [outputEntry(pkg.browser, 'umd')],
-    plugins
-  }
-];
-
-if (isTest262) {
-  builds = [
-    {
-      input: 'lib/init.ts',
-      output: {
-        name: libName,
-        file: 'dist/script.js',
-        format: 'iife',
-        sourcemap: true
-      },
-      plugins
-    }
-  ];
-}
-
-if (isPlaygroundBuild) {
-  builds = [
-    {
-      input: 'lib/init.ts',
-      output: {
-        name: libName,
-        file: 'dist/playground.cjs',
-        format: 'cjs',
-        exports: 'named',
-        sourcemap: true
-      },
-      plugins
-    }
-  ];
+    plugins: withPlugins({
+      debugBuild: !isProduction,
+      optimize: isProduction,
+      babelConfig: es5BundleBabelConfig
+    })
+  };
+  builds = [modernBuildDef, legacyUMDBuildDef];
 }
 
 export default builds;

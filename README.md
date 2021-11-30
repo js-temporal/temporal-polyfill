@@ -70,6 +70,10 @@ See [this issue](https://github.com/tc39/proposal-temporal/issues/778) for more 
 Once JS engines start shipping with Temporal, we may decide to change this behavior to match built-in behavior more closely.
 See [#2](https://github.com/js-temporal/temporal-polyfill/issues/2) to provide feedback or track this issue.
 
+This polyfill ships ES2020 code for both CJS and ESM bundles - if your
+environment does not support ES2020, then please make sure to transpile the
+content of this package along with the rest of your code.
+
 ## Contributing / Help Wanted
 
 We're eagerly welcoming to contributors who want to help build and maintain this polyfill.
