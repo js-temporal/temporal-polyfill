@@ -38,8 +38,9 @@ describe('MonthDay', () => {
     it('Leap day', () => equal(`${new PlainMonthDay(2, 29)}`, '02-29'));
     describe('.from()', () => {
       it('MonthDay.from(10-01) == 10-01', () => equal(`${PlainMonthDay.from('10-01')}`, '10-01'));
-      it('MonthDay.from(2019-10-01T09:00:00Z) == 10-01', () =>
-        equal(`${PlainMonthDay.from('2019-10-01T09:00:00Z')}`, '10-01'));
+      it('Z not supported', () => {
+        throws(() => PlainMonthDay.from('2019-10-01T09:00:00Z'), RangeError);
+      });
       it("MonthDay.from('11-18') == (11-18)", () => equal(`${PlainMonthDay.from('11-18')}`, '11-18'));
       it("MonthDay.from('1976-11-18') == (11-18)", () => equal(`${PlainMonthDay.from('1976-11-18')}`, '11-18'));
       it('MonthDay.from({ monthCode: "M11", day: 18 }) == 11-18', () =>

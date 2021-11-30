@@ -391,9 +391,11 @@ function ParseTemporalTimeString(isoString: string) {
     nanosecond = ToInteger(fraction.slice(6, 9));
     calendar = match[15];
   } else {
-    ({ hour, minute, second, millisecond, microsecond, nanosecond, calendar } = ParseISODateTime(isoString, {
+    let z;
+    ({ hour, minute, second, millisecond, microsecond, nanosecond, calendar, z } = ParseISODateTime(isoString, {
       zoneRequired: false
     }));
+    if (z) throw new RangeError('Z designator not supported for PlainTime');
   }
   return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
 }
@@ -408,7 +410,9 @@ function ParseTemporalYearMonthString(isoString: string) {
     month = ToInteger(match[2]);
     calendar = match[3];
   } else {
-    ({ year, month, calendar, day: referenceISODay } = ParseISODateTime(isoString, { zoneRequired: false }));
+    let z;
+    ({ year, month, calendar, day: referenceISODay, z } = ParseISODateTime(isoString, { zoneRequired: false }));
+    if (z) throw new RangeError('Z designator not supported for PlainYearMonth');
   }
   return { year, month, calendar, referenceISODay };
 }
@@ -420,7 +424,9 @@ function ParseTemporalMonthDayString(isoString: string) {
     month = ToInteger(match[1]);
     day = ToInteger(match[2]);
   } else {
-    ({ month, day, calendar, year: referenceISOYear } = ParseISODateTime(isoString, { zoneRequired: false }));
+    let z;
+    ({ month, day, calendar, year: referenceISOYear, z } = ParseISODateTime(isoString, { zoneRequired: false }));
+    if (z) throw new RangeError('Z designator not supported for PlainMonthDay');
   }
   return { month, day, calendar, referenceISOYear };
 }
@@ -1262,7 +1268,8 @@ export function ToTemporalDate(
     return DateFromFields(calendar, fields, options);
   }
   ToTemporalOverflow(options); // validate and ignore
-  const { year, month, day, calendar } = ParseTemporalDateString(ToString(item));
+  const { year, month, day, calendar, z } = ParseTemporalDateString(ToString(item));
+  if (z) throw new RangeError('Z designator not supported for PlainDate');
   const TemporalPlainDate = GetIntrinsic('%Temporal.PlainDate%');
   return new TemporalPlainDate(year, month, day, calendar); // include validation
 }
@@ -1349,8 +1356,10 @@ export function ToTemporalDateTime(
     ));
   } else {
     ToTemporalOverflow(options); // validate and ignore
-    ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar } =
+    let z;
+    ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, z } =
       ParseTemporalDateTimeString(ToString(item)));
+    if (z) throw new RangeError('Z designator not supported for PlainDateTime');
     RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
     if (calendar === undefined) calendar = GetISO8601Calendar();
     calendar = ToTemporalCalendar(calendar);
