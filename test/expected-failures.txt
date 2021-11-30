@@ -6,3 +6,6 @@
 # Blocked on https://github.com/tc39/test262/pull/3304
 built-ins/Temporal/Instant/prototype/round/options-wrong-type.js
 built-ins/Temporal/Duration/prototype/total/options-wrong-type.js
+
+# https://github.com/tc39/test262/pull/3316
+intl402/Temporal/TimeZone/from/argument-invalid.js

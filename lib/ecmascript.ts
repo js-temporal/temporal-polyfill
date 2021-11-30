@@ -283,21 +283,12 @@ export function RejectObjectWithCalendarOrTimeZone(item: AnyTemporalLikeType) {
     throw new TypeError('with() does not support a timeZone property');
   }
 }
-function TemporalTimeZoneFromString(stringIdent: string) {
+function ParseTemporalTimeZone(stringIdent: string) {
   // TODO: why aren't these three variables destructured to include `undefined` as possible types?
   let { ianaName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
-  let identifier = ianaName;
-  if (!identifier && z) identifier = 'UTC';
-  if (!identifier) identifier = offset;
-  const result = GetCanonicalTimeZoneIdentifier(identifier);
-  if (offset && identifier !== offset) {
-    const ns = ParseTemporalInstant(stringIdent);
-    const offsetNs = GetIANATimeZoneOffsetNanoseconds(ns, result);
-    if (FormatTimeZoneOffsetString(offsetNs) !== offset) {
-      throw new RangeError(`invalid offset ${offset}[${ianaName}]`);
-    }
-  }
-  return result;
+  if (ianaName) return ianaName;
+  if (z) return 'UTC';
+  return offset;
 }
 
 function FormatCalendarAnnotation(id: string, showCalendar: Temporal.ShowCalendarOption['calendarName']) {
@@ -2154,7 +2145,7 @@ export function ToTemporalTimeZone(temporalTimeZoneLikeParam: TimeZoneParams['fr
     }
   }
   const identifier = ToString(temporalTimeZoneLike);
-  const timeZone = TemporalTimeZoneFromString(identifier);
+  const timeZone = ParseTemporalTimeZone(identifier);
   const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
   return new TemporalTimeZone(timeZone);
 }
@@ -5056,7 +5047,7 @@ export const SystemUTCEpochNanoSeconds: () => bigInt.BigInteger = (() => {
 export function SystemTimeZone() {
   const fmt = new IntlDateTimeFormat('en-us');
   const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-  return new TemporalTimeZone(TemporalTimeZoneFromString(fmt.resolvedOptions().timeZone));
+  return new TemporalTimeZone(ParseTemporalTimeZone(fmt.resolvedOptions().timeZone));
 }
 
 export function ComparisonResult(value: number) {
