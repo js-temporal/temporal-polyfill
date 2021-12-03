@@ -4731,35 +4731,27 @@ export function RoundDuration(
       const secondAddOptions = ObjectCreate(null);
       const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, secondAddOptions, dateAdd);
       const monthsWeeksInDays = DaysUntil(yearsLater, yearsMonthsWeeksLater);
-      let relativeToDateOnly = yearsLater;
+      relativeTo = yearsLater;
       days += monthsWeeksInDays;
 
       const thirdAddOptions = ObjectCreate(null);
-      const daysLater = CalendarDateAdd(calendar, relativeToDateOnly, { days }, thirdAddOptions, dateAdd);
+      const daysLater = CalendarDateAdd(calendar, relativeTo, { days }, thirdAddOptions, dateAdd);
       const untilOptions = ObjectCreate(null);
       untilOptions.largestUnit = 'year';
-      const yearsPassed = CalendarDateUntil(calendar, relativeToDateOnly, daysLater, untilOptions).years;
+      const yearsPassed = CalendarDateUntil(calendar, relativeTo, daysLater, untilOptions).years;
       years += yearsPassed;
-      const oldRelativeTo = relativeToDateOnly;
+      const oldRelativeTo = relativeTo;
       const fourthAddOptions = ObjectCreate(null);
-      relativeToDateOnly = CalendarDateAdd(
+      relativeTo = CalendarDateAdd(
         calendar,
-        relativeToDateOnly,
+        relativeTo,
         { years: yearsPassed },
         fourthAddOptions,
         dateAdd
       );
-      const daysPassed = DaysUntil(oldRelativeTo, relativeToDateOnly);
+      const daysPassed = DaysUntil(oldRelativeTo, relativeTo);
       days -= daysPassed;
       const oneYear = new TemporalDuration(days < 0 ? -1 : 1);
-      // This conversion is needed because of an issue in the spec that's likely to change.
-      // See https://github.com/tc39/proposal-temporal/issues/1821.
-      relativeTo = CreateTemporalDate(
-        GetSlot(relativeToDateOnly, ISO_YEAR),
-        GetSlot(relativeToDateOnly, ISO_MONTH),
-        GetSlot(relativeToDateOnly, ISO_DAY),
-        GetSlot(relativeTo, CALENDAR)
-      );
       let { days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear);
 
       // Note that `nanoseconds` below (here and in similar code for months,
@@ -4791,14 +4783,7 @@ export function RoundDuration(
       const secondAddOptions = ObjectCreate(null);
       const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, secondAddOptions, dateAdd);
       const weeksInDays = DaysUntil(yearsMonthsLater, yearsMonthsWeeksLater);
-      // This conversion is needed because of an issue in the spec that's likely to change.
-      // See https://github.com/tc39/proposal-temporal/issues/1821.
-      relativeTo = CreateTemporalDate(
-        GetSlot(yearsMonthsLater, ISO_YEAR),
-        GetSlot(yearsMonthsLater, ISO_MONTH),
-        GetSlot(yearsMonthsLater, ISO_DAY),
-        GetSlot(yearsMonthsLater, CALENDAR)
-      );
+      relativeTo = yearsMonthsLater;
       days += weeksInDays;
 
       // Months may be different lengths of days depending on the calendar,
