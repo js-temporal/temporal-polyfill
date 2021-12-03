@@ -2849,7 +2849,7 @@ export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
   const datetime = formatter.format(new Date(epochMilliseconds));
   const [month, day, year, era, hour, minute, second] = datetime.split(/[^\w]+/);
   return {
-    year: era === 'BC' ? -year + 1 : +year,
+    year: era.toUpperCase().startsWith('B') ? -year + 1 : +year,
     month: +month,
     day: +day,
     hour: hour === '24' ? 0 : +hour, // bugs.chromium.org/p/chromium/issues/detail?id=1045791
