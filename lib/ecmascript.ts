@@ -2845,7 +2845,7 @@ export function GetIANATimeZonePreviousTransition(epochNanoseconds: bigInt.BigIn
 // ts-prune-ignore-next TODO: remove this after tests are converted to TS
 export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
   const formatter = getIntlDateTimeFormatEnUsForTimeZone(timeZone);
-  // FIXME: can this use formatToParts instead?
+  // Using `format` instead of `formatToParts` for compatibility with older clients
   const datetime = formatter.format(new Date(epochMilliseconds));
   const [month, day, year, era, hour, minute, second] = datetime.split(/[^\w]+/);
   return {
