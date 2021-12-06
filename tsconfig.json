@@ -16,10 +16,7 @@
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "strict": false,
-    "lib": [
-      "dom",
-      "ES2020"
-    ],
+    "lib": ["dom", "ES2020"],
     "preserveConstEnums": false,
     "skipDefaultLibCheck": true,
     "strictBindCallApply": true,
@@ -30,5 +27,5 @@
     "target": "es2020",
     "outDir": "tsc-out/",
     "types": []
-  },
+  }
 }
