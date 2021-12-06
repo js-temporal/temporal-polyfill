@@ -371,7 +371,9 @@ describe('Duration', () => {
     });
     it('unrepresentable number is not allowed', () => {
       units.forEach((unit, ix) => {
+        // eslint-disable-next-line @typescript-eslint/no-loss-of-precision,no-loss-of-precision
         throws(() => new Duration(...Array(ix).fill(0), 1e309), RangeError);
+        // eslint-disable-next-line @typescript-eslint/no-loss-of-precision,no-loss-of-precision
         throws(() => Duration.from({ [unit]: 1e309 }), RangeError);
       });
       const manyNines = '9'.repeat(309);

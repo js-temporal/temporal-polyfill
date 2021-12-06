@@ -5002,7 +5002,7 @@ export function GetOptionsObject<T>(options: T) {
   throw new TypeError(`Options parameter must be an object, not ${options === null ? 'null' : `${typeof options}`}`);
 }
 
-export function CreateOnePropObject<K extends string, V extends unknown>(propName: K, propValue: V): { [k in K]: V } {
+export function CreateOnePropObject<K extends string, V>(propName: K, propValue: V): { [k in K]: V } {
   const o = ObjectCreate(null);
   o[propName] = propValue;
   return o;
