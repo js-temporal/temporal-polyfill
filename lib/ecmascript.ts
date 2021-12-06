@@ -2179,8 +2179,8 @@ export function GetOffsetNanosecondsFor(
   instant: TimeZoneProtocolParams['getOffsetNanosecondsFor'][0]
 ) {
   let getOffsetNanosecondsFor = timeZone.getOffsetNanosecondsFor;
-  if (getOffsetNanosecondsFor === undefined) {
-    getOffsetNanosecondsFor = GetIntrinsic('%Temporal.TimeZone.prototype.getOffsetNanosecondsFor%');
+  if (typeof getOffsetNanosecondsFor !== 'function') {
+    throw new TypeError('getOffsetNanosecondsFor not callable');
   }
   const offsetNs = Reflect.apply(getOffsetNanosecondsFor, timeZone, [instant]);
   if (typeof offsetNs !== 'number') {
