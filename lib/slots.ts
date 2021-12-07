@@ -275,7 +275,7 @@ export function HasSlot(container: unknown, ...ids: (keyof Slots)[]): boolean {
   return !!myslots && ids.reduce((all: boolean, id) => all && id in myslots, true);
 }
 export function GetSlot<KeyT extends keyof Slots>(
-  container: Slots[typeof id]['usedBy'] | undefined,
+  container: Slots[typeof id]['usedBy'],
   id: KeyT
 ): Slots[KeyT]['value'] {
   if (container === undefined) throw new TypeError('Missing container');

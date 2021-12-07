@@ -17,6 +17,7 @@ import {
 import { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainDateParams as Params, PlainDateReturn as Return } from './internaltypes';
+import { Duration } from './duration';
 
 const DISALLOWED_UNITS = ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'] as const;
 
@@ -188,8 +189,7 @@ export class PlainDate implements Temporal.PlainDate {
       this
     ));
 
-    // const Duration = GetIntrinsic('%Temporal.Duration%')!;
-    return new Temporal.Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
+    return new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   }
   since(otherParam: Params['since'][0], optionsParam: Params['since'][1] = undefined): Return['since'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
@@ -350,6 +350,7 @@ export class PlainDate implements Temporal.PlainDate {
       calendar
     );
     const instant = ES.BuiltinTimeZoneGetInstantFor(timeZone, dt, 'compatible');
+    if (!instant) throw new TypeError(`Could not create instant for timezone "${timeZone}" and dateTime "${dt}"`);
     return ES.CreateTemporalZonedDateTime(GetSlot(instant, EPOCHNANOSECONDS), timeZone, calendar);
   }
   toPlainYearMonth(): Return['toPlainYearMonth'] {
