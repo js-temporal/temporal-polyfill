@@ -34,7 +34,6 @@ type TemporalIntrinsicPrototypeRegisteredKeys = {
 
 interface StandaloneIntrinsics {
   'Temporal.Calendar.from': typeof Temporal.Calendar.from;
-  'Temporal.TimeZone.prototype.getOffsetNanosecondsFor': typeof Temporal.TimeZone.prototype.getOffsetNanosecondsFor;
 }
 type RegisteredStandaloneIntrinsics = { [key in keyof StandaloneIntrinsics as `%${key}%`]: StandaloneIntrinsics[key] };
 const INTRINSICS: Partial<TemporalIntrinsicRegisteredKeys> &
