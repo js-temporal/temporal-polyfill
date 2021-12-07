@@ -1,6 +1,6 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { MakeIntrinsicClass, DefineIntrinsic } from './intrinsicclass';
+import { MakeIntrinsicClass } from './intrinsicclass';
 import {
   TIMEZONE_ID,
   EPOCHNANOSECONDS,
@@ -156,4 +156,3 @@ export class TimeZone implements Temporal.TimeZone {
 }
 
 MakeIntrinsicClass(TimeZone, 'Temporal.TimeZone');
-DefineIntrinsic('Temporal.TimeZone.prototype.getOffsetNanosecondsFor', TimeZone.prototype.getOffsetNanosecondsFor);
