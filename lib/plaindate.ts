@@ -1,5 +1,5 @@
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
+import { MakeIntrinsicClass } from './intrinsicclass';
 import {
   ISO_YEAR,
   ISO_MONTH,
@@ -188,8 +188,8 @@ export class PlainDate implements Temporal.PlainDate {
       this
     ));
 
-    const Duration = GetIntrinsic('%Temporal.Duration%');
-    return new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
+    // const Duration = GetIntrinsic('%Temporal.Duration%')!;
+    return new Temporal.Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   }
   since(otherParam: Params['since'][0], optionsParam: Params['since'][1] = undefined): Return['since'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
@@ -212,9 +212,8 @@ export class PlainDate implements Temporal.PlainDate {
 
     const untilOptions = { ...options, largestUnit };
     let { years, months, weeks, days } = ES.CalendarDateUntil(calendar, this, other, untilOptions);
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     if (smallestUnit === 'day' && roundingIncrement === 1) {
-      return new Duration(-years, -months, -weeks, -days, 0, 0, 0, 0, 0, 0);
+      return new Temporal.Duration(-years, -months, -weeks, -days, 0, 0, 0, 0, 0, 0);
     }
     ({ years, months, weeks, days } = ES.RoundDuration(
       years,
@@ -233,7 +232,7 @@ export class PlainDate implements Temporal.PlainDate {
       this
     ));
 
-    return new Duration(-years, -months, -weeks, -days, 0, 0, 0, 0, 0, 0);
+    return new Temporal.Duration(-years, -months, -weeks, -days, 0, 0, 0, 0, 0, 0);
   }
   equals(otherParam: Params['equals'][0]): Return['equals'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');

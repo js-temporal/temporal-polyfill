@@ -1069,8 +1069,8 @@ export function ToPartialRecord<B extends AnyTemporalLikeType>(
 }
 
 export function PrepareTemporalFields<B extends AnyTemporalLikeType>(
-  bag: B,
-  fields: ReadonlyArray<FieldRecord<B>>
+  bag?: B,
+  fields: ReadonlyArray<FieldRecord<B>> = []
 ): Required<B> | undefined {
   if (!IsObject(bag)) return undefined;
   const result = {} as B;
@@ -1109,8 +1109,8 @@ export function PrepareTemporalFields<B extends AnyTemporalLikeType>(
 
 // field access in the following operations is intentionally alphabetical
 export function ToTemporalDateFields(
-  bag: Temporal.PlainDateLike,
-  fieldNames: readonly (keyof Temporal.PlainDateLike)[]
+  bag?: Temporal.PlainDateLike,
+  fieldNames: readonly (keyof Temporal.PlainDateLike)[] = []
 ) {
   const entries: [keyof Temporal.PlainDateLike, 0 | undefined][] = [
     ['day', undefined],
@@ -1899,8 +1899,8 @@ export function CalendarFields<F extends Iterable<string>>(calendar: Temporal.Ca
 
 export function CalendarMergeFields(
   calendar: Temporal.CalendarProtocol,
-  fields: Record<string, unknown>,
-  additionalFields: Record<string, unknown>
+  fields?: Record<string, unknown>,
+  additionalFields?: Record<string, unknown>
 ) {
   const calMergeFields = calendar.mergeFields;
   if (!calMergeFields) {
@@ -2102,7 +2102,7 @@ export function ConsolidateCalendars(one: Temporal.CalendarProtocol, two: Tempor
 
 export function DateFromFields(
   calendar: Temporal.CalendarProtocol,
-  fields: CalendarProtocolParams['dateFromFields'][0],
+  fields?: CalendarProtocolParams['dateFromFields'][0],
   options?: Partial<CalendarProtocolParams['dateFromFields'][1]>
 ) {
   const result = calendar.dateFromFields(fields, options);
@@ -2112,7 +2112,7 @@ export function DateFromFields(
 
 export function YearMonthFromFields(
   calendar: Temporal.CalendarProtocol,
-  fields: CalendarProtocolParams['yearMonthFromFields'][0],
+  fields?: CalendarProtocolParams['yearMonthFromFields'][0],
   options?: CalendarProtocolParams['yearMonthFromFields'][1]
 ) {
   const result = calendar.yearMonthFromFields(fields, options);
@@ -2122,7 +2122,7 @@ export function YearMonthFromFields(
 
 export function MonthDayFromFields(
   calendar: Temporal.CalendarProtocol,
-  fields: CalendarProtocolParams['monthDayFromFields'][0],
+  fields?: CalendarProtocolParams['monthDayFromFields'][0],
   options?: CalendarProtocolParams['monthDayFromFields'][1]
 ) {
   const result = calendar.monthDayFromFields(fields, options);
@@ -4666,7 +4666,7 @@ export function RoundDuration(
   nanosecondsParam: number,
   increment: number,
   unit: Temporal.DateTimeUnit,
-  roundingMode: Temporal.RoundingMode,
+  roundingMode: Temporal.RoundingMode = 'trunc',
   relativeToParam: ReturnType<typeof ToRelativeTemporalObject> = undefined
 ) {
   let years = yearsParam;
@@ -4996,7 +4996,7 @@ export function ComparisonResult(value: number) {
   return value < 0 ? -1 : value > 0 ? 1 : (value as 0);
 }
 
-export function GetOptionsObject<T>(options: T) {
+export function GetOptionsObject<T>(options: T | undefined) {
   if (options === undefined) return ObjectCreate(null) as T;
   if (IsObject(options) && options !== null) return options;
   throw new TypeError(`Options parameter must be an object, not ${options === null ? 'null' : `${typeof options}`}`);

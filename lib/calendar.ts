@@ -117,7 +117,7 @@ export class Calendar implements Temporal.Calendar {
     return ES.ToString(this);
   }
   dateFromFields(
-    fields: Params['dateFromFields'][0],
+    fields?: Params['dateFromFields'][0],
     optionsParam: Params['dateFromFields'][1] = undefined
   ): Return['dateFromFields'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
@@ -178,7 +178,7 @@ export class Calendar implements Temporal.Calendar {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     const date = ES.ToTemporalDate(dateParam);
     const duration = ES.ToTemporalDuration(durationParam);
-    const options = ES.GetOptionsObject(optionsParam);
+    const options = ES.GetOptionsObject<Temporal.ArithmeticOptions>(optionsParam);
     const overflow = ES.ToTemporalOverflow(options);
     const { days } = ES.BalanceDuration(
       GetSlot(duration, DAYS),
