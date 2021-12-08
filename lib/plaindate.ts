@@ -1,5 +1,5 @@
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
+import { MakeIntrinsicClass } from './intrinsicclass';
 import {
   ISO_YEAR,
   ISO_MONTH,
@@ -17,6 +17,7 @@ import {
 import { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainDateParams as Params, PlainDateReturn as Return } from './internaltypes';
+import { Duration } from './duration';
 
 const DISALLOWED_UNITS = ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'] as const;
 
@@ -188,7 +189,6 @@ export class PlainDate implements Temporal.PlainDate {
       this
     ));
 
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   }
   since(otherParam: Params['since'][0], optionsParam: Params['since'][1] = undefined): Return['since'] {
@@ -212,7 +212,6 @@ export class PlainDate implements Temporal.PlainDate {
 
     const untilOptions = { ...options, largestUnit };
     let { years, months, weeks, days } = ES.CalendarDateUntil(calendar, this, other, untilOptions);
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     if (smallestUnit === 'day' && roundingIncrement === 1) {
       return new Duration(-years, -months, -weeks, -days, 0, 0, 0, 0, 0, 0);
     }
