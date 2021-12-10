@@ -4681,17 +4681,15 @@ export function RoundDuration(
   let nanoseconds = bigInt(nanosecondsParam);
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   let calendar, zdtRelative;
-  // if it's a ZDT, it will be reassigned to a PDT below.
-  let relativeTo: Parameters<typeof MoveRelativeDate>[1] = relativeToParam;
-  if (relativeToParam) {
+  // A cast is used below because relativeTo will be either PlainDate or
+  // undefined for the rest of this long method (after any ZDT=>PlainDate
+  // conversion below), and TS isn't smart enough to know that the type has
+  // changed. See https://github.com/microsoft/TypeScript/issues/27706.
+  let relativeTo = relativeToParam as Temporal.PlainDate | undefined;
+  if (relativeTo) {
     if (IsTemporalZonedDateTime(relativeTo)) {
       zdtRelative = relativeTo;
-      const pdt = BuiltinTimeZoneGetPlainDateTimeFor(
-        GetSlot(relativeTo, TIME_ZONE),
-        GetSlot(relativeTo, INSTANT),
-        GetSlot(relativeTo, CALENDAR)
-      );
-      relativeTo = TemporalDateTimeToDate(pdt);
+      relativeTo = ToTemporalDate(relativeTo);
     } else if (!IsTemporalDate(relativeTo)) {
       throw new TypeError('starting point must be PlainDate or ZonedDateTime');
     }
