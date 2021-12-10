@@ -4,7 +4,7 @@ This version roughly corresponds with all the changes made to the Temporal polyf
 
 Breaking changes:
 
-- Timezones now require a `getOffsetNanosecondsFor` method, and no longer fall back to the intrinsic definition (previously provided by `Temporal.Timezone#getOffsetNanosecondsFor`) if not provided. ([08346dc5])
+- Timezones now require a `getOffsetNanosecondsFor` method, and no longer fall back to the intrinsic definition (previously provided by `Temporal.Timezone#getOffsetNanosecondsFor`) if not provided. ([08346dc5], see also [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/1929))
 - Disallow Z designators when parsing strings for Plain Temporal types ([f3f8a994], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1874))
 - Allow ISO strings with "Z" + a bracketed IANA name ([70bd9898], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1749))
 - Emit ES2020 builds for newer browsers, and emit ES5 for older browsers. ([2331468d], [9e95c62b])
@@ -18,14 +18,14 @@ Bug fixes:
 
 - Fix GetFormatterParts for Firefox Nightly ([47f9132f])
 - Fix TS types of RoundTo and TotalOf ([3008a670])
-- Fix crash setting `day` outside current JPN era ([6d3588c3], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1807))
+- Fix crash setting `day` outside current JPN era ([6d3588c3], see also [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/1807))
 - Copy options object for PlainYearMonth.{add,subtract} and InterpretTemporalDateTimeFields to prevent user-modified objects from interfering with later operations. ([bafa1bdf], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1748))
 - Validate input to Calendar.prototype.fields ([7ebc700e], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1750))
 - Stop observably calling into `getPossibleInstantsFor` in `InterpretISODateTimeOffset` ([5448e59f], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1688))
-- Call `CalendarEquals` correctly ([07ea694e], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1858))
-- Fix arithmetic issues when using non-ISO months ([079a3325], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1761))
-- Regex: tighten matching of month and day values in datesplit ([b5736546], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1836))
-- Fix TS types for required CalendarProtocol methods ([0ee4581f], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1964))
+- Call `CalendarEquals` correctly ([07ea694e], see also [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/1858))
+- Fix arithmetic issues when using non-ISO months ([079a3325], see also [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/1761))
+- Regex: tighten matching of month and day values in datesplit ([b5736546], see also [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/1836))
+- Fix TS types for required CalendarProtocol methods ([0ee4581f], see also [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/1964))
 
 Non-breaking changes:
 
@@ -33,6 +33,7 @@ Non-breaking changes:
 - Add @@toStringTag to TS types ([41ab6bc0])
 - Accept string Calendar names in PlainMonthDay and PlainYearMonth constructors ([27b4c7e8])
 - Make options optional in Calendar method TS types ([3a09d00d])
+- Align implementation of RoundDuration with adjusted spec text ([4a0d0264], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1968/files))
 
 Other:
 
@@ -68,6 +69,7 @@ Other:
 [41ab6bc0]: https://github.com/js-temporal/temporal-polyfill/commit/41ab6bc01dc66b6f20ba7bc39f681aeebb64068a
 [27b4c7e8]: https://github.com/js-temporal/temporal-polyfill/commit/27b4c7e89d617434bddf9b4240c57ab732233dba
 [3a09d00d]: https://github.com/js-temporal/temporal-polyfill/commit/3a09d00de02918362b1530cc4121047c9e7495bb
+[4a0d0264]: https://github.com/js-temporal/temporal-polyfill/commit/4a0d02648592439840345820b80f6d6f45e773aa
 [47701107]: https://github.com/js-temporal/temporal-polyfill/commit/477011079f6e69e4d6fb18127d9cb0db2ee29ea6
 [f5427de9]: https://github.com/js-temporal/temporal-polyfill/commit/f5427de92d4e4f015ea1374368b6594295597af3
 [310d9d8b]: https://github.com/js-temporal/temporal-polyfill/commit/310d9d8b329de46e83fb2de75b997c7d28ac65f6
