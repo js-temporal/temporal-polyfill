@@ -70,7 +70,7 @@
     "CHANGELOG.md"
   ],
   "dependencies": {
-    "big-integer": "^1.6.51",
+    "jsbi": "^4.0.0",
     "tslib": "^2.3.1"
   },
   "devDependencies": {

@@ -1,6 +1,6 @@
 export namespace Temporal {
   export type ComparisonResult = -1 | 0 | 1;
-  type RoundingMode = 'halfExpand' | 'ceil' | 'trunc' | 'floor';
+  export type RoundingMode = 'halfExpand' | 'ceil' | 'trunc' | 'floor';
 
   /**
    * Options for assigning fields using `with()` or entire objects with
