@@ -1,9 +1,8 @@
 import * as ES from './ecmascript';
-import { GetIntrinsic } from './intrinsicclass';
 import { Temporal } from '..';
+import { Instant } from './instant';
 
 const instant: typeof Temporal.Now['instant'] = () => {
-  const Instant = GetIntrinsic('%Temporal.Instant%');
   return new Instant(ES.SystemUTCEpochNanoSeconds());
 };
 const plainDateTime: typeof Temporal.Now['plainDateTime'] = (calendarLike, temporalTimeZoneLike = timeZone()) => {

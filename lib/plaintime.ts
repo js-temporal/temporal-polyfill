@@ -1,6 +1,5 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 
 import {
   ISO_YEAR,
@@ -21,6 +20,8 @@ import {
 import { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainTimeParams as Params, PlainTimeReturn as Return } from './internaltypes';
+import { Duration } from './duration';
+import { PlainDateTime } from './plaindatetime';
 
 const ObjectAssign = Object.assign;
 
@@ -291,7 +292,6 @@ export class PlainTime implements Temporal.PlainTime {
       nanoseconds,
       largestUnit
     ));
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
   since(otherParam: Params['since'][0], optionsParam: Params['since'][1] = undefined): Return['since'] {
@@ -348,7 +348,6 @@ export class PlainTime implements Temporal.PlainTime {
       nanoseconds,
       largestUnit
     ));
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
   round(optionsParam: Params['round'][0]): Return['round'] {
@@ -475,7 +474,6 @@ export class PlainTime implements Temporal.PlainTime {
     const microsecond = GetSlot(this, ISO_MICROSECOND);
     const nanosecond = GetSlot(this, ISO_NANOSECOND);
 
-    const PlainDateTime = GetIntrinsic('%Temporal.PlainDateTime%');
     const dt = new PlainDateTime(
       year,
       month,
@@ -531,5 +529,3 @@ export class PlainTime implements Temporal.PlainTime {
   }
   [Symbol.toStringTag]!: 'Temporal.PlainTime';
 }
-
-MakeIntrinsicClass(PlainTime, 'Temporal.PlainTime');

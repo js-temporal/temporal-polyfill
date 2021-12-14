@@ -72,7 +72,7 @@ import {
   MICROSECONDS,
   NANOSECONDS
 } from './slots';
-import { IsBuiltinCalendar } from './calendar';
+import { Calendar, IsBuiltinCalendar } from './calendar';
 
 export const ZERO = JSBI.BigInt(0);
 const ONE = JSBI.BigInt(1);
@@ -225,10 +225,11 @@ import * as PARSE from './regex';
 import { PlainDate } from './plaindate';
 import { Duration } from './duration';
 import { Instant } from './instant';
-import { PlainMonthDay } from './plainmonthday';
-import { PlainDateTime } from './plaindatetime';
 import { PlainTime } from './plaintime';
+import { PlainDateTime } from './plaindatetime';
 import { TimeZone } from './timezone';
+import { PlainMonthDay } from './plainmonthday';
+import { ZonedDateTime } from './zoneddatetime';
 
 const IntlDateTimeFormatEnUsCache = new Map<string, Intl.DateTimeFormat>();
 
@@ -1428,10 +1429,7 @@ export function ToTemporalMonthDay(
 
   ToTemporalOverflow(options); // validate and ignore
   let { month, day, referenceISOYear, calendar: maybeStringCalendar } = ParseTemporalMonthDayString(ToString(item));
-  // TODO: should this be a ternary?
-  let calendar: Temporal.CalendarProtocol | string = maybeStringCalendar;
-  if (calendar === undefined) calendar = GetISO8601Calendar();
-  calendar = ToTemporalCalendar(calendar);
+  const calendar = maybeStringCalendar ? ToTemporalCalendar(maybeStringCalendar) : GetISO8601Calendar();
 
   if (referenceISOYear === undefined) {
     RejectISODate(1972, month, day);
@@ -1507,10 +1505,8 @@ export function ToTemporalYearMonth(
 
   ToTemporalOverflow(options); // validate and ignore
   let { year, month, referenceISODay, calendar: maybeStringCalendar } = ParseTemporalYearMonthString(ToString(item));
-  // TODO: replace with ternary?
-  let calendar: Temporal.CalendarProtocol | string = maybeStringCalendar;
-  if (calendar === undefined) calendar = GetISO8601Calendar();
-  calendar = ToTemporalCalendar(calendar);
+
+  const calendar = maybeStringCalendar ? ToTemporalCalendar(maybeStringCalendar) : GetISO8601Calendar();
 
   if (referenceISODay === undefined) {
     RejectISODate(year, month, 1);
@@ -1670,7 +1666,8 @@ export function ToTemporalZonedDateTime(
     offsetOpt,
     matchMinute
   );
-  return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
+  // make sure that calendar is CalendarPrototocol
+  return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, ToTemporalCalendar(calendar));
 }
 
 export function CreateTemporalDateSlots(
@@ -1837,7 +1834,11 @@ export function CreateTemporalYearMonth(
   calendar: Temporal.CalendarProtocol = GetISO8601Calendar(),
   referenceISODay = 1
 ) {
+<<<<<<< Updated upstream
   const result = ObjectCreate(TemporalPlainYearMonth.prototype);
+=======
+  const result = ObjectCreate(PlainYearMonth.prototype);
+>>>>>>> Stashed changes
   CreateTemporalYearMonthSlots(result, isoYear, isoMonth, calendar, referenceISODay);
   return result;
 }
@@ -1855,8 +1856,7 @@ export function CreateTemporalZonedDateTimeSlots(
   SetSlot(result, TIME_ZONE, timeZone);
   SetSlot(result, CALENDAR, calendar);
 
-  const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-  const instant = new TemporalInstant(GetSlot(result, EPOCHNANOSECONDS));
+  const instant = new Instant(GetSlot(result, EPOCHNANOSECONDS));
   SetSlot(result, INSTANT, instant);
 
   if (DEBUG) {
@@ -1874,15 +1874,13 @@ export function CreateTemporalZonedDateTime(
   timeZone: Temporal.TimeZoneProtocol,
   calendar: Temporal.CalendarProtocol = GetISO8601Calendar()
 ) {
-  const TemporalZonedDateTime = GetIntrinsic('%Temporal.ZonedDateTime%');
-  const result = ObjectCreate(TemporalZonedDateTime.prototype);
+  const result = ObjectCreate(ZonedDateTime.prototype);
   CreateTemporalZonedDateTimeSlots(result, epochNanoseconds, timeZone, calendar);
   return result;
 }
 
 export function GetISO8601Calendar() {
-  const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
-  return new TemporalCalendar('iso8601');
+  return new Calendar('iso8601');
 }
 
 // TODO: should (can?) we make this generic so the field names are checked
@@ -2062,8 +2060,7 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
     if (IsObject(calendarLike) && !('calendar' in calendarLike)) return calendarLike;
   }
   const identifier = ToString(calendarLike);
-  const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
-  if (IsBuiltinCalendar(identifier)) return new TemporalCalendar(identifier);
+  if (IsBuiltinCalendar(identifier)) return new Calendar(identifier);
   let calendar;
   try {
     ({ calendar } = ParseISODateTime(identifier, { zoneRequired: false }));
@@ -2071,7 +2068,7 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
     throw new RangeError(`Invalid calendar: ${identifier}`);
   }
   if (!calendar) calendar = 'iso8601';
-  return new TemporalCalendar(calendar);
+  return new Calendar(calendar);
 }
 
 function GetTemporalCalendarWithISODefault(
@@ -2145,8 +2142,7 @@ export function ToTemporalTimeZone(temporalTimeZoneLikeParam: TimeZoneParams['fr
   }
   const identifier = ToString(temporalTimeZoneLike);
   const timeZone = ParseTemporalTimeZone(identifier);
-  const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-  return new TemporalTimeZone(timeZone);
+  return new TimeZone(timeZone);
 }
 
 export function TimeZoneEquals(one: Temporal.TimeZoneProtocol, two: Temporal.TimeZoneProtocol) {
@@ -2166,8 +2162,7 @@ export function TemporalDateTimeToDate(dateTime: Temporal.PlainDateTime) {
 }
 
 export function TemporalDateTimeToTime(dateTime: Temporal.PlainDateTime) {
-  const Time = GetIntrinsic('%Temporal.PlainTime%');
-  return new Time(
+  return new PlainTime(
     GetSlot(dateTime, ISO_HOUR),
     GetSlot(dateTime, ISO_MINUTE),
     GetSlot(dateTime, ISO_SECOND),
@@ -2237,7 +2232,6 @@ function DisambiguatePossibleInstants(
   dateTime: Temporal.PlainDateTime,
   disambiguation: Temporal.ToInstantOptions['disambiguation']
 ) {
-  const Instant = GetIntrinsic('%Temporal.Instant%');
   const numInstants = possibleInstants.length;
 
   if (numInstants === 1) return possibleInstants[0];
@@ -2274,7 +2268,6 @@ function DisambiguatePossibleInstants(
   switch (disambiguation) {
     case 'earlier': {
       const calendar = GetSlot(dateTime, CALENDAR);
-      const PlainDateTime = GetIntrinsic('%Temporal.PlainDateTime%');
       const earlier = AddDateTime(
         year,
         month,
@@ -2316,7 +2309,6 @@ function DisambiguatePossibleInstants(
     // fall through because 'compatible' means 'later' for "spring forward" transitions
     case 'later': {
       const calendar = GetSlot(dateTime, CALENDAR);
-      const PlainDateTime = GetIntrinsic('%Temporal.PlainDateTime%');
       const later = AddDateTime(
         year,
         month,
@@ -2422,8 +2414,7 @@ export function TemporalInstantToString(
 ) {
   let outputTimeZone = timeZone;
   if (outputTimeZone === undefined) {
-    const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-    outputTimeZone = new TemporalTimeZone('UTC');
+    outputTimeZone = new TimeZone('UTC');
   }
   const iso = GetISO8601Calendar();
   const dateTime = BuiltinTimeZoneGetPlainDateTimeFor(outputTimeZone, instant, iso);
@@ -2634,8 +2625,7 @@ export function TemporalZonedDateTimeToString(
   if (options) {
     const { unit, increment, roundingMode } = options;
     const ns = RoundInstant(GetSlot(zdt, EPOCHNANOSECONDS), increment, unit, roundingMode);
-    const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-    instant = new TemporalInstant(ns);
+    instant = new Instant(ns);
   }
 
   const tz = GetSlot(zdt, TIME_ZONE);
@@ -3108,7 +3098,6 @@ export function TotalDurationNanoseconds(
 }
 
 function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof ToRelativeTemporalObject>) {
-  const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
   const sign = MathSign(JSBI.toNumber(nanosecondsParam));
   let nanoseconds = JSBI.BigInt(nanosecondsParam);
   let dayLengthNs = 86400e9;
@@ -3122,7 +3111,7 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
   const startNs = GetSlot(relativeTo, EPOCHNANOSECONDS);
   const start = GetSlot(relativeTo, INSTANT);
   const endNs = JSBI.add(startNs, nanoseconds);
-  const end = new TemporalInstant(endNs);
+  const end = new Instant(endNs);
   const timeZone = GetSlot(relativeTo, TIME_ZONE);
   const calendar = GetSlot(relativeTo, CALENDAR);
 
@@ -3172,7 +3161,7 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
   nanoseconds = JSBI.subtract(endNs, intermediateNs);
 
   let isOverflow = false;
-  let relativeInstant = new TemporalInstant(intermediateNs);
+  let relativeInstant = new Instant(intermediateNs);
   do {
     // calculate length of the next day (day that contains the time remainder)
     const oneDayFartherNs = AddZonedDateTime(relativeInstant, timeZone, calendar, 0, 0, 0, sign, 0, 0, 0, 0, 0, 0);
@@ -3184,7 +3173,7 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
     );
     if (isOverflow) {
       nanoseconds = JSBI.subtract(nanoseconds, JSBI.BigInt(dayLengthNs));
-      relativeInstant = new TemporalInstant(oneDayFartherNs);
+      relativeInstant = new Instant(oneDayFartherNs);
       days += sign;
     }
   } while (isOverflow);
@@ -3307,7 +3296,6 @@ export function UnbalanceDurationRelative(
   let months = monthsParam;
   let weeks = weeksParam;
   let days = daysParam;
-  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
 
   let calendar;
@@ -3317,9 +3305,9 @@ export function UnbalanceDurationRelative(
     calendar = GetSlot(relativeTo, CALENDAR);
   }
 
-  const oneYear = new TemporalDuration(sign);
-  const oneMonth = new TemporalDuration(0, sign);
-  const oneWeek = new TemporalDuration(0, 0, sign);
+  const oneYear = new Duration(sign);
+  const oneMonth = new Duration(0, sign);
+  const oneWeek = new Duration(0, 0, sign);
 
   switch (largestUnit) {
     case 'year':
@@ -3408,7 +3396,6 @@ export function BalanceDurationRelative(
   let months = monthsParam;
   let weeks = weeksParam;
   let days = daysParam;
-  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   if (sign === 0) return { years, months, weeks, days };
 
@@ -3419,9 +3406,9 @@ export function BalanceDurationRelative(
     calendar = GetSlot(relativeTo, CALENDAR);
   }
 
-  const oneYear = new TemporalDuration(sign);
-  const oneMonth = new TemporalDuration(0, sign);
-  const oneWeek = new TemporalDuration(0, 0, sign);
+  const oneYear = new Duration(sign);
+  const oneMonth = new Duration(0, sign);
+  const oneWeek = new Duration(0, 0, sign);
 
   switch (largestUnit) {
     case 'year': {
@@ -3521,8 +3508,7 @@ export function CalculateOffsetShift(
     const calendar = GetSlot(relativeTo, CALENDAR);
     const offsetBefore = GetOffsetNanosecondsFor(timeZone, instant);
     const after = AddZonedDateTime(instant, timeZone, calendar, y, mon, w, d, h, min, s, ms, µs, ns);
-    const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-    const instantAfter = new TemporalInstant(after);
+    const instantAfter = new Instant(after);
     const offsetAfter = GetOffsetNanosecondsFor(timeZone, instantAfter);
     return offsetAfter - offsetBefore;
   }
@@ -3530,8 +3516,7 @@ export function CalculateOffsetShift(
 }
 
 export function CreateNegatedTemporalDuration(duration: Temporal.Duration) {
-  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
-  return new TemporalDuration(
+  return new Duration(
     -GetSlot(duration, YEARS),
     -GetSlot(duration, MONTHS),
     -GetSlot(duration, WEEKS),
@@ -3957,9 +3942,8 @@ export function DifferenceZonedDateTime(
   }
 
   // Find the difference in dates only.
-  const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-  const start = new TemporalInstant(ns1);
-  const end = new TemporalInstant(ns2);
+  const start = new Instant(ns1);
+  const end = new Instant(ns2);
   const dtStart = BuiltinTimeZoneGetPlainDateTimeFor(timeZone, start, calendar);
   const dtEnd = BuiltinTimeZoneGetPlainDateTimeFor(timeZone, end, calendar);
   let { years, months, weeks, days } = DifferenceISODateTime(
@@ -4116,11 +4100,10 @@ export function AddDuration(
       largestUnit
     ));
   } else if (IsTemporalDate(relativeTo)) {
-    const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
     const calendar = GetSlot(relativeTo, CALENDAR);
 
-    const dateDuration1 = new TemporalDuration(y1, mon1, w1, d1, 0, 0, 0, 0, 0, 0);
-    const dateDuration2 = new TemporalDuration(y2, mon2, w2, d2, 0, 0, 0, 0, 0, 0);
+    const dateDuration1 = new Duration(y1, mon1, w1, d1, 0, 0, 0, 0, 0, 0);
+    const dateDuration2 = new Duration(y2, mon2, w2, d2, 0, 0, 0, 0, 0, 0);
     const dateAdd = calendar.dateAdd;
     const firstAddOptions = ObjectCreate(null);
     const intermediate = CalendarDateAdd(calendar, relativeTo, dateDuration1, firstAddOptions, dateAdd);
@@ -4144,7 +4127,6 @@ export function AddDuration(
     ));
   } else {
     // relativeTo is a ZonedDateTime
-    const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
     const timeZone = GetSlot(relativeTo, TIME_ZONE);
     const calendar = GetSlot(relativeTo, CALENDAR);
     const intermediateNs = AddZonedDateTime(
@@ -4163,7 +4145,7 @@ export function AddDuration(
       ns1
     );
     const endNs = AddZonedDateTime(
-      new TemporalInstant(intermediateNs),
+      new Instant(intermediateNs),
       timeZone,
       calendar,
       y2,
@@ -4274,9 +4256,8 @@ export function AddDateTime(
   days += deltaDays;
 
   // Delegate the date part addition to the calendar
-  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   const datePart = CreateTemporalDate(year, month, day, calendar);
-  const dateDuration = new TemporalDuration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
+  const dateDuration = new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   const addedDate = CalendarDateAdd(calendar, datePart, dateDuration, options);
 
   return {
@@ -4316,7 +4297,6 @@ export function AddZonedDateTime(
   // not expected and so is avoided below via a fast path for time-only
   // arithmetic.
   // BTW, this behavior is similar in spirit to offset: 'prefer' in `with`.
-  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   if (DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0) === 0) {
     return AddInstant(GetSlot(instant, EPOCHNANOSECONDS), h, min, s, ms, µs, ns);
   }
@@ -4325,7 +4305,7 @@ export function AddZonedDateTime(
   // time portion to be added in exact time.
   const dt = BuiltinTimeZoneGetPlainDateTimeFor(timeZone, instant, calendar);
   const datePart = CreateTemporalDate(GetSlot(dt, ISO_YEAR), GetSlot(dt, ISO_MONTH), GetSlot(dt, ISO_DAY), calendar);
-  const dateDuration = new TemporalDuration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
+  const dateDuration = new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   const addedDate = CalendarDateAdd(calendar, datePart, dateDuration, options);
   const dtIntermediate = CreateTemporalDateTime(
     GetSlot(addedDate, ISO_YEAR),
@@ -4599,22 +4579,7 @@ export function AdjustRoundedDurationDays(
     0,
     0
   );
-  const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-  const dayEnd = AddZonedDateTime(
-    new TemporalInstant(dayStart),
-    timeZone,
-    calendar,
-    0,
-    0,
-    0,
-    direction,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0
-  );
+  const dayEnd = AddZonedDateTime(new Instant(dayStart), timeZone, calendar, 0, 0, 0, direction, 0, 0, 0, 0, 0, 0);
   const dayLengthNs = JSBI.subtract(dayEnd, dayStart);
 
   if (
@@ -4684,7 +4649,6 @@ export function RoundDuration(
   let milliseconds = millisecondsParam;
   let microseconds = microsecondsParam;
   let nanoseconds = JSBI.BigInt(nanosecondsParam);
-  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   let calendar, zdtRelative;
   // A cast is used below because relativeTo will be either PlainDate or
   // undefined for the rest of this long method (after any ZDT=>PlainDate
@@ -4725,11 +4689,11 @@ export function RoundDuration(
 
       // convert months and weeks to days by calculating difference(
       // relativeTo + years, relativeTo + { years, months, weeks })
-      const yearsDuration = new TemporalDuration(years);
+      const yearsDuration = new Duration(years);
       const dateAdd = calendar.dateAdd;
       const firstAddOptions = ObjectCreate(null);
       const yearsLater = CalendarDateAdd(calendar, relativeTo, yearsDuration, firstAddOptions, dateAdd);
-      const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
+      const yearsMonthsWeeks = new Duration(years, months, weeks);
       const secondAddOptions = ObjectCreate(null);
       const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, secondAddOptions, dateAdd);
       const monthsWeeksInDays = DaysUntil(yearsLater, yearsMonthsWeeksLater);
@@ -4747,7 +4711,7 @@ export function RoundDuration(
       relativeTo = CalendarDateAdd(calendar, relativeTo, { years: yearsPassed }, fourthAddOptions, dateAdd);
       const daysPassed = DaysUntil(oldRelativeTo, relativeTo);
       days -= daysPassed;
-      const oneYear = new TemporalDuration(days < 0 ? -1 : 1);
+      const oneYear = new Duration(days < 0 ? -1 : 1);
       let { days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear);
 
       // Note that `nanoseconds` below (here and in similar code for months,
@@ -4778,11 +4742,11 @@ export function RoundDuration(
 
       // convert weeks to days by calculating difference(relativeTo +
       //   { years, months }, relativeTo + { years, months, weeks })
-      const yearsMonths = new TemporalDuration(years, months);
+      const yearsMonths = new Duration(years, months);
       const dateAdd = calendar.dateAdd;
       const firstAddOptions = ObjectCreate(null);
       const yearsMonthsLater = CalendarDateAdd(calendar, relativeTo, yearsMonths, firstAddOptions, dateAdd);
-      const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
+      const yearsMonthsWeeks = new Duration(years, months, weeks);
       const secondAddOptions = ObjectCreate(null);
       const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, secondAddOptions, dateAdd);
       const weeksInDays = DaysUntil(yearsMonthsLater, yearsMonthsWeeksLater);
@@ -4792,7 +4756,7 @@ export function RoundDuration(
       // Months may be different lengths of days depending on the calendar,
       // convert days to months in a loop as described above under 'years'.
       const sign = MathSign(days);
-      const oneMonth = new TemporalDuration(0, days < 0 ? -1 : 1);
+      const oneMonth = new Duration(0, days < 0 ? -1 : 1);
       let oneMonthDays: number;
       ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
       while (MathAbs(days) >= MathAbs(oneMonthDays)) {
@@ -4822,7 +4786,7 @@ export function RoundDuration(
       // Weeks may be different lengths of days depending on the calendar,
       // convert days to weeks in a loop as described above under 'years'.
       const sign = MathSign(days);
-      const oneWeek = new TemporalDuration(0, 0, days < 0 ? -1 : 1);
+      const oneWeek = new Duration(0, 0, days < 0 ? -1 : 1);
       let oneWeekDays;
       ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek));
       while (MathAbs(days) >= MathAbs(oneWeekDays)) {
@@ -5034,8 +4998,7 @@ export const SystemUTCEpochNanoSeconds: () => JSBI = (() => {
 
 export function SystemTimeZone() {
   const fmt = new IntlDateTimeFormat('en-us');
-  const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-  return new TemporalTimeZone(ParseTemporalTimeZone(fmt.resolvedOptions().timeZone));
+  return new TimeZone(ParseTemporalTimeZone(fmt.resolvedOptions().timeZone));
 }
 
 export function ComparisonResult(value: number) {

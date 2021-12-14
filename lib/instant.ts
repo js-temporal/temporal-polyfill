@@ -1,6 +1,5 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import { EPOCHNANOSECONDS, CreateSlots, GetSlot, SetSlot } from './slots';
 import { Temporal } from '..';
 import { DateTimeFormat } from './intl';
@@ -8,6 +7,7 @@ import type { InstantParams as Params, InstantReturn as Return } from './interna
 
 import JSBI from 'jsbi';
 import { BILLION, MILLION, THOUSAND } from './ecmascript';
+import { Duration } from './duration';
 
 const DISALLOWED_UNITS = ['year', 'month', 'week', 'day'] as const;
 const MAX_DIFFERENCE_INCREMENTS = {
@@ -127,7 +127,6 @@ export class Instant implements Temporal.Instant {
       nanoseconds,
       largestUnit
     ));
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
   since(otherParam: Params['since'][0], optionsParam: Params['since'][1] = undefined) {
@@ -160,7 +159,6 @@ export class Instant implements Temporal.Instant {
       nanoseconds,
       largestUnit
     ));
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
   round(optionsParam: Params['round'][0]): Return['round'] {
@@ -297,5 +295,3 @@ export class Instant implements Temporal.Instant {
   }
   [Symbol.toStringTag]!: 'Temporal.Instant';
 }
-
-MakeIntrinsicClass(Instant, 'Temporal.Instant');

@@ -1,5 +1,4 @@
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 
 import {
   ISO_YEAR,
@@ -18,6 +17,7 @@ import {
 import { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainDateTimeParams as Params, PlainDateTimeReturn as Return } from './internaltypes';
+import { Duration } from './duration';
 
 export class PlainDateTime implements Temporal.PlainDateTime {
   constructor(
@@ -428,7 +428,6 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       largestUnit
     ));
 
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
   since(otherParam: Params['since'][0], optionsParam: Params['since'][1] = undefined): Return['since'] {
@@ -503,7 +502,6 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       largestUnit
     ));
 
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(
       -years,
       -months,
@@ -708,5 +706,3 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   }
   [Symbol.toStringTag]!: 'Temporal.PlainDateTime';
 }
-
-MakeIntrinsicClass(PlainDateTime, 'Temporal.PlainDateTime');

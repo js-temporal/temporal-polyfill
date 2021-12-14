@@ -1,6 +1,5 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { MakeIntrinsicClass } from './intrinsicclass';
 import {
   YEARS,
   MONTHS,
@@ -522,5 +521,3 @@ export class Duration implements Temporal.Duration {
   }
   [Symbol.toStringTag]!: 'Temporal.Duration';
 }
-
-MakeIntrinsicClass(Duration, 'Temporal.Duration');

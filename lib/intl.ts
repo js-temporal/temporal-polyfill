@@ -1,5 +1,4 @@
 import * as ES from './ecmascript';
-import { GetIntrinsic } from './intrinsicclass';
 import {
   GetSlot,
   INSTANT,
@@ -26,6 +25,7 @@ import {
   PlainTimeParams,
   PlainYearMonthParams
 } from './internaltypes';
+import { PlainDateTime } from './plaindatetime';
 
 const DATE = Symbol('date');
 const YM = Symbol('ym');
@@ -505,8 +505,6 @@ type TypesWithToLocaleString =
   | Temporal.ZonedDateTime;
 
 function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormatImpl) {
-  const DateTime = GetIntrinsic('%Temporal.PlainDateTime%');
-
   if (ES.IsTemporalTime(temporalObj)) {
     const hour = GetSlot(temporalObj, ISO_HOUR);
     const minute = GetSlot(temporalObj, ISO_MINUTE);
@@ -514,7 +512,18 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     const millisecond = GetSlot(temporalObj, ISO_MILLISECOND);
     const microsecond = GetSlot(temporalObj, ISO_MICROSECOND);
     const nanosecond = GetSlot(temporalObj, ISO_NANOSECOND);
-    const datetime = new DateTime(1970, 1, 1, hour, minute, second, millisecond, microsecond, nanosecond, main[CAL_ID]);
+    const datetime = new PlainDateTime(
+      1970,
+      1,
+      1,
+      hour,
+      minute,
+      second,
+      millisecond,
+      microsecond,
+      nanosecond,
+      main[CAL_ID]
+    );
     return {
       instant: ES.BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
       formatter: getPropLazy(main, TIME)
@@ -531,7 +540,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
         `cannot format PlainYearMonth with calendar ${calendar} in locale with calendar ${main[CAL_ID]}`
       );
     }
-    const datetime = new DateTime(isoYear, isoMonth, referenceISODay, 12, 0, 0, 0, 0, 0, calendar);
+    const datetime = new PlainDateTime(isoYear, isoMonth, referenceISODay, 12, 0, 0, 0, 0, 0, calendar);
     return {
       instant: ES.BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
       formatter: getPropLazy(main, YM)
@@ -548,7 +557,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
         `cannot format PlainMonthDay with calendar ${calendar} in locale with calendar ${main[CAL_ID]}`
       );
     }
-    const datetime = new DateTime(referenceISOYear, isoMonth, isoDay, 12, 0, 0, 0, 0, 0, calendar);
+    const datetime = new PlainDateTime(referenceISOYear, isoMonth, isoDay, 12, 0, 0, 0, 0, 0, calendar);
     return {
       instant: ES.BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
       formatter: getPropLazy(main, MD)
@@ -563,7 +572,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     if (calendar !== 'iso8601' && calendar !== main[CAL_ID]) {
       throw new RangeError(`cannot format PlainDate with calendar ${calendar} in locale with calendar ${main[CAL_ID]}`);
     }
-    const datetime = new DateTime(isoYear, isoMonth, isoDay, 12, 0, 0, 0, 0, 0, main[CAL_ID]);
+    const datetime = new PlainDateTime(isoYear, isoMonth, isoDay, 12, 0, 0, 0, 0, 0, main[CAL_ID]);
     return {
       instant: ES.BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
       formatter: getPropLazy(main, DATE)
@@ -588,7 +597,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     }
     let datetime = temporalObj;
     if (calendar === 'iso8601') {
-      datetime = new DateTime(
+      datetime = new PlainDateTime(
         isoYear,
         isoMonth,
         isoDay,

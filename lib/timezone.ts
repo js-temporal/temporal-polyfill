@@ -1,6 +1,5 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import {
   TIMEZONE_ID,
   EPOCHNANOSECONDS,
@@ -20,6 +19,7 @@ import {
 import JSBI from 'jsbi';
 import { Temporal } from '..';
 import type { TimeZoneParams as Params, TimeZoneReturn as Return } from './internaltypes';
+import { Instant } from './instant';
 
 export class TimeZone implements Temporal.TimeZone {
   constructor(timeZoneIdentifierParam: string) {
@@ -81,7 +81,6 @@ export class TimeZone implements Temporal.TimeZone {
   getPossibleInstantsFor(dateTimeParam: Params['getPossibleInstantsFor'][0]): Return['getPossibleInstantsFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const dateTime = ES.ToTemporalDateTime(dateTimeParam);
-    const Instant = GetIntrinsic('%Temporal.Instant%');
     const id = GetSlot(this, TIMEZONE_ID);
 
     const offsetNs = ES.ParseOffsetString(id);
@@ -126,7 +125,6 @@ export class TimeZone implements Temporal.TimeZone {
     }
 
     let epochNanoseconds = GetSlot(startingPoint, EPOCHNANOSECONDS);
-    const Instant = GetIntrinsic('%Temporal.Instant%');
     epochNanoseconds = ES.GetIANATimeZoneNextTransition(epochNanoseconds, id);
     return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
   }
@@ -141,7 +139,6 @@ export class TimeZone implements Temporal.TimeZone {
     }
 
     let epochNanoseconds = GetSlot(startingPoint, EPOCHNANOSECONDS);
-    const Instant = GetIntrinsic('%Temporal.Instant%');
     epochNanoseconds = ES.GetIANATimeZonePreviousTransition(epochNanoseconds, id);
     return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
   }
@@ -157,5 +154,3 @@ export class TimeZone implements Temporal.TimeZone {
   }
   [Symbol.toStringTag]!: 'Temporal.TimeZone';
 }
-
-MakeIntrinsicClass(TimeZone, 'Temporal.TimeZone');

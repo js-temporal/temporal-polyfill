@@ -1,9 +1,9 @@
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, GetSlot } from './slots';
 import { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { FieldRecord, PlainYearMonthParams as Params, PlainYearMonthReturn as Return } from './internaltypes';
+import { Duration } from './duration';
 
 const ObjectCreate = Object.create;
 
@@ -203,7 +203,6 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
       thisDate
     ));
 
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(years, months, 0, 0, 0, 0, 0, 0, 0, 0);
   }
   since(otherParam: Params['since'][0], optionsParam: Params['since'][1] = undefined): Return['since'] {
@@ -233,7 +232,6 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
 
     const untilOptions = { ...options, largestUnit };
     let { years, months } = ES.CalendarDateUntil(calendar, thisDate, otherDate, untilOptions);
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     if (smallestUnit === 'month' && roundingIncrement === 1) {
       return new Duration(-years, -months, 0, 0, 0, 0, 0, 0, 0, 0);
     }
@@ -356,5 +354,3 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   }
   [Symbol.toStringTag]!: 'Temporal.PlainYearMonth';
 }
-
-MakeIntrinsicClass(PlainYearMonth, 'Temporal.PlainYearMonth');
