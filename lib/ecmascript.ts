@@ -38,7 +38,6 @@ import type {
   PlainYearMonthParams,
   FieldRecord
 } from './internaltypes';
-import { GetIntrinsic } from './intrinsicclass';
 import {
   CreateSlots,
   GetSlot,
@@ -223,6 +222,13 @@ const SINGULAR_PLURAL_UNITS: readonly PluralAndSingularUnitTuple<Temporal.DateTi
 ] as const;
 
 import * as PARSE from './regex';
+import { PlainDate } from './plaindate';
+import { Duration } from './duration';
+import { Instant } from './instant';
+import { PlainMonthDay } from './plainmonthday';
+import { PlainDateTime } from './plaindatetime';
+import { PlainTime } from './plaintime';
+import { TimeZone } from './timezone';
 
 const IntlDateTimeFormatEnUsCache = new Map<string, Intl.DateTimeFormat>();
 
@@ -1275,8 +1281,7 @@ export function ToTemporalDate(
   ToTemporalOverflow(options); // validate and ignore
   const { year, month, day, calendar, z } = ParseTemporalDateString(ToString(item));
   if (z) throw new RangeError('Z designator not supported for PlainDate');
-  const TemporalPlainDate = GetIntrinsic('%Temporal.PlainDate%');
-  return new TemporalPlainDate(year, month, day, calendar); // include validation
+  return new PlainDate(year, month, day, calendar); // include validation
 }
 
 export function InterpretTemporalDateTimeFields(
@@ -1382,30 +1387,16 @@ export function ToTemporalDuration(item: DurationParams['from'][0]) {
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       ParseTemporalDurationString(ToString(item)));
   }
-  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
-  return new TemporalDuration(
-    years,
-    months,
-    weeks,
-    days,
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds
-  );
+  return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
 }
 
 export function ToTemporalInstant(item: InstantParams['from'][0]) {
   if (IsTemporalInstant(item)) return item;
   if (IsTemporalZonedDateTime(item)) {
-    const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-    return new TemporalInstant(GetSlot(item, EPOCHNANOSECONDS));
+    return new Instant(GetSlot(item, EPOCHNANOSECONDS));
   }
   const ns = ParseTemporalInstant(ToString(item));
-  const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-  return new TemporalInstant(ns);
+  return new Instant(ns);
 }
 
 export function ToTemporalMonthDay(
@@ -1467,8 +1458,7 @@ export function ToTemporalTime(
       );
     }
     if (IsTemporalDateTime(item)) {
-      const TemporalPlainTime = GetIntrinsic('%Temporal.PlainTime%');
-      return new TemporalPlainTime(
+      return new PlainTime(
         GetSlot(item, ISO_HOUR),
         GetSlot(item, ISO_MINUTE),
         GetSlot(item, ISO_SECOND),
@@ -1500,8 +1490,7 @@ export function ToTemporalTime(
       throw new RangeError('PlainTime can only have iso8601 calendar');
     }
   }
-  const TemporalPlainTime = GetIntrinsic('%Temporal.PlainTime%');
-  return new TemporalPlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
+  return new PlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
 }
 
 export function ToTemporalYearMonth(
@@ -1551,8 +1540,7 @@ export function InterpretISODateTimeOffset(
   offsetOpt: Temporal.OffsetDisambiguationOptions['offset'],
   matchMinute: boolean
 ) {
-  const DateTime = GetIntrinsic('%Temporal.PlainDateTime%');
-  const dt = new DateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
+  const dt = new PlainDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
 
   if (offsetBehaviour === 'wall' || offsetOpt === 'ignore') {
     // Simple case: ISO string without a TZ offset (or caller wants to ignore
@@ -1656,8 +1644,7 @@ export function ToTemporalZonedDateTime(
     } else if (!offset) {
       offsetBehaviour = 'wall';
     }
-    const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-    timeZone = new TemporalTimeZone(ianaName);
+    timeZone = new TimeZone(ianaName);
     if (!calendar) calendar = GetISO8601Calendar();
     calendar = ToTemporalCalendar(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
@@ -1719,8 +1706,7 @@ export function CreateTemporalDate(
   isoDay: number,
   calendar: Temporal.CalendarProtocol = GetISO8601Calendar()
 ) {
-  const TemporalPlainDate = GetIntrinsic('%Temporal.PlainDate%');
-  const result = ObjectCreate(TemporalPlainDate.prototype);
+  const result = ObjectCreate(PlainDate.prototype);
   CreateTemporalDateSlots(result, isoYear, isoMonth, isoDay, calendar);
   return result;
 }
@@ -1775,8 +1761,7 @@ export function CreateTemporalDateTime(
   ns: number,
   calendar: Temporal.CalendarProtocol = GetISO8601Calendar()
 ) {
-  const TemporalPlainDateTime = GetIntrinsic('%Temporal.PlainDateTime%');
-  const result = ObjectCreate(TemporalPlainDateTime.prototype);
+  const result = ObjectCreate(PlainDateTime.prototype);
   CreateTemporalDateTimeSlots(result, isoYear, isoMonth, isoDay, h, min, s, ms, µs, ns, calendar);
   return result as Temporal.PlainDateTime;
 }
@@ -1814,8 +1799,7 @@ export function CreateTemporalMonthDay(
   calendar: Temporal.CalendarProtocol = GetISO8601Calendar(),
   referenceISOYear = 1972
 ) {
-  const TemporalPlainMonthDay = GetIntrinsic('%Temporal.PlainMonthDay%');
-  const result = ObjectCreate(TemporalPlainMonthDay.prototype);
+  const result = ObjectCreate(PlainMonthDay.prototype);
   CreateTemporalMonthDaySlots(result, isoMonth, isoDay, calendar, referenceISOYear);
   return result;
 }
@@ -1853,7 +1837,6 @@ export function CreateTemporalYearMonth(
   calendar: Temporal.CalendarProtocol = GetISO8601Calendar(),
   referenceISODay = 1
 ) {
-  const TemporalPlainYearMonth = GetIntrinsic('%Temporal.PlainYearMonth%');
   const result = ObjectCreate(TemporalPlainYearMonth.prototype);
   CreateTemporalYearMonthSlots(result, isoYear, isoMonth, calendar, referenceISODay);
   return result;
