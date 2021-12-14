@@ -379,7 +379,13 @@ describe('ECMAScript', () => {
     });
 
     function test(nanos, zone, expected) {
-      it(`${nanos} @ ${zone}`, () => deepEqual(ES.GetIANATimeZoneDateTimeParts(nanos, zone), expected));
+      // Internally, we represent BigInt as JSBI instances. JSBI instances are
+      // not interchangable with native BigInt, so we must convert them first.
+      // Normally, this would have been done upstream by another part of the
+      // Temporal APIs, but since we are directly calling into the ES function
+      // we must convert in the test instead.
+      const nanosAsBigIntInternal = ES.ToBigInt(nanos);
+      it(`${nanos} @ ${zone}`, () => deepEqual(ES.GetIANATimeZoneDateTimeParts(nanosAsBigIntInternal, zone), expected));
     }
   });
 

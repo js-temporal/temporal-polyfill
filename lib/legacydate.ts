@@ -1,13 +1,11 @@
 import { Instant } from './instant';
 
-import bigInt from 'big-integer';
+import JSBI from 'jsbi';
+import * as ES from './ecmascript';
+import { MILLION } from './ecmascript';
 
 export function toTemporalInstant(this: Date) {
   // Observable access to valueOf is not correct here, but unavoidable
-  const epochNanoseconds = bigInt(+this).multiply(1e6);
-  return new Instant(bigIntIfAvailable(epochNanoseconds));
-}
-
-function bigIntIfAvailable(wrapper: bigInt.BigInteger | bigint) {
-  return typeof (globalThis as any).BigInt === 'undefined' ? wrapper : (wrapper as any).value;
+  const epochNanoseconds = JSBI.multiply(JSBI.BigInt(+this), MILLION);
+  return new Instant(ES.ToBigInt(epochNanoseconds));
 }

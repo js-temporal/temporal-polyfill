@@ -17,6 +17,7 @@ import {
   GetSlot,
   SetSlot
 } from './slots';
+import JSBI from 'jsbi';
 import { Temporal } from '..';
 import type { TimeZoneParams as Params, TimeZoneReturn as Return } from './internaltypes';
 
@@ -97,7 +98,7 @@ export class TimeZone implements Temporal.TimeZone {
         GetSlot(dateTime, ISO_NANOSECOND)
       );
       if (epochNs === null) throw new RangeError('DateTime outside of supported range');
-      return [new Instant(epochNs.minus(offsetNs))];
+      return [new Instant(JSBI.subtract(epochNs, JSBI.BigInt(offsetNs)))];
     }
 
     const possibleEpochNs = ES.GetIANATimeZoneEpochValue(

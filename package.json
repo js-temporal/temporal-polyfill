@@ -1,7 +1,7 @@
 {
   "name": "@js-temporal/polyfill",
-  "version": "0.2.0",
-  "description": "Polyfill for Temporal",
+  "version": "0.3.0",
+  "description": "Polyfill for Tc39 Stage 3 proposal Temporal (https://github.com/tc39/proposal-temporal)",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.esm.js",
@@ -66,10 +66,11 @@
   "files": [
     "index.d.ts",
     "dist",
-    "lib"
+    "lib",
+    "CHANGELOG.md"
   ],
   "dependencies": {
-    "big-integer": "^1.6.51",
+    "jsbi": "^4.0.0",
     "tslib": "^2.3.1"
   },
   "devDependencies": {
