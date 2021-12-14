@@ -174,8 +174,6 @@ Object.defineProperty(DateTimeFormatImpl, 'name', {
   value: 'DateTimeFormat'
 });
 
-export const DateTimeFormat = DateTimeFormatImpl as unknown as typeof Intl.DateTimeFormat;
-
 DateTimeFormatImpl.supportedLocalesOf = function (
   locales: Params['supportedLocalesOf'][0],
   options: Params['supportedLocalesOf'][1]
@@ -198,6 +196,15 @@ if ('formatRangeToParts' in IntlDateTimeFormat.prototype) {
 }
 
 DateTimeFormatImpl.prototype = Object.create(IntlDateTimeFormat.prototype, properties);
+
+// Ensure that the prototype isn't writeable.
+Object.defineProperty(DateTimeFormatImpl, 'prototype', {
+  writable: false,
+  enumerable: false,
+  configurable: false
+});
+
+export const DateTimeFormat = DateTimeFormatImpl as unknown as typeof Intl.DateTimeFormat;
 
 function resolvedOptions(this: DateTimeFormatImpl): Return['resolvedOptions'] {
   return this[ORIGINAL].resolvedOptions();
