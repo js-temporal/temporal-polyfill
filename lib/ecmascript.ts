@@ -230,6 +230,7 @@ import { PlainDateTime } from './plaindatetime';
 import { TimeZone } from './timezone';
 import { PlainMonthDay } from './plainmonthday';
 import { ZonedDateTime } from './zoneddatetime';
+import { PlainYearMonth } from './plainyearmonth';
 
 const IntlDateTimeFormatEnUsCache = new Map<string, Intl.DateTimeFormat>();
 
@@ -1834,11 +1835,7 @@ export function CreateTemporalYearMonth(
   calendar: Temporal.CalendarProtocol = GetISO8601Calendar(),
   referenceISODay = 1
 ) {
-<<<<<<< Updated upstream
-  const result = ObjectCreate(TemporalPlainYearMonth.prototype);
-=======
   const result = ObjectCreate(PlainYearMonth.prototype);
->>>>>>> Stashed changes
   CreateTemporalYearMonthSlots(result, isoYear, isoMonth, calendar, referenceISODay);
   return result;
 }
