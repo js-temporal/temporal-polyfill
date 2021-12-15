@@ -170,7 +170,8 @@ function abs(x: JSBI): JSBI {
   return x;
 }
 
-const BUILTIN_CASTS = new Map<PrimitivePropertyNames, (v: unknown) => string | number>([
+type BuiltinCastFunction = (v: unknown) => string | number;
+const BUILTIN_CASTS = new Map<PrimitivePropertyNames, BuiltinCastFunction>([
   ['year', ToIntegerThrowOnInfinity],
   ['month', ToPositiveInteger],
   ['monthCode', ToString],
@@ -306,7 +307,7 @@ function ParseTemporalTimeZone(stringIdent: string) {
   let { ianaName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
   if (ianaName) return ianaName;
   if (z) return 'UTC';
-  return offset;
+  return offset; // if !ianaName && !z then offset must be present
 }
 
 function FormatCalendarAnnotation(id: string, showCalendar: Temporal.ShowCalendarOption['calendarName']) {
@@ -1068,35 +1069,38 @@ export function LargerOfTwoTemporalUnits<T1 extends Temporal.DateTimeUnit, T2 ex
   return unit1;
 }
 
-export function ToPartialRecord<B extends AnyTemporalLikeType>(
-  bag: B,
-  fields: readonly (keyof B)[],
-  callerCast?: (value: unknown) => unknown
-) {
-  if (!IsObject(bag)) return false;
-  let any: B;
+export function ToPartialRecord<B extends AnyTemporalLikeType>(bagParam: B, fieldsParam: ReadonlyArray<keyof B>) {
+  // External callers are limited to specific types, but this function's
+  // implementation uses generic property types. The casts below (and at the
+  // end) convert to/from generic records.
+  const bag = bagParam as Record<PrimitivePropertyNames & keyof B, string | number | undefined>;
+  const fields = fieldsParam as ReadonlyArray<keyof B & PrimitivePropertyNames>;
+  let any = false;
+  let result = {} as typeof bag;
   for (const property of fields) {
     const value = bag[property];
     if (value !== undefined) {
-      any = any || ({} as B);
-      if (callerCast === undefined && BUILTIN_CASTS.has(property as PrimitivePropertyNames)) {
-        any[property] = BUILTIN_CASTS.get(property as PrimitivePropertyNames)(value) as unknown as B[keyof B];
-      } else if (callerCast !== undefined) {
-        any[property] = callerCast(value) as unknown as B[keyof B];
+      any = true;
+      if (BUILTIN_CASTS.has(property)) {
+        result[property] = (BUILTIN_CASTS.get(property) as BuiltinCastFunction)(value);
       } else {
-        any[property] = value;
+        result[property] = value;
       }
     }
   }
-  return any ? any : false;
+  return any ? (result as B) : false;
 }
 
 export function PrepareTemporalFields<B extends AnyTemporalLikeType>(
-  bag: B,
-  fields: ReadonlyArray<FieldRecord<B>>
-): Required<B> | undefined {
-  if (!IsObject(bag)) return undefined;
-  const result = {} as B;
+  bagParam: B,
+  fieldsParam: ReadonlyArray<FieldRecord<B>>
+): Required<B> {
+  // External callers are limited to specific types, but this function's
+  // implementation uses generic property types. The casts below (and at the
+  // end) convert to/from generic records.
+  const bag = bagParam as Record<PrimitivePropertyNames & keyof B, string | number | undefined>;
+  const fields = fieldsParam as ReadonlyArray<FieldRecord<typeof bag>>;
+  const result = {} as typeof bag;
   let any = false;
   for (const fieldRecord of fields) {
     const [property, defaultValue] = fieldRecord;
@@ -1105,15 +1109,11 @@ export function PrepareTemporalFields<B extends AnyTemporalLikeType>(
       if (fieldRecord.length === 1) {
         throw new TypeError(`required property '${property}' missing or undefined`);
       }
-      // TODO: two TS issues here:
-      // 1. `undefined` was stripped from the type of `defaultValue`. Will it
-      //    come back when strictNullChecks is enabled?
-      // 2. Can types be improved to remove the need for the type assertion?
-      value = defaultValue as unknown as typeof bag[typeof property];
+      value = defaultValue;
     } else {
       any = true;
       if (BUILTIN_CASTS.has(property as PrimitivePropertyNames)) {
-        value = BUILTIN_CASTS.get(property as PrimitivePropertyNames)(value) as unknown as typeof bag[keyof B];
+        value = (BUILTIN_CASTS.get(property) as BuiltinCastFunction)(value);
       }
     }
     result[property] = value;
@@ -1122,12 +1122,12 @@ export function PrepareTemporalFields<B extends AnyTemporalLikeType>(
     throw new TypeError('no supported properties found');
   }
   if (
-    ((result as Temporal.PlainDateLike)['era'] === undefined) !==
-    ((result as Temporal.PlainDateLike)['eraYear'] === undefined)
+    ((result as { era: unknown })['era'] === undefined) !==
+    ((result as { eraYear: unknown })['eraYear'] === undefined)
   ) {
     throw new RangeError("properties 'era' and 'eraYear' must be provided together");
   }
-  return result as Required<B>;
+  return result as unknown as Required<B>;
 }
 
 // field access in the following operations is intentionally alphabetical
