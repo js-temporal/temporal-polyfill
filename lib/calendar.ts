@@ -455,9 +455,213 @@ impl['iso8601'] = {
   }
 };
 
-// Note: other built-in calendars than iso8601 are not part of the Temporal
+// Note: Built-in calendars other than iso8601 are not part of the Temporal
 // proposal for ECMA-262. These calendars will be standardized as part of
-// ECMA-402.
+// ECMA-402. Code below here includes an implementation of these calendars order
+// to validate the Temporal API and to get feedback. However, non-ISO calendar
+// implementation is subject to change because these calendars are
+// implementation-defined.
+//
+// Some ES implementations don't include ECMA 402. For this reason, it's helpful
+// to ensure a clean separation between the ISO calendar implementation which is
+// a part of ECMA 262 and the non-ISO calendar implementation which requires
+// ECMA 402.
+//
+// To ensure this separation, the implementation is split. The `NonIsoImpl`
+// interface is the top-level implementation for all non-ISO calendars. This
+// type has the same shape as the ECMA 262-only ISO calendar implementation so
+// can use the same callers, tests, etc.
+//
+// A derived interface `NonIsoImplWithHelper` adds a `helper` property that
+// includes the remaining non-ISO implementation properties and methods beyond
+// the ISO implementation above. The `helper` property's shape is a base
+// singleton object common to all calendars (`HelperSharedImpl`) that's extended
+// (interface `HelperPerCalendarImpl`) with implementation that varies for each
+// calendar.
+//
+// Typing of individual methods in the interfaces below uses the `this`
+// "parameter" declaration definition, which is a fake parameter (stripped by TS
+// during compilation and not visible at runtime) that tells TS what type `this`
+// is for a method. For historical reasons, the initial implementation of
+// non-ISO calendars mirrored the code style of the previous ISO-only
+// implementation which didn't use ES6 classes. Using the `this` parameter is a
+// hack to delay converting this file to use ES6 classes until the code was
+// fully typed to make a `class` refactoring easier and safer. We'll probably do
+// this conversion in the future. (PRs welcome!)
+
+/**
+ * `NonIsoImpl` - The generic top-level implementation for all non-ISO
+ * calendars. This type has the same shape as the 262-only ISO calendar
+ * implementation, which means the `Calendar` class implementation can swap out
+ * the ISO for non-ISO implementations without changing any `Calendar` code.
+ */
+interface NonIsoImpl {
+  dateFromFields(
+    this: NonIsoImplWithHelper,
+    fieldsParam: Params['dateFromFields'][0],
+    options: NonNullable<Params['dateFromFields'][1]>,
+    calendar: Temporal.Calendar
+  ): Temporal.PlainDate;
+  yearMonthFromFields(
+    this: NonIsoImplWithHelper,
+    fieldsParam: Params['yearMonthFromFields'][0],
+    options: NonNullable<Params['yearMonthFromFields'][1]>,
+    calendar: Temporal.Calendar
+  ): Temporal.PlainYearMonth;
+  monthDayFromFields(
+    this: NonIsoImplWithHelper,
+    fieldsParam: Params['monthDayFromFields'][0],
+    options: NonNullable<Params['monthDayFromFields'][1]>,
+    calendar: Temporal.Calendar
+  ): Temporal.PlainMonthDay;
+  fields(fieldsParam: string[]): Return['fields'];
+  mergeFields(fields: Params['mergeFields'][0], additionalFields: Params['mergeFields'][1]): Return['mergeFields'];
+  dateAdd(
+    this: NonIsoImplWithHelper,
+    date: Temporal.PlainDate,
+    years: number,
+    months: number,
+    weeks: number,
+    days: number,
+    overflow: Overflow,
+    calendar: Temporal.Calendar
+  ): Temporal.PlainDate;
+  dateUntil(
+    this: NonIsoImplWithHelper,
+    one: Temporal.PlainDate,
+    two: Temporal.PlainDate,
+    largestUnit: Temporal.DateUnit
+  ): {
+    years: number;
+    months: number;
+    weeks: number;
+    days: number;
+  };
+  year(this: NonIsoImplWithHelper, date: Temporal.PlainDate): number;
+  month(this: NonIsoImplWithHelper, date: Temporal.PlainDate): number;
+  day(this: NonIsoImplWithHelper, date: Temporal.PlainDate): number;
+  era(this: NonIsoImplWithHelper, date: Temporal.PlainDate): string | undefined;
+  eraYear(this: NonIsoImplWithHelper, date: Temporal.PlainDate): number | undefined;
+  monthCode(this: NonIsoImplWithHelper, date: Temporal.PlainDate): string;
+  dayOfWeek(date: Temporal.PlainDate): number;
+  dayOfYear(this: NonIsoImplWithHelper, date: Temporal.PlainDate): number;
+  weekOfYear(date: Temporal.PlainDate): number;
+  daysInWeek(date: Temporal.PlainDate): number;
+  daysInMonth(this: NonIsoImplWithHelper, date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
+  daysInYear(this: NonIsoImplWithHelper, dateParam: Temporal.PlainDate | Temporal.PlainYearMonth): number;
+  monthsInYear(this: NonIsoImplWithHelper, date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
+  inLeapYear(this: NonIsoImplWithHelper, dateParam: Temporal.PlainDate | Temporal.PlainYearMonth): boolean;
+}
+
+/**
+ * This type exists solely to ensure a compiler error is shown if a per-calendar
+ * implementation object doesn't declare a `helper` property. It will go away
+ * if we migrate to ES6 classes.
+ *
+ * The methods of NonIsoImpl all set their `this` to NonIsoImplWithHelper in
+ * order to avoid having to cast every use of `helper` to exclude `undefined`.
+ * */
+interface NonIsoImplWithHelper extends NonIsoImpl {
+  helper: HelperPerCalendarImpl;
+}
+
+/** Shape of shared implementation code that applies to all calendars */
+interface HelperSharedImpl {
+  isoToCalendarDate(isoDate: IsoYMD, cache: OneObjectCache): FullCalendarDate;
+  validateCalendarDate(calendarDate: Partial<FullCalendarDate>): void;
+  adjustCalendarDate(
+    calendarDate: Partial<FullCalendarDate>,
+    cache?: OneObjectCache,
+    overflow?: Overflow,
+    fromLegacyDate?: boolean
+  ): FullCalendarDate;
+  regulateMonthDayNaive(calendarDate: FullCalendarDate, overflow: Overflow, cache: OneObjectCache): FullCalendarDate;
+  calendarToIsoDate(date: CalendarDateFields, overflow: Overflow, cache: OneObjectCache): IsoYMD;
+  temporalToCalendarDate(
+    date: Temporal.PlainDate | Temporal.PlainMonthDay | Temporal.PlainYearMonth,
+    cache: OneObjectCache
+  ): FullCalendarDate;
+  compareCalendarDates(date1: Partial<CalendarYMD>, date2: Partial<CalendarYMD>): 0 | 1 | -1;
+  regulateDate(calendarDate: CalendarYMD, overflow: Overflow, cache: OneObjectCache): FullCalendarDate;
+  addDaysIso(isoDate: IsoYMD, days: number, cache?: OneObjectCache): IsoYMD;
+  addDaysCalendar(calendarDate: CalendarYMD, days: number, cache: OneObjectCache): FullCalendarDate;
+  addMonthsCalendar(calendarDate: CalendarYMD, months: number, overflow: Overflow, cache: OneObjectCache): CalendarYMD;
+  addCalendar(
+    calendarDate: CalendarYMD,
+    { years, months, weeks, days }: { years?: number; months?: number; weeks?: number; days?: number },
+    overflow: Overflow,
+    cache: OneObjectCache
+  ): FullCalendarDate;
+  untilCalendar(
+    calendarOne: FullCalendarDate,
+    calendarTwo: FullCalendarDate,
+    largestUnit: Temporal.DateUnit,
+    cache: OneObjectCache
+  ): { years: number; months: number; weeks: number; days: number };
+  daysInMonth(calendarDate: CalendarYMD, cache: OneObjectCache): number;
+  daysInPreviousMonth(calendarDate: CalendarYMD, cache: OneObjectCache): number;
+  startOfCalendarYear(calendarDate: CalendarYearOnly): CalendarYMD;
+  startOfCalendarMonth(calendarDate: { year: number; month: number }): CalendarYMD;
+  calendarDaysUntil(calendarOne: CalendarYMD, calendarTwo: CalendarYMD, cache: OneObjectCache): number;
+  isoDaysUntil(oneIso: IsoYMD, twoIso: IsoYMD): number;
+  eraLength: 'long' | 'short' | 'narrow';
+  getFormatter(): globalThis.Intl.DateTimeFormat;
+  formatter?: globalThis.Intl.DateTimeFormat;
+  hasEra: boolean;
+  monthDayFromFields(fields: Partial<FullCalendarDate>, overflow: Overflow, cache: OneObjectCache): IsoYMD;
+}
+
+/** Calendar-specific implementation */
+interface HelperPerCalendarImpl extends HelperSharedImpl {
+  id: string;
+  reviseIntlEra?<T extends Partial<EraAndEraYear>>(calendarDate: T, isoDate: IsoYMD): T;
+  constantEra?: string;
+  checkIcuBugs?(isoDate: IsoYMD): void;
+  calendarType?: string;
+  monthsInYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache): number;
+  maximumMonthLength(calendarDate?: CalendarYM): number;
+  minimumMonthLength(calendarDate?: CalendarYM): number;
+  estimateIsoDate(calendarDate: CalendarYMD): IsoYMD;
+  inLeapYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache): boolean;
+
+  // Fields below here are only present in some subclasses but not others.
+  eras?: Era[];
+  anchorEra?: Era;
+  calendarIsVulnerableToJulianBug?: boolean;
+  v8IsVulnerableToJulianBug?: boolean;
+}
+
+/**
+ * This type is passed through from Calendar#dateFromFields().
+ * `monthExtra` is additional information used internally to identify lunisolar leap months.
+ */
+type CalendarDateFields = Params['dateFromFields'][0] & { monthExtra?: string };
+
+/**
+ * This is a "fully populated" calendar date record. It's only lacking
+ * `era`/`eraYear` (which may not be present in all calendars) and `monthExtra`
+ * which is only used in some cases.
+ */
+type FullCalendarDate = {
+  era?: string;
+  eraYear?: number;
+  year: number;
+  month: number;
+  monthCode: string;
+  day: number;
+  monthExtra?: string;
+};
+
+// The types below are various subsets of calendar dates
+type CalendarYMD = { year: number; month: number; day: number };
+type CalendarYM = { year: number; month: number };
+type CalendarYearOnly = { year: number };
+type EraAndEraYear = { era: string; eraYear: number };
+
+/** Record representing YMD of an ISO calendar date */
+type IsoYMD = { year: number; month: number; day: number };
+
+type Overflow = Temporal.AssignmentOptions['overflow'];
 
 function monthCodeNumberPart(monthCode: string) {
   if (!monthCode.startsWith('M')) {
@@ -1232,6 +1436,27 @@ const nonIsoHelperBase: NonIsoHelperBase = {
   }
 };
 
+interface HebrewMonthInfo {
+  [m: string]: (
+    | {
+        leap: undefined;
+        regular: number;
+      }
+    | {
+        leap: number;
+        regular: undefined;
+      }
+  ) & {
+    monthCode: string;
+    days:
+      | number
+      | {
+          min: number;
+          max: number;
+        };
+  };
+}
+
 const helperHebrew: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
   id: 'hebrew',
   calendarType: 'lunisolar',
@@ -1427,6 +1652,20 @@ const helperPersian: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
     return { year: year + 621, month: 1, day: 1 };
   }
 } as Partial<NonIsoHelperBase>);
+
+interface IndianMonthInfo {
+  [month: number]: {
+    length: number;
+    month: number;
+    day: number;
+    leap?: {
+      length: number;
+      month: number;
+      day: number;
+    };
+    nextYear?: true | undefined;
+  };
+}
 
 const helperIndian: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
   id: 'indian',
@@ -1957,6 +2196,13 @@ const helperJapanese: NonIsoHelperBase = ObjectAssign(
     }
   } as Partial<NonIsoHelperBase>
 );
+
+interface ChineseMonthInfo {
+  [key: string]: { monthIndex: number; daysInMonth: number };
+}
+interface ChineseDraftMonthInfo {
+  [key: string]: { monthIndex: number; daysInMonth?: number };
+}
 
 const helperChinese: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
   id: 'chinese',
