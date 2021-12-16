@@ -644,7 +644,7 @@ interface NonIsoHelperBase {
   reviseIntlEra?(calendarDate: any, isoDate?: any): { era: number; eraYear: number };
   hasEra?: boolean;
   constantEra?: string;
-  checkIcuBugs?(calendarDate: any, isoDate: any): void;
+  checkIcuBugs?(isoDate: any): void;
   calendarType?: string;
   monthsInYear?(calendarDate: any, cache?: any): number;
   maximumMonthLength?(calendarDate?: any): number;
@@ -762,7 +762,7 @@ const nonIsoHelperBase: NonIsoHelperBase = {
       result.era = era;
       result.eraYear = eraYear;
     }
-    if (this.checkIcuBugs) this.checkIcuBugs(result, isoDate);
+    if (this.checkIcuBugs) this.checkIcuBugs(isoDate);
 
     const calendarDate = this.adjustCalendarDate(result, cache, 'constrain', true);
     if (calendarDate.year === undefined) throw new RangeError(`Missing year converting ${JSON.stringify(isoDate)}`);
@@ -1486,7 +1486,7 @@ const helperIndian: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
   // expected.
   vulnerableToBceBug:
     new Date('0000-01-01T00:00Z').toLocaleDateString('en-US-u-ca-indian', { timeZone: 'UTC' }) !== '10/11/-79 Saka',
-  checkIcuBugs(calendarDate, isoDate) {
+  checkIcuBugs(isoDate) {
     if (this.vulnerableToBceBug && isoDate.year < 1) {
       throw new RangeError(
         `calendar '${this.id}' is broken for ISO dates before 0001-01-01` +
@@ -1795,7 +1795,7 @@ const makeHelperGregorian = (id: BuiltinCalendarId, originalEras: InputEra[]) =>
       .toLocaleDateString('en-US-u-ca-japanese', { timeZone: 'UTC' })
       .startsWith('12'),
     calendarIsVulnerableToJulianBug: false,
-    checkIcuBugs(calendarDate, isoDate) {
+    checkIcuBugs(isoDate) {
       if (this.calendarIsVulnerableToJulianBug && this.v8IsVulnerableToJulianBug) {
         const beforeJulianSwitch = ES.CompareISODate(isoDate.year, isoDate.month, isoDate.day, 1582, 10, 15) < 0;
         if (beforeJulianSwitch) {
