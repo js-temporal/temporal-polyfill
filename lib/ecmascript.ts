@@ -295,19 +295,18 @@ export function RejectObjectWithCalendarOrTimeZone(item: AnyTemporalLikeType) {
   if (HasSlot(item, CALENDAR) || HasSlot(item, TIME_ZONE)) {
     throw new TypeError('with() does not support a calendar or timeZone property');
   }
-  if ((item as any).calendar !== undefined) {
+  if ((item as { calendar: unknown }).calendar !== undefined) {
     throw new TypeError('with() does not support a calendar property');
   }
-  if ((item as any).timeZone !== undefined) {
+  if ((item as { timeZone: unknown }).timeZone !== undefined) {
     throw new TypeError('with() does not support a timeZone property');
   }
 }
 function ParseTemporalTimeZone(stringIdent: string) {
-  // TODO: why aren't these three variables destructured to include `undefined` as possible types?
   let { ianaName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
   if (ianaName) return ianaName;
   if (z) return 'UTC';
-  return offset; // if !ianaName && !z then offset must be present
+  return offset as string; // if !ianaName && !z then offset must be present
 }
 
 function FormatCalendarAnnotation(id: string, showCalendar: Temporal.ShowCalendarOption['calendarName']) {
@@ -521,7 +520,7 @@ function ParseTemporalInstant(isoString: string) {
 
   const epochNs = GetEpochFromISOParts(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   if (epochNs === null) throw new RangeError('DateTime outside of supported range');
-  const offsetNs = z ? 0 : ParseTimeZoneOffsetString(offset);
+  const offsetNs = z ? 0 : ParseTimeZoneOffsetString(offset as string);
   return JSBI.subtract(epochNs, JSBI.BigInt(offsetNs));
 }
 
@@ -734,7 +733,7 @@ export function ToTemporalRoundingMode(
   return GetOption(options, 'roundingMode', ['ceil', 'floor', 'trunc', 'halfExpand'], fallback);
 }
 
-export function NegateTemporalRoundingMode(roundingMode: Temporal.ToStringPrecisionOptions['roundingMode']) {
+export function NegateTemporalRoundingMode(roundingMode: Temporal.RoundingMode) {
   switch (roundingMode) {
     case 'ceil':
       return 'floor';
@@ -747,7 +746,7 @@ export function NegateTemporalRoundingMode(roundingMode: Temporal.ToStringPrecis
 
 export function ToTemporalOffset(
   options: Temporal.OffsetDisambiguationOptions,
-  fallback: Temporal.OffsetDisambiguationOptions['offset']
+  fallback: Required<Temporal.OffsetDisambiguationOptions>['offset']
 ) {
   return GetOption(options, 'offset', ['prefer', 'use', 'ignore', 'reject'], fallback);
 }
@@ -861,31 +860,35 @@ export function ToSecondsStringPrecision(options: Temporal.ToStringPrecisionOpti
   }
 }
 
-export function ToLargestTemporalUnit<Allowed extends Temporal.DateTimeUnit, Disallowed extends Temporal.DateTimeUnit>(
+type ToSingularUnit<T extends Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit> | 'auto'> = Exclude<
+  T,
+  Temporal.PluralUnit<Temporal.DateTimeUnit> | 'auto'
+>;
+
+export function ToLargestTemporalUnit<Allowed extends Temporal.DateTimeUnit>(
   options: { largestUnit?: Temporal.LargestUnit<Allowed> },
-  fallback: Allowed | 'auto',
-  disallowedStrings?: ReadonlyArray<Disallowed>
-): Allowed | 'auto';
+  fallback: undefined
+): ToSingularUnit<Allowed> | 'auto' | undefined;
 export function ToLargestTemporalUnit<
-  Allowed extends Temporal.DateTimeUnit,
-  Disallowed extends Temporal.DateTimeUnit,
-  IfAuto extends Allowed | undefined = Allowed
+  Allowed extends Temporal.LargestUnit<Temporal.DateTimeUnit>,
+  Disallowed extends Temporal.DateTimeUnit
 >(
-  options: { largestUnit?: Temporal.LargestUnit<Allowed> },
-  fallback: Allowed | 'auto',
+  options: { largestUnit?: Allowed | undefined },
+  fallback: 'auto',
   disallowedStrings: ReadonlyArray<Disallowed>,
-  autoValue?: IfAuto
-): Allowed;
+  autoValue: ToSingularUnit<Allowed>
+): ToSingularUnit<Allowed>;
 export function ToLargestTemporalUnit<
   Allowed extends Temporal.DateTimeUnit,
-  Disallowed extends Temporal.DateTimeUnit,
-  IfAuto extends Allowed | undefined = Allowed
+  Disallowed extends ToSingularUnit<Exclude<Temporal.DateTimeUnit, Allowed>>,
+  Fallback extends ToSingularUnit<Allowed> | 'auto' | undefined
 >(
   options: { largestUnit?: Temporal.LargestUnit<Allowed> },
-  fallback: Allowed | 'auto',
+  fallback: Fallback,
   disallowedStrings: ReadonlyArray<Disallowed> = [],
-  autoValue?: IfAuto
-): IfAuto extends undefined ? Allowed | 'auto' : Allowed {
+  autoValue?: Exclude<ToSingularUnit<Allowed>, 'auto'> | undefined
+): ToSingularUnit<Allowed> | (Fallback extends undefined ? undefined : 'auto') {
+  type Ret = ToSingularUnit<Allowed> | (Fallback extends undefined ? undefined : 'auto');
   const singular = new Map(
     SINGULAR_PLURAL_UNITS.filter(([, sing]) => !disallowedStrings.includes(sing as Disallowed))
   ) as Map<Temporal.PluralUnit<Allowed>, Allowed>;
@@ -894,33 +897,35 @@ export function ToLargestTemporalUnit<
     allowed.delete(s as unknown as Allowed);
   }
   const retval = GetOption(options, 'largestUnit', ['auto', ...allowed, ...singular.keys()], fallback);
-  type RetType = IfAuto extends undefined ? Allowed | 'auto' : Allowed;
   if (retval === 'auto' && autoValue !== undefined) return autoValue;
   if (singular.has(retval as Temporal.PluralUnit<Allowed>)) {
-    return singular.get(retval as Temporal.PluralUnit<Allowed>) as RetType;
+    return singular.get(retval as Temporal.PluralUnit<Allowed>) as Ret;
   }
-  return retval as RetType;
+  return retval as Ret;
 }
 
 export function ToSmallestTemporalUnit<
-  Allowed extends Temporal.DateTimeUnit,
-  Fallback extends Allowed,
-  Disallowed extends Temporal.DateTimeUnit
+  Allowed extends Temporal.SmallestUnit<Temporal.DateTimeUnit>,
+  Fallback extends ToSingularUnit<Allowed> | undefined,
+  Disallowed extends ToSingularUnit<Exclude<Temporal.DateTimeUnit, Allowed>>
 >(
-  options: { smallestUnit?: Temporal.SmallestUnit<Allowed> },
+  options: { smallestUnit?: Allowed | undefined },
   fallback: Fallback,
   disallowedStrings: ReadonlyArray<Disallowed> = []
-): Allowed {
+): ToSingularUnit<Allowed> | (Fallback extends undefined ? undefined : never) {
+  type Ret = ToSingularUnit<Allowed> | (Fallback extends undefined ? undefined : never);
   const singular = new Map(
     SINGULAR_PLURAL_UNITS.filter(([, sing]) => !disallowedStrings.includes(sing as Disallowed))
-  ) as Map<Temporal.PluralUnit<Allowed>, Allowed>;
+  ) as Map<Allowed, ToSingularUnit<Allowed>>;
   const allowed = new Set(ALLOWED_UNITS) as Set<Allowed>;
   for (const s of disallowedStrings) {
     allowed.delete(s as unknown as Allowed);
   }
   const value = GetOption(options, 'smallestUnit', [...allowed, ...singular.keys()], fallback);
-  if (singular.has(value as Temporal.PluralUnit<Allowed>)) return singular.get(value as Temporal.PluralUnit<Allowed>);
-  return value as Allowed;
+  if (singular.has(value as Allowed)) {
+    return singular.get(value as Allowed) as Ret;
+  }
+  return value as Ret;
 }
 
 export function ToTemporalDurationTotalUnit(options: {
@@ -948,9 +953,7 @@ export function ToRelativeTemporalObject(options: {
     | undefined;
 }): Temporal.ZonedDateTime | Temporal.PlainDate | undefined {
   const relativeTo = options.relativeTo;
-  // TODO: `as undefined` below should not be needed.  Verify that it can be
-  // removed after strictNullChecks is enabled.
-  if (relativeTo === undefined) return relativeTo as undefined;
+  if (relativeTo === undefined) return relativeTo;
 
   let offsetBehaviour: OffsetBehaviour = 'option';
   let matchMinutes = false;
@@ -1042,7 +1045,7 @@ export function DefaultTemporalLargestUnit(
   milliseconds: number,
   microseconds: number,
   nanoseconds: number
-) {
+): Temporal.DateTimeUnit {
   const singular = new Map<string, Temporal.DateTimeUnit>(SINGULAR_PLURAL_UNITS);
   for (const [prop, v] of [
     ['years', years],
@@ -1056,7 +1059,7 @@ export function DefaultTemporalLargestUnit(
     ['microseconds', microseconds],
     ['nanoseconds', nanoseconds]
   ] as const) {
-    if (v !== 0) return singular.get(prop);
+    if (v !== 0) return singular.get(prop) as Temporal.DateTimeUnit;
   }
   return 'nanosecond';
 }
@@ -1286,7 +1289,7 @@ export function ToTemporalDate(
 
 export function InterpretTemporalDateTimeFields(
   calendar: Temporal.CalendarProtocol,
-  fields: Required<Omit<Temporal.PlainDateTimeLike, 'calendar'>>,
+  fields: Pick<Temporal.PlainDateTime, Exclude<keyof Temporal.PlainDateTimeLike, 'calendar'>>,
   options: Temporal.AssignmentOptions
 ) {
   let { hour, minute, second, millisecond, microsecond, nanosecond } = ToTemporalTimeRecord(fields);
@@ -1442,8 +1445,7 @@ export function ToTemporalMonthDay(
 
   ToTemporalOverflow(options); // validate and ignore
   let { month, day, referenceISOYear, calendar: maybeStringCalendar } = ParseTemporalMonthDayString(ToString(item));
-  // TODO: should this be a ternary?
-  let calendar: Temporal.CalendarProtocol | string = maybeStringCalendar;
+  let calendar: Temporal.CalendarProtocol | string | undefined = maybeStringCalendar;
   if (calendar === undefined) calendar = GetISO8601Calendar();
   calendar = ToTemporalCalendar(calendar);
 
@@ -1458,7 +1460,7 @@ export function ToTemporalMonthDay(
 
 export function ToTemporalTime(
   itemParam: PlainTimeParams['from'][0],
-  overflow: PlainTimeParams['from'][1]['overflow'] = 'constrain'
+  overflow: NonNullable<PlainTimeParams['from'][1]>['overflow'] = 'constrain'
 ) {
   let item = itemParam;
   let hour, minute, second, millisecond, microsecond, nanosecond, calendar;
@@ -1552,7 +1554,7 @@ export function InterpretISODateTimeOffset(
   offsetBehaviour: OffsetBehaviour,
   offsetNs: number,
   timeZone: Temporal.TimeZoneProtocol,
-  disambiguation: Temporal.ToInstantOptions['disambiguation'],
+  disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>,
   offsetOpt: Temporal.OffsetDisambiguationOptions['offset'],
   matchMinute: boolean
 ) {
@@ -1618,7 +1620,7 @@ export function ToTemporalZonedDateTime(
     microsecond: number,
     nanosecond: number,
     timeZone,
-    offset: string,
+    offset: string | undefined,
     calendar: string | Temporal.CalendarProtocol;
   let matchMinute = false;
   let offsetBehaviour: OffsetBehaviour = 'option';
@@ -1668,7 +1670,9 @@ export function ToTemporalZonedDateTime(
     matchMinute = true; // ISO strings may specify offset with less precision
   }
   let offsetNs = 0;
-  if (offsetBehaviour === 'option') offsetNs = ParseTimeZoneOffsetString(offset);
+  // The code above guarantees that if offsetBehaviour === 'option', then
+  // `offset` is not undefined.
+  if (offsetBehaviour === 'option') offsetNs = ParseTimeZoneOffsetString(offset as string);
   const disambiguation = ToTemporalDisambiguation(options);
   const offsetOpt = ToTemporalOffset(options, 'reject');
   const epochNanoseconds = InterpretISODateTimeOffset(
@@ -2080,7 +2084,7 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
   if (IsObject(calendarLike)) {
     if (HasSlot(calendarLike, CALENDAR)) return GetSlot(calendarLike, CALENDAR);
     if (!('calendar' in calendarLike)) return calendarLike;
-    calendarLike = calendarLike.calendar;
+    calendarLike = (calendarLike as unknown as { calendar: string | Temporal.CalendarProtocol }).calendar;
     if (IsObject(calendarLike) && !('calendar' in calendarLike)) return calendarLike;
   }
   const identifier = ToString(calendarLike);
@@ -2097,10 +2101,10 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
 }
 
 function GetTemporalCalendarWithISODefault(
-  item: Temporal.CalendarProtocol | { calendar?: Temporal.PlainDateLike['calendar'] } | undefined
+  item: Temporal.CalendarProtocol | { calendar?: Temporal.PlainDateLike['calendar'] }
 ): Temporal.Calendar | Temporal.CalendarProtocol {
   if (HasSlot(item, CALENDAR)) return GetSlot(item, CALENDAR);
-  const { calendar } = item;
+  const { calendar } = item as Exclude<typeof item, Temporal.CalendarProtocol>;
   if (calendar === undefined) return GetISO8601Calendar();
   return ToTemporalCalendar(calendar);
 }
@@ -2160,7 +2164,7 @@ export function ToTemporalTimeZone(temporalTimeZoneLikeParam: TimeZoneParams['fr
   if (IsObject(temporalTimeZoneLike)) {
     if (IsTemporalZonedDateTime(temporalTimeZoneLike)) return GetSlot(temporalTimeZoneLike, TIME_ZONE);
     if (!('timeZone' in temporalTimeZoneLike)) return temporalTimeZoneLike;
-    temporalTimeZoneLike = (temporalTimeZoneLike as { timeZone: typeof temporalTimeZoneLike }).timeZone;
+    temporalTimeZoneLike = (temporalTimeZoneLike as unknown as { timeZone: typeof temporalTimeZoneLike }).timeZone;
     if (IsObject(temporalTimeZoneLike) && !('timeZone' in temporalTimeZoneLike)) {
       return temporalTimeZoneLike;
     }
@@ -2247,7 +2251,7 @@ export function BuiltinTimeZoneGetPlainDateTimeFor(
 export function BuiltinTimeZoneGetInstantFor(
   timeZone: Temporal.TimeZoneProtocol,
   dateTime: Temporal.PlainDateTime,
-  disambiguation: Temporal.ToInstantOptions['disambiguation']
+  disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>
 ) {
   const possibleInstants = GetPossibleInstantsFor(timeZone, dateTime);
   return DisambiguatePossibleInstants(possibleInstants, timeZone, dateTime, disambiguation);
@@ -2257,7 +2261,7 @@ function DisambiguatePossibleInstants(
   possibleInstants: Temporal.Instant[],
   timeZone: Temporal.TimeZoneProtocol,
   dateTime: Temporal.PlainDateTime,
-  disambiguation: Temporal.ToInstantOptions['disambiguation']
+  disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>
 ) {
   const Instant = GetIntrinsic('%Temporal.Instant%');
   const numInstants = possibleInstants.length;
@@ -2469,14 +2473,16 @@ export function TemporalInstantToString(
   return `${year}-${month}-${day}T${hour}:${minute}${seconds}${timeZoneString}`;
 }
 
+interface ToStringOptions {
+  unit: ReturnType<typeof ToSecondsStringPrecision>['unit'];
+  increment: number;
+  roundingMode: ReturnType<typeof ToTemporalRoundingMode>;
+}
+
 export function TemporalDurationToString(
   duration: Temporal.Duration,
   precision: Temporal.ToStringPrecisionOptions['fractionalSecondDigits'] = 'auto',
-  options: {
-    unit: ReturnType<typeof ToSecondsStringPrecision>['unit'];
-    increment: number;
-    roundingMode: ReturnType<typeof ToTemporalRoundingMode>;
-  } = undefined
+  options: ToStringOptions | undefined = undefined
 ) {
   function formatNumber(num: number) {
     if (num <= NumberMaxSafeInteger) return num.toString(10);
@@ -2558,11 +2564,7 @@ export function TemporalDateTimeToString(
   dateTime: Temporal.PlainDateTime,
   precision: ReturnType<typeof ToSecondsStringPrecision>['precision'],
   showCalendar: ReturnType<typeof ToShowCalendarOption> = 'auto',
-  options: {
-    unit: ReturnType<typeof ToSecondsStringPrecision>['unit'];
-    increment: number;
-    roundingMode: ReturnType<typeof ToTemporalRoundingMode>;
-  } = undefined
+  options: ToStringOptions | undefined = undefined
 ) {
   let year = GetSlot(dateTime, ISO_YEAR);
   let month = GetSlot(dateTime, ISO_MONTH);
@@ -2645,11 +2647,7 @@ export function TemporalZonedDateTimeToString(
   showCalendar: ReturnType<typeof ToShowCalendarOption> = 'auto',
   showTimeZone: ReturnType<typeof ToShowTimeZoneNameOption> = 'auto',
   showOffset: ReturnType<typeof ToShowOffsetOption> = 'auto',
-  options: {
-    unit: ReturnType<typeof ToSecondsStringPrecision>['unit'];
-    increment: number;
-    roundingMode: ReturnType<typeof ToTemporalRoundingMode>;
-  } = undefined
+  options: ToStringOptions | undefined = undefined
 ) {
   let instant = GetSlot(zdt, INSTANT);
 
@@ -2917,7 +2915,7 @@ export function GetIANATimeZoneEpochValue(
       }
       return epochNanoseconds;
     })
-    .filter((x) => x !== undefined);
+    .filter((x) => x !== undefined) as JSBI[];
 }
 
 export function LeapYear(year: number) {
@@ -3341,7 +3339,7 @@ export function UnbalanceDurationRelative(
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
 
   let calendar;
-  let relativeTo: Temporal.PlainDate;
+  let relativeTo: Temporal.PlainDate | undefined;
   if (relativeToParam) {
     relativeTo = ToTemporalDate(relativeToParam);
     calendar = GetSlot(relativeTo, CALENDAR);
@@ -3361,7 +3359,7 @@ export function UnbalanceDurationRelative(
         // balance years down to months
         const dateAdd = calendar.dateAdd;
         const dateUntil = calendar.dateUntil;
-        let relativeToDateOnly: Temporal.PlainDateLike = relativeTo;
+        let relativeToDateOnly: Temporal.PlainDateLike = relativeTo as Temporal.PlainDateLike;
         while (MathAbs(years) > 0) {
           const addOptions = ObjectCreate(null);
           const newRelativeTo = CalendarDateAdd(calendar, relativeToDateOnly, oneYear, addOptions, dateAdd);
@@ -3380,7 +3378,7 @@ export function UnbalanceDurationRelative(
       // balance years down to days
       while (MathAbs(years) > 0) {
         let oneYearDays;
-        ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear));
+        ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneYear));
         days += oneYearDays;
         years -= sign;
       }
@@ -3388,7 +3386,7 @@ export function UnbalanceDurationRelative(
       // balance months down to days
       while (MathAbs(months) > 0) {
         let oneMonthDays;
-        ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
+        ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneMonth));
         days += oneMonthDays;
         months -= sign;
       }
@@ -3398,7 +3396,7 @@ export function UnbalanceDurationRelative(
       while (MathAbs(years) > 0) {
         if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
         let oneYearDays;
-        ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear));
+        ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneYear));
         days += oneYearDays;
         years -= sign;
       }
@@ -3407,7 +3405,7 @@ export function UnbalanceDurationRelative(
       while (MathAbs(months) > 0) {
         if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
         let oneMonthDays;
-        ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
+        ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneMonth));
         days += oneMonthDays;
         months -= sign;
       }
@@ -3416,7 +3414,7 @@ export function UnbalanceDurationRelative(
       while (MathAbs(weeks) > 0) {
         if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
         let oneWeekDays;
-        ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek));
+        ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneWeek));
         days += oneWeekDays;
         weeks -= sign;
       }
@@ -3443,7 +3441,7 @@ export function BalanceDurationRelative(
   if (sign === 0) return { years, months, weeks, days };
 
   let calendar;
-  let relativeTo: Temporal.PlainDate;
+  let relativeTo: Temporal.PlainDate | undefined;
   if (relativeToParam) {
     relativeTo = ToTemporalDate(relativeToParam);
     calendar = GetSlot(relativeTo, CALENDAR);
@@ -3458,7 +3456,11 @@ export function BalanceDurationRelative(
       if (!calendar) throw new RangeError('a starting point is required for years balancing');
       // balance days up to years
       let newRelativeTo, oneYearDays;
-      ({ relativeTo: newRelativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear));
+      ({ relativeTo: newRelativeTo, days: oneYearDays } = MoveRelativeDate(
+        calendar,
+        relativeTo as Temporal.PlainDate,
+        oneYear
+      ));
       while (MathAbs(days) >= MathAbs(oneYearDays)) {
         days -= oneYearDays;
         years += sign;
@@ -3468,7 +3470,11 @@ export function BalanceDurationRelative(
 
       // balance days up to months
       let oneMonthDays;
-      ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
+      ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(
+        calendar,
+        relativeTo as Temporal.PlainDate,
+        oneMonth
+      ));
       while (MathAbs(days) >= MathAbs(oneMonthDays)) {
         days -= oneMonthDays;
         months += sign;
@@ -3479,11 +3485,17 @@ export function BalanceDurationRelative(
       // balance months up to years
       const dateAdd = calendar.dateAdd;
       const addOptions = ObjectCreate(null);
-      newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, addOptions, dateAdd);
+      newRelativeTo = CalendarDateAdd(calendar, relativeTo as Temporal.PlainDate, oneYear, addOptions, dateAdd);
       const dateUntil = calendar.dateUntil;
       const untilOptions = ObjectCreate(null);
       untilOptions.largestUnit = 'month';
-      let untilResult = CalendarDateUntil(calendar, relativeTo, newRelativeTo, untilOptions, dateUntil);
+      let untilResult = CalendarDateUntil(
+        calendar,
+        relativeTo as Temporal.PlainDate,
+        newRelativeTo,
+        untilOptions,
+        dateUntil
+      );
       let oneYearMonths = GetSlot(untilResult, MONTHS);
       while (MathAbs(months) >= MathAbs(oneYearMonths)) {
         months -= oneYearMonths;
@@ -3502,7 +3514,11 @@ export function BalanceDurationRelative(
       if (!calendar) throw new RangeError('a starting point is required for months balancing');
       // balance days up to months
       let newRelativeTo, oneMonthDays;
-      ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
+      ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(
+        calendar,
+        relativeTo as Temporal.PlainDate,
+        oneMonth
+      ));
       while (MathAbs(days) >= MathAbs(oneMonthDays)) {
         days -= oneMonthDays;
         months += sign;
@@ -3515,7 +3531,11 @@ export function BalanceDurationRelative(
       if (!calendar) throw new RangeError('a starting point is required for weeks balancing');
       // balance days up to weeks
       let newRelativeTo, oneWeekDays;
-      ({ relativeTo: newRelativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek));
+      ({ relativeTo: newRelativeTo, days: oneWeekDays } = MoveRelativeDate(
+        calendar,
+        relativeTo as Temporal.PlainDate,
+        oneWeek
+      ));
       while (MathAbs(days) >= MathAbs(oneWeekDays)) {
         days -= oneWeekDays;
         weeks += sign;
@@ -3575,8 +3595,10 @@ export function CreateNegatedTemporalDuration(duration: Temporal.Duration) {
   );
 }
 
-export function ConstrainToRange(value: number, min: number, max: number) {
-  return MathMin(max, MathMax(min, value));
+export function ConstrainToRange(value: number | undefined, min: number, max: number) {
+  // Math.Max accepts undefined values and returns NaN. Undefined values are
+  // used for optional params in the method below.
+  return MathMin(max, MathMax(min, value as number));
 }
 function ConstrainISODate(year: number, monthParam: number, dayParam?: number) {
   const month = ConstrainToRange(monthParam, 1, 12);
@@ -4283,7 +4305,7 @@ export function AddDateTime(
   milliseconds: number,
   microseconds: number,
   nanoseconds: number,
-  options: Temporal.ArithmeticOptions
+  options?: Temporal.ArithmeticOptions
 ) {
   let days = daysParam;
   // Add the time part
@@ -4519,7 +4541,7 @@ function DaysUntil(
 
 function MoveRelativeDate(
   calendar: Temporal.CalendarProtocol,
-  relativeToParam: ReturnType<typeof ToRelativeTemporalObject>,
+  relativeToParam: NonNullable<ReturnType<typeof ToRelativeTemporalObject>>,
   duration: Temporal.Duration
 ) {
   const options = ObjectCreate(null);
@@ -4733,7 +4755,9 @@ export function RoundDuration(
 
   // First convert time units up to days, if rounding to days or higher units.
   // If rounding relative to a ZonedDateTime, then some days may not be 24h.
-  let dayLengthNs: JSBI;
+  // TS doesn't know that `dayLengthNs` is only used if the unit is day or
+  // larger. This makes the cast below acceptable.
+  let dayLengthNs: JSBI = undefined as unknown as JSBI;
   if (unit === 'year' || unit === 'month' || unit === 'week' || unit === 'day') {
     nanoseconds = TotalDurationNanoseconds(0, hours, minutes, seconds, milliseconds, microseconds, nanosecondsParam, 0);
     let intermediate;
@@ -4758,10 +4782,22 @@ export function RoundDuration(
       const yearsDuration = new TemporalDuration(years);
       const dateAdd = calendar.dateAdd;
       const firstAddOptions = ObjectCreate(null);
-      const yearsLater = CalendarDateAdd(calendar, relativeTo, yearsDuration, firstAddOptions, dateAdd);
+      const yearsLater = CalendarDateAdd(
+        calendar,
+        relativeTo as Temporal.PlainDate,
+        yearsDuration,
+        firstAddOptions,
+        dateAdd
+      );
       const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
       const secondAddOptions = ObjectCreate(null);
-      const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, secondAddOptions, dateAdd);
+      const yearsMonthsWeeksLater = CalendarDateAdd(
+        calendar,
+        relativeTo as Temporal.PlainDate,
+        yearsMonthsWeeks,
+        secondAddOptions,
+        dateAdd
+      );
       const monthsWeeksInDays = DaysUntil(yearsLater, yearsMonthsWeeksLater);
       relativeTo = yearsLater;
       days += monthsWeeksInDays;
@@ -4811,10 +4847,22 @@ export function RoundDuration(
       const yearsMonths = new TemporalDuration(years, months);
       const dateAdd = calendar.dateAdd;
       const firstAddOptions = ObjectCreate(null);
-      const yearsMonthsLater = CalendarDateAdd(calendar, relativeTo, yearsMonths, firstAddOptions, dateAdd);
+      const yearsMonthsLater = CalendarDateAdd(
+        calendar,
+        relativeTo as Temporal.PlainDate,
+        yearsMonths,
+        firstAddOptions,
+        dateAdd
+      );
       const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
       const secondAddOptions = ObjectCreate(null);
-      const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, secondAddOptions, dateAdd);
+      const yearsMonthsWeeksLater = CalendarDateAdd(
+        calendar,
+        relativeTo as Temporal.PlainDate,
+        yearsMonthsWeeks,
+        secondAddOptions,
+        dateAdd
+      );
       const weeksInDays = DaysUntil(yearsMonthsLater, yearsMonthsWeeksLater);
       relativeTo = yearsMonthsLater;
       days += weeksInDays;
@@ -4854,7 +4902,7 @@ export function RoundDuration(
       const sign = MathSign(days);
       const oneWeek = new TemporalDuration(0, 0, days < 0 ? -1 : 1);
       let oneWeekDays;
-      ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek));
+      ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneWeek));
       while (MathAbs(days) >= MathAbs(oneWeekDays)) {
         weeks += sign;
         days -= oneWeekDays;
@@ -5073,7 +5121,7 @@ export function ComparisonResult(value: number) {
 }
 
 export function GetOptionsObject<T>(options: T) {
-  if (options === undefined) return ObjectCreate(null) as T;
+  if (options === undefined) return ObjectCreate(null) as NonNullable<T>;
   if (IsObject(options) && options !== null) return options;
   throw new TypeError(`Options parameter must be an object, not ${options === null ? 'null' : `${typeof options}`}`);
 }
@@ -5088,8 +5136,28 @@ function GetOption<P extends string, O extends Partial<Record<P, unknown>>>(
   options: O,
   property: P,
   allowedValues: ReadonlyArray<O[P]>,
+  fallback: undefined
+): O[P];
+function GetOption<
+  P extends string,
+  O extends Partial<Record<P, unknown>>,
+  Fallback extends Required<O>[P] | undefined
+>(
+  options: O,
+  property: P,
+  allowedValues: ReadonlyArray<O[P]>,
+  fallback: Fallback
+): Fallback extends undefined ? O[P] | undefined : Required<O>[P];
+function GetOption<
+  P extends string,
+  O extends Partial<Record<P, unknown>>,
+  Fallback extends Required<O>[P] | undefined
+>(
+  options: O,
+  property: P,
+  allowedValues: ReadonlyArray<O[P]>,
   fallback: O[P]
-) {
+): Fallback extends undefined ? O[P] | undefined : Required<O>[P] {
   let value = options[property];
   if (value !== undefined) {
     value = ToString(value) as O[P];
