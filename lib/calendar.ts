@@ -1305,8 +1305,8 @@ const helperHebrew: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
     fromLegacyDate = false
   ) {
     let { year, eraYear, month, monthCode, day, monthExtra } = calendarDate;
-    if (year === undefined) year = eraYear;
-    if (eraYear === undefined) eraYear = year;
+    if (year === undefined && eraYear !== undefined) year = eraYear;
+    if (eraYear === undefined && year !== undefined) eraYear = year;
     if (fromLegacyDate) {
       // In Pre Node-14 V8, DateTimeFormat.formatToParts `month: 'numeric'`
       // output returns the numeric equivalent of `month` as a string, meaning
