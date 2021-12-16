@@ -821,17 +821,21 @@ const nonIsoHelperBase: NonIsoHelperBase = {
     if (this.calendarType === 'lunisolar') throw new RangeError('Override required for lunisolar calendars');
     let calendarDate = calendarDateParam;
     this.validateCalendarDate(calendarDate);
-    const largestMonth = this.monthsInYear(calendarDate, cache);
-    let { month, year, eraYear, monthCode } = calendarDate;
-
     // For calendars that always use the same era, set it here so that derived
     // calendars won't need to implement this method simply to set the era.
     if (this.constantEra) {
       // year and eraYear always match when there's only one possible era
-      if (year === undefined) year = eraYear;
-      if (eraYear === undefined) eraYear = year;
-      calendarDate = { ...calendarDate, era: this.constantEra, year, eraYear };
+      const { year, eraYear } = calendarDate;
+      calendarDate = {
+        ...calendarDate,
+        era: this.constantEra,
+        year: year !== undefined ? year : eraYear,
+        eraYear: eraYear !== undefined ? eraYear : year
+      };
     }
+
+    const largestMonth = this.monthsInYear(calendarDate, cache);
+    let { month, monthCode } = calendarDate;
 
     ({ month, monthCode } = resolveNonLunisolarMonth(calendarDate, overflow, largestMonth));
     return { ...calendarDate, month, monthCode };
