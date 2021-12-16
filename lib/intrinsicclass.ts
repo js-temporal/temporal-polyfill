@@ -36,9 +36,9 @@ interface StandaloneIntrinsics {
   'Temporal.Calendar.from': typeof Temporal.Calendar.from;
 }
 type RegisteredStandaloneIntrinsics = { [key in keyof StandaloneIntrinsics as `%${key}%`]: StandaloneIntrinsics[key] };
-const INTRINSICS: Partial<TemporalIntrinsicRegisteredKeys> &
-  Partial<TemporalIntrinsicPrototypeRegisteredKeys> &
-  Partial<RegisteredStandaloneIntrinsics> = {};
+const INTRINSICS = {} as TemporalIntrinsicRegisteredKeys &
+  TemporalIntrinsicPrototypeRegisteredKeys &
+  RegisteredStandaloneIntrinsics;
 
 type customFormatFunction<T> = (
   this: T,
@@ -96,13 +96,13 @@ export function MakeIntrinsicClass(
     });
   }
   for (const prop of Object.getOwnPropertyNames(Class)) {
-    const desc = Object.getOwnPropertyDescriptor(Class, prop);
+    const desc = Object.getOwnPropertyDescriptor(Class, prop) as PropertyDescriptor;
     if (!desc.configurable || !desc.enumerable) continue;
     desc.enumerable = false;
     Object.defineProperty(Class, prop, desc);
   }
   for (const prop of Object.getOwnPropertyNames(Class.prototype)) {
-    const desc = Object.getOwnPropertyDescriptor(Class.prototype, prop);
+    const desc = Object.getOwnPropertyDescriptor(Class.prototype, prop) as PropertyDescriptor;
     if (!desc.configurable || !desc.enumerable) continue;
     desc.enumerable = false;
     Object.defineProperty(Class.prototype, prop, desc);
