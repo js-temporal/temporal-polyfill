@@ -78,7 +78,7 @@ interface CalendarImpl {
     months: number,
     weeks: number,
     days: number,
-    overflow: Temporal.ArithmeticOptions['overflow'],
+    overflow: Overflow,
     calendar: Temporal.Calendar
   ): Temporal.PlainDate;
   dateUntil(
@@ -683,7 +683,7 @@ function buildMonthCode(month: number | string, leap = false) {
  * */
 function resolveNonLunisolarMonth<T extends CalendarDate>(
   calendarDate: T,
-  overflow: Temporal.ArithmeticOptions['overflow'] = undefined,
+  overflow: Overflow = undefined,
   monthsPerYear = 12
 ) {
   let { month, monthCode } = calendarDate;
@@ -708,12 +708,6 @@ function resolveNonLunisolarMonth<T extends CalendarDate>(
   }
   return { ...calendarDate, month, monthCode };
 }
-
-// Note: other built-in calendars than iso8601 are not part of the Temporal
-// proposal for ECMA-262. An implementation of these calendars is present in
-// this polyfill in order to validate the Temporal API and to get early feedback
-// about non-ISO calendars. However, non-ISO calendar implementation is subject
-// to change because these calendars are implementation-defined.
 
 type CachedTypes = Temporal.PlainYearMonth | Temporal.PlainDate | Temporal.PlainMonthDay;
 
@@ -812,7 +806,7 @@ function simpleDateDiff(one: Required<CalendarDate>, two: Required<CalendarDate>
   };
 }
 
-interface NonIsoHelperBase {
+interface HelperSharedImpl {
   id?: string;
   isoToCalendarDate(isoDate: any, cache: any): any;
   validateCalendarDate(calendarDate: any): void;
@@ -846,7 +840,7 @@ interface NonIsoHelperBase {
   eraLength: 'long' | 'short' | 'narrow';
   // reviseIntlEra can optionally be defined on subclasses of the base
   reviseIntlEra?(calendarDate: any, isoDate?: any): { era: number; eraYear: number };
-  hasEra?: boolean;
+  hasEra: boolean;
   constantEra?: string;
   checkIcuBugs?(isoDate: any): void;
   calendarType?: string;
@@ -878,7 +872,7 @@ interface NonIsoHelperBase {
 /**
  * Implementation that's common to all non-trivial non-ISO calendars
  */
-const nonIsoHelperBase: NonIsoHelperBase = {
+const helperSharedImpl: HelperSharedImpl = {
   // The properties and methods below here should be the same for all lunar/lunisolar calendars.
   getFormatter() {
     // `new Intl.DateTimeFormat()` is amazingly slow and chews up RAM. Per
@@ -1457,7 +1451,7 @@ interface HebrewMonthInfo {
   };
 }
 
-const helperHebrew: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
+const helperHebrew: HelperSharedImpl = ObjectAssign({}, helperSharedImpl, {
   id: 'hebrew',
   calendarType: 'lunisolar',
   inLeapYear(calendarDate /*, cache */) {
@@ -1523,7 +1517,7 @@ const helperHebrew: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
     }
   },
   adjustCalendarDate(
-    this: typeof helperHebrew & NonIsoHelperBase,
+    this: typeof helperHebrew & HelperSharedImpl,
     calendarDate,
     cache,
     overflow = 'constrain',
@@ -1597,16 +1591,16 @@ const helperHebrew: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
   },
   // All built-in calendars except Chinese/Dangi and Hebrew use an era
   hasEra: false
-} as Partial<NonIsoHelperBase>);
+} as Partial<HelperSharedImpl>);
 
 /**
  * For Temporal purposes, the Islamic calendar is simple because it's always the
  * same 12 months in the same order.
  */
-const helperIslamic: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
+const helperIslamic: HelperSharedImpl = ObjectAssign({}, helperSharedImpl, {
   id: 'islamic',
   calendarType: 'lunar',
-  inLeapYear(this: typeof helperIslamic & NonIsoHelperBase, calendarDate, cache) {
+  inLeapYear(this: typeof helperIslamic & HelperSharedImpl, calendarDate, cache) {
     // In leap years, the 12th month has 30 days. In non-leap years: 29.
     const days = this.daysInMonth({ year: calendarDate.year, month: 12, day: 1 }, cache);
     return days === 30;
@@ -1619,13 +1613,13 @@ const helperIslamic: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
   DAYS_PER_ISLAMIC_YEAR: 354 + 11 / 30,
   DAYS_PER_ISO_YEAR: 365.2425,
   constantEra: 'ah',
-  estimateIsoDate(this: typeof helperIslamic & NonIsoHelperBase, calendarDate) {
+  estimateIsoDate(this: typeof helperIslamic & HelperSharedImpl, calendarDate) {
     const { year } = this.adjustCalendarDate(calendarDate);
     return { year: MathFloor((year * this.DAYS_PER_ISLAMIC_YEAR) / this.DAYS_PER_ISO_YEAR) + 622, month: 1, day: 1 };
   }
-} as Partial<NonIsoHelperBase>);
+} as Partial<HelperSharedImpl>);
 
-const helperPersian: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
+const helperPersian: HelperSharedImpl = ObjectAssign({}, helperSharedImpl, {
   id: 'persian',
   calendarType: 'solar',
   inLeapYear(calendarDate, cache) {
@@ -1647,11 +1641,11 @@ const helperPersian: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
     return month <= 6 ? 31 : 30;
   },
   constantEra: 'ap',
-  estimateIsoDate(this: typeof helperPersian & NonIsoHelperBase, calendarDate) {
+  estimateIsoDate(this: typeof helperPersian & HelperSharedImpl, calendarDate) {
     const { year } = this.adjustCalendarDate(calendarDate);
     return { year: year + 621, month: 1, day: 1 };
   }
-} as Partial<NonIsoHelperBase>);
+} as Partial<HelperSharedImpl>);
 
 interface IndianMonthInfo {
   [month: number]: {
@@ -1667,7 +1661,7 @@ interface IndianMonthInfo {
   };
 }
 
-const helperIndian: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
+const helperIndian: HelperSharedImpl = ObjectAssign({}, helperSharedImpl, {
   id: 'indian',
   calendarType: 'solar',
   inLeapYear(calendarDate /*, cache*/) {
@@ -1712,7 +1706,7 @@ const helperIndian: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
     if (this.inLeapYear(calendarDate) && monthInfo.leap) monthInfo = monthInfo.leap;
     return monthInfo;
   },
-  estimateIsoDate(this: typeof helperIndian & NonIsoHelperBase, calendarDateParam) {
+  estimateIsoDate(this: typeof helperIndian & HelperSharedImpl, calendarDateParam) {
     // FYI, this "estimate" is always the exact ISO date, which makes the Indian
     // calendar fast!
     const calendarDate = this.adjustCalendarDate(calendarDateParam);
@@ -1737,7 +1731,7 @@ const helperIndian: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
       );
     }
   }
-} as Partial<NonIsoHelperBase>);
+} as Partial<HelperSharedImpl>);
 
 /**
  * Era metadata defined for each calendar.
@@ -1925,7 +1919,7 @@ function isGregorianLeapYear(year: number) {
 /** Base for all Gregorian-like calendars. */
 const makeHelperGregorian = (id: BuiltinCalendarId, originalEras: InputEra[]) => {
   const { eras, anchorEra } = adjustEras(originalEras);
-  const helperGregorian: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
+  const helperGregorian: HelperSharedImpl = ObjectAssign({}, helperSharedImpl, {
     id,
     eras,
     anchorEra,
@@ -1973,7 +1967,7 @@ const makeHelperGregorian = (id: BuiltinCalendarId, originalEras: InputEra[]) =>
             eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
             return true;
           }
-          const comparison = nonIsoHelperBase.compareCalendarDates(adjustedCalendarDate, e.anchorEpoch);
+          const comparison = helperSharedImpl.compareCalendarDates(adjustedCalendarDate, e.anchorEpoch);
           if (comparison >= 0) {
             eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
             return true;
@@ -2013,7 +2007,7 @@ const makeHelperGregorian = (id: BuiltinCalendarId, originalEras: InputEra[]) =>
       return { ...calendarDate, year, eraYear, era };
     },
     adjustCalendarDate(
-      this: typeof helperGregorian & NonIsoHelperBase,
+      this: typeof helperGregorian & HelperSharedImpl,
       calendarDateParam,
       cache,
       overflow /*, fromLegacyDate = false */
@@ -2025,10 +2019,10 @@ const makeHelperGregorian = (id: BuiltinCalendarId, originalEras: InputEra[]) =>
       this.validateCalendarDate(calendarDate);
       calendarDate = this.completeEraYear(calendarDate);
       // TODO this can become `super` later.
-      calendarDate = ReflectApply(nonIsoHelperBase.adjustCalendarDate, this, [calendarDate, cache, overflow]);
+      calendarDate = ReflectApply(helperSharedImpl.adjustCalendarDate, this, [calendarDate, cache, overflow]);
       return calendarDate;
     },
-    estimateIsoDate(this: typeof helperGregorian & NonIsoHelperBase, calendarDateParam) {
+    estimateIsoDate(this: typeof helperGregorian & HelperSharedImpl, calendarDateParam) {
       const calendarDate = this.adjustCalendarDate(calendarDateParam);
       const { year, month, day } = calendarDate;
       const { anchorEra } = this;
@@ -2053,12 +2047,12 @@ const makeHelperGregorian = (id: BuiltinCalendarId, originalEras: InputEra[]) =>
         }
       }
     }
-  } as Partial<NonIsoHelperBase>);
+  } as Partial<HelperSharedImpl>);
   return helperGregorian;
 };
 
 const makeHelperOrthodox = (id: BuiltinCalendarId, originalEras: InputEra[]) => {
-  const base: NonIsoHelperBase = makeHelperGregorian(id, originalEras);
+  const base: HelperSharedImpl = makeHelperGregorian(id, originalEras);
   return ObjectAssign(base, {
     inLeapYear(calendarDate /*, cache */) {
       // Leap years happen one year before the Julian leap year. Note that this
@@ -2084,7 +2078,7 @@ const makeHelperOrthodox = (id: BuiltinCalendarId, originalEras: InputEra[]) => 
     maximumMonthLength(calendarDate) {
       return this.minimumMonthLength(calendarDate);
     }
-  } as Partial<NonIsoHelperBase>);
+  } as Partial<HelperSharedImpl>);
 };
 
 // `coptic` and `ethiopic` calendars are very similar to `ethioaa` calendar,
@@ -2141,7 +2135,7 @@ const helperGregory = ObjectAssign(
   }
 );
 
-const helperJapanese: NonIsoHelperBase = ObjectAssign(
+const helperJapanese: HelperSharedImpl = ObjectAssign(
   {},
   // NOTE: Only the 5 modern eras (Meiji and later) are included. For dates
   // before Meiji 1, the `ce` and `bce` eras are used. Challenges with pre-Meiji
@@ -2194,7 +2188,7 @@ const helperJapanese: NonIsoHelperBase = ObjectAssign(
       if (this.eras.find((e) => e.name === era)) return { era, eraYear };
       return isoYear < 1 ? { era: 'bce', eraYear: 1 - isoYear } : { era: 'ce', eraYear: isoYear };
     }
-  } as Partial<NonIsoHelperBase>
+  } as Partial<HelperSharedImpl>
 );
 
 interface ChineseMonthInfo {
@@ -2204,7 +2198,7 @@ interface ChineseDraftMonthInfo {
   [key: string]: { monthIndex: number; daysInMonth?: number };
 }
 
-const helperChinese: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
+const helperChinese: HelperSharedImpl = ObjectAssign({}, helperSharedImpl, {
   id: 'chinese',
   calendarType: 'lunisolar',
   inLeapYear(calendarDate, cache) {
@@ -2217,7 +2211,7 @@ const helperChinese: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
   minimumMonthLength: (/* calendarDate */) => 29,
   maximumMonthLength: (/* calendarDate */) => 30,
   getMonthList(
-    this: NonIsoHelperBase,
+    this: HelperSharedImpl,
     calendarYear,
     cache
   ): { [key: string]: { monthIndex: string; daysInMonth: number } } {
@@ -2298,7 +2292,7 @@ const helperChinese: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
     return { year, month: month >= 12 ? 12 : month + 1, day: 1 };
   },
   adjustCalendarDate(
-    this: typeof helperChinese & NonIsoHelperBase,
+    this: typeof helperChinese & HelperSharedImpl,
     calendarDate,
     cache,
     overflow = 'constrain',
@@ -2383,68 +2377,10 @@ const helperChinese: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
   },
   // All built-in calendars except Chinese/Dangi and Hebrew use an era
   hasEra: false
-} as Partial<NonIsoHelperBase>);
+} as Partial<HelperSharedImpl>);
 
 // Dangi (Korean) calendar has same implementation as Chinese
 const helperDangi = ObjectAssign({}, { ...helperChinese, id: 'dangi' });
-
-interface NonIsoGeneralImpl {
-  dateFromFields(
-    this: NonIsoGeneralImpl & { helper: NonIsoHelperBase },
-    fieldsParam: Params['dateFromFields'][0],
-    options: Params['dateFromFields'][1],
-    calendar: Temporal.Calendar
-  ): Temporal.PlainDate;
-  yearMonthFromFields(
-    this: NonIsoGeneralImpl & { helper: NonIsoHelperBase },
-    fieldsParam: Params['yearMonthFromFields'][0],
-    options: Params['yearMonthFromFields'][1],
-    calendar: Temporal.Calendar
-  ): Temporal.PlainYearMonth;
-  monthDayFromFields(
-    this: NonIsoGeneralImpl & { helper: NonIsoHelperBase },
-    fieldsParam: Params['monthDayFromFields'][0],
-    options: Params['monthDayFromFields'][1],
-    calendar: Temporal.Calendar
-  ): Temporal.PlainMonthDay;
-  fields(fieldsParam: string[]): Return['fields'];
-  mergeFields(fields: Params['mergeFields'][0], additionalFields: Params['mergeFields'][1]): Return['mergeFields'];
-  dateAdd(
-    this: NonIsoGeneralImpl & { helper: NonIsoHelperBase },
-    date: Temporal.PlainDate,
-    years: number,
-    months: number,
-    weeks: number,
-    days: number,
-    overflow: Temporal.AssignmentOptions['overflow'],
-    calendar: Temporal.Calendar
-  ): Temporal.PlainDate;
-  dateUntil(
-    this: NonIsoGeneralImpl & { helper: NonIsoHelperBase },
-    one: Temporal.PlainDate,
-    two: Temporal.PlainDate,
-    largestUnit: Temporal.DateUnit
-  ): {
-    years: number;
-    months: number;
-    weeks: number;
-    days: number;
-  };
-  year(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate): number;
-  month(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate): number;
-  day(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate): number;
-  era(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate): string;
-  eraYear(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate): number;
-  monthCode(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate): string;
-  dayOfWeek(date: Temporal.PlainDate): number;
-  dayOfYear(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate): number;
-  weekOfYear(date: Temporal.PlainDate): number;
-  daysInWeek(date: Temporal.PlainDate): number;
-  daysInMonth(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: any): number;
-  daysInYear(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, dateParam: any): number;
-  monthsInYear(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: any): number;
-  inLeapYear(this: NonIsoGeneralImpl & { helper: NonIsoHelperBase }, dateParam: any): boolean;
-}
 
 /**
  * Common implementation of all non-ISO calendars.
@@ -2452,8 +2388,8 @@ interface NonIsoGeneralImpl {
  * This split allowed an easy separation between code that was similar between
  * ISO and non-ISO implementations vs. code that was very different.
  */
-const nonIsoGeneralImpl: NonIsoGeneralImpl = {
-  dateFromFields(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, fieldsParam, options, calendar) {
+const nonIsoImpl: NonIsoImpl = {
+  dateFromFields(this: NonIsoImplWithHelper, fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     // Intentionally alphabetical
@@ -2470,7 +2406,7 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
     cache.setObject(result);
     return result;
   },
-  yearMonthFromFields(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, fieldsParam, options, calendar) {
+  yearMonthFromFields(this: NonIsoImplWithHelper, fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     // Intentionally alphabetical
@@ -2487,7 +2423,7 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
     return result;
   },
   monthDayFromFields(
-    this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase },
+    this: NonIsoImplWithHelper,
     fieldsParam: Params['monthDayFromFields'][0],
     options: Params['monthDayFromFields'][1],
     calendar: Temporal.CalendarProtocol
@@ -2546,13 +2482,13 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
     return { ...original, ...additionalFieldsCopy };
   },
   dateAdd(
-    this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase },
+    this: NonIsoImplWithHelper,
     date: Temporal.PlainDate,
     years: number,
     months: number,
     weeks: number,
     days: number,
-    overflow: Temporal.AssignmentOptions['overflow'],
+    overflow: Overflow,
     calendar: Temporal.Calendar
   ) {
     const cache = OneObjectCache.getCacheForObject(date);
@@ -2567,7 +2503,7 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
     return newTemporalObject;
   },
   dateUntil(
-    this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase },
+    this: NonIsoImplWithHelper,
     one: Temporal.PlainDate,
     two: Temporal.PlainDate,
     largestUnit: Temporal.DateUnit
@@ -2579,34 +2515,34 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
     const result = this.helper.untilCalendar(calendarOne, calendarTwo, largestUnit, cacheOne);
     return result;
   },
-  year(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate) {
+  year(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.year;
   },
-  month(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate) {
+  month(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.month;
   },
-  day(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate) {
+  day(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.day;
   },
-  era(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate) {
+  era(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
     if (!this.helper.hasEra) return undefined;
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.era;
   },
-  eraYear(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate) {
+  eraYear(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
     if (!this.helper.hasEra) return undefined;
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.eraYear;
   },
-  monthCode(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate) {
+  monthCode(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.monthCode;
@@ -2614,7 +2550,7 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
   dayOfWeek(date: Temporal.PlainDate) {
     return impl['iso8601'].dayOfWeek(date);
   },
-  dayOfYear(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: Temporal.PlainDate) {
+  dayOfYear(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.isoToCalendarDate(date, cache);
     const startOfYear = this.helper.startOfCalendarYear(calendarDate);
@@ -2627,7 +2563,7 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
   daysInWeek(date: Temporal.PlainDate) {
     return impl['iso8601'].daysInWeek(date);
   },
-  daysInMonth(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, date: any) {
+  daysInMonth(this: NonIsoImplWithHelper, date: any) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
 
@@ -2644,7 +2580,7 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
     const result = this.helper.calendarDaysUntil(startOfMonthCalendar, startOfNextMonthCalendar, cache);
     return result;
   },
-  daysInYear(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, dateParam) {
+  daysInYear(this: NonIsoImplWithHelper, dateParam) {
     let date = dateParam;
     if (!HasSlot(date, ISO_YEAR)) date = ES.ToTemporalDate(date);
     const cache = OneObjectCache.getCacheForObject(date);
@@ -2654,13 +2590,13 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
     const result = this.helper.calendarDaysUntil(startOfYearCalendar, startOfNextYearCalendar, cache);
     return result;
   },
-  monthsInYear(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, date) {
+  monthsInYear(this: NonIsoImplWithHelper, date) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     const result = this.helper.monthsInYear(calendarDate, cache);
     return result;
   },
-  inLeapYear(this: typeof nonIsoGeneralImpl & { helper: NonIsoHelperBase }, dateParam) {
+  inLeapYear(this: NonIsoImplWithHelper, dateParam) {
     let date = dateParam;
     if (!HasSlot(date, ISO_YEAR)) date = ES.ToTemporalDate(date);
     const cache = OneObjectCache.getCacheForObject(date);
@@ -2670,22 +2606,22 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
   }
 };
 
-impl['hebrew'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperHebrew });
-impl['islamic'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperIslamic });
+impl['hebrew'] = ObjectAssign({}, nonIsoImpl, { helper: helperHebrew });
+impl['islamic'] = ObjectAssign({}, nonIsoImpl, { helper: helperIslamic });
 (['islamic-umalqura', 'islamic-tbla', 'islamic-civil', 'islamic-rgsa', 'islamicc'] as const).forEach((id) => {
-  impl[id] = ObjectAssign({}, nonIsoGeneralImpl, { helper: { ...helperIslamic, id } });
+  impl[id] = ObjectAssign({}, nonIsoImpl, { helper: { ...helperIslamic, id } });
 });
-impl['persian'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperPersian });
-impl['ethiopic'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperEthiopic });
-impl['ethioaa'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperEthioaa });
-impl['coptic'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperCoptic });
-impl['chinese'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperChinese });
-impl['dangi'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperDangi });
-impl['roc'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperRoc });
-impl['indian'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperIndian });
-impl['buddhist'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperBuddhist });
-impl['japanese'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperJapanese });
-impl['gregory'] = ObjectAssign({}, nonIsoGeneralImpl, { helper: helperGregory });
+impl['persian'] = ObjectAssign({}, nonIsoImpl, { helper: helperPersian });
+impl['ethiopic'] = ObjectAssign({}, nonIsoImpl, { helper: helperEthiopic });
+impl['ethioaa'] = ObjectAssign({}, nonIsoImpl, { helper: helperEthioaa });
+impl['coptic'] = ObjectAssign({}, nonIsoImpl, { helper: helperCoptic });
+impl['chinese'] = ObjectAssign({}, nonIsoImpl, { helper: helperChinese });
+impl['dangi'] = ObjectAssign({}, nonIsoImpl, { helper: helperDangi });
+impl['roc'] = ObjectAssign({}, nonIsoImpl, { helper: helperRoc });
+impl['indian'] = ObjectAssign({}, nonIsoImpl, { helper: helperIndian });
+impl['buddhist'] = ObjectAssign({}, nonIsoImpl, { helper: helperBuddhist });
+impl['japanese'] = ObjectAssign({}, nonIsoImpl, { helper: helperJapanese });
+impl['gregory'] = ObjectAssign({}, nonIsoImpl, { helper: helperGregory });
 
 const BUILTIN_CALENDAR_IDS = Object.keys(impl) as BuiltinCalendarId[];
 
