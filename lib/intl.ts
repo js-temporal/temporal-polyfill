@@ -16,16 +16,7 @@ import {
   TIME_ZONE
 } from './slots';
 import { Temporal, Intl } from '..';
-import {
-  DateTimeFormatParams as Params,
-  DateTimeFormatReturn as Return,
-  InstantParams,
-  PlainDateParams,
-  PlainDateTimeParams,
-  PlainMonthDayParams,
-  PlainTimeParams,
-  PlainYearMonthParams
-} from './internaltypes';
+import { DateTimeFormatParams as Params, DateTimeFormatReturn as Return } from './internaltypes';
 
 const DATE = Symbol('date');
 const YM = Symbol('ym');
@@ -340,7 +331,9 @@ function amend(optionsParam: Intl.DateTimeFormatOptions = {}, amended: MaybeFals
   return options as globalThis.Intl.DateTimeFormatOptions;
 }
 
-function timeAmend(optionsParam: Intl.DateTimeFormatOptions) {
+type OptionsType<T extends TypesWithToLocaleString> = NonNullable<Parameters<T['toLocaleString']>[1]>;
+
+function timeAmend(optionsParam: OptionsType<Temporal.PlainTime>) {
   let options = amend(optionsParam, {
     year: false,
     month: false,
@@ -359,7 +352,7 @@ function timeAmend(optionsParam: Intl.DateTimeFormatOptions) {
   return options;
 }
 
-function yearMonthAmend(optionsParam: PlainYearMonthParams['toLocaleString'][1]) {
+function yearMonthAmend(optionsParam: OptionsType<Temporal.PlainYearMonth>) {
   let options = amend(optionsParam, {
     day: false,
     hour: false,
@@ -377,7 +370,7 @@ function yearMonthAmend(optionsParam: PlainYearMonthParams['toLocaleString'][1])
   return options;
 }
 
-function monthDayAmend(optionsParam: PlainMonthDayParams['toLocaleString'][1]) {
+function monthDayAmend(optionsParam: OptionsType<Temporal.PlainMonthDay>) {
   let options = amend(optionsParam, {
     year: false,
     hour: false,
@@ -395,7 +388,7 @@ function monthDayAmend(optionsParam: PlainMonthDayParams['toLocaleString'][1]) {
   return options;
 }
 
-function dateAmend(optionsParam: PlainDateParams['toLocaleString'][1]) {
+function dateAmend(optionsParam: OptionsType<Temporal.PlainDate>) {
   let options = amend(optionsParam, {
     hour: false,
     minute: false,
@@ -414,7 +407,7 @@ function dateAmend(optionsParam: PlainDateParams['toLocaleString'][1]) {
   return options;
 }
 
-function datetimeAmend(optionsParam: PlainDateTimeParams['toLocaleString'][1]) {
+function datetimeAmend(optionsParam: OptionsType<Temporal.PlainDateTime>) {
   let options = amend(optionsParam, { timeZoneName: false });
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
     options = ObjectAssign({}, options, {
@@ -429,7 +422,7 @@ function datetimeAmend(optionsParam: PlainDateTimeParams['toLocaleString'][1]) {
   return options;
 }
 
-function zonedDateTimeAmend(optionsParam: PlainTimeParams['toLocaleString'][1]) {
+function zonedDateTimeAmend(optionsParam: OptionsType<Temporal.PlainTime>) {
   let options = optionsParam;
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
     options = ObjectAssign({}, options, {
@@ -445,7 +438,7 @@ function zonedDateTimeAmend(optionsParam: PlainTimeParams['toLocaleString'][1]) 
   return options;
 }
 
-function instantAmend(optionsParam: InstantParams['toLocaleString'][1]) {
+function instantAmend(optionsParam: OptionsType<Temporal.Instant>) {
   let options = optionsParam;
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
     options = ObjectAssign({}, options, {
@@ -460,11 +453,11 @@ function instantAmend(optionsParam: InstantParams['toLocaleString'][1]) {
   return options;
 }
 
-function hasDateOptions(options: Parameters<TypesWithToLocaleString['toLocaleString']>[1]) {
+function hasDateOptions(options: OptionsType<TypesWithToLocaleString>) {
   return 'year' in options || 'month' in options || 'day' in options || 'weekday' in options || 'dateStyle' in options;
 }
 
-function hasTimeOptions(options: Parameters<TypesWithToLocaleString['toLocaleString']>[1]) {
+function hasTimeOptions(options: OptionsType<TypesWithToLocaleString>) {
   return (
     'hour' in options || 'minute' in options || 'second' in options || 'timeStyle' in options || 'dayPeriod' in options
   );
@@ -509,7 +502,8 @@ type TypesWithToLocaleString =
   | Temporal.PlainTime
   | Temporal.PlainYearMonth
   | Temporal.PlainMonthDay
-  | Temporal.ZonedDateTime;
+  | Temporal.ZonedDateTime
+  | Temporal.Instant;
 
 function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormatImpl) {
   const DateTime = GetIntrinsic('%Temporal.PlainDateTime%');
