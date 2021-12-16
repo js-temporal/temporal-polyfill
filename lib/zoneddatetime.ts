@@ -225,9 +225,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
         entries.push([fieldName, undefined]);
       }
     });
-    let fields = ES.PrepareTemporalFields(this, entries as any);
+    let fields = ES.PrepareTemporalFields(this, entries);
     fields = ES.CalendarMergeFields(calendar, fields, props);
-    fields = ES.PrepareTemporalFields(fields, entries as any);
+    fields = ES.PrepareTemporalFields(fields, entries);
     const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
       ES.InterpretTemporalDateTimeFields(calendar, fields, options);
     const offsetNs = ES.ParseTimeZoneOffsetString(fields.offset);

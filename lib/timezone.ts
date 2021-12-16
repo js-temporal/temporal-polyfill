@@ -125,7 +125,7 @@ export class TimeZone implements Temporal.TimeZone {
       return null;
     }
 
-    let epochNanoseconds = GetSlot(startingPoint, EPOCHNANOSECONDS);
+    let epochNanoseconds: JSBI | null = GetSlot(startingPoint, EPOCHNANOSECONDS);
     const Instant = GetIntrinsic('%Temporal.Instant%');
     epochNanoseconds = ES.GetIANATimeZoneNextTransition(epochNanoseconds, id);
     return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
@@ -140,7 +140,7 @@ export class TimeZone implements Temporal.TimeZone {
       return null;
     }
 
-    let epochNanoseconds = GetSlot(startingPoint, EPOCHNANOSECONDS);
+    let epochNanoseconds: JSBI | null = GetSlot(startingPoint, EPOCHNANOSECONDS);
     const Instant = GetIntrinsic('%Temporal.Instant%');
     epochNanoseconds = ES.GetIANATimeZonePreviousTransition(epochNanoseconds, id);
     return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
