@@ -530,7 +530,7 @@ class OneObjectCache {
   constructor(cacheToClone: OneObjectCache = undefined) {
     this.now = globalThis.performance ? globalThis.performance.now() : Date.now();
     if (cacheToClone !== undefined) {
-      let i = 0; // TODO why was this originally cacheToClone.length ?
+      let i = 0;
       for (const entry of cacheToClone.map.entries()) {
         if (++i > OneObjectCache.MAX_CACHE_ENTRIES) break;
         this.map.set(...entry);
