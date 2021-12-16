@@ -43,7 +43,7 @@ type TemporalTimeToStringOptions = {
 function TemporalTimeToString(
   time: Temporal.PlainTime,
   precision: ReturnType<typeof ES.ToSecondsStringPrecision>['precision'],
-  options: TemporalTimeToStringOptions = undefined
+  options: TemporalTimeToStringOptions | undefined = undefined
 ) {
   let hour = GetSlot(time, ISO_HOUR);
   let minute = GetSlot(time, ISO_MINUTE);
