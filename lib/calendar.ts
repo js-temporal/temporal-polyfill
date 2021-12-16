@@ -1691,8 +1691,11 @@ const makeHelperGregorian = (id: BuiltinCalendarId, originalEras: InputEra[]) =>
     eras,
     anchorEra,
     calendarType: 'solar',
-    inLeapYear(calendarDate /*, cache */) {
-      const { year } = this.estimateIsoDate(calendarDate);
+    inLeapYear(calendarDate /*, cache: OneObjectCache */) {
+      // Calendars that don't override this method use the same months and leap
+      // years as Gregorian. Once we know the ISO year corresponding to the
+      // calendar year, we'll know if it's a leap year or not.
+      const { year } = this.estimateIsoDate({ month: 1, day: 1, year: calendarDate.year });
       return isGregorianLeapYear(year);
     },
     monthsInYear(/* calendarDate */) {
