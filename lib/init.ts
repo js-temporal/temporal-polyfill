@@ -12,7 +12,7 @@ Object.defineProperty(globalThis, 'Temporal', {
   enumerable: false,
   configurable: true
 });
-const globalTemporal = (globalThis as any).Temporal;
+const globalTemporal = (globalThis as unknown as { Temporal: typeof Temporal }).Temporal;
 copy(globalTemporal, Temporal);
 Object.defineProperty(globalTemporal, Symbol.toStringTag, {
   value: 'Temporal',

@@ -32,6 +32,7 @@ import { Duration } from './duration';
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
+const ArraySort = Array.prototype.sort;
 const MathAbs = Math.abs;
 const MathFloor = Math.floor;
 const ObjectAssign = Object.assign;
@@ -525,7 +526,7 @@ class OneObjectCache {
   constructor(cacheToClone: OneObjectCache = undefined) {
     this.now = globalThis.performance ? globalThis.performance.now() : Date.now();
     if (cacheToClone !== undefined) {
-      let i = 0; // TODO why was this originally cacheToClone.length ?
+      let i = 0;
       for (const entry of cacheToClone.map.entries()) {
         if (++i > OneObjectCache.MAX_CACHE_ENTRIES) break;
         this.map.set(...entry);
@@ -639,7 +640,7 @@ interface NonIsoHelperBase {
   reviseIntlEra?(calendarDate: any, isoDate?: any): { era: number; eraYear: number };
   hasEra?: boolean;
   constantEra?: string;
-  checkIcuBugs?(calendarDate: any, isoDate: any): void;
+  checkIcuBugs?(isoDate: any): void;
   calendarType?: string;
   monthsInYear?(calendarDate: any, cache?: any): number;
   maximumMonthLength?(calendarDate?: any): number;
@@ -757,7 +758,7 @@ const nonIsoHelperBase: NonIsoHelperBase = {
       result.era = era;
       result.eraYear = eraYear;
     }
-    if (this.checkIcuBugs) this.checkIcuBugs(result, isoDate);
+    if (this.checkIcuBugs) this.checkIcuBugs(isoDate);
 
     const calendarDate = this.adjustCalendarDate(result, cache, 'constrain', true);
     if (calendarDate.year === undefined) throw new RangeError(`Missing year converting ${JSON.stringify(isoDate)}`);
@@ -816,17 +817,21 @@ const nonIsoHelperBase: NonIsoHelperBase = {
     if (this.calendarType === 'lunisolar') throw new RangeError('Override required for lunisolar calendars');
     let calendarDate = calendarDateParam;
     this.validateCalendarDate(calendarDate);
-    const largestMonth = this.monthsInYear(calendarDate, cache);
-    let { month, year, eraYear, monthCode } = calendarDate;
-
     // For calendars that always use the same era, set it here so that derived
     // calendars won't need to implement this method simply to set the era.
     if (this.constantEra) {
       // year and eraYear always match when there's only one possible era
-      if (year === undefined) year = eraYear;
-      if (eraYear === undefined) eraYear = year;
-      calendarDate = { ...calendarDate, era: this.constantEra, year, eraYear };
+      const { year, eraYear } = calendarDate;
+      calendarDate = {
+        ...calendarDate,
+        era: this.constantEra,
+        year: year !== undefined ? year : eraYear,
+        eraYear: eraYear !== undefined ? eraYear : year
+      };
     }
+
+    const largestMonth = this.monthsInYear(calendarDate, cache);
+    let { month, monthCode } = calendarDate;
 
     ({ month, monthCode } = resolveNonLunisolarMonth(calendarDate, overflow, largestMonth));
     return { ...calendarDate, month, monthCode };
@@ -1296,8 +1301,8 @@ const helperHebrew: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
     fromLegacyDate = false
   ) {
     let { year, eraYear, month, monthCode, day, monthExtra } = calendarDate;
-    if (year === undefined) year = eraYear;
-    if (eraYear === undefined) eraYear = year;
+    if (year === undefined && eraYear !== undefined) year = eraYear;
+    if (eraYear === undefined && year !== undefined) eraYear = year;
     if (fromLegacyDate) {
       // In Pre Node-14 V8, DateTimeFormat.formatToParts `month: 'numeric'`
       // output returns the numeric equivalent of `month` as a string, meaning
@@ -1344,10 +1349,10 @@ const helperHebrew: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
       } else {
         if (overflow === 'reject') {
           ES.RejectToRange(month, 1, this.monthsInYear({ year }));
-          ES.RejectToRange(day, 1, this.maximumMonthLength(calendarDate));
+          ES.RejectToRange(day, 1, this.maximumMonthLength({ year, month }));
         } else {
           month = ES.ConstrainToRange(month, 1, this.monthsInYear({ year }));
-          day = ES.ConstrainToRange(day, 1, this.maximumMonthLength({ ...calendarDate, month }));
+          day = ES.ConstrainToRange(day, 1, this.maximumMonthLength({ year, month }));
         }
         if (monthCode === undefined) {
           monthCode = this.getMonthCode(year, month);
@@ -1481,7 +1486,7 @@ const helperIndian: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
   // expected.
   vulnerableToBceBug:
     new Date('0000-01-01T00:00Z').toLocaleDateString('en-US-u-ca-indian', { timeZone: 'UTC' }) !== '10/11/-79 Saka',
-  checkIcuBugs(calendarDate, isoDate) {
+  checkIcuBugs(isoDate) {
     if (this.vulnerableToBceBug && isoDate.year < 1) {
       throw new RangeError(
         `calendar '${this.id}' is broken for ISO dates before 0001-01-01` +
@@ -1646,9 +1651,10 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
   // Ensure that the latest epoch is first in the array. This lets us try to
   // match eras in index order, with the last era getting the remaining older
   // years. Any reverse-signed era must be at the end.
-  eras.sort((e1, e2) => {
+  ArraySort.call(eras, (e1, e2) => {
     if (e1.reverseOf) return 1;
     if (e2.reverseOf) return -1;
+    if (!e1.isoEpoch || !e2.isoEpoch) throw new RangeError('Invalid era data: missing ISO epoch');
     return e2.isoEpoch.year - e1.isoEpoch.year;
   });
 
@@ -1790,7 +1796,7 @@ const makeHelperGregorian = (id: BuiltinCalendarId, originalEras: InputEra[]) =>
       .toLocaleDateString('en-US-u-ca-japanese', { timeZone: 'UTC' })
       .startsWith('12'),
     calendarIsVulnerableToJulianBug: false,
-    checkIcuBugs(calendarDate, isoDate) {
+    checkIcuBugs(isoDate) {
       if (this.calendarIsVulnerableToJulianBug && this.v8IsVulnerableToJulianBug) {
         const beforeJulianSwitch = ES.CompareISODate(isoDate.year, isoDate.month, isoDate.day, 1582, 10, 15) < 0;
         if (beforeJulianSwitch) {
@@ -2075,7 +2081,7 @@ const helperChinese: NonIsoHelperBase = ObjectAssign({}, nonIsoHelperBase, {
         if (
           month === undefined &&
           monthCode.endsWith('L') &&
-          !['M01L', 'M12L', 'M13L'].includes(monthCode) &&
+          !ArrayIncludes.call(['M01L', 'M12L', 'M13L'], monthCode) &&
           overflow === 'constrain'
         ) {
           let withoutML = monthCode.slice(1, -1);
@@ -2258,7 +2264,7 @@ const nonIsoGeneralImpl: NonIsoGeneralImpl = {
   },
   fields(fieldsParam) {
     let fields = fieldsParam;
-    if (fields.includes('year')) fields = [...fields, 'era', 'eraYear'];
+    if (ArrayIncludes.call(fields, 'year')) fields = [...fields, 'era', 'eraYear'];
     return fields;
   },
   mergeFields(fields, additionalFields) {

@@ -19,7 +19,6 @@ built-ins/Temporal/Instant/fromEpochNanoseconds/builtin.js
 built-ins/Temporal/Instant/fromEpochNanoseconds/not-a-constructor.js
 built-ins/Temporal/Instant/fromEpochSeconds/builtin.js
 built-ins/Temporal/Instant/fromEpochSeconds/not-a-constructor.js
-built-ins/Temporal/Instant/prototype/prop-desc.js
 built-ins/Temporal/Now/instant/not-a-constructor.js
 built-ins/Temporal/Now/plainDateTime/not-a-constructor.js
 built-ins/Temporal/Now/plainDateTimeISO/not-a-constructor.js
