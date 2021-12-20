@@ -1263,6 +1263,44 @@ describe('Time', () => {
     it('optional parts', () => {
       equal(`${PlainTime.from('15')}`, '15:00:00');
     });
+    it('date-only formats not allowed', () => {
+      throws(() => PlainTime.from('2020-12-01'), RangeError);
+      throws(() => PlainTime.from('20201201'), RangeError);
+    });
+    it('time designator prefix', () => {
+      equal(`${PlainTime.from('T15:23:30')}`, '15:23:30');
+      equal(`${PlainTime.from('t152330')}`, '15:23:30');
+    });
+    it('space not accepted as time designator prefix', () => {
+      throws(() => PlainTime.from(' 15:23:30'), RangeError);
+    });
+    it('time designator required for ambiguous strings', () => {
+      // YYYY-MM or HHMM-UU
+      throws(() => PlainTime.from('2021-12'), RangeError);
+      equal(`${PlainTime.from('T2021-12')}`, '20:21:00');
+      equal(`${PlainTime.from('2021-13')}`, '20:21:00');
+      equal(`${PlainTime.from('0000-00')}`, '00:00:00');
+      // MMDD or HHMM
+      throws(() => PlainTime.from('1214'), RangeError);
+      throws(() => PlainTime.from('0229'), RangeError);
+      throws(() => PlainTime.from('1130'), RangeError);
+      equal(`${PlainTime.from('T1214')}`, '12:14:00');
+      equal(`${PlainTime.from('1314')}`, '13:14:00');
+      equal(`${PlainTime.from('1232')}`, '12:32:00');
+      equal(`${PlainTime.from('0230')}`, '02:30:00');
+      equal(`${PlainTime.from('0631')}`, '06:31:00');
+      equal(`${PlainTime.from('0000')}`, '00:00:00');
+      // MM-DD or HH-UU
+      throws(() => PlainTime.from('12-14'), RangeError);
+      equal(`${PlainTime.from('T12-14')}`, '12:00:00');
+      equal(`${PlainTime.from('13-14')}`, '13:00:00');
+      equal(`${PlainTime.from('00-00')}`, '00:00:00');
+      // YYYYMM or HHMMSS
+      throws(() => PlainTime.from('202112'), RangeError);
+      equal(`${PlainTime.from('T202112')}`, '20:21:12');
+      equal(`${PlainTime.from('202113')}`, '20:21:13');
+      equal(`${PlainTime.from('000000')}`, '00:00:00');
+    });
     it('no junk at end of string', () => throws(() => PlainTime.from('15:23:30.100junk'), RangeError));
     it('options may only be an object or undefined', () => {
       [null, 1, 'hello', true, Symbol('foo'), 1n].forEach((badOptions) =>
