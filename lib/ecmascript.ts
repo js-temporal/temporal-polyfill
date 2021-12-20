@@ -326,6 +326,7 @@ function ParseISODateTime(isoString: string) {
   const month = ToInteger(match[2] || match[4]);
   const day = ToInteger(match[3] || match[5]);
   const hour = ToInteger(match[6]);
+  const hasTime = match[6] !== undefined;
   const minute = ToInteger(match[7] || match[10]);
   let second = ToInteger(match[8] || match[11]);
   if (second === 60) second = 59;
@@ -367,6 +368,7 @@ function ParseISODateTime(isoString: string) {
     year,
     month,
     day,
+    hasTime,
     hour,
     minute,
     second,
@@ -414,11 +416,31 @@ function ParseTemporalTimeString(isoString: string) {
     nanosecond = ToInteger(fraction.slice(6, 9));
     calendar = match[15];
   } else {
-    let z;
-    ({ hour, minute, second, millisecond, microsecond, nanosecond, calendar, z } = ParseISODateTime(isoString));
+    let z, hasTime;
+    ({ hasTime, hour, minute, second, millisecond, microsecond, nanosecond, calendar, z } =
+      ParseISODateTime(isoString));
+    if (!hasTime) throw new RangeError(`time is missing in string: ${isoString}`);
     if (z) throw new RangeError('Z designator not supported for PlainTime');
   }
-  return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
+  // if it's a date-time string, OK
+  if (/[tT ][0-9][0-9]/.test(isoString)) {
+    return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
+  }
+  // slow but non-grammar-dependent way to ensure that time-only strings that
+  // are also valid PlainMonthDay and PlainYearMonth throw. corresponds to
+  // assertion in spec text
+  try {
+    const { month, day } = ParseTemporalMonthDayString(isoString);
+    RejectISODate(1972, month, day);
+  } catch {
+    try {
+      const { year, month } = ParseTemporalYearMonthString(isoString);
+      RejectISODate(year, month, 1);
+    } catch {
+      return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
+    }
+  }
+  throw new RangeError(`invalid ISO 8601 time-only string ${isoString}; may need a T prefix`);
 }
 
 function ParseTemporalYearMonthString(isoString: string) {
