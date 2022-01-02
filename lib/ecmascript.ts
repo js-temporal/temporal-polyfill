@@ -2861,16 +2861,42 @@ export function GetIANATimeZonePreviousTransition(epochNanoseconds: JSBI, id: st
   return result;
 }
 
+// ts-prune-ignore-next TODO: remove this after tests are converted to TS
 export function parseFromEnUsFormat(datetime: string) {
-  const [month, day, year, era, hour, minute, second] = datetime.split(/[^\w]+/);
-  return {
-    year: era.toUpperCase().startsWith('B') ? -year + 1 : +year,
-    month: +month,
-    day: +day,
-    hour: hour === '24' ? 0 : +hour, // bugs.chromium.org/p/chromium/issues/detail?id=1045791
-    minute: +minute,
-    second: +second
-  };
+  const parts = datetime.split(/[^\w]+/);
+
+  if (parts.length !== 7) {
+    throw new RangeError(`expected 7 parts in "${datetime}`);
+  }
+
+  const month = +parts[0];
+  const day = +parts[1];
+  let year = +parts[2];
+  const era = parts[3].toUpperCase();
+  if (era === 'B' || era === 'BC') {
+    year = -year + 1;
+  } else if (era !== 'A' && era !== 'AD') {
+    throw new RangeError(`Unknown era ${era} in "${datetime}`);
+  }
+  let hour = +parts[4];
+  if (hour === 24) {
+    hour = 0;
+  }
+  const minute = +parts[5];
+  const second = +parts[6];
+
+  if (
+    !NumberIsFinite(year) ||
+    !NumberIsFinite(month) ||
+    !NumberIsFinite(day) ||
+    !NumberIsFinite(hour) ||
+    !NumberIsFinite(minute) ||
+    !NumberIsFinite(second)
+  ) {
+    throw new RangeError(`Invalid number in "${datetime}`);
+  }
+
+  return { year, month, day, hour, minute, second };
 }
 
 // ts-prune-ignore-next TODO: remove this after tests are converted to TS
