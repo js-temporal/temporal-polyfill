@@ -2883,11 +2883,7 @@ export function GetIANATimeZonePreviousTransition(epochNanoseconds: JSBI, id: st
   return result;
 }
 
-// ts-prune-ignore-next TODO: remove this after tests are converted to TS
-export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
-  const formatter = getIntlDateTimeFormatEnUsForTimeZone(timeZone);
-  // Using `format` instead of `formatToParts` for compatibility with older clients
-  const datetime = formatter.format(new Date(epochMilliseconds));
+export function parseFromEnUsFormat(datetime: string) {
   const [month, day, year, era, hour, minute, second] = datetime.split(/[^\w]+/);
   return {
     year: era.toUpperCase().startsWith('B') ? -year + 1 : +year,
@@ -2897,6 +2893,14 @@ export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
     minute: +minute,
     second: +second
   };
+}
+
+// ts-prune-ignore-next TODO: remove this after tests are converted to TS
+export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
+  const formatter = getIntlDateTimeFormatEnUsForTimeZone(timeZone);
+  // Using `format` instead of `formatToParts` for compatibility with older clients
+  const datetime = formatter.format(new Date(epochMilliseconds));
+  return parseFromEnUsFormat(datetime);
 }
 
 export function GetIANATimeZoneEpochValue(
