@@ -406,23 +406,37 @@ describe('ECMAScript', () => {
   });
 
   describe('parseFromEnUsFormat', () => {
+    describe('succeeds', () => {
+      // newer Firefox
+      test('9/16/2021 A, 16:09:00', { year: 2021, month: 9, day: 16, hour: 16, minute: 9, second: 0 });
 
-    // newer Firefox
-    test('9/16/2021 A, 16:09:00', { year: 2021, month: 9, day: 16, hour: 16, minute: 9, second: 0 });
+      // other browsers
+      test('9 16, 2021 AD, 16:09:00', { year: 2021, month: 9, day: 16, hour: 16, minute: 9, second: 0 });
 
-    // other browsers
-    test('9 16, 2021 AD, 16:09:00', { year: 2021, month: 9, day: 16, hour: 16, minute: 9, second: 0 });
+      // verify BC years
+      test('1 15, 501 BC, 16:07:45', { year: -500, month: 1, day: 15, hour: 16, minute: 7, second: 45 });
 
-    // verify BC years
-    test('1 15, 501 BC, 16:07:45', { year: -500, month: 1, day: 15, hour: 16, minute: 7, second: 45 });
-    
-    // verify hour 24
-    test('1 1, 2000 AD, 24:00:00', { year: 2000, month: 1, day: 1, hour: 0, minute: 0, second: 0 });
+      // verify hour 24
+      test('1 1, 2000 AD, 24:00:00', { year: 2000, month: 1, day: 1, hour: 0, minute: 0, second: 0 });
 
-    function test(dateTimeString, expected) {
-      it(dateTimeString, () => deepEqual(ES.parseFromEnUsFormat(dateTimeString), expected));
-    }
-  })
+      function test(dateTimeString, expected) {
+        it(dateTimeString, () => deepEqual(ES.parseFromEnUsFormat(dateTimeString), expected));
+      }
+    });
+
+    describe('throws', () => {
+      test('');
+      test('1234');
+      test('1 2 3 4 5 6');
+      test('1 2 3 4 5 6 7');
+      test('this is not a date');
+      test('one two three four five six seven');
+
+      function test(dateTimeString) {
+        it(dateTimeString, () => throws(() => ES.parseFromEnUsFormat(dateTimeString)));
+      }
+    });
+  });
 
   describe('GetOptionsObject', () => {
     it('Options parameter can only be an object or undefined', () => {
