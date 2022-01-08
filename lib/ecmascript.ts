@@ -2902,6 +2902,7 @@ export function parseFromEnUsFormat(datetime: string) {
   }
   let hour = +parts[4];
   if (hour === 24) {
+    // bugs.chromium.org/p/chromium/issues/detail?id=1045791
     hour = 0;
   }
   const minute = +parts[5];
