@@ -35,10 +35,8 @@ const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
 const ArraySort = Array.prototype.sort;
 const MathAbs = Math.abs;
 const MathFloor = Math.floor;
-const ObjectAssign = Object.assign;
 const ObjectEntries = Object.entries;
 const ObjectKeys = Object.keys;
-const ReflectApply = Reflect.apply;
 
 interface CalendarImpl {
   year(date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
@@ -445,63 +443,41 @@ impl['iso8601'] = {
     if (!HasSlot(date, ISO_YEAR)) date = ES.ToTemporalDate(date);
     return ES.LeapYear(GetSlot(date, ISO_YEAR));
   }
-};
+} as CalendarImpl;
 
 // Note: Built-in calendars other than iso8601 are not part of the Temporal
 // proposal for ECMA-262. These calendars will be standardized as part of
-// ECMA-402. Code below here includes an implementation of these calendars order
-// to validate the Temporal API and to get feedback. However, non-ISO calendar
-// implementation is subject to change because these calendars are
-// implementation-defined.
+// ECMA-402. Code below here includes an implementation of these calendars to
+// validate the Temporal API and to get feedback. However, native non-ISO
+// calendar behavior is at least somewhat implementation-defined, so may not
+// match this polyfill's output exactly.
 //
 // Some ES implementations don't include ECMA 402. For this reason, it's helpful
 // to ensure a clean separation between the ISO calendar implementation which is
 // a part of ECMA 262 and the non-ISO calendar implementation which requires
 // ECMA 402.
 //
-// To ensure this separation, the implementation is split. The `NonIsoImpl`
-// interface is the top-level implementation for all non-ISO calendars. This
-// type has the same shape as the ECMA 262-only ISO calendar implementation so
-// can use the same callers, tests, etc.
-//
-// A derived interface `NonIsoImplWithHelper` adds a `helper` property that
-// includes the remaining non-ISO implementation properties and methods beyond
-// the ISO implementation above. The `helper` property's shape is a base
-// singleton object common to all calendars (`HelperSharedImpl`) that's extended
-// (interface `HelperPerCalendarImpl`) with implementation that varies for each
-// calendar.
-//
-// Typing of individual methods in the interfaces below uses the `this`
-// "parameter" declaration definition, which is a fake parameter (stripped by TS
-// during compilation and not visible at runtime) that tells TS what type `this`
-// is for a method. For historical reasons, the initial implementation of
-// non-ISO calendars mirrored the code style of the previous ISO-only
-// implementation which didn't use ES6 classes. Using the `this` parameter is a
-// hack to delay converting this file to use ES6 classes until the code was
-// fully typed to make a `class` refactoring easier and safer. We'll probably do
-// this conversion in the future. (PRs welcome!)
+// To ensure this separation, the implementation is split. A `CalendarImpl`
+// interface powers both ISO and non-ISO calendars, and that interface is
+// extended by `NonIsoImpl` which adds a `helper` property which contains
+// non-ISO implementation.
 
 /**
- * `NonIsoImpl` - The generic top-level implementation for all non-ISO
- * calendars. This type has the same shape as the 262-only ISO calendar
- * implementation, which means the `Calendar` class implementation can swap out
- * the ISO for non-ISO implementations without changing any `Calendar` code.
+ * Generic top-level implementation for all calendars. The `Calendar` class can
+ * use the same code to call ISO and non-ISO implementations.
  */
-interface NonIsoImpl {
+interface CalendarImpl {
   dateFromFields(
-    this: NonIsoImplWithHelper,
     fieldsParam: Params['dateFromFields'][0],
     options: NonNullable<Params['dateFromFields'][1]>,
     calendar: Temporal.Calendar
   ): Temporal.PlainDate;
   yearMonthFromFields(
-    this: NonIsoImplWithHelper,
     fieldsParam: Params['yearMonthFromFields'][0],
     options: NonNullable<Params['yearMonthFromFields'][1]>,
     calendar: Temporal.Calendar
   ): Temporal.PlainYearMonth;
   monthDayFromFields(
-    this: NonIsoImplWithHelper,
     fieldsParam: Params['monthDayFromFields'][0],
     options: NonNullable<Params['monthDayFromFields'][1]>,
     calendar: Temporal.Calendar
@@ -509,7 +485,6 @@ interface NonIsoImpl {
   fields(fieldsParam: string[]): Return['fields'];
   mergeFields(fields: Params['mergeFields'][0], additionalFields: Params['mergeFields'][1]): Return['mergeFields'];
   dateAdd(
-    this: NonIsoImplWithHelper,
     date: Temporal.PlainDate,
     years: number,
     months: number,
@@ -519,7 +494,6 @@ interface NonIsoImpl {
     calendar: Temporal.Calendar
   ): Temporal.PlainDate;
   dateUntil(
-    this: NonIsoImplWithHelper,
     one: Temporal.PlainDate,
     two: Temporal.PlainDate,
     largestUnit: Temporal.DateUnit
@@ -529,98 +503,28 @@ interface NonIsoImpl {
     weeks: number;
     days: number;
   };
-  year(this: NonIsoImplWithHelper, date: Temporal.PlainDate): number;
-  month(this: NonIsoImplWithHelper, date: Temporal.PlainDate): number;
-  day(this: NonIsoImplWithHelper, date: Temporal.PlainDate): number;
-  era(this: NonIsoImplWithHelper, date: Temporal.PlainDate): string | undefined;
-  eraYear(this: NonIsoImplWithHelper, date: Temporal.PlainDate): number | undefined;
-  monthCode(this: NonIsoImplWithHelper, date: Temporal.PlainDate): string;
+  year(date: Temporal.PlainDate): number;
+  month(date: Temporal.PlainDate): number;
+  day(date: Temporal.PlainDate): number;
+  era(date: Temporal.PlainDate): string | undefined;
+  eraYear(date: Temporal.PlainDate): number | undefined;
+  monthCode(date: Temporal.PlainDate): string;
   dayOfWeek(date: Temporal.PlainDate): number;
-  dayOfYear(this: NonIsoImplWithHelper, date: Temporal.PlainDate): number;
+  dayOfYear(date: Temporal.PlainDate): number;
   weekOfYear(date: Temporal.PlainDate): number;
   daysInWeek(date: Temporal.PlainDate): number;
-  daysInMonth(this: NonIsoImplWithHelper, date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
-  daysInYear(this: NonIsoImplWithHelper, dateParam: Temporal.PlainDate | Temporal.PlainYearMonth): number;
-  monthsInYear(this: NonIsoImplWithHelper, date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
-  inLeapYear(this: NonIsoImplWithHelper, dateParam: Temporal.PlainDate | Temporal.PlainYearMonth): boolean;
+  daysInMonth(date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
+  daysInYear(dateParam: Temporal.PlainDate | Temporal.PlainYearMonth): number;
+  monthsInYear(date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
+  inLeapYear(dateParam: Temporal.PlainDate | Temporal.PlainYearMonth): boolean;
 }
 
 /**
- * This type exists solely to ensure a compiler error is shown if a per-calendar
- * implementation object doesn't declare a `helper` property. It will go away
- * if we migrate to ES6 classes.
- *
- * The methods of NonIsoImpl all set their `this` to NonIsoImplWithHelper in
- * order to avoid having to cast every use of `helper` to exclude `undefined`.
- * */
-interface NonIsoImplWithHelper extends NonIsoImpl {
-  helper: HelperPerCalendarImpl;
-}
-
-/** Shape of shared implementation code that applies to all calendars */
-interface HelperSharedImpl {
-  isoToCalendarDate(isoDate: IsoYMD, cache: OneObjectCache): FullCalendarDate;
-  validateCalendarDate(calendarDate: Partial<FullCalendarDate>): void;
-  adjustCalendarDate(
-    calendarDate: Partial<FullCalendarDate>,
-    cache?: OneObjectCache,
-    overflow?: Overflow,
-    fromLegacyDate?: boolean
-  ): FullCalendarDate;
-  regulateMonthDayNaive(calendarDate: FullCalendarDate, overflow: Overflow, cache: OneObjectCache): FullCalendarDate;
-  calendarToIsoDate(date: CalendarDateFields, overflow: Overflow, cache: OneObjectCache): IsoYMD;
-  temporalToCalendarDate(
-    date: Temporal.PlainDate | Temporal.PlainMonthDay | Temporal.PlainYearMonth,
-    cache: OneObjectCache
-  ): FullCalendarDate;
-  compareCalendarDates(date1: Partial<CalendarYMD>, date2: Partial<CalendarYMD>): 0 | 1 | -1;
-  regulateDate(calendarDate: CalendarYMD, overflow: Overflow, cache: OneObjectCache): FullCalendarDate;
-  addDaysIso(isoDate: IsoYMD, days: number, cache?: OneObjectCache): IsoYMD;
-  addDaysCalendar(calendarDate: CalendarYMD, days: number, cache: OneObjectCache): FullCalendarDate;
-  addMonthsCalendar(calendarDate: CalendarYMD, months: number, overflow: Overflow, cache: OneObjectCache): CalendarYMD;
-  addCalendar(
-    calendarDate: CalendarYMD,
-    { years, months, weeks, days }: { years?: number; months?: number; weeks?: number; days?: number },
-    overflow: Overflow,
-    cache: OneObjectCache
-  ): FullCalendarDate;
-  untilCalendar(
-    calendarOne: FullCalendarDate,
-    calendarTwo: FullCalendarDate,
-    largestUnit: Temporal.DateUnit,
-    cache: OneObjectCache
-  ): { years: number; months: number; weeks: number; days: number };
-  daysInMonth(calendarDate: CalendarYMD, cache: OneObjectCache): number;
-  daysInPreviousMonth(calendarDate: CalendarYMD, cache: OneObjectCache): number;
-  startOfCalendarYear(calendarDate: CalendarYearOnly): CalendarYMD;
-  startOfCalendarMonth(calendarDate: { year: number; month: number }): CalendarYMD;
-  calendarDaysUntil(calendarOne: CalendarYMD, calendarTwo: CalendarYMD, cache: OneObjectCache): number;
-  isoDaysUntil(oneIso: IsoYMD, twoIso: IsoYMD): number;
-  eraLength: 'long' | 'short' | 'narrow';
-  getFormatter(): globalThis.Intl.DateTimeFormat;
-  formatter?: globalThis.Intl.DateTimeFormat;
-  hasEra: boolean;
-  monthDayFromFields(fields: Partial<FullCalendarDate>, overflow: Overflow, cache: OneObjectCache): IsoYMD;
-}
-
-/** Calendar-specific implementation */
-interface HelperPerCalendarImpl extends HelperSharedImpl {
-  id: string;
-  reviseIntlEra?<T extends Partial<EraAndEraYear>>(calendarDate: T, isoDate: IsoYMD): T;
-  constantEra?: string;
-  checkIcuBugs?(isoDate: IsoYMD): void;
-  calendarType?: string;
-  monthsInYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache): number;
-  maximumMonthLength(calendarDate?: CalendarYM): number;
-  minimumMonthLength(calendarDate?: CalendarYM): number;
-  estimateIsoDate(calendarDate: CalendarYMD): IsoYMD;
-  inLeapYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache): boolean;
-
-  // Fields below here are only present in some subclasses but not others.
-  eras?: Era[];
-  anchorEra?: Era;
-  calendarIsVulnerableToJulianBug?: boolean;
-  v8IsVulnerableToJulianBug?: boolean;
+ * Interface for non-ISO calendar implementations. The `helper` is an abstract
+ * base class that's extended for each non-ISO calendar, e.g. `HebrewHelper`.
+ */
+interface NonIsoImpl extends CalendarImpl {
+  helper: HelperBase;
 }
 
 /**
@@ -653,7 +557,7 @@ type EraAndEraYear = { era: string; eraYear: number };
 /** Record representing YMD of an ISO calendar date */
 type IsoYMD = { year: number; month: number; day: number };
 
-type Overflow = Temporal.AssignmentOptions['overflow'];
+type Overflow = NonNullable<Temporal.AssignmentOptions['overflow']>;
 
 function monthCodeNumberPart(monthCode: string) {
   if (!monthCode.startsWith('M')) {
@@ -675,7 +579,7 @@ function buildMonthCode(month: number | string, leap = false) {
  * */
 function resolveNonLunisolarMonth<T extends { monthCode?: string; month?: number }>(
   calendarDate: T,
-  overflow: Overflow = undefined,
+  overflow: Overflow | undefined = undefined,
   monthsPerYear = 12
 ) {
   let { month, monthCode } = calendarDate;
@@ -790,11 +694,21 @@ function simpleDateDiff(one: CalendarYMD, two: CalendarYMD) {
 }
 
 /**
- * Implementation that's common to all non-ISO calendars
+ * Implementation helper that's common to all non-ISO calendars
  */
-const helperSharedImpl: HelperSharedImpl = {
-  // The properties and methods below here should be the same for all lunar/lunisolar calendars.
-  getFormatter(this: HelperPerCalendarImpl) {
+abstract class HelperBase {
+  abstract id: BuiltinCalendarId;
+  abstract monthsInYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache): number;
+  abstract maximumMonthLength(calendarDate?: CalendarYM): number;
+  abstract minimumMonthLength(calendarDate?: CalendarYM): number;
+  abstract estimateIsoDate(calendarDate: CalendarYMD): IsoYMD;
+  abstract inLeapYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache): boolean;
+  abstract calendarType: 'solar' | 'lunar' | 'lunisolar';
+  reviseIntlEra?<T extends Partial<EraAndEraYear>>(calendarDate: T, isoDate: IsoYMD): T;
+  constantEra?: string;
+  checkIcuBugs?(isoDate: IsoYMD): void;
+  private formatter?: globalThis.Intl.DateTimeFormat;
+  getFormatter() {
     // `new Intl.DateTimeFormat()` is amazingly slow and chews up RAM. Per
     // https://bugs.chromium.org/p/v8/issues/detail?id=6528#c4, we cache one
     // DateTimeFormat instance per calendar. Caching is lazy so we only pay for
@@ -811,8 +725,8 @@ const helperSharedImpl: HelperSharedImpl = {
       });
     }
     return this.formatter;
-  },
-  isoToCalendarDate(this: HelperPerCalendarImpl, isoDate, cache) {
+  }
+  isoToCalendarDate(isoDate: IsoYMD, cache: OneObjectCache): FullCalendarDate {
     const { year: isoYear, month: isoMonth, day: isoDay } = isoDate;
     const key = JSON.stringify({ func: 'isoToCalendarDate', isoYear, isoMonth, isoDay, id: this.id });
     const cached = cache.get(key);
@@ -900,11 +814,8 @@ const helperSharedImpl: HelperSharedImpl = {
       cache.set(keyReverse, isoDate);
     });
     return calendarDate;
-  },
-  validateCalendarDate(
-    this: HelperPerCalendarImpl,
-    calendarDate: Partial<FullCalendarDate>
-  ): asserts calendarDate is FullCalendarDate {
+  }
+  validateCalendarDate(calendarDate: Partial<FullCalendarDate>): asserts calendarDate is FullCalendarDate {
     const { era, month, year, day, eraYear, monthCode, monthExtra } = calendarDate as Partial<FullCalendarDate>;
     // When there's a suffix (e.g. "5bis" for a leap month in Chinese calendar)
     // the derived class must deal with it.
@@ -926,7 +837,7 @@ const helperSharedImpl: HelperSharedImpl = {
         throw new RangeError(`eraYear ${eraYear} does not match year ${year}`);
       }
     }
-  },
+  }
   /**
    * Allows derived calendars to add additional fields and/or to make
    * adjustments e.g. to set the era based on the date or to revise the month
@@ -938,7 +849,14 @@ const helperSharedImpl: HelperSharedImpl = {
    * - no eras or a constant era defined in `.constantEra`
    * - non-lunisolar calendar (no leap months)
    * */
-  adjustCalendarDate(this: HelperPerCalendarImpl, calendarDateParam, cache, overflow /*, fromLegacyDate = false */) {
+  adjustCalendarDate(
+    calendarDateParam: Partial<FullCalendarDate>,
+    cache: OneObjectCache | undefined = undefined,
+    overflow: Overflow = 'constrain',
+    // This param is only used by derived classes
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    fromLegacyDate = false
+  ): FullCalendarDate {
     if (this.calendarType === 'lunisolar') throw new RangeError('Override required for lunisolar calendars');
     let calendarDate = calendarDateParam;
     this.validateCalendarDate(calendarDate);
@@ -960,8 +878,8 @@ const helperSharedImpl: HelperSharedImpl = {
 
     ({ month, monthCode } = resolveNonLunisolarMonth(calendarDate, overflow, largestMonth));
     return { ...(calendarDate as typeof calendarDate & CalendarYMD), month, monthCode };
-  },
-  regulateMonthDayNaive(this: HelperPerCalendarImpl, calendarDate, overflow, cache) {
+  }
+  regulateMonthDayNaive(calendarDate: FullCalendarDate, overflow: Overflow, cache: OneObjectCache): FullCalendarDate {
     const largestMonth = this.monthsInYear(calendarDate, cache);
     let { month, day } = calendarDate;
     if (overflow === 'reject') {
@@ -972,8 +890,8 @@ const helperSharedImpl: HelperSharedImpl = {
       day = ES.ConstrainToRange(day, 1, this.maximumMonthLength({ ...calendarDate, month }));
     }
     return { ...calendarDate, month, day };
-  },
-  calendarToIsoDate(this: HelperPerCalendarImpl, dateParam, overflow: Overflow = 'constrain', cache) {
+  }
+  calendarToIsoDate(dateParam: CalendarDateFields, overflow: Overflow = 'constrain', cache: OneObjectCache): IsoYMD {
     const originalDate = dateParam as Partial<FullCalendarDate>;
     // First, normalize the calendar date to ensure that (year, month, day)
     // are all present, converting monthCode and eraYear if needed.
@@ -1118,13 +1036,16 @@ const helperSharedImpl: HelperSharedImpl = {
       cache.set(keyReverse, date);
     }
     return isoEstimate;
-  },
-  temporalToCalendarDate(date, cache) {
+  }
+  temporalToCalendarDate(
+    date: Temporal.PlainDate | Temporal.PlainMonthDay | Temporal.PlainYearMonth,
+    cache: OneObjectCache
+  ): FullCalendarDate {
     const isoDate = { year: GetSlot(date, ISO_YEAR), month: GetSlot(date, ISO_MONTH), day: GetSlot(date, ISO_DAY) };
     const result = this.isoToCalendarDate(isoDate, cache);
     return result;
-  },
-  compareCalendarDates(date1Param, date2Param) {
+  }
+  compareCalendarDates(date1Param: Partial<CalendarYMD>, date2Param: Partial<CalendarYMD>): 0 | 1 | -1 {
     // `date1` and `date2` are already records. The calls below simply validate
     // that all three required fields are present.
     const date1 = ES.PrepareTemporalFields(date1Param, [['day'], ['month'], ['year']]);
@@ -1133,23 +1054,28 @@ const helperSharedImpl: HelperSharedImpl = {
     if (date1.month !== date2.month) return ES.ComparisonResult(date1.month - date2.month);
     if (date1.day !== date2.day) return ES.ComparisonResult(date1.day - date2.day);
     return 0;
-  },
+  }
   /** Ensure that a calendar date actually exists. If not, return the closest earlier date. */
-  regulateDate(calendarDate, overflow = 'constrain', cache) {
+  regulateDate(calendarDate: CalendarYMD, overflow: Overflow = 'constrain', cache: OneObjectCache): FullCalendarDate {
     const isoDate = this.calendarToIsoDate(calendarDate, overflow, cache);
     return this.isoToCalendarDate(isoDate, cache);
-  },
-  addDaysIso(isoDate, days) {
+  }
+  addDaysIso(isoDate: IsoYMD, days: number): IsoYMD {
     const added = ES.AddISODate(isoDate.year, isoDate.month, isoDate.day, 0, 0, 0, days, 'constrain');
     return added;
-  },
-  addDaysCalendar(calendarDate, days, cache) {
+  }
+  addDaysCalendar(calendarDate: CalendarYMD, days: number, cache: OneObjectCache): FullCalendarDate {
     const isoDate = this.calendarToIsoDate(calendarDate, 'constrain', cache);
     const addedIso = this.addDaysIso(isoDate, days);
     const addedCalendar = this.isoToCalendarDate(addedIso, cache);
     return addedCalendar;
-  },
-  addMonthsCalendar(this: HelperPerCalendarImpl, calendarDateParam, months, overflow, cache) {
+  }
+  addMonthsCalendar(
+    calendarDateParam: CalendarYMD,
+    months: number,
+    overflow: Overflow,
+    cache: OneObjectCache
+  ): CalendarYMD {
     let calendarDate = calendarDateParam;
     const { day } = calendarDate;
     for (let i = 0, absMonths = MathAbs(months); i < absMonths; i++) {
@@ -1160,7 +1086,7 @@ const helperSharedImpl: HelperSharedImpl = {
           ? -Math.max(day, this.daysInPreviousMonth(calendarDate, cache))
           : this.daysInMonth(calendarDate, cache);
       const isoDate = this.calendarToIsoDate(calendarDate, 'constrain', cache);
-      let addedIso = this.addDaysIso(isoDate, days, cache);
+      let addedIso = this.addDaysIso(isoDate, days);
       calendarDate = this.isoToCalendarDate(addedIso, cache);
 
       // Normally, we can advance one month by adding the number of days in the
@@ -1171,7 +1097,7 @@ const helperSharedImpl: HelperSharedImpl = {
       if (months > 0) {
         const monthsInOldYear = this.monthsInYear(oldCalendarDate, cache);
         while (calendarDate.month - 1 !== month % monthsInOldYear) {
-          addedIso = this.addDaysIso(addedIso, -1, cache);
+          addedIso = this.addDaysIso(addedIso, -1);
           calendarDate = this.isoToCalendarDate(addedIso, cache);
         }
       }
@@ -1185,15 +1111,35 @@ const helperSharedImpl: HelperSharedImpl = {
       throw new RangeError(`Day ${day} does not exist in resulting calendar month`);
     }
     return calendarDate;
-  },
-  addCalendar(calendarDate, { years = 0, months = 0, weeks = 0, days = 0 }, overflow, cache) {
+  }
+  addCalendar(
+    calendarDate: CalendarYMD,
+    {
+      years,
+      months,
+      weeks,
+      days
+    }: {
+      years?: number | undefined;
+      months?: number | undefined;
+      weeks?: number | undefined;
+      days?: number | undefined;
+    },
+    overflow: Overflow,
+    cache: OneObjectCache
+  ): FullCalendarDate {
     const { year, month, day } = calendarDate;
-    const addedMonths = this.addMonthsCalendar({ year: year + years, month, day }, months, overflow, cache);
-    const initialDays = days + weeks * 7;
+    const addedMonths = this.addMonthsCalendar({ year: year + (years ?? 0), month, day }, months ?? 0, overflow, cache);
+    const initialDays = (days ?? 0) + (weeks ?? 0) * 7;
     const addedDays = this.addDaysCalendar(addedMonths, initialDays, cache);
     return addedDays;
-  },
-  untilCalendar(calendarOne, calendarTwo, largestUnit, cache) {
+  }
+  untilCalendar(
+    calendarOne: FullCalendarDate,
+    calendarTwo: FullCalendarDate,
+    largestUnit: Temporal.DateUnit,
+    cache: OneObjectCache
+  ): { years: number; months: number; weeks: number; days: number } {
     let days = 0;
     let weeks = 0;
     let months = 0;
@@ -1240,8 +1186,8 @@ const helperSharedImpl: HelperSharedImpl = {
       }
     }
     return { years, months, weeks, days };
-  },
-  daysInMonth(this: HelperPerCalendarImpl, calendarDate, cache) {
+  }
+  daysInMonth(calendarDate: CalendarYMD, cache: OneObjectCache): number {
     // Add enough days to roll over to the next month. One we're in the next
     // month, we can calculate the length of the current month. NOTE: This
     // algorithm assumes that months are continuous. It would break if a
@@ -1266,8 +1212,8 @@ const helperSharedImpl: HelperSharedImpl = {
     const endOfMonthIso = this.addDaysIso(addedIsoDate, -addedCalendarDate.day);
     const endOfMonthCalendar = this.isoToCalendarDate(endOfMonthIso, cache);
     return endOfMonthCalendar.day;
-  },
-  daysInPreviousMonth(this: HelperPerCalendarImpl, calendarDate, cache) {
+  }
+  daysInPreviousMonth(calendarDate: CalendarYMD, cache: OneObjectCache): number {
     const { day, month, year } = calendarDate;
 
     // Check to see if we already know the month length, and return it if so
@@ -1283,19 +1229,19 @@ const helperSharedImpl: HelperSharedImpl = {
     const lastDayOfPreviousMonthIso = this.addDaysIso(isoDate, -day);
     const lastDayOfPreviousMonthCalendar = this.isoToCalendarDate(lastDayOfPreviousMonthIso, cache);
     return lastDayOfPreviousMonthCalendar.day;
-  },
-  startOfCalendarYear(calendarDate) {
+  }
+  startOfCalendarYear(calendarDate: CalendarYearOnly): CalendarYMD {
     return { year: calendarDate.year, month: 1, day: 1 };
-  },
-  startOfCalendarMonth(calendarDate) {
+  }
+  startOfCalendarMonth(calendarDate: CalendarYM): CalendarYMD {
     return { year: calendarDate.year, month: calendarDate.month, day: 1 };
-  },
-  calendarDaysUntil(calendarOne, calendarTwo, cache) {
+  }
+  calendarDaysUntil(calendarOne: CalendarYMD, calendarTwo: CalendarYMD, cache: OneObjectCache): number {
     const oneIso = this.calendarToIsoDate(calendarOne, 'constrain', cache);
     const twoIso = this.calendarToIsoDate(calendarTwo, 'constrain', cache);
     return this.isoDaysUntil(oneIso, twoIso);
-  },
-  isoDaysUntil(oneIso, twoIso) {
+  }
+  isoDaysUntil(oneIso: IsoYMD, twoIso: IsoYMD): number {
     const duration = ES.DifferenceISODate(
       oneIso.year,
       oneIso.month,
@@ -1306,13 +1252,13 @@ const helperSharedImpl: HelperSharedImpl = {
       'day'
     );
     return duration.days;
-  },
+  }
   // The short era format works for all calendars except Japanese, which will
   // override.
-  eraLength: 'short',
+  eraLength: Intl.DateTimeFormatOptions['era'] = 'short';
   // All built-in calendars except Chinese/Dangi and Hebrew use an era
-  hasEra: true,
-  monthDayFromFields(this: HelperPerCalendarImpl, fields, overflow, cache) {
+  hasEra = true;
+  monthDayFromFields(fields: Partial<FullCalendarDate>, overflow: Overflow, cache: OneObjectCache): IsoYMD {
     let { year, month, monthCode, day, era, eraYear } = fields;
     if (monthCode === undefined) {
       if (year === undefined && (era === undefined || eraYear === undefined)) {
@@ -1330,7 +1276,10 @@ const helperSharedImpl: HelperSharedImpl = {
     const startDateIso = { year: 1972, month: 1, day: 1 };
     const { year: calendarYear } = this.isoToCalendarDate(startDateIso, cache);
     for (let i = 0; i < 100; i++) {
-      const testCalendarDate = this.adjustCalendarDate({ day, monthCode, year: calendarYear - i }, cache);
+      const testCalendarDate: FullCalendarDate = this.adjustCalendarDate(
+        { day, monthCode, year: calendarYear - i },
+        cache
+      );
       const isoDate = this.calendarToIsoDate(testCalendarDate, 'constrain', cache);
       const roundTripCalendarDate = this.isoToCalendarDate(isoDate, cache);
       ({ year: isoYear, month: isoMonth, day: isoDay } = isoDate);
@@ -1351,7 +1300,7 @@ const helperSharedImpl: HelperSharedImpl = {
     if (overflow === 'constrain' && closestIso !== undefined) return closestIso;
     throw new RangeError(`No recent ${this.id} year with monthCode ${monthCode} and day ${day}`);
   }
-};
+}
 
 interface HebrewMonthInfo {
   [m: string]: (
@@ -1362,6 +1311,10 @@ interface HebrewMonthInfo {
     | {
         leap: number;
         regular: undefined;
+      }
+    | {
+        leap: number;
+        regular: number;
       }
   ) & {
     monthCode: string;
@@ -1374,10 +1327,10 @@ interface HebrewMonthInfo {
   };
 }
 
-const helperHebrew: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl as HelperPerCalendarImpl, {
-  id: 'hebrew',
-  calendarType: 'lunisolar',
-  inLeapYear(calendarDate: CalendarYearOnly /*, cache: OneObjectCache */) {
+class HebrewHelper extends HelperBase {
+  id = 'hebrew' as const;
+  calendarType = 'lunisolar' as const;
+  inLeapYear(calendarDate: CalendarYearOnly) {
     const { year } = calendarDate;
     // FYI: In addition to adding a month in leap years, the Hebrew calendar
     // also has per-year changes to the number of days of Heshvan and Kislev.
@@ -1385,16 +1338,16 @@ const helperHebrew: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl as
     // those months, I assume that these DO NOT need to be exposed as
     // Hebrew-only prototype fields or methods.
     return (7 * year + 1) % 19 < 7;
-  },
+  }
   monthsInYear(calendarDate: CalendarYearOnly) {
     return this.inLeapYear(calendarDate) ? 13 : 12;
-  },
+  }
   minimumMonthLength(calendarDate: CalendarYM) {
     return this.minMaxMonthLength(calendarDate, 'min');
-  },
+  }
   maximumMonthLength(calendarDate: CalendarYM) {
     return this.minMaxMonthLength(calendarDate, 'max');
-  },
+  }
   minMaxMonthLength(calendarDate: CalendarYM, minOrMax: 'min' | 'max') {
     const { month, year } = calendarDate;
     const monthCode = this.getMonthCode(year, month);
@@ -1402,13 +1355,13 @@ const helperHebrew: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl as
     if (monthInfo === undefined) throw new RangeError(`unmatched Hebrew month: ${month}`);
     const daysInMonth = monthInfo[1].days;
     return typeof daysInMonth === 'number' ? daysInMonth : daysInMonth[minOrMax];
-  },
+  }
   /** Take a guess at what ISO date a particular calendar date corresponds to */
   estimateIsoDate(calendarDate: CalendarYMD) {
     const { year } = calendarDate;
     return { year: year - 3760, month: 1, day: 1 };
-  },
-  months: {
+  }
+  months: HebrewMonthInfo = {
     Tishri: { leap: 1, regular: 1, monthCode: 'M01', days: 30 },
     Heshvan: { leap: 2, regular: 2, monthCode: 'M02', days: { min: 29, max: 30 } },
     Kislev: { leap: 3, regular: 3, monthCode: 'M03', days: { min: 29, max: 30 } },
@@ -1423,21 +1376,20 @@ const helperHebrew: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl as
     Tamuz: { leap: 11, regular: 10, monthCode: 'M10', days: 29 },
     Av: { leap: 12, regular: 11, monthCode: 'M11', days: 30 },
     Elul: { leap: 13, regular: 12, monthCode: 'M12', days: 29 }
-  },
+  };
   getMonthCode(year: number, month: number) {
     if (this.inLeapYear({ year })) {
       return month === 6 ? buildMonthCode(5, true) : buildMonthCode(month < 6 ? month : month - 1);
     } else {
       return buildMonthCode(month);
     }
-  },
+  }
   adjustCalendarDate(
-    this: HelperPerCalendarImpl & { months: HebrewMonthInfo; getMonthCode(year: number, month: number): string },
     calendarDate: Partial<FullCalendarDate>,
     cache?: OneObjectCache,
     overflow: Overflow = 'constrain',
     fromLegacyDate = false
-  ) {
+  ): FullCalendarDate {
     // The incoming type is actually CalendarDate (same as args to
     // Calendar.dateFromParams) but TS isn't smart enough to follow all the
     // reassignments below, so as an alternative to 10+ type casts, we'll lie
@@ -1463,7 +1415,7 @@ const helperHebrew: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl as
       }
       // Because we're getting data from legacy Date, then `month` will always be present
       monthCode = this.getMonthCode(year, month as number);
-      const result = { year, month, day, era: undefined as string | undefined, eraYear, monthCode };
+      const result = { year, month: month as number, day, era: undefined as string | undefined, eraYear, monthCode };
       return result;
     } else {
       // When called without input coming from legacy Date output, simply ensure
@@ -1509,69 +1461,92 @@ const helperHebrew: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl as
           }
         }
       }
-      return { ...calendarDate, day, month, monthCode, year, eraYear };
+      return { ...calendarDate, day, month, monthCode: monthCode as string, year, eraYear };
     }
-  },
+  }
   // All built-in calendars except Chinese/Dangi and Hebrew use an era
-  hasEra: false
-});
+  hasEra = false;
+}
 
 /**
  * For Temporal purposes, the Islamic calendar is simple because it's always the
  * same 12 months in the same order.
  */
-const helperIslamic: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl, {
-  id: 'islamic',
-  calendarType: 'lunar',
-  inLeapYear(this: HelperPerCalendarImpl, calendarDate: CalendarYearOnly, cache: OneObjectCache) {
+abstract class IslamicBaseHelper extends HelperBase {
+  abstract id: BuiltinCalendarId;
+  calendarType = 'lunar' as const;
+  inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     // In leap years, the 12th month has 30 days. In non-leap years: 29.
     const days = this.daysInMonth({ year: calendarDate.year, month: 12, day: 1 }, cache);
     return days === 30;
-  },
+  }
   monthsInYear(/* calendarYear, cache */) {
     return 12;
-  },
-  minimumMonthLength: (/* calendarDate */) => 29,
-  maximumMonthLength: (/* calendarDate */) => 30,
-  DAYS_PER_ISLAMIC_YEAR: 354 + 11 / 30,
-  DAYS_PER_ISO_YEAR: 365.2425,
-  constantEra: 'ah',
-  estimateIsoDate(
-    this: HelperPerCalendarImpl & { DAYS_PER_ISLAMIC_YEAR: number; DAYS_PER_ISO_YEAR: number },
-    calendarDate: CalendarYMD
-  ) {
+  }
+  minimumMonthLength(/* calendarDate */) {
+    return 29;
+  }
+  maximumMonthLength(/* calendarDate */) {
+    return 30;
+  }
+  DAYS_PER_ISLAMIC_YEAR = 354 + 11 / 30;
+  DAYS_PER_ISO_YEAR = 365.2425;
+  constantEra = 'ah';
+  estimateIsoDate(calendarDate: CalendarYMD) {
     const { year } = this.adjustCalendarDate(calendarDate);
     return { year: MathFloor((year * this.DAYS_PER_ISLAMIC_YEAR) / this.DAYS_PER_ISO_YEAR) + 622, month: 1, day: 1 };
   }
-});
+}
 
-const helperPersian = ObjectAssign({}, helperSharedImpl, {
-  id: 'persian',
-  calendarType: 'solar',
-  inLeapYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache) {
+// There are 6 Islamic calendars with the same implementation in this polyfill.
+// They vary only in their ID. They do emit different output from the underlying
+// Intl implementation, but our code for each of them is identical.
+class IslamicHelper extends IslamicBaseHelper {
+  id = 'islamic' as const;
+}
+class IslamicUmalquraHelper extends IslamicBaseHelper {
+  id = 'islamic-umalqura' as const;
+}
+class IslamicTblaHelper extends IslamicBaseHelper {
+  id = 'islamic-tbla' as const;
+}
+class IslamicCivilHelper extends IslamicBaseHelper {
+  id = 'islamic-civil' as const;
+}
+class IslamicRgsaHelper extends IslamicBaseHelper {
+  id = 'islamic-rgsa' as const;
+}
+class IslamicCcHelper extends IslamicBaseHelper {
+  id = 'islamicc' as const;
+}
+
+class PersianHelper extends HelperBase {
+  id = 'persian' as const;
+  calendarType = 'solar' as const;
+  inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     // Same logic (count days in the last month) for Persian as for Islamic,
     // even though Persian is solar and Islamic is lunar.
-    return helperIslamic.inLeapYear(calendarDate, cache);
-  },
+    return IslamicHelper.prototype.inLeapYear.call(this, calendarDate, cache);
+  }
   monthsInYear(/* calendarYear, cache */) {
     return 12;
-  },
+  }
   minimumMonthLength(calendarDate: CalendarYM) {
     const { month } = calendarDate;
     if (month === 12) return 29;
     return month <= 6 ? 31 : 30;
-  },
+  }
   maximumMonthLength(calendarDate: CalendarYM) {
     const { month } = calendarDate;
     if (month === 12) return 30;
     return month <= 6 ? 31 : 30;
-  },
-  constantEra: 'ap',
-  estimateIsoDate(this: HelperPerCalendarImpl, calendarDate: CalendarYMD) {
+  }
+  constantEra = 'ap';
+  estimateIsoDate(calendarDate: CalendarYMD) {
     const { year } = this.adjustCalendarDate(calendarDate);
     return { year: year + 621, month: 1, day: 1 };
   }
-});
+}
 
 interface IndianMonthInfo {
   [month: number]: {
@@ -1587,37 +1562,31 @@ interface IndianMonthInfo {
   };
 }
 
-const helperIndian: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl, {
-  id: 'indian',
-  calendarType: 'solar',
-  inLeapYear(calendarDate: CalendarYearOnly /*, cache: OneObjectCache */) {
+class IndianHelper extends HelperBase {
+  id = 'indian' as const;
+  calendarType = 'solar' as const;
+  inLeapYear(calendarDate: CalendarYearOnly) {
     // From https://en.wikipedia.org/wiki/Indian_national_calendar:
     // Years are counted in the Saka era, which starts its year 0 in the year 78
     // of the Common Era. To determine leap years, add 78 to the Saka year – if
     // the result is a leap year in the Gregorian calendar, then the Saka year
     // is a leap year as well.
     return isGregorianLeapYear(calendarDate.year + 78);
-  },
+  }
   monthsInYear(/* calendarYear, cache */) {
     return 12;
-  },
-  minimumMonthLength(
-    this: HelperPerCalendarImpl & { getMonthInfo(calendarDate: CalendarYM): IndianMonthInfo[number] },
-    calendarDate: CalendarYM
-  ) {
+  }
+  minimumMonthLength(calendarDate: CalendarYM) {
     return this.getMonthInfo(calendarDate).length;
-  },
-  maximumMonthLength(
-    this: HelperPerCalendarImpl & { getMonthInfo(calendarDate: CalendarYM): IndianMonthInfo[number] },
-    calendarDate: CalendarYM
-  ) {
+  }
+  maximumMonthLength(calendarDate: CalendarYM) {
     return this.getMonthInfo(calendarDate).length;
-  },
-  constantEra: 'saka',
+  }
+  constantEra = 'saka';
   // Indian months always start at the same well-known Gregorian month and
   // day. So this conversion is easy and fast. See
   // https://en.wikipedia.org/wiki/Indian_national_calendar
-  months: {
+  months: IndianMonthInfo = {
     1: { length: 30, month: 3, day: 22, leap: { length: 31, month: 3, day: 21 } },
     2: { length: 31, month: 4, day: 21 },
     3: { length: 31, month: 5, day: 22 },
@@ -1630,18 +1599,15 @@ const helperIndian: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl, {
     10: { length: 30, month: 12, day: 22 },
     11: { length: 30, month: 1, nextYear: true, day: 21 },
     12: { length: 30, month: 2, nextYear: true, day: 20 }
-  },
-  getMonthInfo(this: HelperPerCalendarImpl & { months: IndianMonthInfo }, calendarDate: CalendarYM) {
+  };
+  getMonthInfo(calendarDate: CalendarYM) {
     const { month } = calendarDate;
     let monthInfo = this.months[month];
     if (monthInfo === undefined) throw new RangeError(`Invalid month: ${month}`);
     if (this.inLeapYear(calendarDate) && monthInfo.leap) monthInfo = monthInfo.leap;
     return monthInfo;
-  },
-  estimateIsoDate(
-    this: HelperPerCalendarImpl & { getMonthInfo(calendarDate: CalendarYM): IndianMonthInfo[number] },
-    calendarDateParam: CalendarYMD
-  ) {
+  }
+  estimateIsoDate(calendarDateParam: CalendarYMD) {
     // FYI, this "estimate" is always the exact ISO date, which makes the Indian
     // calendar fast!
     const calendarDate = this.adjustCalendarDate(calendarDateParam);
@@ -1651,13 +1617,13 @@ const helperIndian: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl, {
     const isoDay = monthInfo.day;
     const isoDate = ES.AddISODate(isoYear, isoMonth, isoDay, 0, 0, 0, calendarDate.day - 1, 'constrain');
     return isoDate;
-  },
+  }
   // https://bugs.chromium.org/p/v8/issues/detail?id=10529 causes Intl's Indian
   // calendar output to fail for all dates before 0001-01-01 ISO.  For example,
   // in Node 12 0000-01-01 is calculated as 6146/12/-583 instead of 10/11/-79 as
   // expected.
-  vulnerableToBceBug:
-    new Date('0000-01-01T00:00Z').toLocaleDateString('en-US-u-ca-indian', { timeZone: 'UTC' }) !== '10/11/-79 Saka',
+  vulnerableToBceBug =
+    new Date('0000-01-01T00:00Z').toLocaleDateString('en-US-u-ca-indian', { timeZone: 'UTC' }) !== '10/11/-79 Saka';
   checkIcuBugs(isoDate: IsoYMD) {
     if (this.vulnerableToBceBug && isoDate.year < 1) {
       throw new RangeError(
@@ -1666,7 +1632,7 @@ const helperIndian: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl, {
       );
     }
   }
-});
+}
 
 /**
  * Era metadata defined for each calendar.
@@ -1852,170 +1818,170 @@ function isGregorianLeapYear(year: number) {
 }
 
 /** Base for all Gregorian-like calendars. */
-const makeHelperGregorian = (id: BuiltinCalendarId, originalEras: InputEra[]) => {
-  const { eras, anchorEra } = adjustEras(originalEras);
-  const helperGregorian = ObjectAssign({}, helperSharedImpl, {
-    id,
-    eras,
-    anchorEra,
-    calendarType: 'solar',
-    inLeapYear(this: HelperPerCalendarImpl, calendarDate: CalendarYearOnly /*, cache: OneObjectCache */) {
-      // Calendars that don't override this method use the same months and leap
-      // years as Gregorian. Once we know the ISO year corresponding to the
-      // calendar year, we'll know if it's a leap year or not.
-      const { year } = this.estimateIsoDate({ month: 1, day: 1, year: calendarDate.year });
-      return isGregorianLeapYear(year);
-    },
-    monthsInYear(/* calendarDate */) {
-      return 12;
-    },
-    minimumMonthLength(this: HelperPerCalendarImpl, calendarDate: CalendarYM) {
-      const { month } = calendarDate;
-      if (month === 2) return this.inLeapYear(calendarDate) ? 29 : 28;
-      return [4, 6, 9, 11].indexOf(month) >= 0 ? 30 : 31;
-    },
-    maximumMonthLength(this: HelperPerCalendarImpl, calendarDate: CalendarYM) {
-      return this.minimumMonthLength(calendarDate);
-    },
-    /** Fill in missing parts of the (year, era, eraYear) tuple */
-    completeEraYear(this: HelperPerCalendarImpl & { eras: Era[] }, calendarDate: Partial<FullCalendarDate>) {
-      const checkField = (name: keyof FullCalendarDate, value: string | number | undefined) => {
-        const currentValue = calendarDate[name];
-        if (currentValue != null && currentValue != value) {
-          throw new RangeError(`Input ${name} ${currentValue} doesn't match calculated value ${value}`);
-        }
-      };
-      const eraFromYear = (year: number) => {
-        let eraYear;
-        const adjustedCalendarDate = { ...calendarDate, year };
-        const matchingEra = this.eras.find((e, i) => {
-          if (i === this.eras.length - 1) {
-            if (e.reverseOf) {
-              // This is a reverse-sign era (like BCE) which must be the oldest
-              // era. Count years backwards.
-              if (year > 0) throw new RangeError(`Signed year ${year} is invalid for era ${e.name}`);
-              eraYear = e.anchorEpoch.year - year;
-              return true;
-            }
-            // last era always gets all "leftover" (older than epoch) years,
-            // so no need for a comparison like below.
-            eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
-            return true;
-          }
-          const comparison = helperSharedImpl.compareCalendarDates(adjustedCalendarDate, e.anchorEpoch);
-          if (comparison >= 0) {
-            eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
-            return true;
-          }
-          return false;
-        });
-        if (!matchingEra) throw new RangeError(`Year ${year} was not matched by any era`);
-        return { eraYear, era: matchingEra.name };
-      };
+abstract class GregorianBaseHelper extends HelperBase {
+  id: BuiltinCalendarId;
+  eras: Era[];
+  anchorEra: Era;
 
-      let { year, eraYear, era } = calendarDate;
-      if (year != null) {
-        ({ eraYear, era } = eraFromYear(year));
-        checkField('era', era);
-        checkField('eraYear', eraYear);
-      } else if (eraYear != null) {
-        const matchingEra =
-          era === undefined ? undefined : this.eras.find((e) => e.name === era || e.genericName === era);
-        if (!matchingEra) throw new RangeError(`Era ${era} (ISO year ${eraYear}) was not matched by any era`);
-        if (eraYear < 1 && matchingEra.reverseOf) {
-          throw new RangeError(`Years in ${era} era must be positive, not ${year}`);
+  constructor(id: BuiltinCalendarId, originalEras: InputEra[]) {
+    super();
+    this.id = id;
+    const { eras, anchorEra } = adjustEras(originalEras);
+    this.anchorEra = anchorEra;
+    this.eras = eras;
+  }
+  calendarType = 'solar' as const;
+  inLeapYear(calendarDate: CalendarYearOnly) {
+    // Calendars that don't override this method use the same months and leap
+    // years as Gregorian. Once we know the ISO year corresponding to the
+    // calendar year, we'll know if it's a leap year or not.
+    const { year } = this.estimateIsoDate({ month: 1, day: 1, year: calendarDate.year });
+    return isGregorianLeapYear(year);
+  }
+  monthsInYear(/* calendarDate */) {
+    return 12;
+  }
+  minimumMonthLength(calendarDate: CalendarYM): number {
+    const { month } = calendarDate;
+    if (month === 2) return this.inLeapYear(calendarDate) ? 29 : 28;
+    return [4, 6, 9, 11].indexOf(month) >= 0 ? 30 : 31;
+  }
+  maximumMonthLength(calendarDate: CalendarYM): number {
+    return this.minimumMonthLength(calendarDate);
+  }
+  /** Fill in missing parts of the (year, era, eraYear) tuple */
+  completeEraYear(calendarDate: Partial<FullCalendarDate>) {
+    const checkField = (name: keyof FullCalendarDate, value: string | number | undefined) => {
+      const currentValue = calendarDate[name];
+      if (currentValue != null && currentValue != value) {
+        throw new RangeError(`Input ${name} ${currentValue} doesn't match calculated value ${value}`);
+      }
+    };
+    const eraFromYear = (year: number) => {
+      let eraYear;
+      const adjustedCalendarDate = { ...calendarDate, year };
+      const matchingEra = this.eras.find((e, i) => {
+        if (i === this.eras.length - 1) {
+          if (e.reverseOf) {
+            // This is a reverse-sign era (like BCE) which must be the oldest
+            // era. Count years backwards.
+            if (year > 0) throw new RangeError(`Signed year ${year} is invalid for era ${e.name}`);
+            eraYear = e.anchorEpoch.year - year;
+            return true;
+          }
+          // last era always gets all "leftover" (older than epoch) years,
+          // so no need for a comparison like below.
+          eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
+          return true;
         }
-        if (matchingEra.reverseOf) {
-          year = matchingEra.anchorEpoch.year - eraYear;
-        } else {
-          year = eraYear + matchingEra.anchorEpoch.year - (matchingEra.hasYearZero ? 0 : 1);
+        const comparison = this.compareCalendarDates(adjustedCalendarDate, e.anchorEpoch);
+        if (comparison >= 0) {
+          eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
+          return true;
         }
-        checkField('year', year);
-        // We'll accept dates where the month/day is earlier than the start of
-        // the era or after its end as long as it's in the same year. If that
-        // happens, we'll adjust the era/eraYear pair to be the correct era for
-        // the `year`.
-        ({ eraYear, era } = eraFromYear(year));
+        return false;
+      });
+      if (!matchingEra) throw new RangeError(`Year ${year} was not matched by any era`);
+      return { eraYear: eraYear as unknown as number, era: matchingEra.name };
+    };
+
+    let { year, eraYear, era } = calendarDate;
+    if (year != null) {
+      ({ eraYear, era } = eraFromYear(year));
+      checkField('era', era);
+      checkField('eraYear', eraYear);
+    } else if (eraYear != null) {
+      const matchingEra =
+        era === undefined ? undefined : this.eras.find((e) => e.name === era || e.genericName === era);
+      if (!matchingEra) throw new RangeError(`Era ${era} (ISO year ${eraYear}) was not matched by any era`);
+      if (eraYear < 1 && matchingEra.reverseOf) {
+        throw new RangeError(`Years in ${era} era must be positive, not ${year}`);
+      }
+      if (matchingEra.reverseOf) {
+        year = matchingEra.anchorEpoch.year - eraYear;
       } else {
-        throw new RangeError('Either `year` or `eraYear` and `era` are required');
+        year = eraYear + matchingEra.anchorEpoch.year - (matchingEra.hasYearZero ? 0 : 1);
       }
-      return { ...calendarDate, year, eraYear, era };
-    },
-    adjustCalendarDate(
-      this: HelperPerCalendarImpl & { completeEraYear(calendarDate: Partial<FullCalendarDate>): FullCalendarDate },
-      calendarDateParam: Partial<FullCalendarDate>,
-      cache: OneObjectCache,
-      overflow: Overflow
-      /*, fromLegacyDate = false */
-    ) {
-      let calendarDate = calendarDateParam;
-      // Because this is not a lunisolar calendar, it's safe to convert monthCode to a number
-      const { month, monthCode } = calendarDate;
-      if (month === undefined) calendarDate = { ...calendarDate, month: monthCodeNumberPart(monthCode as string) };
-      this.validateCalendarDate(calendarDate);
-      calendarDate = this.completeEraYear(calendarDate);
-      // TODO this can become `super` later.
-      calendarDate = ReflectApply(helperSharedImpl.adjustCalendarDate, this, [calendarDate, cache, overflow]);
-      return calendarDate;
-    },
-    estimateIsoDate(this: HelperPerCalendarImpl, calendarDateParam: CalendarYMD) {
-      const calendarDate = this.adjustCalendarDate(calendarDateParam);
-      const { year, month, day } = calendarDate;
-      const { anchorEra } = this as { anchorEra: Era };
-      const isoYearEstimate = year + anchorEra.isoEpoch.year - (anchorEra.hasYearZero ? 0 : 1);
-      return ES.RegulateISODate(isoYearEstimate, month, day, 'constrain');
-    },
-    // Several calendars based on the Gregorian calendar use Julian dates (not
-    // proleptic Gregorian dates) before the Julian switchover in Oct 1582. See
-    // https://bugs.chromium.org/p/chromium/issues/detail?id=1173158.
-    v8IsVulnerableToJulianBug: new Date('+001001-01-01T00:00Z')
-      .toLocaleDateString('en-US-u-ca-japanese', { timeZone: 'UTC' })
-      .startsWith('12'),
-    calendarIsVulnerableToJulianBug: false,
-    checkIcuBugs(isoDate: IsoYMD) {
-      if (this.calendarIsVulnerableToJulianBug && this.v8IsVulnerableToJulianBug) {
-        const beforeJulianSwitch = ES.CompareISODate(isoDate.year, isoDate.month, isoDate.day, 1582, 10, 15) < 0;
-        if (beforeJulianSwitch) {
-          throw new RangeError(
-            `calendar '${this.id}' is broken for ISO dates before 1582-10-15` +
-              ' (see https://bugs.chromium.org/p/chromium/issues/detail?id=1173158)'
-          );
-        }
+      checkField('year', year);
+      // We'll accept dates where the month/day is earlier than the start of
+      // the era or after its end as long as it's in the same year. If that
+      // happens, we'll adjust the era/eraYear pair to be the correct era for
+      // the `year`.
+      ({ eraYear, era } = eraFromYear(year));
+    } else {
+      throw new RangeError('Either `year` or `eraYear` and `era` are required');
+    }
+    return { ...calendarDate, year, eraYear, era };
+  }
+  adjustCalendarDate(
+    calendarDateParam: Partial<FullCalendarDate>,
+    cache?: OneObjectCache,
+    overflow: Overflow = 'constrain'
+  ): FullCalendarDate {
+    let calendarDate = calendarDateParam;
+    // Because this is not a lunisolar calendar, it's safe to convert monthCode to a number
+    const { month, monthCode } = calendarDate;
+    if (month === undefined) calendarDate = { ...calendarDate, month: monthCodeNumberPart(monthCode as string) };
+    this.validateCalendarDate(calendarDate);
+    calendarDate = this.completeEraYear(calendarDate);
+    return super.adjustCalendarDate(calendarDate, cache, overflow);
+  }
+  estimateIsoDate(calendarDateParam: CalendarYMD) {
+    const calendarDate = this.adjustCalendarDate(calendarDateParam);
+    const { year, month, day } = calendarDate;
+    const { anchorEra } = this;
+    const isoYearEstimate = year + anchorEra.isoEpoch.year - (anchorEra.hasYearZero ? 0 : 1);
+    return ES.RegulateISODate(isoYearEstimate, month, day, 'constrain');
+  }
+  // Several calendars based on the Gregorian calendar use Julian dates (not
+  // proleptic Gregorian dates) before the Julian switchover in Oct 1582. See
+  // https://bugs.chromium.org/p/chromium/issues/detail?id=1173158.
+  v8IsVulnerableToJulianBug = new Date('+001001-01-01T00:00Z')
+    .toLocaleDateString('en-US-u-ca-japanese', { timeZone: 'UTC' })
+    .startsWith('12');
+  calendarIsVulnerableToJulianBug = false;
+  checkIcuBugs(isoDate: IsoYMD) {
+    if (this.calendarIsVulnerableToJulianBug && this.v8IsVulnerableToJulianBug) {
+      const beforeJulianSwitch = ES.CompareISODate(isoDate.year, isoDate.month, isoDate.day, 1582, 10, 15) < 0;
+      if (beforeJulianSwitch) {
+        throw new RangeError(
+          `calendar '${this.id}' is broken for ISO dates before 1582-10-15` +
+            ' (see https://bugs.chromium.org/p/chromium/issues/detail?id=1173158)'
+        );
       }
     }
-  });
-  return helperGregorian;
-};
+  }
+}
 
-const makeHelperOrthodox = (id: BuiltinCalendarId, originalEras: InputEra[]) => {
-  const base = makeHelperGregorian(id, originalEras);
-  return ObjectAssign(base, {
-    inLeapYear(calendarDate: CalendarYearOnly /*, cache: OneObjectCache */) {
-      // Leap years happen one year before the Julian leap year. Note that this
-      // calendar is based on the Julian calendar which has a leap year every 4
-      // years, unlike the Gregorian calendar which doesn't have leap years on
-      // years divisible by 100 except years divisible by 400.
-      //
-      // Note that we're assuming that leap years in before-epoch times match
-      // how leap years are defined now. This is probably not accurate but I'm
-      // not sure how better to do it.
-      const { year } = calendarDate;
-      return (year + 1) % 4 === 0;
-    },
-    monthsInYear(/* calendarDate */) {
-      return 13;
-    },
-    minimumMonthLength(this: HelperPerCalendarImpl, calendarDate: CalendarYM) {
-      const { month } = calendarDate;
-      // Ethiopian/Coptic calendars have 12 30-day months and an extra 5-6 day 13th month.
-      if (month === 13) return this.inLeapYear(calendarDate) ? 6 : 5;
-      return 30;
-    },
-    maximumMonthLength(this: HelperPerCalendarImpl, calendarDate: CalendarYM) {
-      return this.minimumMonthLength(calendarDate);
-    }
-  });
-};
+abstract class OrthodoxBaseHelper extends GregorianBaseHelper {
+  constructor(id: BuiltinCalendarId, originalEras: InputEra[]) {
+    super(id, originalEras);
+  }
+  inLeapYear(calendarDate: CalendarYearOnly) {
+    // Leap years happen one year before the Julian leap year. Note that this
+    // calendar is based on the Julian calendar which has a leap year every 4
+    // years, unlike the Gregorian calendar which doesn't have leap years on
+    // years divisible by 100 except years divisible by 400.
+    //
+    // Note that we're assuming that leap years in before-epoch times match
+    // how leap years are defined now. This is probably not accurate but I'm
+    // not sure how better to do it.
+    const { year } = calendarDate;
+    return (year + 1) % 4 === 0;
+  }
+  monthsInYear(/* calendarDate */) {
+    return 13;
+  }
+  minimumMonthLength(calendarDate: CalendarYM) {
+    const { month } = calendarDate;
+    // Ethiopian/Coptic calendars have 12 30-day months and an extra 5-6 day 13th month.
+    if (month === 13) return this.inLeapYear(calendarDate) ? 6 : 5;
+    return 30;
+  }
+  maximumMonthLength(calendarDate: CalendarYM) {
+    return this.minimumMonthLength(calendarDate);
+  }
+}
 
 // `coptic` and `ethiopic` calendars are very similar to `ethioaa` calendar,
 // with the following differences:
@@ -2024,112 +1990,119 @@ const makeHelperOrthodox = (id: BuiltinCalendarId, originalEras: InputEra[]) => 
 // - Coptic has a different epoch date
 // - Ethiopic has an additional second era that starts at the same date as the
 //   zero era of ethioaa.
-const helperEthioaa = makeHelperOrthodox('ethioaa', [{ name: 'era0', isoEpoch: { year: -5492, month: 7, day: 17 } }]);
-const helperCoptic = makeHelperOrthodox('coptic', [
-  { name: 'era1', isoEpoch: { year: 284, month: 8, day: 29 } },
-  { name: 'era0', reverseOf: 'era1' }
-]);
+class EthioaaHelper extends OrthodoxBaseHelper {
+  constructor() {
+    super('ethioaa', [{ name: 'era0', isoEpoch: { year: -5492, month: 7, day: 17 } }]);
+  }
+}
+class CopticHelper extends OrthodoxBaseHelper {
+  constructor() {
+    super('coptic', [
+      { name: 'era1', isoEpoch: { year: 284, month: 8, day: 29 } },
+      { name: 'era0', reverseOf: 'era1' }
+    ]);
+  }
+}
+
 // Anchor is currently the older era to match ethioaa, but should it be the newer era?
 // See https://github.com/tc39/ecma402/issues/534 for discussion.
-const helperEthiopic = makeHelperOrthodox('ethiopic', [
-  { name: 'era0', isoEpoch: { year: -5492, month: 7, day: 17 } },
-  { name: 'era1', isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
-]);
-
-const helperRoc = ObjectAssign(
-  {},
-  makeHelperGregorian('roc', [
-    { name: 'minguo', isoEpoch: { year: 1912, month: 1, day: 1 } },
-    { name: 'before-roc', reverseOf: 'minguo' }
-  ]),
-  {
-    calendarIsVulnerableToJulianBug: true
+class EthiopicHelper extends OrthodoxBaseHelper {
+  constructor() {
+    super('ethiopic', [
+      { name: 'era0', isoEpoch: { year: -5492, month: 7, day: 17 } },
+      { name: 'era1', isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
+    ]);
   }
-);
+}
 
-const helperBuddhist = ObjectAssign(
-  {},
-  makeHelperGregorian('buddhist', [{ name: 'be', hasYearZero: true, isoEpoch: { year: -543, month: 1, day: 1 } }]),
-  {
-    calendarIsVulnerableToJulianBug: true
+class RocHelper extends GregorianBaseHelper {
+  constructor() {
+    super('roc', [
+      { name: 'minguo', isoEpoch: { year: 1912, month: 1, day: 1 } },
+      { name: 'before-roc', reverseOf: 'minguo' }
+    ]);
   }
-);
+  calendarIsVulnerableToJulianBug = true;
+}
 
-const helperGregory: HelperPerCalendarImpl = ObjectAssign(
-  {},
-  makeHelperGregorian('gregory', [
-    { name: 'ce', isoEpoch: { year: 1, month: 1, day: 1 } },
-    { name: 'bce', reverseOf: 'ce' }
-  ]),
-  {
-    reviseIntlEra<T extends Partial<EraAndEraYear>>(calendarDate: T /*, isoDate: IsoDate*/): T {
-      let { era, eraYear } = calendarDate;
-      if (era === 'bc') era = 'bce';
-      if (era === 'ad') era = 'ce';
-      return { era, eraYear } as T;
-    }
+class BuddhistHelper extends GregorianBaseHelper {
+  constructor() {
+    super('buddhist', [{ name: 'be', hasYearZero: true, isoEpoch: { year: -543, month: 1, day: 1 } }]);
   }
-);
+  calendarIsVulnerableToJulianBug = true;
+}
 
-const helperJapanese: HelperPerCalendarImpl = ObjectAssign(
-  {},
-  // NOTE: Only the 5 modern eras (Meiji and later) are included. For dates
-  // before Meiji 1, the `ce` and `bce` eras are used. Challenges with pre-Meiji
-  // eras include:
-  // - Start/end dates of older eras are not precisely defined, which is
-  //   challenging given Temporal's need for precision
-  // - Some era dates and/or names are disputed by historians
-  // - As historical research proceeds, new eras are discovered and existing era
-  //   dates are modified, leading to considerable churn which is not good for
-  //   Temporal use.
-  //  - The earliest era (in 645 CE) may not end up being the earliest depending
-  //    on future historical scholarship
-  //  - Before Meiji, Japan used a lunar (or lunisolar?) calendar but AFAIK
-  //    that's not reflected in the ICU implementation.
-  //
-  // For more discussion: https://github.com/tc39/proposal-temporal/issues/526.
-  //
-  // Here's a full list of CLDR/ICU eras:
-  // https://github.com/unicode-org/icu/blob/master/icu4c/source/data/locales/root.txt#L1582-L1818
-  // https://github.com/unicode-org/cldr/blob/master/common/supplemental/supplementalData.xml#L4310-L4546
-  //
-  // NOTE: Japan started using the Gregorian calendar in 6 Meiji, replacing a
-  // lunisolar calendar. So the day before January 1 of 6 Meiji (1873) was not
-  // December 31, but December 2, of 5 Meiji (1872). The existing Ecma-402
-  // Japanese calendar doesn't seem to take this into account, so neither do we:
-  // > args = ['en-ca-u-ca-japanese', { era: 'short' }]
-  // > new Date('1873-01-01T12:00').toLocaleString(...args)
-  // '1 1, 6 Meiji, 12:00:00 PM'
-  // > new Date('1872-12-31T12:00').toLocaleString(...args)
-  // '12 31, 5 Meiji, 12:00:00 PM'
-  makeHelperGregorian('japanese', [
-    // The Japanese calendar `year` is just the ISO year, because (unlike other
-    // ICU calendars) there's no obvious "default era", we use the ISO year.
-    { name: 'reiwa', isoEpoch: { year: 2019, month: 5, day: 1 }, anchorEpoch: { year: 2019, month: 5, day: 1 } },
-    { name: 'heisei', isoEpoch: { year: 1989, month: 1, day: 8 }, anchorEpoch: { year: 1989, month: 1, day: 8 } },
-    { name: 'showa', isoEpoch: { year: 1926, month: 12, day: 25 }, anchorEpoch: { year: 1926, month: 12, day: 25 } },
-    { name: 'taisho', isoEpoch: { year: 1912, month: 7, day: 30 }, anchorEpoch: { year: 1912, month: 7, day: 30 } },
-    { name: 'meiji', isoEpoch: { year: 1868, month: 9, day: 8 }, anchorEpoch: { year: 1868, month: 9, day: 8 } },
-    { name: 'ce', isoEpoch: { year: 1, month: 1, day: 1 } },
-    { name: 'bce', reverseOf: 'ce' }
-  ]),
-  {
-    // The last 3 Japanese eras confusingly return only one character in the
-    // default "short" era, so need to use the long format.
-    eraLength: 'long',
-    calendarIsVulnerableToJulianBug: true,
-    reviseIntlEra<T extends Partial<EraAndEraYear>>(
-      this: HelperPerCalendarImpl & { eras: Era[] },
-      calendarDate: T,
-      isoDate: IsoYMD
-    ): T {
-      const { era, eraYear } = calendarDate;
-      const { year: isoYear } = isoDate;
-      if (this.eras.find((e) => e.name === era)) return { era, eraYear } as T;
-      return (isoYear < 1 ? { era: 'bce', eraYear: 1 - isoYear } : { era: 'ce', eraYear: isoYear }) as T;
-    }
+class GregoryHelper extends GregorianBaseHelper {
+  constructor() {
+    super('gregory', [
+      { name: 'ce', isoEpoch: { year: 1, month: 1, day: 1 } },
+      { name: 'bce', reverseOf: 'ce' }
+    ]);
   }
-);
+  reviseIntlEra<T extends Partial<EraAndEraYear>>(calendarDate: T /*, isoDate: IsoDate*/): T {
+    let { era, eraYear } = calendarDate;
+    if (era === 'bc') era = 'bce';
+    if (era === 'ad') era = 'ce';
+    return { era, eraYear } as T;
+  }
+}
+
+// NOTE: Only the 5 modern eras (Meiji and later) are included. For dates
+// before Meiji 1, the `ce` and `bce` eras are used. Challenges with pre-Meiji
+// eras include:
+// - Start/end dates of older eras are not precisely defined, which is
+//   challenging given Temporal's need for precision
+// - Some era dates and/or names are disputed by historians
+// - As historical research proceeds, new eras are discovered and existing era
+//   dates are modified, leading to considerable churn which is not good for
+//   Temporal use.
+//  - The earliest era (in 645 CE) may not end up being the earliest depending
+//    on future historical scholarship
+//  - Before Meiji, Japan used a lunar (or lunisolar?) calendar but AFAIK
+//    that's not reflected in the ICU implementation.
+//
+// For more discussion: https://github.com/tc39/proposal-temporal/issues/526.
+//
+// Here's a full list of CLDR/ICU eras:
+// https://github.com/unicode-org/icu/blob/master/icu4c/source/data/locales/root.txt#L1582-L1818
+// https://github.com/unicode-org/cldr/blob/master/common/supplemental/supplementalData.xml#L4310-L4546
+//
+// NOTE: Japan started using the Gregorian calendar in 6 Meiji, replacing a
+// lunisolar calendar. So the day before January 1 of 6 Meiji (1873) was not
+// December 31, but December 2, of 5 Meiji (1872). The existing Ecma-402
+// Japanese calendar doesn't seem to take this into account, so neither do we:
+// > args = ['en-ca-u-ca-japanese', { era: 'short' }]
+// > new Date('1873-01-01T12:00').toLocaleString(...args)
+// '1 1, 6 Meiji, 12:00:00 PM'
+// > new Date('1872-12-31T12:00').toLocaleString(...args)
+// '12 31, 5 Meiji, 12:00:00 PM'
+class JapaneseHelper extends GregorianBaseHelper {
+  constructor() {
+    super('japanese', [
+      // The Japanese calendar `year` is just the ISO year, because (unlike other
+      // ICU calendars) there's no obvious "default era", we use the ISO year.
+      { name: 'reiwa', isoEpoch: { year: 2019, month: 5, day: 1 }, anchorEpoch: { year: 2019, month: 5, day: 1 } },
+      { name: 'heisei', isoEpoch: { year: 1989, month: 1, day: 8 }, anchorEpoch: { year: 1989, month: 1, day: 8 } },
+      { name: 'showa', isoEpoch: { year: 1926, month: 12, day: 25 }, anchorEpoch: { year: 1926, month: 12, day: 25 } },
+      { name: 'taisho', isoEpoch: { year: 1912, month: 7, day: 30 }, anchorEpoch: { year: 1912, month: 7, day: 30 } },
+      { name: 'meiji', isoEpoch: { year: 1868, month: 9, day: 8 }, anchorEpoch: { year: 1868, month: 9, day: 8 } },
+      { name: 'ce', isoEpoch: { year: 1, month: 1, day: 1 } },
+      { name: 'bce', reverseOf: 'ce' }
+    ]);
+  }
+  calendarIsVulnerableToJulianBug = true;
+
+  // The last 3 Japanese eras confusingly return only one character in the
+  // default "short" era, so need to use the long format.
+  eraLength = 'long' as const;
+
+  reviseIntlEra<T extends Partial<EraAndEraYear>>(calendarDate: T, isoDate: IsoYMD): T {
+    const { era, eraYear } = calendarDate;
+    const { year: isoYear } = isoDate;
+    if (this.eras.find((e) => e.name === era)) return { era, eraYear } as T;
+    return (isoYear < 1 ? { era: 'bce', eraYear: 1 - isoYear } : { era: 'ce', eraYear: isoYear }) as T;
+  }
+}
 
 interface ChineseMonthInfo {
   [key: string]: { monthIndex: number; daysInMonth: number };
@@ -2138,23 +2111,23 @@ interface ChineseDraftMonthInfo {
   [key: string]: { monthIndex: number; daysInMonth?: number };
 }
 
-const helperChinese: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl, {
-  id: 'chinese',
-  calendarType: 'lunisolar',
-  inLeapYear(
-    this: HelperPerCalendarImpl & { getMonthList(year: number, cache: OneObjectCache): ChineseMonthInfo },
-    calendarDate: CalendarYearOnly,
-    cache: OneObjectCache
-  ) {
+abstract class ChineseBaseHelper extends HelperBase {
+  abstract id: BuiltinCalendarId;
+  calendarType = 'lunisolar' as const;
+  inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     const months = this.getMonthList(calendarDate.year, cache as OneObjectCache);
     return ObjectEntries(months).length === 13;
-  },
-  monthsInYear(this: HelperPerCalendarImpl, calendarDate: CalendarYearOnly, cache: OneObjectCache) {
+  }
+  monthsInYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     return this.inLeapYear(calendarDate, cache) ? 13 : 12;
-  },
-  minimumMonthLength: (/* calendarDate */) => 29,
-  maximumMonthLength: (/* calendarDate */) => 30,
-  getMonthList(this: HelperPerCalendarImpl, calendarYear: number, cache: OneObjectCache): ChineseMonthInfo {
+  }
+  minimumMonthLength(/* calendarDate */) {
+    return 29;
+  }
+  maximumMonthLength(/* calendarDate */) {
+    return 30;
+  }
+  getMonthList(calendarYear: number, cache: OneObjectCache): ChineseMonthInfo {
     if (calendarYear === undefined) {
       throw new TypeError('Missing year');
     }
@@ -2226,13 +2199,12 @@ const helperChinese: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl, 
 
     cache.set(key, result);
     return result as ChineseMonthInfo;
-  },
+  }
   estimateIsoDate(calendarDate: CalendarYMD) {
     const { year, month } = calendarDate;
     return { year, month: month >= 12 ? 12 : month + 1, day: 1 };
-  },
+  }
   adjustCalendarDate(
-    this: HelperPerCalendarImpl & { getMonthList(year: number, cache: OneObjectCache): ChineseMonthInfo },
     calendarDate: Partial<FullCalendarDate>,
     cache: OneObjectCache,
     overflow: Overflow = 'constrain',
@@ -2321,13 +2293,19 @@ const helperChinese: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl, 
         day: day as number
       };
     }
-  },
+  }
   // All built-in calendars except Chinese/Dangi and Hebrew use an era
-  hasEra: false
-});
+  hasEra = false;
+}
+
+class ChineseHelper extends ChineseBaseHelper {
+  id = 'chinese' as const;
+}
 
 // Dangi (Korean) calendar has same implementation as Chinese
-const helperDangi = ObjectAssign({}, { ...helperChinese, id: 'dangi' });
+class DangiHelper extends ChineseBaseHelper {
+  id = 'dangi' as const;
+}
 
 /**
  * Common implementation of all non-ISO calendars.
@@ -2336,7 +2314,10 @@ const helperDangi = ObjectAssign({}, { ...helperChinese, id: 'dangi' });
  * ISO and non-ISO implementations vs. code that was very different.
  */
 const nonIsoImpl: NonIsoImpl = {
-  dateFromFields(this: NonIsoImplWithHelper, fieldsParam, options, calendar) {
+  // `helper` is added when this object is spread into each calendar's
+  // implementation
+  helper: undefined as unknown as HelperBase,
+  dateFromFields(fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     // Intentionally alphabetical
@@ -2353,7 +2334,7 @@ const nonIsoImpl: NonIsoImpl = {
     cache.setObject(result);
     return result;
   },
-  yearMonthFromFields(this: NonIsoImplWithHelper, fieldsParam, options, calendar) {
+  yearMonthFromFields(fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     // Intentionally alphabetical
@@ -2370,7 +2351,6 @@ const nonIsoImpl: NonIsoImpl = {
     return result;
   },
   monthDayFromFields(
-    this: NonIsoImplWithHelper,
     fieldsParam: Params['monthDayFromFields'][0],
     options: NonNullable<Params['monthDayFromFields'][1]>,
     calendar: Temporal.CalendarProtocol
@@ -2429,7 +2409,6 @@ const nonIsoImpl: NonIsoImpl = {
     return { ...original, ...additionalFieldsCopy };
   },
   dateAdd(
-    this: NonIsoImplWithHelper,
     date: Temporal.PlainDate,
     years: number,
     months: number,
@@ -2449,12 +2428,7 @@ const nonIsoImpl: NonIsoImpl = {
     newCache.setObject(newTemporalObject);
     return newTemporalObject;
   },
-  dateUntil(
-    this: NonIsoImplWithHelper,
-    one: Temporal.PlainDate,
-    two: Temporal.PlainDate,
-    largestUnit: Temporal.DateUnit
-  ) {
+  dateUntil(one: Temporal.PlainDate, two: Temporal.PlainDate, largestUnit: Temporal.DateUnit) {
     const cacheOne = OneObjectCache.getCacheForObject(one);
     const cacheTwo = OneObjectCache.getCacheForObject(two);
     const calendarOne = this.helper.temporalToCalendarDate(one, cacheOne);
@@ -2462,34 +2436,34 @@ const nonIsoImpl: NonIsoImpl = {
     const result = this.helper.untilCalendar(calendarOne, calendarTwo, largestUnit, cacheOne);
     return result;
   },
-  year(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
+  year(date: Temporal.PlainDate) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.year;
   },
-  month(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
+  month(date: Temporal.PlainDate) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.month;
   },
-  day(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
+  day(date: Temporal.PlainDate) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.day;
   },
-  era(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
+  era(date: Temporal.PlainDate) {
     if (!this.helper.hasEra) return undefined;
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.era;
   },
-  eraYear(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
+  eraYear(date: Temporal.PlainDate) {
     if (!this.helper.hasEra) return undefined;
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.eraYear;
   },
-  monthCode(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
+  monthCode(date: Temporal.PlainDate) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.monthCode;
@@ -2497,7 +2471,7 @@ const nonIsoImpl: NonIsoImpl = {
   dayOfWeek(date: Temporal.PlainDate) {
     return impl['iso8601'].dayOfWeek(date);
   },
-  dayOfYear(this: NonIsoImplWithHelper, date: Temporal.PlainDate) {
+  dayOfYear(date: Temporal.PlainDate) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.isoToCalendarDate(date, cache);
     const startOfYear = this.helper.startOfCalendarYear(calendarDate);
@@ -2510,7 +2484,7 @@ const nonIsoImpl: NonIsoImpl = {
   daysInWeek(date: Temporal.PlainDate) {
     return impl['iso8601'].daysInWeek(date);
   },
-  daysInMonth(this: NonIsoImplWithHelper, date) {
+  daysInMonth(date) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
 
@@ -2527,7 +2501,7 @@ const nonIsoImpl: NonIsoImpl = {
     const result = this.helper.calendarDaysUntil(startOfMonthCalendar, startOfNextMonthCalendar, cache);
     return result;
   },
-  daysInYear(this: NonIsoImplWithHelper, dateParam) {
+  daysInYear(dateParam) {
     let date = dateParam;
     if (!HasSlot(date, ISO_YEAR)) date = ES.ToTemporalDate(date);
     const cache = OneObjectCache.getCacheForObject(date);
@@ -2537,13 +2511,13 @@ const nonIsoImpl: NonIsoImpl = {
     const result = this.helper.calendarDaysUntil(startOfYearCalendar, startOfNextYearCalendar, cache);
     return result;
   },
-  monthsInYear(this: NonIsoImplWithHelper, date) {
+  monthsInYear(date) {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     const result = this.helper.monthsInYear(calendarDate, cache);
     return result;
   },
-  inLeapYear(this: NonIsoImplWithHelper, dateParam) {
+  inLeapYear(dateParam) {
     let date = dateParam;
     if (!HasSlot(date, ISO_YEAR)) date = ES.ToTemporalDate(date);
     const cache = OneObjectCache.getCacheForObject(date);
@@ -2553,22 +2527,29 @@ const nonIsoImpl: NonIsoImpl = {
   }
 };
 
-impl['hebrew'] = ObjectAssign({}, nonIsoImpl, { helper: helperHebrew });
-impl['islamic'] = ObjectAssign({}, nonIsoImpl, { helper: helperIslamic });
-(['islamic-umalqura', 'islamic-tbla', 'islamic-civil', 'islamic-rgsa', 'islamicc'] as const).forEach((id) => {
-  impl[id] = ObjectAssign({}, nonIsoImpl, { helper: { ...helperIslamic, id } });
-});
-impl['persian'] = ObjectAssign({}, nonIsoImpl, { helper: helperPersian });
-impl['ethiopic'] = ObjectAssign({}, nonIsoImpl, { helper: helperEthiopic });
-impl['ethioaa'] = ObjectAssign({}, nonIsoImpl, { helper: helperEthioaa });
-impl['coptic'] = ObjectAssign({}, nonIsoImpl, { helper: helperCoptic });
-impl['chinese'] = ObjectAssign({}, nonIsoImpl, { helper: helperChinese });
-impl['dangi'] = ObjectAssign({}, nonIsoImpl, { helper: helperDangi });
-impl['roc'] = ObjectAssign({}, nonIsoImpl, { helper: helperRoc });
-impl['indian'] = ObjectAssign({}, nonIsoImpl, { helper: helperIndian });
-impl['buddhist'] = ObjectAssign({}, nonIsoImpl, { helper: helperBuddhist });
-impl['japanese'] = ObjectAssign({}, nonIsoImpl, { helper: helperJapanese });
-impl['gregory'] = ObjectAssign({}, nonIsoImpl, { helper: helperGregory });
+for (const Helper of [
+  HebrewHelper,
+  PersianHelper,
+  EthiopicHelper,
+  EthioaaHelper,
+  CopticHelper,
+  ChineseHelper,
+  DangiHelper,
+  RocHelper,
+  IndianHelper,
+  BuddhistHelper,
+  GregoryHelper,
+  JapaneseHelper,
+  IslamicHelper,
+  IslamicUmalquraHelper,
+  IslamicTblaHelper,
+  IslamicCivilHelper,
+  IslamicRgsaHelper,
+  IslamicCcHelper
+]) {
+  const helper = new Helper();
+  impl[helper.id] = { ...nonIsoImpl, ...{ helper } };
+}
 
 const BUILTIN_CALENDAR_IDS = Object.keys(impl) as BuiltinCalendarId[];
 
