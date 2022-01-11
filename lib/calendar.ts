@@ -1459,9 +1459,9 @@ const helperHebrew: HelperPerCalendarImpl = ObjectAssign({}, helperSharedImpl as
       if (monthExtra) {
         const monthInfo = this.months[monthExtra];
         if (!monthInfo) throw new RangeError(`Unrecognized month from formatToParts: ${monthExtra}`);
-        month = (this.inLeapYear({ year }) ? monthInfo.leap : monthInfo.regular) as number;
+        month = this.inLeapYear({ year }) ? monthInfo.leap : monthInfo.regular;
       }
-      // if we're getting data from legacy Date, then `month` will always be present
+      // Because we're getting data from legacy Date, then `month` will always be present
       monthCode = this.getMonthCode(year, month as number);
       const result = { year, month, day, era: undefined as string | undefined, eraYear, monthCode };
       return result;

@@ -4756,8 +4756,8 @@ export function RoundDuration(
   // First convert time units up to days, if rounding to days or higher units.
   // If rounding relative to a ZonedDateTime, then some days may not be 24h.
   // TS doesn't know that `dayLengthNs` is only used if the unit is day or
-  // larger. This makes the cast below acceptable.
-  let dayLengthNs: JSBI = undefined as unknown as JSBI;
+  // larger. We'll cast away `undefined` when it's used lower down below.
+  let dayLengthNs: JSBI | undefined;
   if (unit === 'year' || unit === 'month' || unit === 'week' || unit === 'day') {
     nanoseconds = TotalDurationNanoseconds(0, hours, minutes, seconds, milliseconds, microseconds, nanosecondsParam, 0);
     let intermediate;
@@ -4823,9 +4823,12 @@ export function RoundDuration(
       // the duration. This lets us do days-or-larger rounding using BigInt
       // math which reduces precision loss.
       oneYearDays = MathAbs(oneYearDays);
-      const divisor = JSBI.multiply(JSBI.BigInt(oneYearDays), dayLengthNs);
+      // dayLengthNs is never undefined if unit is `day` or larger.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const divisor = JSBI.multiply(JSBI.BigInt(oneYearDays), dayLengthNs!);
       nanoseconds = JSBI.add(
-        JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(years)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs)),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(years)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs!)),
         nanoseconds
       );
       const rounded = RoundNumberToIncrement(
@@ -4879,9 +4882,12 @@ export function RoundDuration(
         ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
       }
       oneMonthDays = MathAbs(oneMonthDays);
-      const divisor = JSBI.multiply(JSBI.BigInt(oneMonthDays), dayLengthNs);
+      // dayLengthNs is never undefined if unit is `day` or larger.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const divisor = JSBI.multiply(JSBI.BigInt(oneMonthDays), dayLengthNs!);
       nanoseconds = JSBI.add(
-        JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(months)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs)),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(months)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs!)),
         nanoseconds
       );
       const rounded = RoundNumberToIncrement(
@@ -4909,9 +4915,12 @@ export function RoundDuration(
         ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek));
       }
       oneWeekDays = MathAbs(oneWeekDays);
-      const divisor = JSBI.multiply(JSBI.BigInt(oneWeekDays), dayLengthNs);
+      // dayLengthNs is never undefined if unit is `day` or larger.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const divisor = JSBI.multiply(JSBI.BigInt(oneWeekDays), dayLengthNs!);
       nanoseconds = JSBI.add(
-        JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(weeks)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs)),
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(weeks)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs!)),
         nanoseconds
       );
       const rounded = RoundNumberToIncrement(
@@ -4926,7 +4935,9 @@ export function RoundDuration(
       break;
     }
     case 'day': {
-      const divisor = dayLengthNs;
+      // dayLengthNs is never undefined if unit is `day` or larger.
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+      const divisor = dayLengthNs!;
       nanoseconds = JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(days)), nanoseconds);
       const rounded = RoundNumberToIncrement(
         nanoseconds,
