@@ -38,6 +38,16 @@ const MathFloor = Math.floor;
 const ObjectEntries = Object.entries;
 const ObjectKeys = Object.keys;
 
+/**
+ * Shape of internal implementation of each built-in calendar. Note that
+ * parameter types are simpler than CalendarProtocol because the `Calendar`
+ * class performs validation and parameter normalization before handing control
+ * over to CalendarImpl.
+ *
+ * There are two instances of this interface: one for the ISO calendar and
+ * another that handles logic that's the same across all non-ISO calendars. The
+ * latter is cloned for each non-ISO calendar at the end of this file.
+ */
 interface CalendarImpl {
   year(date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
   month(date: Temporal.PlainDate | Temporal.PlainYearMonth | Temporal.PlainMonthDay): number;
@@ -86,8 +96,28 @@ interface CalendarImpl {
   mergeFields(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown>;
 }
 
-const impl = {} as Record<BuiltinCalendarId, CalendarImpl>;
+/**
+ * Implementations for each calendar. Non-ISO calendars have an extra `helper`
+ * property that provides additional per-calendar logic.
+ */
+const impl = {} as {
+  iso8601: CalendarImpl;
+} & {
+  [id in Exclude<BuiltinCalendarId, 'iso8601'>]: NonIsoImpl;
+};
 
+/**
+ * Thin wrapper around the implementation of each built-in calendar. This
+ * class's methods follow a similar pattern:
+ * 1. Validate parameters
+ * 2. Fill in default options (for methods where options are present)
+ * 3. Simplify and/or normalize parameters. For example, some methods accept
+ *    PlainDate, PlainDateTime, ZonedDateTime, etc. and these are normalized to
+ *    PlainDate.
+ * 4. Look up the ID of the built-in calendar
+ * 5. Fetch the implementation object for that ID.
+ * 6. Call the corresponding method in the implementation object.
+ */
 export class Calendar implements Temporal.Calendar {
   constructor(idParam: Params['constructor'][0]) {
     // Note: if the argument is not passed, IsBuiltinCalendar("undefined") will fail. This check
@@ -315,6 +345,11 @@ export class Calendar implements Temporal.Calendar {
 MakeIntrinsicClass(Calendar, 'Temporal.Calendar');
 DefineIntrinsic('Temporal.Calendar.from', Calendar.from);
 
+/**
+ * Implementation for the ISO 8601 calendar. This is the only calendar that's
+ * guaranteed to be supported by all ECMAScript implementations, including those
+ * without Intl (ECMA-402) support.
+ */
 impl['iso8601'] = {
   dateFromFields(fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
@@ -443,7 +478,7 @@ impl['iso8601'] = {
     if (!HasSlot(date, ISO_YEAR)) date = ES.ToTemporalDate(date);
     return ES.LeapYear(GetSlot(date, ISO_YEAR));
   }
-} as CalendarImpl;
+};
 
 // Note: Built-in calendars other than iso8601 are not part of the Temporal
 // proposal for ECMA-262. These calendars will be standardized as part of
@@ -452,19 +487,19 @@ impl['iso8601'] = {
 // calendar behavior is at least somewhat implementation-defined, so may not
 // match this polyfill's output exactly.
 //
-// Some ES implementations don't include ECMA 402. For this reason, it's helpful
+// Some ES implementations don't include ECMA-402. For this reason, it's helpful
 // to ensure a clean separation between the ISO calendar implementation which is
-// a part of ECMA 262 and the non-ISO calendar implementation which requires
-// ECMA 402.
+// a part of ECMA-262 and the non-ISO calendar implementation which requires
+// ECMA-402.
 //
 // To ensure this separation, the implementation is split. A `CalendarImpl`
-// interface powers both ISO and non-ISO calendars, and that interface is
-// extended by `NonIsoImpl` which adds a `helper` property which contains
-// non-ISO implementation.
+// interface powers both ISO and non-ISO calendars. That interface is extended
+// (as `NonIsoImpl`) with a `helper` property that implements logic that varies
+// between each non-ISO calendar.
 
 /**
- * Generic top-level implementation for all calendars. The `Calendar` class can
- * use the same code to call ISO and non-ISO implementations.
+ * Generic implementation for all calendars. The `Calendar` class can use the
+ * same code to call ISO and non-ISO implementations.
  */
 interface CalendarImpl {
   dateFromFields(
@@ -2548,7 +2583,9 @@ for (const Helper of [
   IslamicCcHelper
 ]) {
   const helper = new Helper();
-  impl[helper.id] = { ...nonIsoImpl, ...{ helper } };
+  // Clone the singleton non-ISO implementation that's the same for all
+  // calendars. The `helper` property contains per-calendar logic.
+  impl[helper.id] = { ...nonIsoImpl, helper };
 }
 
 const BUILTIN_CALENDAR_IDS = Object.keys(impl) as BuiltinCalendarId[];
