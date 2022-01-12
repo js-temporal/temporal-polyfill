@@ -1149,23 +1149,13 @@ abstract class HelperBase {
   }
   addCalendar(
     calendarDate: CalendarYMD,
-    {
-      years,
-      months,
-      weeks,
-      days
-    }: {
-      years?: number | undefined;
-      months?: number | undefined;
-      weeks?: number | undefined;
-      days?: number | undefined;
-    },
+    { years = 0, months = 0, weeks = 0, days = 0 },
     overflow: Overflow,
     cache: OneObjectCache
   ): FullCalendarDate {
     const { year, month, day } = calendarDate;
-    const addedMonths = this.addMonthsCalendar({ year: year + (years ?? 0), month, day }, months ?? 0, overflow, cache);
-    const initialDays = (days ?? 0) + (weeks ?? 0) * 7;
+    const addedMonths = this.addMonthsCalendar({ year: year + years, month, day }, months, overflow, cache);
+    const initialDays = days + weeks * 7;
     const addedDays = this.addDaysCalendar(addedMonths, initialDays, cache);
     return addedDays;
   }
