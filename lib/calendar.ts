@@ -21,7 +21,7 @@ import {
   HasSlot,
   SetSlot
 } from './slots';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import type {
   BuiltinCalendarId,
   CalendarParams as Params,

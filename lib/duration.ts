@@ -16,7 +16,7 @@ import {
   GetSlot,
   SetSlot
 } from './slots';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
 import JSBI from 'jsbi';
 

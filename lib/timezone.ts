@@ -18,7 +18,7 @@ import {
   SetSlot
 } from './slots';
 import JSBI from 'jsbi';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import type { TimeZoneParams as Params, TimeZoneReturn as Return } from './internaltypes';
 
 export class TimeZone implements Temporal.TimeZone {

@@ -1,6 +1,6 @@
 import * as ES from './ecmascript';
 import { GetIntrinsic } from './intrinsicclass';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 
 const instant: typeof Temporal.Now['instant'] = () => {
   const Instant = GetIntrinsic('%Temporal.Instant%');

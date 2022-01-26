@@ -16,7 +16,7 @@ import {
   TIME_ZONE,
   GetSlot
 } from './slots';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 

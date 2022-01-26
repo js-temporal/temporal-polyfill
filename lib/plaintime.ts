@@ -18,7 +18,7 @@ import {
   GetSlot,
   SetSlot
 } from './slots';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainTimeParams as Params, PlainTimeReturn as Return } from './internaltypes';
 
