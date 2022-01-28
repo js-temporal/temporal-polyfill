@@ -21,7 +21,7 @@ This polyfill is compatible with Node.js 14 or later.
 - [x] Optimize slow operations by reducing calls to Intl.DateTimeFormat constructor (see #7, #8, #10, #12)
 - [x] Convert to TypeScript for better maintainability
 - [x] Improve typing of sources for better maintainability
-- [ ] Migrate to JSBI for improved compile-time safety around BigInt operations.
+- [x] Migrate to JSBI for improved compile-time safety around BigInt operations.
 - [ ] Optimize performance of other slow operations
 - [ ] Release production version to NPM
 
