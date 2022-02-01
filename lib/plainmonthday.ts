@@ -1,7 +1,7 @@
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import { ISO_MONTH, ISO_DAY, ISO_YEAR, CALENDAR, GetSlot } from './slots';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { FieldRecord, PlainMonthDayParams as Params, PlainMonthDayReturn as Return } from './internaltypes';
 

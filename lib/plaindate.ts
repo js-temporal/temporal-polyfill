@@ -14,7 +14,7 @@ import {
   EPOCHNANOSECONDS,
   GetSlot
 } from './slots';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainDateParams as Params, PlainDateReturn as Return } from './internaltypes';
 

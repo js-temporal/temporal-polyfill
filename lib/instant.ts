@@ -2,7 +2,7 @@ import { DEBUG } from './debug';
 import * as ES from './ecmascript';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import { EPOCHNANOSECONDS, CreateSlots, GetSlot, SetSlot } from './slots';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { InstantParams as Params, InstantReturn as Return } from './internaltypes';
 

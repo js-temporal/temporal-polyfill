@@ -26,6 +26,7 @@
     "stripInternal": true,
     "target": "es2020",
     "outDir": "tsc-out/",
-    "types": []
+    "types": [],
+    "importsNotUsedAsValues": "error"
   }
 }

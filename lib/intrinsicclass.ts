@@ -1,5 +1,5 @@
-import JSBI from 'jsbi';
-import { Temporal } from '..';
+import type JSBI from 'jsbi';
+import type { Temporal } from '..';
 
 import { DEBUG } from './debug';
 

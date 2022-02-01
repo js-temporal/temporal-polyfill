@@ -15,8 +15,8 @@ import {
   CALENDAR,
   TIME_ZONE
 } from './slots';
-import { Temporal, Intl } from '..';
-import { DateTimeFormatParams as Params, DateTimeFormatReturn as Return } from './internaltypes';
+import type { Temporal, Intl } from '..';
+import type { DateTimeFormatParams as Params, DateTimeFormatReturn as Return } from './internaltypes';
 
 const DATE = Symbol('date');
 const YM = Symbol('ym');

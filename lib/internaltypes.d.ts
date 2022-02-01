@@ -1,4 +1,4 @@
-import { Intl, Temporal } from '..';
+import type { Intl, Temporal } from '..';
 
 export type BuiltinCalendarId =
   | 'iso8601'
