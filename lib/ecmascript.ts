@@ -753,11 +753,13 @@ export function ToLimitedTemporalDuration(
   return record;
 }
 
-export function ToTemporalOverflow(options: Temporal.AssignmentOptions) {
+export function ToTemporalOverflow(options: Temporal.AssignmentOptions | undefined) {
+  if (options === undefined) return 'constrain';
   return GetOption(options, 'overflow', ['constrain', 'reject'], 'constrain');
 }
 
-export function ToTemporalDisambiguation(options: Temporal.ToInstantOptions) {
+export function ToTemporalDisambiguation(options: Temporal.ToInstantOptions | undefined) {
+  if (options === undefined) return 'compatible';
   return GetOption(options, 'disambiguation', ['compatible', 'earlier', 'later', 'reject'], 'compatible');
 }
 
@@ -780,9 +782,10 @@ export function NegateTemporalRoundingMode(roundingMode: Temporal.RoundingMode) 
 }
 
 export function ToTemporalOffset(
-  options: Temporal.OffsetDisambiguationOptions,
+  options: Temporal.OffsetDisambiguationOptions | undefined,
   fallback: Required<Temporal.OffsetDisambiguationOptions>['offset']
 ) {
+  if (options === undefined) return fallback;
   return GetOption(options, 'offset', ['prefer', 'use', 'ignore', 'reject'], fallback);
 }
 
@@ -1290,7 +1293,7 @@ function ToTemporalZonedDateTimeFields(
 
 export function ToTemporalDate(
   itemParam: PlainDateParams['from'][0],
-  options: PlainDateParams['from'][1] = ObjectCreate(null)
+  options?: PlainDateParams['from'][1]
 ): Temporal.PlainDate {
   let item = itemParam;
   if (IsObject(item)) {
@@ -1325,7 +1328,7 @@ export function ToTemporalDate(
 export function InterpretTemporalDateTimeFields(
   calendar: Temporal.CalendarProtocol,
   fields: Pick<Temporal.PlainDateTime, Exclude<keyof Temporal.PlainDateTimeLike, 'calendar'>>,
-  options: Temporal.AssignmentOptions
+  options?: Temporal.AssignmentOptions
 ) {
   let { hour, minute, second, millisecond, microsecond, nanosecond } = ToTemporalTimeRecord(fields);
   const overflow = ToTemporalOverflow(options);
@@ -1345,10 +1348,7 @@ export function InterpretTemporalDateTimeFields(
   return { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond };
 }
 
-export function ToTemporalDateTime(
-  item: PlainDateTimeParams['from'][0],
-  options: PlainDateTimeParams['from'][1] = ObjectCreate(null)
-) {
+export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options?: PlainDateTimeParams['from'][1]) {
   let year: number,
     month: number,
     day: number,
@@ -1445,10 +1445,7 @@ export function ToTemporalInstant(item: InstantParams['from'][0]) {
   return new TemporalInstant(ns);
 }
 
-export function ToTemporalMonthDay(
-  item: PlainMonthDayParams['from'][0],
-  options: PlainMonthDayParams['from'][1] = ObjectCreate(null)
-) {
+export function ToTemporalMonthDay(item: PlainMonthDayParams['from'][0], options?: PlainMonthDayParams['from'][1]) {
   if (IsObject(item)) {
     if (IsTemporalMonthDay(item)) return item;
     let calendar: Temporal.CalendarProtocol, calendarAbsent: boolean;
@@ -1483,8 +1480,7 @@ export function ToTemporalMonthDay(
     return CreateTemporalMonthDay(month, day, calendar);
   }
   const result = CreateTemporalMonthDay(month, day, calendar, referenceISOYear);
-  const canonicalOptions = ObjectCreate(null);
-  return MonthDayFromFields(calendar, result, canonicalOptions);
+  return MonthDayFromFields(calendar, result);
 }
 
 export function ToTemporalTime(
@@ -1540,10 +1536,7 @@ export function ToTemporalTime(
   return new TemporalPlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
 }
 
-export function ToTemporalYearMonth(
-  item: PlainYearMonthParams['from'][0],
-  options: PlainYearMonthParams['from'][1] = ObjectCreate(null)
-) {
+export function ToTemporalYearMonth(item: PlainYearMonthParams['from'][0], options?: PlainYearMonthParams['from'][1]) {
   if (IsObject(item)) {
     if (IsTemporalYearMonth(item)) return item;
     const calendar = GetTemporalCalendarWithISODefault(item);
@@ -1564,8 +1557,7 @@ export function ToTemporalYearMonth(
     return CreateTemporalYearMonth(year, month, calendar);
   }
   const result = CreateTemporalYearMonth(year, month, calendar, referenceISODay);
-  const canonicalOptions = ObjectCreate(null);
-  return YearMonthFromFields(calendar, result, canonicalOptions);
+  return YearMonthFromFields(calendar, result);
 }
 
 type OffsetBehaviour = 'wall' | 'exact' | 'option';
@@ -1637,7 +1629,7 @@ export function InterpretISODateTimeOffset(
 
 export function ToTemporalZonedDateTime(
   item: ZonedDateTimeParams['from'][0],
-  options: ZonedDateTimeParams['from'][1] = ObjectCreate(null)
+  options?: ZonedDateTimeParams['from'][1]
 ) {
   let year: number,
     month: number,
@@ -3484,8 +3476,7 @@ export function UnbalanceDurationRelative(
         const dateUntil = calendar.dateUntil;
         let relativeToDateOnly: Temporal.PlainDateLike = relativeTo as Temporal.PlainDateLike;
         while (MathAbs(years) > 0) {
-          const addOptions = ObjectCreate(null);
-          const newRelativeTo = CalendarDateAdd(calendar, relativeToDateOnly, oneYear, addOptions, dateAdd);
+          const newRelativeTo = CalendarDateAdd(calendar, relativeToDateOnly, oneYear, undefined, dateAdd);
           const untilOptions = ObjectCreate(null);
           untilOptions.largestUnit = 'month';
           const untilResult = CalendarDateUntil(calendar, relativeToDateOnly, newRelativeTo, untilOptions, dateUntil);
@@ -3607,8 +3598,7 @@ export function BalanceDurationRelative(
 
       // balance months up to years
       const dateAdd = calendar.dateAdd;
-      const addOptions = ObjectCreate(null);
-      newRelativeTo = CalendarDateAdd(calendar, relativeTo as Temporal.PlainDate, oneYear, addOptions, dateAdd);
+      newRelativeTo = CalendarDateAdd(calendar, relativeTo as Temporal.PlainDate, oneYear, undefined, dateAdd);
       const dateUntil = calendar.dateUntil;
       const untilOptions = ObjectCreate(null);
       untilOptions.largestUnit = 'month';
@@ -3624,8 +3614,7 @@ export function BalanceDurationRelative(
         months -= oneYearMonths;
         years += sign;
         relativeTo = newRelativeTo;
-        const addOptions = ObjectCreate(null);
-        newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, addOptions, dateAdd);
+        newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, undefined, dateAdd);
         const untilOptions = ObjectCreate(null);
         untilOptions.largestUnit = 'month';
         untilResult = CalendarDateUntil(calendar, relativeTo, newRelativeTo, untilOptions, dateUntil);
@@ -4049,7 +4038,7 @@ export function DifferenceISODateTime(
   ns2: number,
   calendar: Temporal.CalendarProtocol,
   largestUnit: Temporal.DateTimeUnit,
-  options = ObjectCreate(null)
+  options?: Temporal.DifferenceOptions<Temporal.DateTimeUnit>
 ) {
   let y1 = y1Param;
   let mon1 = mon1Param;
@@ -4091,7 +4080,12 @@ export function DifferenceISODateTime(
   const date2 = CreateTemporalDate(y2, mon2, d2, calendar);
   const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit);
   const untilOptions = { ...options, largestUnit: dateLargestUnit };
-  let { years, months, weeks, days } = CalendarDateUntil(calendar, date1, date2, untilOptions);
+  // TODO untilOptions doesn't want to compile as it seems that smallestUnit is not clamped?
+  // Type 'SmallestUnit<DateTimeUnit> | undefined' is not assignable to type
+  //      'SmallestUnit<"year" | "month" | "day" | "week"> | undefined'.
+  // Type '"hour"' is not assignable to type
+  //      'SmallestUnit<"year" | "month" | "day" | "week"> | undefined'.ts(2345)
+  let { years, months, weeks, days } = CalendarDateUntil(calendar, date1, date2, untilOptions as any);
   // Signs of date part and time part may not agree; balance them together
   ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
     days,
@@ -4296,10 +4290,8 @@ export function AddDuration(
     const dateDuration1 = new TemporalDuration(y1, mon1, w1, d1, 0, 0, 0, 0, 0, 0);
     const dateDuration2 = new TemporalDuration(y2, mon2, w2, d2, 0, 0, 0, 0, 0, 0);
     const dateAdd = calendar.dateAdd;
-    const firstAddOptions = ObjectCreate(null);
-    const intermediate = CalendarDateAdd(calendar, relativeTo, dateDuration1, firstAddOptions, dateAdd);
-    const secondAddOptions = ObjectCreate(null);
-    const end = CalendarDateAdd(calendar, intermediate, dateDuration2, secondAddOptions, dateAdd);
+    const intermediate = CalendarDateAdd(calendar, relativeTo, dateDuration1, undefined, dateAdd);
+    const end = CalendarDateAdd(calendar, intermediate, dateDuration2, undefined, dateAdd);
 
     const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit);
     const differenceOptions = ObjectCreate(null);
@@ -4666,8 +4658,7 @@ function MoveRelativeDate(
   relativeToParam: NonNullable<ReturnType<typeof ToRelativeTemporalObject>>,
   duration: Temporal.Duration
 ) {
-  const options = ObjectCreate(null);
-  const later = CalendarDateAdd(calendar, relativeToParam, duration, options);
+  const later = CalendarDateAdd(calendar, relativeToParam, duration, undefined);
   const days = DaysUntil(relativeToParam, later);
   return { relativeTo: later, days };
 }
@@ -4903,36 +4894,26 @@ export function RoundDuration(
       // relativeTo + years, relativeTo + { years, months, weeks })
       const yearsDuration = new TemporalDuration(years);
       const dateAdd = calendar.dateAdd;
-      const firstAddOptions = ObjectCreate(null);
-      const yearsLater = CalendarDateAdd(
-        calendar,
-        relativeTo as Temporal.PlainDate,
-        yearsDuration,
-        firstAddOptions,
-        dateAdd
-      );
+      const yearsLater = CalendarDateAdd(calendar, relativeTo as Temporal.PlainDate, yearsDuration, undefined, dateAdd);
       const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
-      const secondAddOptions = ObjectCreate(null);
       const yearsMonthsWeeksLater = CalendarDateAdd(
         calendar,
         relativeTo as Temporal.PlainDate,
         yearsMonthsWeeks,
-        secondAddOptions,
+        undefined,
         dateAdd
       );
       const monthsWeeksInDays = DaysUntil(yearsLater, yearsMonthsWeeksLater);
       relativeTo = yearsLater;
       days += monthsWeeksInDays;
 
-      const thirdAddOptions = ObjectCreate(null);
-      const daysLater = CalendarDateAdd(calendar, relativeTo, { days }, thirdAddOptions, dateAdd);
+      const daysLater = CalendarDateAdd(calendar, relativeTo, { days }, undefined, dateAdd);
       const untilOptions = ObjectCreate(null);
       untilOptions.largestUnit = 'year';
       const yearsPassed = CalendarDateUntil(calendar, relativeTo, daysLater, untilOptions).years;
       years += yearsPassed;
       const oldRelativeTo = relativeTo;
-      const fourthAddOptions = ObjectCreate(null);
-      relativeTo = CalendarDateAdd(calendar, relativeTo, { years: yearsPassed }, fourthAddOptions, dateAdd);
+      relativeTo = CalendarDateAdd(calendar, relativeTo, { years: yearsPassed }, undefined, dateAdd);
       const daysPassed = DaysUntil(oldRelativeTo, relativeTo);
       days -= daysPassed;
       const oneYear = new TemporalDuration(days < 0 ? -1 : 1);
@@ -4971,21 +4952,19 @@ export function RoundDuration(
       //   { years, months }, relativeTo + { years, months, weeks })
       const yearsMonths = new TemporalDuration(years, months);
       const dateAdd = calendar.dateAdd;
-      const firstAddOptions = ObjectCreate(null);
       const yearsMonthsLater = CalendarDateAdd(
         calendar,
         relativeTo as Temporal.PlainDate,
         yearsMonths,
-        firstAddOptions,
+        undefined,
         dateAdd
       );
       const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
-      const secondAddOptions = ObjectCreate(null);
       const yearsMonthsWeeksLater = CalendarDateAdd(
         calendar,
         relativeTo as Temporal.PlainDate,
         yearsMonthsWeeks,
-        secondAddOptions,
+        undefined,
         dateAdd
       );
       const weeksInDays = DaysUntil(yearsMonthsLater, yearsMonthsWeeksLater);
