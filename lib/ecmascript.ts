@@ -2645,7 +2645,7 @@ export function TemporalMonthDayToString(
   let resultString = `${month}-${day}`;
   const calendar = GetSlot(monthDay, CALENDAR);
   const calendarID = ToString(calendar);
-  if (calendarID !== 'iso8601') {
+  if (showCalendar === 'always' || calendarID !== 'iso8601') {
     const year = ISOYearString(GetSlot(monthDay, ISO_YEAR));
     resultString = `${year}-${resultString}`;
   }
@@ -2663,7 +2663,7 @@ export function TemporalYearMonthToString(
   let resultString = `${year}-${month}`;
   const calendar = GetSlot(yearMonth, CALENDAR);
   const calendarID = ToString(calendar);
-  if (calendarID !== 'iso8601') {
+  if (showCalendar === 'always' || calendarID !== 'iso8601') {
     const day = ISODateTimePartString(GetSlot(yearMonth, ISO_DAY));
     resultString += `-${day}`;
   }
