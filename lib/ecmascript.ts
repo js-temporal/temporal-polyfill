@@ -2106,7 +2106,7 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
   if (IsObject(calendarLike)) {
     if (HasSlot(calendarLike, CALENDAR)) return GetSlot(calendarLike, CALENDAR);
     if (!('calendar' in calendarLike)) return calendarLike;
-    calendarLike = (calendarLike as unknown as { calendar: string | Temporal.CalendarProtocol }).calendar;
+    calendarLike = (calendarLike as { calendar: Temporal.CalendarProtocol | string }).calendar;
     if (IsObject(calendarLike) && !('calendar' in calendarLike)) return calendarLike;
   }
   const identifier = ToString(calendarLike);
@@ -2186,7 +2186,7 @@ export function ToTemporalTimeZone(temporalTimeZoneLikeParam: TimeZoneParams['fr
   if (IsObject(temporalTimeZoneLike)) {
     if (IsTemporalZonedDateTime(temporalTimeZoneLike)) return GetSlot(temporalTimeZoneLike, TIME_ZONE);
     if (!('timeZone' in temporalTimeZoneLike)) return temporalTimeZoneLike;
-    temporalTimeZoneLike = (temporalTimeZoneLike as unknown as { timeZone: typeof temporalTimeZoneLike }).timeZone;
+    temporalTimeZoneLike = (temporalTimeZoneLike as { timeZone: Temporal.TimeZoneProtocol | string }).timeZone;
     if (IsObject(temporalTimeZoneLike) && !('timeZone' in temporalTimeZoneLike)) {
       return temporalTimeZoneLike;
     }
