@@ -2066,8 +2066,12 @@ class GregoryHelper extends GregorianBaseHelper {
   }
   reviseIntlEra<T extends Partial<EraAndEraYear>>(calendarDate: T /*, isoDate: IsoDate*/): T {
     let { era, eraYear } = calendarDate;
-    if (era === 'bc') era = 'bce';
-    if (era === 'ad') era = 'ce';
+    // Firefox 96 introduced a bug where the `'short'` format of the era
+    // option mistakenly returns the one-letter (narrow) format instead. The
+    // code below handles either the correct or Firefox-buggy format. See
+    // https://bugzilla.mozilla.org/show_bug.cgi?id=1752253
+    if (era === 'bc' || era === 'b') era = 'bce';
+    if (era === 'ad' || era === 'a') era = 'ce';
     return { era, eraYear } as T;
   }
 }
