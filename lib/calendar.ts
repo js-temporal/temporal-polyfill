@@ -498,63 +498,6 @@ impl['iso8601'] = {
 // between each non-ISO calendar.
 
 /**
- * Generic implementation for all calendars. The `Calendar` class can use the
- * same code to call ISO and non-ISO implementations.
- */
-interface CalendarImpl {
-  dateFromFields(
-    fieldsParam: Params['dateFromFields'][0],
-    options: NonNullable<Params['dateFromFields'][1]>,
-    calendar: Temporal.Calendar
-  ): Temporal.PlainDate;
-  yearMonthFromFields(
-    fieldsParam: Params['yearMonthFromFields'][0],
-    options: NonNullable<Params['yearMonthFromFields'][1]>,
-    calendar: Temporal.Calendar
-  ): Temporal.PlainYearMonth;
-  monthDayFromFields(
-    fieldsParam: Params['monthDayFromFields'][0],
-    options: NonNullable<Params['monthDayFromFields'][1]>,
-    calendar: Temporal.Calendar
-  ): Temporal.PlainMonthDay;
-  fields(fieldsParam: string[]): Return['fields'];
-  mergeFields(fields: Params['mergeFields'][0], additionalFields: Params['mergeFields'][1]): Return['mergeFields'];
-  dateAdd(
-    date: Temporal.PlainDate,
-    years: number,
-    months: number,
-    weeks: number,
-    days: number,
-    overflow: Overflow,
-    calendar: Temporal.Calendar
-  ): Temporal.PlainDate;
-  dateUntil(
-    one: Temporal.PlainDate,
-    two: Temporal.PlainDate,
-    largestUnit: Temporal.DateUnit
-  ): {
-    years: number;
-    months: number;
-    weeks: number;
-    days: number;
-  };
-  year(date: Temporal.PlainDate): number;
-  month(date: Temporal.PlainDate): number;
-  day(date: Temporal.PlainDate): number;
-  era(date: Temporal.PlainDate): string | undefined;
-  eraYear(date: Temporal.PlainDate): number | undefined;
-  monthCode(date: Temporal.PlainDate): string;
-  dayOfWeek(date: Temporal.PlainDate): number;
-  dayOfYear(date: Temporal.PlainDate): number;
-  weekOfYear(date: Temporal.PlainDate): number;
-  daysInWeek(date: Temporal.PlainDate): number;
-  daysInMonth(date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
-  daysInYear(dateParam: Temporal.PlainDate | Temporal.PlainYearMonth): number;
-  monthsInYear(date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
-  inLeapYear(dateParam: Temporal.PlainDate | Temporal.PlainYearMonth): boolean;
-}
-
-/**
  * Interface for non-ISO calendar implementations. The `helper` is an abstract
  * base class that's extended for each non-ISO calendar, e.g. `HebrewHelper`.
  */
