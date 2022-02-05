@@ -5116,7 +5116,7 @@ export function ToBigInt(arg: unknown): JSBI {
     // eslint: no-fallthrough: false
     case 'bigint':
       try {
-        return JSBI.BigInt((prim as bigint).toString());
+        return JSBI.BigInt(prim.toString());
       } catch (e) {
         if (e instanceof Error && e.message.startsWith('Invalid integer')) throw new SyntaxError(e.message);
         throw e;
