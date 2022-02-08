@@ -25,7 +25,6 @@ import './plaindate.mjs';
 import './plaintime.mjs';
 import './plaindatetime.mjs';
 import './duration.mjs';
-import './plainyearmonth.mjs';
 import './intl.mjs';
 import './calendar.mjs';
 
