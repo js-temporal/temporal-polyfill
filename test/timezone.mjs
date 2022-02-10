@@ -217,6 +217,114 @@ describe('TimeZone', () => {
       }
     });
   });
+  const checkTime = (limitMsecs, func) => {
+    const now = Date.now();
+    func();
+    const msecs = Date.now() - now;
+    if (msecs > limitMsecs) assert(false, `Expected ${limitMsecs}ms or less, actual: ${msecs}ms`);
+  };
+  describe('Far-future transitions (time zone currently has DST)', () => {
+    const zone = new Temporal.TimeZone('America/Los_Angeles');
+    const inst = Temporal.Instant.from('+200000-01-01T00:00-08:00');
+    it('next transition is valid', () => {
+      const nextTransition = zone.getNextTransition(inst, zone);
+      const zdtTransition = nextTransition.toZonedDateTimeISO(zone);
+      equal(zdtTransition.offset, '-07:00');
+      equal(zdtTransition.month, 3);
+      equal(zdtTransition.subtract({ nanoseconds: 1 }).offset, '-08:00');
+    });
+    it('getNextTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getNextTransition(inst, zone));
+    });
+    it('previous transition is valid', () => {
+      const prevTransition = zone.getPreviousTransition(inst, zone);
+      const zdtTransition = prevTransition.toZonedDateTimeISO(zone);
+      equal(zdtTransition.offset, '-08:00');
+      equal(zdtTransition.month, 11);
+      equal(zdtTransition.subtract({ nanoseconds: 1 }).offset, '-07:00');
+    });
+    it('getPreviousTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getPreviousTransition(inst, zone));
+    });
+  });
+  describe('Far-future transitions (time zone has no DST now, but has past transitions)', () => {
+    const zone = new Temporal.TimeZone('Asia/Kolkata');
+    const inst = Temporal.Instant.from('+200000-01-01T00:00+05:30');
+    it('next transition is valid', () => {
+      const nextTransition = zone.getNextTransition(inst, zone);
+      equal(nextTransition, null);
+    });
+    it('getNextTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getNextTransition(inst, zone));
+    });
+    it('previous transition is valid', () => {
+      const prevTransition = zone.getPreviousTransition(inst, zone);
+      const zdtTransition = prevTransition.toZonedDateTimeISO(zone);
+      equal(zdtTransition.offset, '+05:30');
+      equal(prevTransition.toString(), '1945-10-14T17:30:00Z');
+      equal(zdtTransition.subtract({ nanoseconds: 1 }).offset, '+06:30');
+    });
+    it('getPreviousTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getPreviousTransition(inst, zone));
+    });
+  });
+  describe('Far-future transitions (time zone has never had any offset transitions)', () => {
+    const zone = new Temporal.TimeZone('Etc/GMT+8');
+    const inst = Temporal.Instant.from('+200000-01-01T00:00-08:00');
+    it('next transition is valid', () => {
+      const nextTransition = zone.getNextTransition(inst, zone);
+      equal(nextTransition, null);
+    });
+    it('getNextTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getNextTransition(inst, zone));
+    });
+    it('previous transition is valid', () => {
+      const prevTransition = zone.getPreviousTransition(inst, zone);
+      equal(prevTransition, null);
+    });
+    it('getPreviousTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getPreviousTransition(inst, zone));
+    });
+  });
+  describe('Far-past transitions (time zone with some transitions)', () => {
+    const zone = new Temporal.TimeZone('America/Los_Angeles');
+    const inst = Temporal.Instant.from('-200000-01-01T00:00-08:00');
+    const zdt = inst.toZonedDateTimeISO(zone);
+    it('next transition is valid', () => {
+      const nextTransition = zone.getNextTransition(inst, zone);
+      const zdtTransition = nextTransition.toZonedDateTimeISO(zone);
+      equal(zdt.offset, '-07:52:58');
+      equal(zdtTransition.toString(), '1883-11-18T12:00:00-08:00[America/Los_Angeles]');
+    });
+    it('getNextTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getNextTransition(inst, zone));
+    });
+    it('previous transition is valid', () => {
+      const prevTransition = zone.getPreviousTransition(inst, zone);
+      equal(prevTransition, null);
+    });
+    it('getPreviousTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getPreviousTransition(inst, zone));
+    });
+  });
+  describe('Far-past transitions (time zone has never had any offset transitions)', () => {
+    const zone = new Temporal.TimeZone('Etc/GMT+8');
+    const inst = Temporal.Instant.from('-200000-01-01T00:00-08:00');
+    it('next transition is valid', () => {
+      const nextTransition = zone.getNextTransition(inst, zone);
+      equal(nextTransition, null);
+    });
+    it('getNextTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getNextTransition(inst, zone));
+    });
+    it('previous transition is valid', () => {
+      const prevTransition = zone.getPreviousTransition(inst, zone);
+      equal(prevTransition, null);
+    });
+    it('getPreviousTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getPreviousTransition(inst, zone));
+    });
+  });
   describe('sub-minute offset', () => {
     const zone = new Temporal.TimeZone('Europe/Amsterdam');
     const inst = Temporal.Instant.from('1900-01-01T12:00Z');
