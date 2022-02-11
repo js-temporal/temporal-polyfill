@@ -385,27 +385,32 @@ function ParseISODateTime(isoString: string) {
   };
 }
 
-function ParseTemporalInstantString(isoString: string) {
+// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
+export function ParseTemporalInstantString(isoString: string) {
   const result = ParseISODateTime(isoString);
   if (!result.z && !result.offset) throw new RangeError('Temporal.Instant requires a time zone offset');
   return result;
 }
 
-function ParseTemporalZonedDateTimeString(isoString: string) {
+// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
+export function ParseTemporalZonedDateTimeString(isoString: string) {
   const result = ParseISODateTime(isoString);
   if (!result.ianaName) throw new RangeError('Temporal.ZonedDateTime requires a time zone ID in brackets');
   return result;
 }
 
-function ParseTemporalDateTimeString(isoString: string) {
+// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
+export function ParseTemporalDateTimeString(isoString: string) {
   return ParseISODateTime(isoString);
 }
 
-function ParseTemporalDateString(isoString: string) {
+// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
+export function ParseTemporalDateString(isoString: string) {
   return ParseISODateTime(isoString);
 }
 
-function ParseTemporalTimeString(isoString: string) {
+// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
+export function ParseTemporalTimeString(isoString: string) {
   const match = PARSE.time.exec(isoString);
   let hour, minute, second, millisecond, microsecond, nanosecond, calendar;
   if (match) {
@@ -446,7 +451,8 @@ function ParseTemporalTimeString(isoString: string) {
   throw new RangeError(`invalid ISO 8601 time-only string ${isoString}; may need a T prefix`);
 }
 
-function ParseTemporalYearMonthString(isoString: string) {
+// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
+export function ParseTemporalYearMonthString(isoString: string) {
   const match = PARSE.yearmonth.exec(isoString);
   let year, month, calendar, referenceISODay;
   if (match) {
@@ -464,7 +470,8 @@ function ParseTemporalYearMonthString(isoString: string) {
   return { year, month, calendar, referenceISODay };
 }
 
-function ParseTemporalMonthDayString(isoString: string) {
+// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
+export function ParseTemporalMonthDayString(isoString: string) {
   const match = PARSE.monthday.exec(isoString);
   let month, day, calendar, referenceISOYear;
   if (match) {
@@ -478,7 +485,8 @@ function ParseTemporalMonthDayString(isoString: string) {
   return { month, day, calendar, referenceISOYear };
 }
 
-function ParseTemporalTimeZoneString(stringIdent: string): Partial<{
+// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
+export function ParseTemporalTimeZoneString(stringIdent: string): Partial<{
   ianaName: string | undefined;
   offset: string | undefined;
   z: boolean | undefined;
@@ -505,7 +513,8 @@ function ParseTemporalTimeZoneString(stringIdent: string): Partial<{
   throw new RangeError(`Invalid time zone: ${stringIdent}`);
 }
 
-function ParseTemporalDurationString(isoString: string) {
+// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
+export function ParseTemporalDurationString(isoString: string) {
   const match = PARSE.duration.exec(isoString);
   if (!match) throw new RangeError(`invalid duration: ${isoString}`);
   if (match.slice(2).every((element) => element === undefined)) {
@@ -541,7 +550,8 @@ function ParseTemporalDurationString(isoString: string) {
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-function ParseTemporalInstant(isoString: string) {
+// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
+export function ParseTemporalInstant(isoString: string) {
   const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, offset, z } =
     ParseTemporalInstantString(isoString);
 
