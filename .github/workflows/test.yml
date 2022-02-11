@@ -80,3 +80,15 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           NODE_ENV: production
           TRANSPILE: '1'
+  test-validstrings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: use node.js v16.x
+        uses: actions/setup-node@v1
+        with:
+          node-version: 16.x
+      - run: npm ci
+      - run: |
+          npm ci
+          npm run testValidStrings
