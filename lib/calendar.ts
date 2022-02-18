@@ -92,7 +92,7 @@ interface CalendarImpl {
     two: Temporal.PlainDate,
     largestUnit: 'year' | 'month' | 'week' | 'day'
   ): { years: number; months: number; weeks: number; days: number };
-  fields(fields: Iterable<string>): Iterable<string>;
+  fields(fields: string[]): string[];
   mergeFields(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown>;
 }
 
