@@ -324,6 +324,7 @@ function ParseISODateTime(isoString: string) {
   if (!match) throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
   let yearString = match[1];
   if (yearString[0] === '\u2212') yearString = `-${yearString.slice(1)}`;
+  if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
   const year = ToInteger(yearString);
   const month = ToInteger(match[2] || match[4]);
   const day = ToInteger(match[3] || match[5]);
@@ -451,6 +452,7 @@ function ParseTemporalYearMonthString(isoString: string) {
   if (match) {
     let yearString = match[1];
     if (yearString[0] === '\u2212') yearString = `-${yearString.slice(1)}`;
+    if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
     year = ToInteger(yearString);
     month = ToInteger(match[2]);
     calendar = match[3];
