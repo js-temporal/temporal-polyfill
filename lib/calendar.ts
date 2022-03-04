@@ -141,6 +141,7 @@ export class Calendar implements Temporal.Calendar {
     }
   }
   get id(): Return['id'] {
+    if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     return ES.ToString(this);
   }
   dateFromFields(
@@ -334,6 +335,7 @@ export class Calendar implements Temporal.Calendar {
     return GetSlot(this, CALENDAR_ID);
   }
   toJSON(): Return['toJSON'] {
+    if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     return ES.ToString(this);
   }
   static from(item: Params['from'][0]): Return['from'] {
