@@ -1,3 +1,39 @@
+# 0.4.0
+
+This version roughly corresponds with all the changes made to the Temporal polyfill as of the February 2022 TC39 Plenary meeting.
+
+Breaking changes:
+
+- Use JSBI instead of big-integer for Big Integer math operations. If your codebase does not need to polyfill BigInt, consider using [the JSBI Babel plugin](https://github.com/GoogleChromeLabs/babel-plugin-transform-jsbi-to-bigint) to transpile these operations to native BigInt.
+- Reject plain date-only strings ([b733c213], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1952), [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/1986))
+- Reject '-000000' as an extended year value ([670cda6b], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1992))
+- Add missing branding checks for Calendar and Timezone classes to match spec changes ([670cda6b], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1995))
+
+Bug fixes:
+
+- Temporal class prototypes are no longer writeable ([871d28dc], see also [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/1974))
+- Throw a RangeError for invalid offset strings ([d5ada8b0], see also [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/1976))
+- Pad fractional second values correctly in Duration.prototype.toString() ([e046ccdf], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1956))
+- Support the numberless output of Hebrew months from Intl.DateTimeFormat ([b06ac47f], see also [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/2034))
+- Workaround FireFox bug with Gregory era names ([30c4d4d8], see also [proposal-temporal polyfill PR](https://github.com/tc39/proposal-temporal/pull/2033))
+
+Non-breaking changes:
+
+- Rename public ...FromFields types ([3554d7f1])
+- Add validation for hard-coded Era data in Calendar.ts ([08e84c9f])
+- Improve code in Calendar.ts to handle calendar with a constant era but a variable number of months in a year ([ef8c588b])
+- Add an optional calendar to PlainTime, PlainDateTime, and PlainMonthDay ([f8837367], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/1950))
+- Only require a year in Gregorian calendar implementations, not a full date ([02aec1c3])
+- Include `valueOf` in the Temporal.Duration type ([b1dd7eb3])
+- Expand the types allowed to be used as TimezoneLike and CalendarLike to match the spec ([9d54c646])
+- Improve worse-case performance when finding Timezone transition points by over 1000X! ([e70d6324])
+- Change Calendar.fields to return an `Array`, not an `Iterable` ([3145c6c4], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/2056))
+
+Other:
+
+- Update build dependencies ([500b4c97])
+- Run tests against Node 17 on CI ([db63e22a])
+
 # 0.3.0
 
 This version roughly corresponds with all the changes made to the Temporal polyfill as of the October 2021 TC39 Plenary meeting.
@@ -45,6 +81,25 @@ Other:
 - The polyfill's source was ported to TypeScript ([12e4d529], [ac78fd9d], [53f32e0f], [06b806c9], [66fdc765], [50b1c34b], [4724b017], [947a8a5e], [fdbf7e01], [fa60af6a], [da753f2f], [f4db8b0b], [4a38420d])
 - Document the release process for this polyfill ([c55818b6])
 
+[b733c213]: https://github.com/js-temporal/temporal-polyfill/commit/b733c213cba462f79eb9ee3a084661ea5344d9ea
+[670cda6b]: https://github.com/js-temporal/temporal-polyfill/commit/670cda6bd269db66c8ce97eb73f941b20abb92ec
+[670cda6b]: https://github.com/js-temporal/temporal-polyfill/commit/670cda6bd269db66c8ce97eb73f941b20abb92ec
+[871d28dc]: https://github.com/js-temporal/temporal-polyfill/commit/871d28dc16674b650bd2161e168bae4549ec2bd2
+[d5ada8b0]: https://github.com/js-temporal/temporal-polyfill/commit/d5ada8b01f6ebc96cac46b6fda888ee6fc64e457
+[e046ccdf]: https://github.com/js-temporal/temporal-polyfill/commit/e046ccdfd5ff4a2f048195894e279aefc64e565c
+[b06ac47f]: https://github.com/js-temporal/temporal-polyfill/commit/b06ac47f2d580f7079f13b4f82a90ebce2e469bb
+[30c4d4d8]: https://github.com/js-temporal/temporal-polyfill/commit/30c4d4d8584267989423cb09124ea175e08e9c04
+[3554d7f1]: https://github.com/js-temporal/temporal-polyfill/commit/3554d7f119d275749507dc0943f9b0823a0a3dd2
+[08e84c9f]: https://github.com/js-temporal/temporal-polyfill/commit/08e84c9f2478dc9e62bbe43737bacba762dbc9f7
+[ef8c588b]: https://github.com/js-temporal/temporal-polyfill/commit/ef8c588bc54204d584ff5f3f582f9075e7e1abf7
+[f8837367]: https://github.com/js-temporal/temporal-polyfill/commit/f88373671662b5d108311804c26f56df8df2f32c
+[02aec1c3]: https://github.com/js-temporal/temporal-polyfill/commit/02aec1c319b9081e394232ec264d515549ed2a51
+[b1dd7eb3]: https://github.com/js-temporal/temporal-polyfill/commit/b1dd7eb348d001008240102a154e94eb141f8d7d
+[9d54c646]: https://github.com/js-temporal/temporal-polyfill/commit/9d54c6464b31a71b9f28d94cc8cfae60c5765067
+[e70d6324]: https://github.com/js-temporal/temporal-polyfill/commit/e70d6324b876888c5b46e46523e1a3ef47a067ba
+[3145c6c4]: https://github.com/js-temporal/temporal-polyfill/commit/3145c6c411a36e69985419a84d4bbf9a573383c0
+[500b4c97]: https://github.com/js-temporal/temporal-polyfill/commit/500b4c97e05b225472ae61007da579a7548bfb78
+[db63e22a]: https://github.com/js-temporal/temporal-polyfill/commit/db63e22a238c3546d8c1082847ae6a19c7bc9570
 [08346dc5]: https://github.com/js-temporal/temporal-polyfill/commit/08346dc5bc809e7575eacde3200f9775fe19c378
 [f3f8a994]: https://github.com/js-temporal/temporal-polyfill/commit/f3f8a994c05603ddf1f4ebad09f191a8e847566e
 [70bd9898]: https://github.com/js-temporal/temporal-polyfill/commit/70bd98989d79da847c479b1a3ff05a6a4dc045b2
