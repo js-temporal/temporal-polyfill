@@ -1,6 +1,6 @@
 # 0.4.0
 
-This version roughly corresponds with all the changes made to the Temporal polyfill as of the February 2022 TC39 Plenary meeting.
+This version roughly corresponds with all the changes made to the Temporal polyfill as of the January 2022 TC39 Plenary meeting.
 
 Breaking changes:
 
