@@ -690,7 +690,10 @@ function DurationHandleFractions(
   return { minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-function ToTemporalDurationRecord(item: Temporal.Duration | Temporal.DurationLike) {
+function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
+  if (!IsObject(item)) {
+    return ParseTemporalDurationString(ToString(item));
+  }
   if (IsTemporalDuration(item)) {
     return {
       years: GetSlot(item, YEARS),
@@ -738,13 +741,7 @@ export function ToLimitedTemporalDuration(
   item: Temporal.DurationLike | string,
   disallowedProperties: (keyof Temporal.DurationLike)[] = []
 ) {
-  let record: Required<Temporal.DurationLike>;
-  if (IsObject(item)) {
-    record = ToTemporalDurationRecord(item);
-  } else {
-    const str = ToString(item);
-    record = ParseTemporalDurationString(str);
-  }
+  let record = ToTemporalDurationRecord(item);
   for (const property of disallowedProperties) {
     if (record[property] !== 0) {
       throw new RangeError(
@@ -1418,15 +1415,9 @@ export function ToTemporalDateTime(
 }
 
 export function ToTemporalDuration(item: DurationParams['from'][0]) {
-  let years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds;
-  if (IsObject(item)) {
-    if (IsTemporalDuration(item)) return item;
-    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-      ToTemporalDurationRecord(item));
-  } else {
-    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-      ParseTemporalDurationString(ToString(item)));
-  }
+  if (IsTemporalDuration(item)) return item;
+  let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+    ToTemporalDurationRecord(item);
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   return new TemporalDuration(
     years,
