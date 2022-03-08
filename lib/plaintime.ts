@@ -175,7 +175,7 @@ export class PlainTime implements Temporal.PlainTime {
   }
   add(temporalDurationLike: Params['add'][0]): Return['add'] {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    const duration = ES.ToLimitedTemporalDuration(temporalDurationLike);
+    const duration = ES.ToTemporalDurationRecord(temporalDurationLike);
     const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
     let hour = GetSlot(this, ISO_HOUR);
     let minute = GetSlot(this, ISO_MINUTE);
@@ -210,7 +210,7 @@ export class PlainTime implements Temporal.PlainTime {
   }
   subtract(temporalDurationLike: Params['subtract'][0]): Return['subtract'] {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    const duration = ES.ToLimitedTemporalDuration(temporalDurationLike);
+    const duration = ES.ToTemporalDurationRecord(temporalDurationLike);
     const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
     let hour = GetSlot(this, ISO_HOUR);
     let minute = GetSlot(this, ISO_MINUTE);

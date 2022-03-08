@@ -192,7 +192,7 @@ export class Duration implements Temporal.Duration {
   add(other: Params['add'][0], optionsParam: Params['add'][1] = undefined) {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-      ES.ToLimitedTemporalDuration(other);
+      ES.ToTemporalDurationRecord(other);
     const options = ES.GetOptionsObject(optionsParam);
     const relativeTo = ES.ToRelativeTemporalObject(options);
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.AddDuration(
@@ -223,7 +223,7 @@ export class Duration implements Temporal.Duration {
   subtract(other: Params['subtract'][0], optionsParam: Params['subtract'][1] = undefined) {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-      ES.ToLimitedTemporalDuration(other);
+      ES.ToTemporalDurationRecord(other);
     const options = ES.GetOptionsObject(optionsParam);
     const relativeTo = ES.ToRelativeTemporalObject(options);
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.AddDuration(
