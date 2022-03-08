@@ -547,6 +547,7 @@ export function ParseTemporalDurationString(isoString: string) {
     microseconds,
     nanoseconds
   ));
+  RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
@@ -729,6 +730,7 @@ function ToTemporalDurationRecord(item: Temporal.Duration | Temporal.DurationLik
     microseconds = 0,
     nanoseconds = 0
   } = props;
+  RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
@@ -743,8 +745,6 @@ export function ToLimitedTemporalDuration(
     const str = ToString(item);
     record = ParseTemporalDurationString(str);
   }
-  const { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = record;
-  RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   for (const property of disallowedProperties) {
     if (record[property] !== 0) {
       throw new RangeError(
