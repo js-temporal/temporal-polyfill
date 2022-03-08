@@ -103,7 +103,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   }
   add(temporalDurationLike: Params['add'][0], optionsParam: Params['add'][1] = undefined): Return['add'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    const duration = ES.ToLimitedTemporalDuration(temporalDurationLike);
+    const duration = ES.ToTemporalDurationRecord(temporalDurationLike);
     let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
     ({ days } = ES.BalanceDuration(days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, 'day'));
 
@@ -126,7 +126,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     optionsParam: Params['subtract'][1] = undefined
   ): Return['subtract'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    let duration = ES.ToLimitedTemporalDuration(temporalDurationLike);
+    let duration = ES.ToTemporalDurationRecord(temporalDurationLike);
     duration = {
       years: -duration.years,
       months: -duration.months,

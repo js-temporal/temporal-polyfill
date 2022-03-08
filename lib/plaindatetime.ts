@@ -271,7 +271,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   }
   add(temporalDurationLike: Params['add'][0], optionsParam: Params['add'][1] = undefined): Return['add'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
-    const duration = ES.ToLimitedTemporalDuration(temporalDurationLike);
+    const duration = ES.ToTemporalDurationRecord(temporalDurationLike);
     const { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
     const options = ES.GetOptionsObject(optionsParam);
     const calendar = GetSlot(this, CALENDAR);
@@ -316,7 +316,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     optionsParam: Params['subtract'][1] = undefined
   ): Return['subtract'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
-    const duration = ES.ToLimitedTemporalDuration(temporalDurationLike);
+    const duration = ES.ToTemporalDurationRecord(temporalDurationLike);
     const { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
     const options = ES.GetOptionsObject(optionsParam);
     const calendar = GetSlot(this, CALENDAR);

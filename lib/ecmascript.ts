@@ -690,7 +690,7 @@ function DurationHandleFractions(
   return { minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
+export function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
   if (!IsObject(item)) {
     return ParseTemporalDurationString(ToString(item));
   }
@@ -739,7 +739,7 @@ function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
 
 export function ToLimitedTemporalDuration(
   item: Temporal.DurationLike | string,
-  disallowedProperties: (keyof Temporal.DurationLike)[] = []
+  disallowedProperties: (keyof Temporal.DurationLike)[]
 ) {
   let record = ToTemporalDurationRecord(item);
   for (const property of disallowedProperties) {
