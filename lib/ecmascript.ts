@@ -3839,7 +3839,7 @@ function RejectYearMonthRange(year: number, month: number) {
   }
 }
 
-function RejectDuration(
+export function RejectDuration(
   y: number,
   mon: number,
   w: number,
