@@ -3897,7 +3897,6 @@ export function DifferenceISODate<Allowed extends Temporal.DateTimeUnit>(
           months = 11 * sign;
         }
         mid = AddISODate(y1, m1, d1, years, months, 0, 0, 'constrain');
-        midSign = -CompareISODate(y1, m1, d1, mid.year, mid.month, mid.day);
       }
 
       let days = 0;
