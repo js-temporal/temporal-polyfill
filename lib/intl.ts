@@ -218,6 +218,8 @@ function adjustFormatterTimeZone(
     // cause errors at runtime if passed along with
     // dateStyle or timeStyle options as per
     // https://tc39.es/proposal-intl-datetime-style/#table-datetimeformat-components.
+    // This has been fixed in newer versions of Safari:
+    // https://bugs.webkit.org/show_bug.cgi?id=231041
     delete options['weekday'];
     delete options['era'];
     delete options['year'];
