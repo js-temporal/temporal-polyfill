@@ -208,11 +208,30 @@ function adjustFormatterTimeZone(
   if (!timeZone) return formatter;
   const options = formatter.resolvedOptions();
   if (options.timeZone === timeZone) return formatter;
-  // Existing Intl isn't typed to accept Temporal-specific options, but will not
-  // break at runtime if we pass them. Also, the lib types for resolved options
-  // are less restrictive than the types for options. For example, `weekday` is
+  // Existing Intl isn't typed to accept Temporal-specific options and the lib
+  // types for resolved options are less restrictive than the types for options.
+  // For example, `weekday` is
   // `'long' | 'short' | 'narrow'` in options but `string` in resolved options.
   // TODO: investigate why, and file an issue against TS if it's a bug.
+  // https://tc39.es/proposal-intl-datetime-style/#table-datetimeformat-components
+  if ((options as any)['dateStyle'] || (options as any)['timeStyle']) {
+    // Unfortunately, Safari's resolvedOptions include parameters that will
+    // cause errors at runtime if passed along with
+    // dateStyle or timeStyle options as per
+    // https://tc39.es/proposal-intl-datetime-style/#table-datetimeformat-components.
+    delete options['weekday'];
+    delete options['era'];
+    delete options['year'];
+    delete options['month'];
+    delete options['day'];
+    delete options['hour'];
+    delete options['minute'];
+    delete options['second'];
+    delete options['timeZoneName'];
+    delete (options as any)['hourCycle'];
+    delete options['hour12'];
+    delete (options as any)['dayPeriod'];
+  }
   return new IntlDateTimeFormat(options.locale, { ...(options as globalThis.Intl.DateTimeFormatOptions), timeZone });
 }
 
