@@ -213,7 +213,6 @@ function adjustFormatterTimeZone(
   // For example, `weekday` is
   // `'long' | 'short' | 'narrow'` in options but `string` in resolved options.
   // TODO: investigate why, and file an issue against TS if it's a bug.
-  // https://tc39.es/proposal-intl-datetime-style/#table-datetimeformat-components
   if ((options as any)['dateStyle'] || (options as any)['timeStyle']) {
     // Unfortunately, Safari's resolvedOptions include parameters that will
     // cause errors at runtime if passed along with
