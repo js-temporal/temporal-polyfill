@@ -367,6 +367,7 @@ function ParseISODateTime(isoString: string) {
     }
   }
   const calendar = match[20];
+  RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   return {
     year,
     month,
