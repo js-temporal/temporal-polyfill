@@ -18,314 +18,6 @@ import * as Temporal from '@js-temporal/polyfill';
 const { Instant } = Temporal;
 
 describe('Instant', () => {
-  describe('Structure', () => {
-    it('Instant is a Function', () => {
-      equal(typeof Instant, 'function');
-    });
-    it('Instant has a prototype', () => {
-      assert(Instant.prototype);
-      equal(typeof Instant.prototype, 'object');
-    });
-    describe('Instant.prototype', () => {
-      it('Instant.prototype.equals is a Function', () => {
-        equal(typeof Instant.prototype.equals, 'function');
-      });
-      it('Instant.prototype.until is a Function', () => {
-        equal(typeof Instant.prototype.until, 'function');
-      });
-      it('Instant.prototype.since is a Function', () => {
-        equal(typeof Instant.prototype.since, 'function');
-      });
-      it('Instant.prototype.round is a Function', () => {
-        equal(typeof Instant.prototype.round, 'function');
-      });
-      it('Instant.prototype.toZonedDateTimeISO is a Function', () => {
-        equal(typeof Instant.prototype.toZonedDateTimeISO, 'function');
-      });
-      it('Instant.prototype.toZonedDateTime is a Function', () => {
-        equal(typeof Instant.prototype.toZonedDateTime, 'function');
-      });
-    });
-    it('Instant.fromEpochSeconds is a Function', () => {
-      equal(typeof Instant.fromEpochSeconds, 'function');
-    });
-    it('Instant.fromEpochMicroseconds is a Function', () => {
-      equal(typeof Instant.fromEpochMicroseconds, 'function');
-    });
-    it('Instant.fromEpochMilliseconds is a Function', () => {
-      equal(typeof Instant.fromEpochMilliseconds, 'function');
-    });
-    it('Instant.fromEpochNanoseconds is a Function', () => {
-      equal(typeof Instant.fromEpochNanoseconds, 'function');
-    });
-    it('Instant.from is a Function', () => {
-      equal(typeof Instant.from, 'function');
-    });
-    it('Instant.compare is a Function', () => {
-      equal(typeof Instant.compare, 'function');
-    });
-  });
-  describe('Construction', () => {
-    it('can construct', () => {
-      const epochMillis = Date.UTC(1976, 10, 18, 14, 23, 30, 123);
-      const epochNanos = BigInt(epochMillis) * BigInt(1e6) + BigInt(456789);
-      const instant = new Instant(epochNanos);
-      assert(instant);
-      equal(typeof instant, 'object');
-      equal(instant.epochSeconds, Math.floor(Date.UTC(1976, 10, 18, 14, 23, 30, 123) / 1e3), 'epochSeconds');
-      equal(instant.epochMilliseconds, Date.UTC(1976, 10, 18, 14, 23, 30, 123), 'epochMilliseconds');
-    });
-    it('constructs from string', () => equal(`${new Instant('0')}`, '1970-01-01T00:00:00Z'));
-    it('throws on number', () => throws(() => new Instant(1234), TypeError));
-    it('throws on string that does not convert to BigInt', () => throws(() => new Instant('abc123'), SyntaxError));
-  });
-  describe('instant.toString() works', () => {
-    it('`1976-11-18T14:23:30.123456789Z`.toString()', () => {
-      const iso = '1976-11-18T14:23:30.123456789Z';
-      const instant = Instant.from(iso);
-      assert(instant);
-      equal(`${instant}`, iso);
-    });
-    it('`1963-02-13T09:36:29.123456789Z`.toString()', () => {
-      const iso = '1963-02-13T09:36:29.123456789Z';
-      const instant = Instant.from(iso);
-      assert(instant);
-      equal(`${instant}`, iso);
-    });
-    it('optional time zone parameter UTC', () => {
-      const inst = Instant.from('1976-11-18T14:23:30.123456789Z');
-      const timeZone = Temporal.TimeZone.from('UTC');
-      equal(inst.toString({ timeZone }), '1976-11-18T14:23:30.123456789+00:00');
-    });
-    it('optional time zone parameter non-UTC', () => {
-      const inst = Instant.from('1976-11-18T14:23:30.123456789Z');
-      const timeZone = Temporal.TimeZone.from('America/New_York');
-      equal(inst.toString({ timeZone }), '1976-11-18T09:23:30.123456789-05:00');
-    });
-    it('sub-minute offset', () => {
-      const inst = Instant.from('1900-01-01T12:00Z');
-      const timeZone = Temporal.TimeZone.from('Europe/Amsterdam');
-      equal(inst.toString({ timeZone }), '1900-01-01T12:19:32+00:20');
-    });
-    const i1 = Instant.from('1976-11-18T15:23Z');
-    const i2 = Instant.from('1976-11-18T15:23:30Z');
-    const i3 = Instant.from('1976-11-18T15:23:30.1234Z');
-    it('default is to emit seconds and drop trailing zeros after the decimal', () => {
-      equal(i1.toString(), '1976-11-18T15:23:00Z');
-      equal(i2.toString(), '1976-11-18T15:23:30Z');
-      equal(i3.toString(), '1976-11-18T15:23:30.1234Z');
-    });
-    it('truncates to minute', () => {
-      [i1, i2, i3].forEach((i) => equal(i.toString({ smallestUnit: 'minute' }), '1976-11-18T15:23Z'));
-    });
-    it('other smallestUnits are aliases for fractional digits', () => {
-      equal(i3.toString({ smallestUnit: 'second' }), i3.toString({ fractionalSecondDigits: 0 }));
-      equal(i3.toString({ smallestUnit: 'millisecond' }), i3.toString({ fractionalSecondDigits: 3 }));
-      equal(i3.toString({ smallestUnit: 'microsecond' }), i3.toString({ fractionalSecondDigits: 6 }));
-      equal(i3.toString({ smallestUnit: 'nanosecond' }), i3.toString({ fractionalSecondDigits: 9 }));
-    });
-    it('throws on invalid or disallowed smallestUnit', () => {
-      ['era', 'year', 'month', 'day', 'hour', 'nonsense'].forEach((smallestUnit) =>
-        throws(() => i1.toString({ smallestUnit }), RangeError)
-      );
-    });
-    it('accepts plural units', () => {
-      equal(i3.toString({ smallestUnit: 'minutes' }), i3.toString({ smallestUnit: 'minute' }));
-      equal(i3.toString({ smallestUnit: 'seconds' }), i3.toString({ smallestUnit: 'second' }));
-      equal(i3.toString({ smallestUnit: 'milliseconds' }), i3.toString({ smallestUnit: 'millisecond' }));
-      equal(i3.toString({ smallestUnit: 'microseconds' }), i3.toString({ smallestUnit: 'microsecond' }));
-      equal(i3.toString({ smallestUnit: 'nanoseconds' }), i3.toString({ smallestUnit: 'nanosecond' }));
-    });
-    it('truncates or pads to 2 places', () => {
-      const options = { fractionalSecondDigits: 2 };
-      equal(i1.toString(options), '1976-11-18T15:23:00.00Z');
-      equal(i2.toString(options), '1976-11-18T15:23:30.00Z');
-      equal(i3.toString(options), '1976-11-18T15:23:30.12Z');
-    });
-    it('pads to 7 places', () => {
-      const options = { fractionalSecondDigits: 7 };
-      equal(i1.toString(options), '1976-11-18T15:23:00.0000000Z');
-      equal(i2.toString(options), '1976-11-18T15:23:30.0000000Z');
-      equal(i3.toString(options), '1976-11-18T15:23:30.1234000Z');
-    });
-    it('auto is the default', () => {
-      [i1, i2, i3].forEach((i) => equal(i.toString({ fractionalSecondDigits: 'auto' }), i.toString()));
-    });
-    it('throws on out of range or invalid fractionalSecondDigits', () => {
-      [-1, 10, Infinity, NaN, 'not-auto'].forEach((fractionalSecondDigits) =>
-        throws(() => i1.toString({ fractionalSecondDigits }), RangeError)
-      );
-    });
-    it('accepts and truncates fractional fractionalSecondDigits', () => {
-      equal(i3.toString({ fractionalSecondDigits: 5.5 }), '1976-11-18T15:23:30.12340Z');
-    });
-    it('smallestUnit overrides fractionalSecondDigits', () => {
-      equal(i3.toString({ smallestUnit: 'minute', fractionalSecondDigits: 9 }), '1976-11-18T15:23Z');
-    });
-    it('throws on invalid roundingMode', () => {
-      throws(() => i1.toString({ roundingMode: 'cile' }), RangeError);
-    });
-    it('rounds to nearest', () => {
-      equal(i2.toString({ smallestUnit: 'minute', roundingMode: 'halfExpand' }), '1976-11-18T15:24Z');
-      equal(i3.toString({ fractionalSecondDigits: 3, roundingMode: 'halfExpand' }), '1976-11-18T15:23:30.123Z');
-    });
-    it('rounds up', () => {
-      equal(i2.toString({ smallestUnit: 'minute', roundingMode: 'ceil' }), '1976-11-18T15:24Z');
-      equal(i3.toString({ fractionalSecondDigits: 3, roundingMode: 'ceil' }), '1976-11-18T15:23:30.124Z');
-    });
-    it('rounds down', () => {
-      ['floor', 'trunc'].forEach((roundingMode) => {
-        equal(i2.toString({ smallestUnit: 'minute', roundingMode }), '1976-11-18T15:23Z');
-        equal(i3.toString({ fractionalSecondDigits: 3, roundingMode }), '1976-11-18T15:23:30.123Z');
-      });
-    });
-    it('rounding down is towards the Big Bang, not towards 1 BCE', () => {
-      const i4 = Instant.from('-000099-12-15T12:00:00.5Z');
-      equal(i4.toString({ smallestUnit: 'second', roundingMode: 'floor' }), '-000099-12-15T12:00:00Z');
-    });
-    it('rounding can affect all units', () => {
-      const i5 = Instant.from('1999-12-31T23:59:59.999999999Z');
-      equal(i5.toString({ fractionalSecondDigits: 8, roundingMode: 'halfExpand' }), '2000-01-01T00:00:00.00000000Z');
-    });
-    it('options may only be an object or undefined', () => {
-      [null, 1, 'hello', true, Symbol('foo'), 1n].forEach((badOptions) =>
-        throws(() => i1.toString(badOptions), TypeError)
-      );
-      [{}, () => {}, undefined].forEach((options) => equal(i1.toString(options), '1976-11-18T15:23:00Z'));
-    });
-  });
-  describe('Instant.toJSON() works', () => {
-    it('`1976-11-18T15:23:30.123456789+01:00`.toJSON()', () => {
-      const inst = Instant.from('1976-11-18T15:23:30.123456789+01:00');
-      assert(inst);
-      equal(inst.toJSON(), '1976-11-18T14:23:30.123456789Z');
-    });
-    it('`1963-02-13T10:36:29.123456789+01:00`.toJSON()', () => {
-      const inst = Instant.from('1963-02-13T10:36:29.123456789+01:00');
-      assert(inst);
-      equal(inst.toJSON(), '1963-02-13T09:36:29.123456789Z');
-    });
-    it('argument is ignored', () => {
-      const inst = Instant.from('1976-11-18T15:23:30.123456789+01:00');
-      equal(inst.toJSON('+01:00'), inst.toJSON());
-    });
-  });
-  describe('Instant.epochSeconds works', () => {
-    it('post-epoch', () => {
-      const epochMs = Date.UTC(1976, 10, 18, 15, 23, 30, 123);
-      const epochNs = BigInt(epochMs) * BigInt(1e6);
-      const inst = new Instant(epochNs);
-      equal(inst.epochSeconds, Math.trunc(epochMs / 1e3));
-      equal(typeof inst.epochSeconds, 'number');
-    });
-    it('pre-epoch', () => {
-      const epochMs = Date.UTC(1963, 1, 13, 9, 36, 29, 123);
-      const epochNs = BigInt(epochMs) * BigInt(1e6);
-      const inst = new Instant(epochNs);
-      equal(inst.epochSeconds, Math.trunc(epochMs / 1e3));
-      equal(typeof inst.epochSeconds, 'number');
-    });
-  });
-  describe('Instant.fromEpochSeconds() works', () => {
-    it('1976-11-18T15:23:30', () => {
-      const epochSeconds = Math.floor(Date.UTC(1976, 10, 18, 15, 23, 30, 123) / 1e3);
-      const instant = Instant.fromEpochSeconds(epochSeconds);
-      equal(instant.epochSeconds, epochSeconds);
-    });
-    it('1963-02-13T09:36:29', () => {
-      const epochSeconds = Math.floor(Date.UTC(1963, 1, 13, 9, 36, 29, 123) / 1e3);
-      const instant = Instant.fromEpochSeconds(epochSeconds);
-      equal(instant.epochSeconds, epochSeconds);
-    });
-  });
-  describe('Instant.epochMilliseconds() works', () => {
-    it('post-epoch', () => {
-      const epochMs = Date.UTC(1976, 10, 18, 15, 23, 30, 123);
-      const epochNs = BigInt(epochMs) * BigInt(1e6);
-      const inst = new Instant(epochNs);
-      equal(inst.epochMilliseconds, epochMs);
-      equal(typeof inst.epochMilliseconds, 'number');
-    });
-    it('pre-epoch', () => {
-      const epochMs = Date.UTC(1963, 1, 13, 9, 36, 29, 123);
-      const epochNs = BigInt(epochMs) * BigInt(1e6);
-      const inst = new Instant(epochNs);
-      equal(inst.epochMilliseconds, epochMs);
-      equal(typeof inst.epochMilliseconds, 'number');
-    });
-  });
-  describe('Instant.fromEpochMilliseconds() works', () => {
-    it('1976-11-18T15:23:30.123', () => {
-      const epochMilliseconds = Date.UTC(1976, 10, 18, 15, 23, 30, 123);
-      const instant = Instant.fromEpochMilliseconds(epochMilliseconds);
-      equal(instant.epochMilliseconds, epochMilliseconds);
-    });
-    it('1963-02-13T09:36:29.123', () => {
-      const epochMilliseconds = Date.UTC(1963, 1, 13, 9, 36, 29, 123);
-      const instant = Instant.fromEpochMilliseconds(epochMilliseconds);
-      equal(instant.epochMilliseconds, epochMilliseconds);
-    });
-  });
-  describe('Instant.epochMicroseconds works', () => {
-    it('post-epoch', () => {
-      const epochMs = Date.UTC(1976, 10, 18, 15, 23, 30, 123);
-      const epochNs = BigInt(epochMs) * BigInt(1e6);
-      const inst = new Instant(epochNs);
-      equal(inst.epochMicroseconds, BigInt(epochMs) * BigInt(1e3));
-      equal(typeof inst.epochMicroseconds, 'bigint');
-    });
-    it('pre-epoch', () => {
-      const epochMs = Date.UTC(1963, 1, 13, 9, 36, 29, 123);
-      const epochNs = BigInt(epochMs) * BigInt(1e6);
-      const inst = new Instant(epochNs);
-      equal(inst.epochMicroseconds, BigInt(epochMs) * BigInt(1e3));
-      equal(typeof inst.epochMicroseconds, 'bigint');
-    });
-  });
-  describe('Instant.fromEpochMicroseconds() works', () => {
-    it('1976-11-18T15:23:30.123456', () => {
-      const epochMicroseconds = BigInt(Date.UTC(1976, 10, 18, 15, 23, 30, 123)) * BigInt(1e3) + BigInt(456);
-      const instant = Instant.fromEpochMicroseconds(epochMicroseconds);
-      equal(instant.epochMicroseconds, epochMicroseconds);
-    });
-    it('1963-02-13T09:36:29.123456', () => {
-      const epochMicroseconds = BigInt(Date.UTC(1963, 1, 13, 9, 36, 29, 123)) * BigInt(1e3) + BigInt(456);
-      const instant = Instant.fromEpochMicroseconds(epochMicroseconds);
-      equal(instant.epochMicroseconds, epochMicroseconds);
-    });
-  });
-  describe('Instant.epochNanoseconds works', () => {
-    it('post-epoch', () => {
-      const epochMs = Date.UTC(1976, 10, 18, 15, 23, 30, 123);
-      const epochNs = BigInt(epochMs) * BigInt(1e6);
-      const inst = new Instant(epochNs);
-      equal(inst.epochNanoseconds, epochNs);
-      equal(typeof inst.epochNanoseconds, 'bigint');
-    });
-    it('pre-epoch', () => {
-      const epochMs = Date.UTC(1963, 1, 13, 9, 36, 29, 123);
-      const epochNs = BigInt(epochMs) * BigInt(1e6);
-      const inst = new Instant(epochNs);
-      equal(inst.epochNanoseconds, epochNs);
-      equal(typeof inst.epochNanoseconds, 'bigint');
-    });
-  });
-  describe('Instant.fromEpochNanoseconds() works', () => {
-    it('1976-11-18T15:23:30.123456789', () => {
-      const epochNanoseconds = BigInt(Date.UTC(1976, 10, 18, 15, 23, 30, 123)) * BigInt(1e6) + BigInt(456789);
-      const instant = Instant.fromEpochNanoseconds(epochNanoseconds);
-      equal(instant.epochNanoseconds, epochNanoseconds);
-    });
-    it('1963-02-13T09:36:29.123456789', () => {
-      const epochNanoseconds = BigInt(Date.UTC(1963, 1, 13, 9, 36, 29, 123)) * BigInt(1e6) + BigInt(456789);
-      const instant = Instant.fromEpochNanoseconds(epochNanoseconds);
-      equal(instant.epochNanoseconds, epochNanoseconds);
-    });
-    it('-1n', () => {
-      const instant = Instant.fromEpochNanoseconds(-1n);
-      equal(`${instant}`, '1969-12-31T23:59:59.999999999Z');
-    });
-  });
   describe('Instant.from() works', () => {
     it('1976-11-18T15:23Z', () => {
       equal(Instant.from('1976-11-18T15:23Z').epochMilliseconds, Date.UTC(1976, 10, 18, 15, 23));
@@ -595,17 +287,8 @@ describe('Instant', () => {
       equal(nsDiff.microseconds, 0);
       equal(nsDiff.nanoseconds, 86400250250250);
     });
-    it('cannot return days, weeks, months, and years', () => {
-      throws(() => feb21.since(feb20, { largestUnit: 'days' }), RangeError);
-      throws(() => feb21.since(feb20, { largestUnit: 'weeks' }), RangeError);
-      throws(() => feb21.since(feb20, { largestUnit: 'months' }), RangeError);
-      throws(() => feb21.since(feb20, { largestUnit: 'years' }), RangeError);
-    });
-    it('options may only be an object or undefined', () => {
-      [null, 1, 'hello', true, Symbol('foo'), 1n].forEach((badOptions) =>
-        throws(() => feb21.since(feb20, badOptions), TypeError)
-      );
-      [{}, () => {}, undefined].forEach((options) => equal(`${feb21.since(feb20, options)}`, 'PT31622400S'));
+    it('options may be a function object', () => {
+      equal(`${feb21.since(feb20, () => {})}`, 'PT31622400S');
     });
     it('throws on disallowed or invalid smallestUnit', () => {
       ['era', 'year', 'month', 'week', 'day', 'years', 'months', 'weeks', 'days', 'nonsense'].forEach(
@@ -914,17 +597,8 @@ describe('Instant', () => {
       equal(nsDiff.microseconds, 0);
       equal(nsDiff.nanoseconds, 86400250250250);
     });
-    it('cannot return days, weeks, months, and years', () => {
-      throws(() => feb20.until(feb21, { largestUnit: 'days' }), RangeError);
-      throws(() => feb20.until(feb21, { largestUnit: 'weeks' }), RangeError);
-      throws(() => feb20.until(feb21, { largestUnit: 'months' }), RangeError);
-      throws(() => feb20.until(feb21, { largestUnit: 'years' }), RangeError);
-    });
-    it('options may only be an object or undefined', () => {
-      [null, 1, 'hello', true, Symbol('foo'), 1n].forEach((badOptions) =>
-        throws(() => feb20.until(feb21, badOptions), TypeError)
-      );
-      [{}, () => {}, undefined].forEach((options) => equal(`${feb20.until(feb21, options)}`, 'PT31622400S'));
+    it('options may be a function object', () => {
+      equal(`${feb20.until(feb21, () => {})}`, 'PT31622400S');
     });
     it('throws on disallowed or invalid smallestUnit', () => {
       ['era', 'year', 'month', 'week', 'day', 'years', 'months', 'weeks', 'days', 'nonsense'].forEach(
@@ -1194,13 +868,6 @@ describe('Instant', () => {
       throws(() => inst.round({}), RangeError);
       throws(() => inst.round({ roundingIncrement: 1, roundingMode: 'ceil' }), RangeError);
     });
-    it('throws on disallowed or invalid smallestUnit (object param)', () => {
-      ['era', 'year', 'month', 'week', 'day', 'years', 'months', 'weeks', 'days', 'nonsense'].forEach(
-        (smallestUnit) => {
-          throws(() => inst.round({ smallestUnit }), RangeError);
-        }
-      );
-    });
     it('throws on disallowed or invalid smallestUnit (string param)', () => {
       ['era', 'year', 'month', 'week', 'day', 'years', 'months', 'weeks', 'days', 'nonsense'].forEach(
         (smallestUnit) => {
@@ -1248,18 +915,6 @@ describe('Instant', () => {
         equal(`${inst.round({ smallestUnit, roundingMode: 'floor' })}`, expected));
       it(`truncates to ${smallestUnit}`, () =>
         equal(`${inst.round({ smallestUnit, roundingMode: 'trunc' })}`, expected));
-    });
-    it('nearest is the default', () => {
-      equal(`${inst.round({ smallestUnit: 'minute' })}`, '1976-11-18T14:24:00Z');
-      equal(`${inst.round({ smallestUnit: 'second' })}`, '1976-11-18T14:23:30Z');
-    });
-    it('rounding down is towards the Big Bang, not towards the epoch', () => {
-      const inst2 = Instant.from('1969-12-15T12:00:00.5Z');
-      const smallestUnit = 'second';
-      equal(`${inst2.round({ smallestUnit, roundingMode: 'ceil' })}`, '1969-12-15T12:00:01Z');
-      equal(`${inst2.round({ smallestUnit, roundingMode: 'floor' })}`, '1969-12-15T12:00:00Z');
-      equal(`${inst2.round({ smallestUnit, roundingMode: 'trunc' })}`, '1969-12-15T12:00:00Z');
-      equal(`${inst2.round({ smallestUnit, roundingMode: 'halfExpand' })}`, '1969-12-15T12:00:01Z');
     });
     it('rounds to an increment of hours', () => {
       equal(`${inst.round({ smallestUnit: 'hour', roundingIncrement: 4 })}`, '1976-11-18T16:00:00Z');
