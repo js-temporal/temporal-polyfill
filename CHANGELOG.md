@@ -1,3 +1,13 @@
+# 0.4.1
+
+This version is a patch version enabling polyfill compatibilit with Safari
+versions <15.1 (October 2021 and earlier).
+
+Bug fixes:
+
+ - Remove erroneous options from Safari's Intl.DateTimeFormat resolvedOptions
+   bag. The underlying bug in Safari was fixed in Safari 15.1.
+
 # 0.4.0
 
 This version roughly corresponds with all the changes made to the Temporal polyfill as of the January 2022 TC39 Plenary meeting.
