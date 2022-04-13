@@ -121,7 +121,7 @@ export class PlainDate implements Temporal.PlainDate {
 
     const options = ES.GetOptionsObject(optionsParam);
 
-    return ES.DateFromFields(calendar, fields, options);
+    return ES.CalendarDateFromFields(calendar, fields, options);
   }
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
@@ -358,14 +358,14 @@ export class PlainDate implements Temporal.PlainDate {
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
     const fields = ES.ToTemporalYearMonthFields(this, fieldNames);
-    return ES.YearMonthFromFields(calendar, fields);
+    return ES.CalendarYearMonthFromFields(calendar, fields);
   }
   toPlainMonthDay(): Return['toPlainMonthDay'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode'] as const);
     const fields = ES.ToTemporalMonthDayFields(this, fieldNames);
-    return ES.MonthDayFromFields(calendar, fields);
+    return ES.CalendarMonthDayFromFields(calendar, fields);
   }
   getISOFields(): Return['getISOFields'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');

@@ -1316,7 +1316,7 @@ export function ToTemporalDate(
     const calendar = GetTemporalCalendarWithISODefault(item);
     const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
     const fields = ToTemporalDateFields(item, fieldNames);
-    return DateFromFields(calendar, fields, options);
+    return CalendarDateFromFields(calendar, fields, options);
   }
   ToTemporalOverflow(options); // validate and ignore
   const { year, month, day, calendar, z } = ParseTemporalDateString(ToString(item));
@@ -1332,7 +1332,7 @@ export function InterpretTemporalDateTimeFields(
 ) {
   let { hour, minute, second, millisecond, microsecond, nanosecond } = ToTemporalTimeRecord(fields);
   const overflow = ToTemporalOverflow(options);
-  const date = DateFromFields(calendar, fields, options);
+  const date = CalendarDateFromFields(calendar, fields, options);
   const year = GetSlot(date, ISO_YEAR);
   const month = GetSlot(date, ISO_MONTH);
   const day = GetSlot(date, ISO_DAY);
@@ -1466,7 +1466,7 @@ export function ToTemporalMonthDay(item: PlainMonthDayParams['from'][0], options
     if (calendarAbsent && fields.month !== undefined && fields.monthCode === undefined && fields.year === undefined) {
       fields.year = 1972;
     }
-    return MonthDayFromFields(calendar, fields, options);
+    return CalendarMonthDayFromFields(calendar, fields, options);
   }
 
   ToTemporalOverflow(options); // validate and ignore
@@ -1480,7 +1480,7 @@ export function ToTemporalMonthDay(item: PlainMonthDayParams['from'][0], options
     return CreateTemporalMonthDay(month, day, calendar);
   }
   const result = CreateTemporalMonthDay(month, day, calendar, referenceISOYear);
-  return MonthDayFromFields(calendar, result);
+  return CalendarMonthDayFromFields(calendar, result);
 }
 
 export function ToTemporalTime(
@@ -1542,7 +1542,7 @@ export function ToTemporalYearMonth(item: PlainYearMonthParams['from'][0], optio
     const calendar = GetTemporalCalendarWithISODefault(item);
     const fieldNames = CalendarFields(calendar, ['month', 'monthCode', 'year'] as const);
     const fields = ToTemporalYearMonthFields(item, fieldNames);
-    return YearMonthFromFields(calendar, fields, options);
+    return CalendarYearMonthFromFields(calendar, fields, options);
   }
 
   ToTemporalOverflow(options); // validate and ignore
@@ -1557,7 +1557,7 @@ export function ToTemporalYearMonth(item: PlainYearMonthParams['from'][0], optio
     return CreateTemporalYearMonth(year, month, calendar);
   }
   const result = CreateTemporalYearMonth(year, month, calendar, referenceISODay);
-  return YearMonthFromFields(calendar, result);
+  return CalendarYearMonthFromFields(calendar, result);
 }
 
 type OffsetBehaviour = 'wall' | 'exact' | 'option';
@@ -2150,7 +2150,7 @@ export function ConsolidateCalendars(one: Temporal.CalendarProtocol, two: Tempor
   }
 }
 
-export function DateFromFields(
+export function CalendarDateFromFields(
   calendar: Temporal.CalendarProtocol,
   fields: CalendarProtocolParams['dateFromFields'][0],
   options?: Partial<CalendarProtocolParams['dateFromFields'][1]>
@@ -2160,7 +2160,7 @@ export function DateFromFields(
   return result;
 }
 
-export function YearMonthFromFields(
+export function CalendarYearMonthFromFields(
   calendar: Temporal.CalendarProtocol,
   fields: CalendarProtocolParams['yearMonthFromFields'][0],
   options?: CalendarProtocolParams['yearMonthFromFields'][1]
@@ -2170,7 +2170,7 @@ export function YearMonthFromFields(
   return result;
 }
 
-export function MonthDayFromFields(
+export function CalendarMonthDayFromFields(
   calendar: Temporal.CalendarProtocol,
   fields: CalendarProtocolParams['monthDayFromFields'][0],
   options?: CalendarProtocolParams['monthDayFromFields'][1]
