@@ -5,8 +5,8 @@ versions <15.1 (October 2021 and earlier).
 
 Bug fixes:
 
- - Remove erroneous options from Safari's Intl.DateTimeFormat resolvedOptions
-   bag. The underlying bug in Safari was fixed in Safari 15.1.
+- Remove erroneous options from Safari's Intl.DateTimeFormat resolvedOptions
+  bag. The underlying bug in Safari was fixed in Safari 15.1.
 
 # 0.4.0
 
