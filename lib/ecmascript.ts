@@ -1040,7 +1040,7 @@ export function ToRelativeTemporalObject(options: {
     calendar = ToTemporalCalendar(calendar);
     matchMinutes = true;
   }
-  if (timeZone) {
+  if (timeZone !== undefined) {
     timeZone = ToTemporalTimeZone(timeZone);
     let offsetNs = 0;
     if (offsetBehaviour === 'option') offsetNs = ParseTimeZoneOffsetString(ToString(offset));
