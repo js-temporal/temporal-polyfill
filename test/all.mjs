@@ -23,7 +23,6 @@ import './instant.mjs';
 import './zoneddatetime.mjs';
 import './plaindate.mjs';
 import './plaintime.mjs';
-import './plaindatetime.mjs';
 import './duration.mjs';
 import './intl.mjs';
 import './calendar.mjs';
