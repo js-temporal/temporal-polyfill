@@ -6,3 +6,7 @@
 # https://github.com/tc39/test262/pull/3316
 intl402/Temporal/TimeZone/from/argument-invalid.js
 
+# https://github.com/tc39/test262/pull/3518
+built-ins/Temporal/PlainYearMonth/limits.js
+built-ins/Temporal/PlainYearMonth/prototype/add/calendar-datefromfields-called.js
+built-ins/Temporal/PlainYearMonth/prototype/subtract/calendar-datefromfields-called.js
