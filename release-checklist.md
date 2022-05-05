@@ -15,5 +15,7 @@
 - Create the new release on GitHub https://github.com/js-temporal/temporal-polyfill/releases/new
   - Don't forget the `v` in the version tag, e.g. `v0.2.0`
   - Check the "This is a pre-release" box unless we've decided to release a production version
-- Run `npm publish` to publish the release to NPM
+- Run `NODE_ENV=production npm publish` to publish the release to NPM
   - This requires two-factor authentication to be active on your NPM account
+  - Setting `NODE_ENV` is important: without this, package content will not be
+    minified.
