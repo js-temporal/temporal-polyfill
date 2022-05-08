@@ -1423,7 +1423,7 @@ class HebrewHelper extends HelperBase {
         } else {
           month = monthCodeNumberPart(monthCode as string);
           // if leap month is before this one, the month index is one more than the month code
-          if (this.inLeapYear({ year }) && month > 6) month++;
+          if (this.inLeapYear({ year }) && month >= 6) month++;
           const largestMonth = this.monthsInYear({ year });
           if (month < 1 || month > largestMonth) throw new RangeError(`Invalid monthCode: ${monthCode}`);
         }
