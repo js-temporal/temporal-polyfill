@@ -1106,13 +1106,14 @@ abstract class HelperBase {
     return calendarDate;
   }
   addCalendar(
-    calendarDate: CalendarYMD,
+    calendarDate: CalendarYMD & { monthCode: string },
     { years = 0, months = 0, weeks = 0, days = 0 },
     overflow: Overflow,
     cache: OneObjectCache
   ): FullCalendarDate {
-    const { year, month, day } = calendarDate;
-    const addedMonths = this.addMonthsCalendar({ year: year + years, month, day }, months, overflow, cache);
+    const { year, day, monthCode } = calendarDate;
+    const addedYears = this.adjustCalendarDate({ year: year + years, monthCode, day }, cache);
+    const addedMonths = this.addMonthsCalendar(addedYears, months, overflow, cache);
     const initialDays = days + weeks * 7;
     const addedDays = this.addDaysCalendar(addedMonths, initialDays, cache);
     return addedDays;
@@ -1213,8 +1214,8 @@ abstract class HelperBase {
     const lastDayOfPreviousMonthCalendar = this.isoToCalendarDate(lastDayOfPreviousMonthIso, cache);
     return lastDayOfPreviousMonthCalendar.day;
   }
-  startOfCalendarYear(calendarDate: CalendarYearOnly): CalendarYMD {
-    return { year: calendarDate.year, month: 1, day: 1 };
+  startOfCalendarYear(calendarDate: CalendarYearOnly): CalendarYMD & { monthCode: string } {
+    return { year: calendarDate.year, month: 1, monthCode: 'M01', day: 1 };
   }
   startOfCalendarMonth(calendarDate: CalendarYM): CalendarYMD {
     return { year: calendarDate.year, month: calendarDate.month, day: 1 };
