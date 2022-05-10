@@ -567,13 +567,29 @@ export function ParseTemporalDurationString(isoString: string) {
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalInstant(isoString: string) {
-  const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, offset, z } =
+  let { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, offset, z } =
     ParseTemporalInstantString(isoString);
+
+  if (!z && !offset) throw new RangeError('Temporal.Instant requires a time zone offset');
+  // At least one of z or offset is defined, but TS doesn't seem to understand
+  // that we only use offset if z is not defined (and thus offset must be defined).
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  const offsetNs = z ? 0 : ParseTimeZoneOffsetString(offset!);
+  ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = BalanceISODateTime(
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond,
+    microsecond,
+    nanosecond - offsetNs
+  ));
 
   const epochNs = GetEpochFromISOParts(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   if (epochNs === null) throw new RangeError('DateTime outside of supported range');
-  const offsetNs = z ? 0 : ParseTimeZoneOffsetString(offset as string);
-  return JSBI.subtract(epochNs, JSBI.BigInt(offsetNs));
+  return epochNs;
 }
 
 export function RegulateISODate(
