@@ -22,10 +22,16 @@ import {
   SetSlot
 } from './slots';
 import type { Temporal } from '..';
-import type { BuiltinCalendarId, CalendarParams as Params, CalendarReturn as Return } from './internaltypes';
+import type {
+  BuiltinCalendarId,
+  CalendarParams as Params,
+  CalendarReturn as Return,
+  AnyTemporalKey
+} from './internaltypes';
 
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
+const ArrayPrototypeSort = Array.prototype.sort;
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
 const ArraySort = Array.prototype.sort;
 const MathAbs = Math.abs;
@@ -2283,12 +2289,9 @@ class NonIsoCalendar implements CalendarImpl {
   ): Temporal.PlainDate {
     const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
-    // Intentionally alphabetical
-    const fields = ES.PrepareTemporalFields(
-      fieldsParam,
-      ['day', 'era', 'eraYear', 'month', 'monthCode', 'year'],
-      ['day']
-    );
+    const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as readonly AnyTemporalKey[];
+    ArrayPrototypeSort.call(fieldNames);
+    const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const { year, month, day } = this.helper.calendarToIsoDate(fields, overflow, cache);
     const result = ES.CreateTemporalDate(year, month, day, calendar);
     cache.setObject(result);
@@ -2301,8 +2304,9 @@ class NonIsoCalendar implements CalendarImpl {
   ): Temporal.PlainYearMonth {
     const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
-    // Intentionally alphabetical
-    const fields = ES.PrepareTemporalFields(fieldsParam, ['era', 'eraYear', 'month', 'monthCode', 'year'], []);
+    const fieldNames = this.fields(['month', 'monthCode', 'year']) as readonly AnyTemporalKey[];
+    ArrayPrototypeSort.call(fieldNames);
+    const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const { year, month, day } = this.helper.calendarToIsoDate({ ...fields, day: 1 }, overflow, cache);
     const result = ES.CreateTemporalYearMonth(year, month, calendar, /* referenceISODay = */ day);
     cache.setObject(result);
@@ -2314,16 +2318,12 @@ class NonIsoCalendar implements CalendarImpl {
     calendar: Temporal.Calendar
   ): Temporal.PlainMonthDay {
     const overflow = ES.ToTemporalOverflow(options);
-    // All built-in calendars require `day`, but some allow other fields to be
-    // substituted for `month`. And for lunisolar calendars, either `monthCode`
-    // or `year` must be provided because `month` is ambiguous without a year or
-    // a code.
     const cache = new OneObjectCache();
-    const fields = ES.PrepareTemporalFields(
-      fieldsParam,
-      ['day', 'era', 'eraYear', 'month', 'monthCode', 'year'],
-      ['day']
-    );
+    // For lunisolar calendars, either `monthCode` or `year` must be provided
+    // because `month` is ambiguous without a year or a code.
+    const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as readonly AnyTemporalKey[];
+    ArrayPrototypeSort.call(fieldNames);
+    const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const { year, month, day } = this.helper.monthDayFromFields(fields, overflow, cache);
     // `year` is a reference year where this month/day exists in this calendar
     const result = ES.CreateTemporalMonthDay(month, day, calendar, /* referenceISOYear = */ year);

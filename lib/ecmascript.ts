@@ -40,7 +40,9 @@ import type {
   PlainDateTimeParams,
   PlainYearMonthParams,
   PrimitiveFieldsOf,
-  BuiltinCalendarId
+  BuiltinCalendarId,
+  Keys,
+  AnyTemporalKey
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
 import {
@@ -1212,11 +1214,6 @@ type FieldCompleteness = 'complete' | 'partial';
 interface FieldPrepareOptions {
   emptySourceErrorMessage: string;
 }
-
-type AnyTemporalKey = Exclude<Keys<AnyTemporalLikeType>, symbol>;
-
-// Keys is a conditionally-mapped version of keyof
-type Keys<T> = T extends Record<string, unknown> ? keyof T : never;
 
 // Returns all potential owners from all Temporal Like-types for a given union
 // of keys in K.
