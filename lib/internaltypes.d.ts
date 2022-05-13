@@ -61,6 +61,11 @@ type AllTemporalLikeTypes = [
 ];
 export type AnyTemporalLikeType = AllTemporalLikeTypes[number];
 
+// Keys is a conditionally-mapped version of keyof
+export type Keys<T> = T extends Record<string, unknown> ? keyof T : never;
+
+export type AnyTemporalKey = Exclude<Keys<AnyTemporalLikeType>, symbol>;
+
 // The properties below are all the names of Temporal properties that can be set with `with`.
 // `timeZone` and `calendar` are not on the list because they have special methods to set them.
 
