@@ -494,11 +494,7 @@ export function ParseTemporalTimeZoneString(stringIdent: string): Partial<{
 }> {
   try {
     let canonicalIdent = GetCanonicalTimeZoneIdentifier(stringIdent);
-    if (canonicalIdent) {
-      canonicalIdent = canonicalIdent.toString();
-      if (TestTimeZoneOffsetString(canonicalIdent)) return { offset: canonicalIdent };
-      return { ianaName: canonicalIdent };
-    }
+    if (canonicalIdent) return { ianaName: canonicalIdent.toString() };
   } catch {
     // fall through
   }
