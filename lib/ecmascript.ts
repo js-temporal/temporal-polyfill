@@ -160,7 +160,7 @@ export function ToIntegerThrowOnInfinity(value: unknown): number {
   return integer;
 }
 
-export function ToPositiveInteger(valueParam: unknown, property?: string): number {
+function ToPositiveInteger(valueParam: unknown, property?: string): number {
   const value = ToInteger(valueParam);
   if (!NumberIsFinite(value)) {
     throw new RangeError('infinity is out of range');
@@ -710,7 +710,7 @@ function DurationHandleFractions(
   return { minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-export function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
+function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
   if (!IsObject(item)) {
     return ParseTemporalDurationString(ToString(item));
   }
@@ -757,7 +757,7 @@ export function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-export function ToLimitedTemporalDuration(
+function ToLimitedTemporalDuration(
   item: Temporal.DurationLike | string,
   disallowedProperties: (keyof Temporal.DurationLike)[]
 ) {
@@ -4688,7 +4688,7 @@ export function AddISODate(
   return { year, month, day };
 }
 
-export function AddTime(
+function AddTime(
   hourParam: number,
   minuteParam: number,
   secondParam: number,
@@ -4727,7 +4727,7 @@ export function AddTime(
   return { deltaDays, hour, minute, second, millisecond, microsecond, nanosecond };
 }
 
-export function AddDuration(
+function AddDuration(
   y1: number,
   mon1: number,
   w1: number,
@@ -4863,15 +4863,7 @@ export function AddDuration(
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-export function AddInstant(
-  epochNanoseconds: JSBI,
-  h: number,
-  min: number,
-  s: number,
-  ms: number,
-  µs: number,
-  ns: number
-) {
+function AddInstant(epochNanoseconds: JSBI, h: number, min: number, s: number, ms: number, µs: number, ns: number) {
   let sum = ZERO;
   sum = JSBI.add(sum, JSBI.BigInt(ns));
   sum = JSBI.add(sum, JSBI.multiply(JSBI.BigInt(µs), THOUSAND));
@@ -4885,7 +4877,7 @@ export function AddInstant(
   return result;
 }
 
-export function AddDateTime(
+function AddDateTime(
   year: number,
   month: number,
   day: number,
@@ -4997,6 +4989,214 @@ export function AddZonedDateTime(
   // is required by RFC 5545.
   const instantIntermediate = BuiltinTimeZoneGetInstantFor(timeZone, dtIntermediate, 'compatible');
   return AddInstant(GetSlot(instantIntermediate, EPOCHNANOSECONDS), h, min, s, ms, µs, ns);
+}
+
+type AddSubtractOperation = 'add' | 'subtract';
+
+export function AddDurationToOrSubtractDurationFromDuration(
+  operation: AddSubtractOperation,
+  duration: Temporal.Duration,
+  other: DurationParams['add'][0],
+  optionsParam: DurationParams['add'][1]
+): Temporal.Duration {
+  const sign = operation === 'subtract' ? -1 : 1;
+  let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+    ToTemporalDurationRecord(other);
+  const options = GetOptionsObject(optionsParam);
+  const relativeTo = ToRelativeTemporalObject(options);
+  ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = AddDuration(
+    GetSlot(duration, YEARS),
+    GetSlot(duration, MONTHS),
+    GetSlot(duration, WEEKS),
+    GetSlot(duration, DAYS),
+    GetSlot(duration, HOURS),
+    GetSlot(duration, MINUTES),
+    GetSlot(duration, SECONDS),
+    GetSlot(duration, MILLISECONDS),
+    GetSlot(duration, MICROSECONDS),
+    GetSlot(duration, NANOSECONDS),
+    sign * years,
+    sign * months,
+    sign * weeks,
+    sign * days,
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds,
+    relativeTo
+  ));
+  const Duration = GetIntrinsic('%Temporal.Duration%');
+  return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+}
+
+export function AddDurationToOrSubtractDurationFromInstant(
+  operation: AddSubtractOperation,
+  instant: Temporal.Instant,
+  durationLike: InstantParams['add'][0]
+): Temporal.Instant {
+  const sign = operation === 'subtract' ? -1 : 1;
+  const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ToLimitedTemporalDuration(durationLike, [
+    'years',
+    'months',
+    'weeks',
+    'days'
+  ]);
+  const ns = AddInstant(
+    GetSlot(instant, EPOCHNANOSECONDS),
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds
+  );
+  const Instant = GetIntrinsic('%Temporal.Instant%');
+  return new Instant(ns);
+}
+
+export function AddDurationToOrSubtractDurationFromPlainDateTime(
+  operation: AddSubtractOperation,
+  dateTime: Temporal.PlainDateTime,
+  durationLike: PlainDateTimeParams['add'][0],
+  optionsParam: PlainDateTimeParams['add'][1]
+): Temporal.PlainDateTime {
+  const sign = operation === 'subtract' ? -1 : 1;
+  const { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+    ToTemporalDurationRecord(durationLike);
+  const options = GetOptionsObject(optionsParam);
+  const calendar = GetSlot(dateTime, CALENDAR);
+  const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = AddDateTime(
+    GetSlot(dateTime, ISO_YEAR),
+    GetSlot(dateTime, ISO_MONTH),
+    GetSlot(dateTime, ISO_DAY),
+    GetSlot(dateTime, ISO_HOUR),
+    GetSlot(dateTime, ISO_MINUTE),
+    GetSlot(dateTime, ISO_SECOND),
+    GetSlot(dateTime, ISO_MILLISECOND),
+    GetSlot(dateTime, ISO_MICROSECOND),
+    GetSlot(dateTime, ISO_NANOSECOND),
+    calendar,
+    sign * years,
+    sign * months,
+    sign * weeks,
+    sign * days,
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds,
+    options
+  );
+  return CreateTemporalDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar);
+}
+
+export function AddDurationToOrSubtractDurationFromPlainTime(
+  operation: AddSubtractOperation,
+  temporalTime: Temporal.PlainTime,
+  durationLike: PlainTimeParams['add'][0]
+): Temporal.PlainTime {
+  const sign = operation === 'subtract' ? -1 : 1;
+  const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ToTemporalDurationRecord(durationLike);
+  let { hour, minute, second, millisecond, microsecond, nanosecond } = AddTime(
+    GetSlot(temporalTime, ISO_HOUR),
+    GetSlot(temporalTime, ISO_MINUTE),
+    GetSlot(temporalTime, ISO_SECOND),
+    GetSlot(temporalTime, ISO_MILLISECOND),
+    GetSlot(temporalTime, ISO_MICROSECOND),
+    GetSlot(temporalTime, ISO_NANOSECOND),
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds
+  );
+  ({ hour, minute, second, millisecond, microsecond, nanosecond } = RegulateTime(
+    hour,
+    minute,
+    second,
+    millisecond,
+    microsecond,
+    nanosecond,
+    'reject'
+  ));
+  const PlainTime = GetIntrinsic('%Temporal.PlainTime%');
+  return new PlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
+}
+
+export function AddDurationToOrSubtractDurationFromPlainYearMonth(
+  operation: AddSubtractOperation,
+  yearMonth: Temporal.PlainYearMonth,
+  durationLike: PlainYearMonthParams['add'][0],
+  optionsParam: PlainYearMonthParams['add'][1]
+): Temporal.PlainYearMonth {
+  let duration = ToTemporalDurationRecord(durationLike);
+  if (operation === 'subtract') {
+    duration = {
+      years: -duration.years,
+      months: -duration.months,
+      weeks: -duration.weeks,
+      days: -duration.days,
+      hours: -duration.hours,
+      minutes: -duration.minutes,
+      seconds: -duration.seconds,
+      milliseconds: -duration.milliseconds,
+      microseconds: -duration.microseconds,
+      nanoseconds: -duration.nanoseconds
+    };
+  }
+  let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
+  ({ days } = BalanceDuration(days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, 'day'));
+
+  const options = GetOptionsObject(optionsParam);
+
+  const calendar = GetSlot(yearMonth, CALENDAR);
+  const fieldNames = CalendarFields(calendar, ['monthCode', 'year']) as ReadonlyArray<
+    keyof Temporal.PlainYearMonthLike
+  >;
+  const fields = ToTemporalYearMonthFields(yearMonth, fieldNames);
+  const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
+  const day = sign < 0 ? ToPositiveInteger(CalendarDaysInMonth(calendar, yearMonth)) : 1;
+  const startDate = CalendarDateFromFields(calendar, { ...fields, day });
+  const optionsCopy = { ...options };
+  const addedDate = CalendarDateAdd(calendar, startDate, { ...duration, days }, options);
+  const addedDateFields = ToTemporalYearMonthFields(addedDate, fieldNames);
+
+  return CalendarYearMonthFromFields(calendar, addedDateFields, optionsCopy);
+}
+
+export function AddDurationToOrSubtractDurationFromZonedDateTime(
+  operation: AddSubtractOperation,
+  zonedDateTime: Temporal.ZonedDateTime,
+  durationLike: ZonedDateTimeParams['add'][0],
+  optionsParam: ZonedDateTimeParams['add'][1]
+): Temporal.ZonedDateTime {
+  const sign = operation === 'subtract' ? -1 : 1;
+  const { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+    ToTemporalDurationRecord(durationLike);
+  const options = GetOptionsObject(optionsParam);
+  const timeZone = GetSlot(zonedDateTime, TIME_ZONE);
+  const calendar = GetSlot(zonedDateTime, CALENDAR);
+  const epochNanoseconds = AddZonedDateTime(
+    GetSlot(zonedDateTime, INSTANT),
+    timeZone,
+    calendar,
+    sign * years,
+    sign * months,
+    sign * weeks,
+    sign * days,
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds,
+    options
+  );
+  return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
 }
 
 function RoundNumberToIncrement(quantity: JSBI, increment: number, mode: Temporal.RoundingMode) {
