@@ -1129,6 +1129,15 @@ export function LargerOfTwoTemporalUnits<T1 extends Temporal.DateTimeUnit, T2 ex
   return unit1;
 }
 
+function MergeLargestUnitOption<T extends Temporal.DateTimeUnit>(
+  optionsParam: Temporal.DifferenceOptions<T> | undefined,
+  largestUnit: T
+): Temporal.DifferenceOptions<T> {
+  let options = optionsParam;
+  if (options === undefined) options = ObjectCreate(null);
+  return { ...options, largestUnit };
+}
+
 export function ToPartialRecord<B extends AnyTemporalLikeType>(bagParam: B, fieldsParam: ReadonlyArray<keyof B>) {
   // External callers are limited to specific types, but this function's
   // implementation uses generic property types. The casts below (and at the
@@ -4098,7 +4107,7 @@ function DifferenceISODateTime(
   const date1 = CreateTemporalDate(y1, mon1, d1, calendar);
   const date2 = CreateTemporalDate(y2, mon2, d2, calendar);
   const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit);
-  const untilOptions = { ...options, largestUnit: dateLargestUnit };
+  const untilOptions = MergeLargestUnitOption(options, dateLargestUnit);
   // TODO untilOptions doesn't want to compile as it seems that smallestUnit is not clamped?
   // Type 'SmallestUnit<DateTimeUnit> | undefined' is not assignable to type
   //      'SmallestUnit<"year" | "month" | "day" | "week"> | undefined'.
@@ -4274,7 +4283,7 @@ export function DifferenceTemporalPlainDate(
   if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
   const roundingIncrement = ToTemporalRoundingIncrement(options, undefined, false);
 
-  const untilOptions = { ...options, largestUnit };
+  const untilOptions = MergeLargestUnitOption(options, largestUnit);
   let { years, months, weeks, days } = CalendarDateUntil(calendar, plainDate, other, untilOptions);
 
   if (smallestUnit !== 'day' || roundingIncrement !== 1) {
@@ -4511,7 +4520,7 @@ export function DifferenceTemporalPlainYearMonth(
   const otherDate = CalendarDateFromFields(calendar, { ...otherFields, day: 1 });
   const thisDate = CalendarDateFromFields(calendar, { ...thisFields, day: 1 });
 
-  const untilOptions = { ...options, largestUnit };
+  const untilOptions = MergeLargestUnitOption(options, largestUnit);
   let { years, months } = CalendarDateUntil(calendar, thisDate, otherDate, untilOptions);
 
   if (smallestUnit !== 'month' || roundingIncrement !== 1) {
@@ -4598,7 +4607,7 @@ export function DifferenceTemporalZonedDateTime(
           'or smaller because day lengths can vary between time zones due to DST or time zone offset changes.'
       );
     }
-    const untilOptions = { ...options, largestUnit };
+    const untilOptions = MergeLargestUnitOption(options, largestUnit);
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       DifferenceZonedDateTime(ns1, ns2, timeZone, calendar, largestUnit, untilOptions));
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
