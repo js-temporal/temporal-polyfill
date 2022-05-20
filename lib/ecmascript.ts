@@ -789,7 +789,7 @@ export function ToTemporalRoundingMode(
   return GetOption(options, 'roundingMode', ['ceil', 'floor', 'trunc', 'halfExpand'], fallback);
 }
 
-export function NegateTemporalRoundingMode(roundingMode: Temporal.RoundingMode) {
+function NegateTemporalRoundingMode(roundingMode: Temporal.RoundingMode) {
   switch (roundingMode) {
     case 'ceil':
       return 'floor';
@@ -1996,7 +1996,7 @@ export function CalendarDateAdd(
   return result;
 }
 
-export function CalendarDateUntil(
+function CalendarDateUntil(
   calendar: Temporal.CalendarProtocol,
   date: CalendarProtocolParams['dateUntil'][0],
   otherDate: CalendarProtocolParams['dateUntil'][1],
@@ -3964,7 +3964,7 @@ export function DifferenceISODate<Allowed extends Temporal.DateTimeUnit>(
   }
 }
 
-export function DifferenceTime(
+function DifferenceTime(
   h1: number,
   min1: number,
   s1: number,
@@ -4015,7 +4015,7 @@ export function DifferenceTime(
   return { deltaDays, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-export function DifferenceInstant(
+function DifferenceInstant(
   ns1: JSBI,
   ns2: JSBI,
   increment: number,
@@ -4036,7 +4036,7 @@ export function DifferenceInstant(
   return { seconds, milliseconds, microseconds, nanoseconds };
 }
 
-export function DifferenceISODateTime(
+function DifferenceISODateTime(
   y1Param: number,
   mon1Param: number,
   d1Param: number,
@@ -4119,7 +4119,7 @@ export function DifferenceISODateTime(
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-export function DifferenceZonedDateTime(
+function DifferenceZonedDateTime(
   ns1: JSBI,
   ns2: JSBI,
   timeZone: Temporal.TimeZoneProtocol,
@@ -4190,6 +4190,465 @@ export function DifferenceZonedDateTime(
     'hour'
   );
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
+}
+
+type DifferenceOperation = 'since' | 'until';
+
+// TODO: does it make sense to explicitly union the other and options types for each operation?
+export function DifferenceTemporalInstant(
+  operation: DifferenceOperation,
+  instant: Temporal.Instant,
+  otherParam: InstantParams['until'][0],
+  optionsParam: InstantParams['until'][1] | undefined
+): Temporal.Duration {
+  const other = ToTemporalInstant(otherParam);
+  let first, second;
+  if (operation === 'until') {
+    [first, second] = [instant, other];
+  } else {
+    [first, second] = [other, instant];
+  }
+  const options = GetOptionsObject(optionsParam);
+  const DISALLOWED_UNITS = ['year', 'month', 'week', 'day'] as const;
+  const smallestUnit = ToSmallestTemporalUnit(options, 'nanosecond', DISALLOWED_UNITS);
+  const defaultLargestUnit = LargerOfTwoTemporalUnits('second', smallestUnit);
+  const largestUnit = ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, defaultLargestUnit);
+  ValidateTemporalUnitRange(largestUnit, smallestUnit);
+  const roundingMode = ToTemporalRoundingMode(options, 'trunc');
+  const MAX_DIFFERENCE_INCREMENTS = {
+    hour: 24,
+    minute: 60,
+    second: 60,
+    millisecond: 1000,
+    microsecond: 1000,
+    nanosecond: 1000
+  };
+  const roundingIncrement = ToTemporalRoundingIncrement(options, MAX_DIFFERENCE_INCREMENTS[smallestUnit], false);
+  const onens = GetSlot(first, EPOCHNANOSECONDS);
+  const twons = GetSlot(second, EPOCHNANOSECONDS);
+  let { seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
+    onens,
+    twons,
+    roundingIncrement,
+    smallestUnit,
+    roundingMode
+  );
+  let hours, minutes;
+  ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
+    0,
+    0,
+    0,
+    seconds,
+    milliseconds,
+    microseconds,
+    nanoseconds,
+    largestUnit
+  ));
+  const Duration = GetIntrinsic('%Temporal.Duration%');
+  return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+}
+
+export function DifferenceTemporalPlainDate(
+  operation: DifferenceOperation,
+  plainDate: Temporal.PlainDate,
+  otherParam: PlainDateParams['until'][0],
+  optionsParam: PlainDateParams['until'][1]
+): Temporal.Duration {
+  const sign = operation === 'since' ? -1 : 1;
+  const other = ToTemporalDate(otherParam);
+  const calendar = GetSlot(plainDate, CALENDAR);
+  const otherCalendar = GetSlot(other, CALENDAR);
+  const calendarId = ToString(calendar);
+  const otherCalendarId = ToString(otherCalendar);
+  if (calendarId !== otherCalendarId) {
+    throw new RangeError(`cannot compute difference between dates of ${calendarId} and ${otherCalendarId} calendars`);
+  }
+
+  const options = GetOptionsObject(optionsParam);
+  const DISALLOWED_UNITS = ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'] as const;
+  const smallestUnit = ToSmallestTemporalUnit(options, 'day', DISALLOWED_UNITS);
+  const defaultLargestUnit = LargerOfTwoTemporalUnits('day', smallestUnit);
+  const largestUnit = ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, defaultLargestUnit);
+  ValidateTemporalUnitRange(largestUnit, smallestUnit);
+  let roundingMode = ToTemporalRoundingMode(options, 'trunc');
+  if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
+  const roundingIncrement = ToTemporalRoundingIncrement(options, undefined, false);
+
+  const untilOptions = { ...options, largestUnit };
+  let { years, months, weeks, days } = CalendarDateUntil(calendar, plainDate, other, untilOptions);
+
+  if (smallestUnit !== 'day' || roundingIncrement !== 1) {
+    ({ years, months, weeks, days } = RoundDuration(
+      years,
+      months,
+      weeks,
+      days,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      roundingIncrement,
+      smallestUnit,
+      roundingMode,
+      plainDate
+    ));
+  }
+
+  const Duration = GetIntrinsic('%Temporal.Duration%');
+  return new Duration(sign * years, sign * months, sign * weeks, sign * days, 0, 0, 0, 0, 0, 0);
+}
+
+export function DifferenceTemporalPlainDateTime(
+  operation: DifferenceOperation,
+  plainDateTime: Temporal.PlainDateTime,
+  otherParam: PlainDateTimeParams['until'][0],
+  optionsParam: PlainDateTimeParams['until'][1]
+): Temporal.Duration {
+  const sign = operation === 'since' ? -1 : 1;
+  const other = ToTemporalDateTime(otherParam);
+  const calendar = GetSlot(plainDateTime, CALENDAR);
+  const otherCalendar = GetSlot(other, CALENDAR);
+  const calendarId = ToString(calendar);
+  const otherCalendarId = ToString(otherCalendar);
+  if (calendarId !== otherCalendarId) {
+    throw new RangeError(`cannot compute difference between dates of ${calendarId} and ${otherCalendarId} calendars`);
+  }
+  const options = GetOptionsObject(optionsParam);
+  const smallestUnit = ToSmallestTemporalUnit(options, 'nanosecond');
+  const defaultLargestUnit = LargerOfTwoTemporalUnits('day', smallestUnit);
+  const largestUnit = ToLargestTemporalUnit(options, 'auto', [], defaultLargestUnit);
+  ValidateTemporalUnitRange(largestUnit, smallestUnit);
+  let roundingMode = ToTemporalRoundingMode(options, 'trunc');
+  if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
+  const roundingIncrement = ToTemporalDateTimeRoundingIncrement(options, smallestUnit);
+
+  let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+    DifferenceISODateTime(
+      GetSlot(plainDateTime, ISO_YEAR),
+      GetSlot(plainDateTime, ISO_MONTH),
+      GetSlot(plainDateTime, ISO_DAY),
+      GetSlot(plainDateTime, ISO_HOUR),
+      GetSlot(plainDateTime, ISO_MINUTE),
+      GetSlot(plainDateTime, ISO_SECOND),
+      GetSlot(plainDateTime, ISO_MILLISECOND),
+      GetSlot(plainDateTime, ISO_MICROSECOND),
+      GetSlot(plainDateTime, ISO_NANOSECOND),
+      GetSlot(other, ISO_YEAR),
+      GetSlot(other, ISO_MONTH),
+      GetSlot(other, ISO_DAY),
+      GetSlot(other, ISO_HOUR),
+      GetSlot(other, ISO_MINUTE),
+      GetSlot(other, ISO_SECOND),
+      GetSlot(other, ISO_MILLISECOND),
+      GetSlot(other, ISO_MICROSECOND),
+      GetSlot(other, ISO_NANOSECOND),
+      calendar,
+      largestUnit,
+      options
+    );
+
+  const relativeTo = TemporalDateTimeToDate(plainDateTime);
+  ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
+    years,
+    months,
+    weeks,
+    days,
+    hours,
+    minutes,
+    seconds,
+    milliseconds,
+    microseconds,
+    nanoseconds,
+    roundingIncrement,
+    smallestUnit,
+    roundingMode,
+    relativeTo
+  ));
+  ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
+    days,
+    hours,
+    minutes,
+    seconds,
+    milliseconds,
+    microseconds,
+    nanoseconds,
+    largestUnit
+  ));
+
+  const Duration = GetIntrinsic('%Temporal.Duration%');
+  return new Duration(
+    sign * years,
+    sign * months,
+    sign * weeks,
+    sign * days,
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds
+  );
+}
+
+export function DifferenceTemporalPlainTime(
+  operation: DifferenceOperation,
+  plainTime: Temporal.PlainTime,
+  otherParam: PlainTimeParams['until'][0],
+  optionsParam: PlainTimeParams['until'][1]
+): Temporal.Duration {
+  const sign = operation === 'since' ? -1 : 1;
+  const other = ToTemporalTime(otherParam);
+  const options = GetOptionsObject(optionsParam);
+  const DISALLOWED_UNITS = ['year', 'month', 'week', 'day'] as const;
+  const largestUnit = ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, 'hour');
+  const smallestUnit = ToSmallestTemporalUnit(options, 'nanosecond', DISALLOWED_UNITS);
+  ValidateTemporalUnitRange(largestUnit, smallestUnit);
+  let roundingMode = ToTemporalRoundingMode(options, 'trunc');
+  if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
+  const MAX_INCREMENTS = {
+    hour: 24,
+    minute: 60,
+    second: 60,
+    millisecond: 1000,
+    microsecond: 1000,
+    nanosecond: 1000
+  };
+  const roundingIncrement = ToTemporalRoundingIncrement(options, MAX_INCREMENTS[smallestUnit], false);
+  let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceTime(
+    GetSlot(plainTime, ISO_HOUR),
+    GetSlot(plainTime, ISO_MINUTE),
+    GetSlot(plainTime, ISO_SECOND),
+    GetSlot(plainTime, ISO_MILLISECOND),
+    GetSlot(plainTime, ISO_MICROSECOND),
+    GetSlot(plainTime, ISO_NANOSECOND),
+    GetSlot(other, ISO_HOUR),
+    GetSlot(other, ISO_MINUTE),
+    GetSlot(other, ISO_SECOND),
+    GetSlot(other, ISO_MILLISECOND),
+    GetSlot(other, ISO_MICROSECOND),
+    GetSlot(other, ISO_NANOSECOND)
+  );
+  ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
+    0,
+    0,
+    0,
+    0,
+    hours,
+    minutes,
+    seconds,
+    milliseconds,
+    microseconds,
+    nanoseconds,
+    roundingIncrement,
+    smallestUnit,
+    roundingMode
+  ));
+  ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
+    0,
+    hours,
+    minutes,
+    seconds,
+    milliseconds,
+    microseconds,
+    nanoseconds,
+    largestUnit
+  ));
+  const Duration = GetIntrinsic('%Temporal.Duration%');
+  return new Duration(
+    0,
+    0,
+    0,
+    0,
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds
+  );
+}
+
+export function DifferenceTemporalPlainYearMonth(
+  operation: DifferenceOperation,
+  yearMonth: Temporal.PlainYearMonth,
+  otherParam: PlainYearMonthParams['until'][0],
+  optionsParam: PlainYearMonthParams['until'][1]
+): Temporal.Duration {
+  const sign = operation === 'since' ? -1 : 1;
+  const other = ToTemporalYearMonth(otherParam);
+  const calendar = GetSlot(yearMonth, CALENDAR);
+  const otherCalendar = GetSlot(other, CALENDAR);
+  const calendarID = ToString(calendar);
+  const otherCalendarID = ToString(otherCalendar);
+  if (calendarID !== otherCalendarID) {
+    throw new RangeError(`cannot compute difference between months of ${calendarID} and ${otherCalendarID} calendars`);
+  }
+  const options = GetOptionsObject(optionsParam);
+  const DISALLOWED_UNITS = [
+    'week',
+    'day',
+    'hour',
+    'minute',
+    'second',
+    'millisecond',
+    'microsecond',
+    'nanosecond'
+  ] as const;
+  const smallestUnit = ToSmallestTemporalUnit(options, 'month', DISALLOWED_UNITS);
+  const largestUnit = ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, 'year');
+  ValidateTemporalUnitRange(largestUnit, smallestUnit);
+  let roundingMode = ToTemporalRoundingMode(options, 'trunc');
+  if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
+  const roundingIncrement = ToTemporalRoundingIncrement(options, undefined, false);
+
+  const fieldNames = CalendarFields(calendar, ['monthCode', 'year']) as ReadonlyArray<
+    keyof Temporal.PlainYearMonthLike
+  >;
+  const otherFields = ToTemporalYearMonthFields(other, fieldNames);
+  const thisFields = ToTemporalYearMonthFields(yearMonth, fieldNames);
+  const otherDate = CalendarDateFromFields(calendar, { ...otherFields, day: 1 });
+  const thisDate = CalendarDateFromFields(calendar, { ...thisFields, day: 1 });
+
+  const untilOptions = { ...options, largestUnit };
+  let { years, months } = CalendarDateUntil(calendar, thisDate, otherDate, untilOptions);
+
+  if (smallestUnit !== 'month' || roundingIncrement !== 1) {
+    ({ years, months } = RoundDuration(
+      years,
+      months,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      roundingIncrement,
+      smallestUnit,
+      roundingMode,
+      thisDate
+    ));
+  }
+
+  const Duration = GetIntrinsic('%Temporal.Duration%');
+  return new Duration(sign * years, sign * months, 0, 0, 0, 0, 0, 0, 0, 0);
+}
+
+export function DifferenceTemporalZonedDateTime(
+  operation: DifferenceOperation,
+  zonedDateTime: Temporal.ZonedDateTime,
+  otherParam: ZonedDateTimeParams['until'][0],
+  optionsParam: ZonedDateTimeParams['until'][1]
+): Temporal.Duration {
+  const sign = operation === 'since' ? -1 : 1;
+  const other = ToTemporalZonedDateTime(otherParam);
+  const calendar = GetSlot(zonedDateTime, CALENDAR);
+  const otherCalendar = GetSlot(other, CALENDAR);
+  const calendarId = ToString(calendar);
+  const otherCalendarId = ToString(otherCalendar);
+  if (calendarId !== otherCalendarId) {
+    throw new RangeError(`cannot compute difference between dates of ${calendarId} and ${otherCalendarId} calendars`);
+  }
+  const options = GetOptionsObject(optionsParam);
+  const smallestUnit = ToSmallestTemporalUnit(options, 'nanosecond');
+  const defaultLargestUnit = LargerOfTwoTemporalUnits('hour', smallestUnit);
+  const largestUnit = ToLargestTemporalUnit(options, 'auto', [], defaultLargestUnit);
+  ValidateTemporalUnitRange(largestUnit, smallestUnit);
+  let roundingMode = ToTemporalRoundingMode(options, 'trunc');
+  if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
+  const roundingIncrement = ToTemporalDateTimeRoundingIncrement(options, smallestUnit);
+
+  const ns1 = GetSlot(zonedDateTime, EPOCHNANOSECONDS);
+  const ns2 = GetSlot(other, EPOCHNANOSECONDS);
+  let years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds;
+  if (largestUnit !== 'year' && largestUnit !== 'month' && largestUnit !== 'week' && largestUnit !== 'day') {
+    // The user is only asking for a time difference, so return difference of instants.
+    years = 0;
+    months = 0;
+    weeks = 0;
+    days = 0;
+    ({ seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
+      ns1,
+      ns2,
+      roundingIncrement,
+      // TODO this doesn't type-check as it includes >= day-size units
+      // This is probably safe as the typing for ToSmallestTemporalUnit isn't
+      // very good.
+      smallestUnit as any,
+      roundingMode
+    ));
+    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
+      0,
+      0,
+      0,
+      seconds,
+      milliseconds,
+      microseconds,
+      nanoseconds,
+      largestUnit
+    ));
+  } else {
+    const timeZone = GetSlot(zonedDateTime, TIME_ZONE);
+    if (!TimeZoneEquals(timeZone, GetSlot(other, TIME_ZONE))) {
+      throw new RangeError(
+        "When calculating difference between time zones, largestUnit must be 'hours' " +
+          'or smaller because day lengths can vary between time zones due to DST or time zone offset changes.'
+      );
+    }
+    const untilOptions = { ...options, largestUnit };
+    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+      DifferenceZonedDateTime(ns1, ns2, timeZone, calendar, largestUnit, untilOptions));
+    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
+      years,
+      months,
+      weeks,
+      days,
+      hours,
+      minutes,
+      seconds,
+      milliseconds,
+      microseconds,
+      nanoseconds,
+      roundingIncrement,
+      smallestUnit,
+      roundingMode,
+      zonedDateTime
+    ));
+    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+      AdjustRoundedDurationDays(
+        years,
+        months,
+        weeks,
+        days,
+        hours,
+        minutes,
+        seconds,
+        milliseconds,
+        microseconds,
+        nanoseconds,
+        roundingIncrement,
+        smallestUnit,
+        roundingMode,
+        zonedDateTime
+      ));
+  }
+
+  const Duration = GetIntrinsic('%Temporal.Duration%');
+  return new Duration(
+    sign * years,
+    sign * months,
+    sign * weeks,
+    sign * days,
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds
+  );
 }
 
 export function AddISODate(
