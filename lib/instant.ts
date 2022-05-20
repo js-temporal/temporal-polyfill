@@ -55,37 +55,11 @@ export class Instant implements Temporal.Instant {
 
   add(temporalDurationLike: Params['add'][0]): Return['add'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.ToLimitedTemporalDuration(
-      temporalDurationLike,
-      ['years', 'months', 'weeks', 'days']
-    );
-    const ns = ES.AddInstant(
-      GetSlot(this, EPOCHNANOSECONDS),
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds
-    );
-    return new Instant(ns);
+    return ES.AddDurationToOrSubtractDurationFromInstant('add', this, temporalDurationLike);
   }
   subtract(temporalDurationLike: Params['subtract'][0]): Return['subtract'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.ToLimitedTemporalDuration(
-      temporalDurationLike,
-      ['years', 'months', 'weeks', 'days']
-    );
-    const ns = ES.AddInstant(
-      GetSlot(this, EPOCHNANOSECONDS),
-      -hours,
-      -minutes,
-      -seconds,
-      -milliseconds,
-      -microseconds,
-      -nanoseconds
-    );
-    return new Instant(ns);
+    return ES.AddDurationToOrSubtractDurationFromInstant('subtract', this, temporalDurationLike);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
