@@ -12,6 +12,7 @@ const NumberIsFinite = Number.isFinite;
 const NumberCtor = Number;
 const StringCtor = String;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
+const ObjectAssign = Object.assign;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
 const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
@@ -1171,7 +1172,7 @@ function MergeLargestUnitOption<T extends Temporal.DateTimeUnit>(
 ): Temporal.DifferenceOptions<T> {
   let options = optionsParam;
   if (options === undefined) options = ObjectCreate(null);
-  return { ...options, largestUnit };
+  return ObjectAssign(ObjectCreate(null), options, { largestUnit });
 }
 
 type FieldCompleteness = 'complete' | 'partial';
@@ -1220,7 +1221,7 @@ export function PrepareTemporalFields<
   completeness: FieldCompleteness = 'complete',
   { emptySourceErrorMessage }: FieldPrepareOptions = { emptySourceErrorMessage: 'no supported properties found' }
 ): Owner<Exclude<FieldKeys, undefined>> {
-  const result: Partial<Record<AnyTemporalKey, string | number | undefined>> = {};
+  const result: Partial<Record<AnyTemporalKey, string | number | undefined>> = ObjectCreate(null);
   let any = false;
   for (const fieldRecord of fields) {
     // Unlike the spec, this interface supports field defaults via [field, default] pairs.
@@ -4608,10 +4609,16 @@ export function DifferenceTemporalPlainYearMonth(
   const roundingIncrement = ToTemporalRoundingIncrement(options, undefined, false);
 
   const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
-  const otherFields = ToTemporalYearMonthFields(other, fieldNames);
-  const thisFields = ToTemporalYearMonthFields(yearMonth, fieldNames);
-  const otherDate = CalendarDateFromFields(calendar, { ...otherFields, day: 1 });
-  const thisDate = CalendarDateFromFields(calendar, { ...thisFields, day: 1 });
+  // ToTemporalYearMonthFields doesn't return a type that includes 'day', as
+  // it's not part of the field list above, so we must widen the type so we
+  // can assign to 'day' later.
+  type YearMonthFieldsWithDay = ReturnType<typeof ToTemporalYearMonthFields> & { day: number };
+  const otherFields = ToTemporalYearMonthFields(other, fieldNames) as YearMonthFieldsWithDay;
+  otherFields.day = 1;
+  const thisFields = ToTemporalYearMonthFields(yearMonth, fieldNames) as YearMonthFieldsWithDay;
+  thisFields.day = 1;
+  const otherDate = CalendarDateFromFields(calendar, otherFields);
+  const thisDate = CalendarDateFromFields(calendar, thisFields);
 
   const untilOptions = MergeLargestUnitOption(options, largestUnit);
   let { years, months } = CalendarDateUntil(calendar, thisDate, otherDate, untilOptions);
@@ -5258,11 +5265,16 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
 
   const calendar = GetSlot(yearMonth, CALENDAR);
   const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
-  const fields = ToTemporalYearMonthFields(yearMonth, fieldNames);
+
+  // ToTemporalYearMonthFields doesn't return a type that includes 'day', as
+  // it's not part of the field list above, so we must widen the type so we
+  // can assign to 'day' later.
+  type YearMonthFieldsWithDay = ReturnType<typeof ToTemporalYearMonthFields> & { day: number };
+  const fields = ToTemporalYearMonthFields(yearMonth, fieldNames) as YearMonthFieldsWithDay;
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
-  const day = sign < 0 ? ToPositiveInteger(CalendarDaysInMonth(calendar, yearMonth)) : 1;
-  const startDate = CalendarDateFromFields(calendar, { ...fields, day });
-  const optionsCopy = { ...options };
+  fields.day = sign < 0 ? ToPositiveInteger(CalendarDaysInMonth(calendar, yearMonth)) : 1;
+  const startDate = CalendarDateFromFields(calendar, fields);
+  const optionsCopy = ObjectAssign(ObjectCreate(null), options);
   const addedDate = CalendarDateAdd(calendar, startDate, { ...duration, days }, options);
   const addedDateFields = ToTemporalYearMonthFields(addedDate, fieldNames);
 
