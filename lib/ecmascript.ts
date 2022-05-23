@@ -1,3 +1,4 @@
+const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
 const MathMin = Math.min;
@@ -36,7 +37,8 @@ import type {
   DurationParams,
   PlainDateTimeParams,
   PlainYearMonthParams,
-  FieldRecord
+  FieldRecord,
+  BuiltinCalendarId
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
 import {
@@ -73,7 +75,6 @@ import {
   MICROSECONDS,
   NANOSECONDS
 } from './slots';
-import { IsBuiltinCalendar } from './calendar';
 
 export const ZERO = JSBI.BigInt(0);
 const ONE = JSBI.BigInt(1);
@@ -92,6 +93,28 @@ const BEFORE_FIRST_OFFSET_TRANSITION = JSBI.multiply(JSBI.BigInt(-388152), JSBI.
 const ABOUT_TEN_YEARS_NANOS = JSBI.multiply(DAY_NANOS, JSBI.BigInt(366 * 10));
 const ABOUT_ONE_YEAR_NANOS = JSBI.multiply(DAY_NANOS, JSBI.BigInt(366 * 1));
 const TWO_WEEKS_NANOS = JSBI.multiply(DAY_NANOS, JSBI.BigInt(2 * 7));
+
+const BUILTIN_CALENDAR_IDS = [
+  'iso8601',
+  'hebrew',
+  'islamic',
+  'islamic-umalqura',
+  'islamic-tbla',
+  'islamic-civil',
+  'islamic-rgsa',
+  'islamicc',
+  'persian',
+  'ethiopic',
+  'ethioaa',
+  'coptic',
+  'chinese',
+  'dangi',
+  'roc',
+  'indian',
+  'buddhist',
+  'japanese',
+  'gregory'
+];
 
 function IsInteger(value: unknown): value is number {
   if (typeof value !== 'number' || !NumberIsFinite(value)) return false;
@@ -5291,6 +5314,10 @@ function GetNumberOption<P extends string, T extends Partial<Record<P, unknown>>
     throw new RangeError(`${property} must be between ${minimum} and ${maximum}, not ${value}`);
   }
   return MathFloor(value);
+}
+
+export function IsBuiltinCalendar(id: string): id is BuiltinCalendarId {
+  return ArrayIncludes.call(BUILTIN_CALENDAR_IDS, id);
 }
 
 const OFFSET = new RegExp(`^${PARSE.offset.source}$`);
