@@ -127,7 +127,7 @@ export class Calendar implements Temporal.Calendar {
     }
 
     const id = ES.ToString(idParam);
-    if (!IsBuiltinCalendar(id)) throw new RangeError(`invalid calendar identifier ${id}`);
+    if (!ES.IsBuiltinCalendar(id)) throw new RangeError(`invalid calendar identifier ${id}`);
     CreateSlots(this);
     SetSlot(this, CALENDAR_ID, id);
 
@@ -2539,10 +2539,4 @@ for (const Helper of [
   // Clone the singleton non-ISO implementation that's the same for all
   // calendars. The `helper` property contains per-calendar logic.
   impl[helper.id] = { ...nonIsoImpl, helper };
-}
-
-const BUILTIN_CALENDAR_IDS = Object.keys(impl) as BuiltinCalendarId[];
-
-export function IsBuiltinCalendar(id: string): id is BuiltinCalendarId {
-  return ArrayIncludes.call(BUILTIN_CALENDAR_IDS, id);
 }
