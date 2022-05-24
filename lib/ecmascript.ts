@@ -1410,6 +1410,7 @@ export function ToTemporalDate(
   if (IsObject(item)) {
     if (IsTemporalDate(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
+      ToTemporalOverflow(options); // validate and ignore
       item = BuiltinTimeZoneGetPlainDateTimeFor(
         GetSlot(item, TIME_ZONE),
         GetSlot(item, INSTANT),
@@ -1417,6 +1418,7 @@ export function ToTemporalDate(
       );
     }
     if (IsTemporalDateTime(item)) {
+      ToTemporalOverflow(options); // validate and ignore
       return CreateTemporalDate(
         GetSlot(item, ISO_YEAR),
         GetSlot(item, ISO_MONTH),
@@ -1473,6 +1475,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
   if (IsObject(item)) {
     if (IsTemporalDateTime(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
+      ToTemporalOverflow(options); // validate and ignore
       return BuiltinTimeZoneGetPlainDateTimeFor(
         GetSlot(item, TIME_ZONE),
         GetSlot(item, INSTANT),
@@ -1480,6 +1483,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
       );
     }
     if (IsTemporalDate(item)) {
+      ToTemporalOverflow(options); // validate and ignore
       return CreateTemporalDateTime(
         GetSlot(item, ISO_YEAR),
         GetSlot(item, ISO_MONTH),
