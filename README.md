@@ -74,6 +74,8 @@ This polyfill ships ES2020 code for both CJS and ESM bundles - if your
 environment does not support ES2020, then please make sure to transpile the
 content of this package along with the rest of your code.
 
+This polyfill uses [JSBI](https://github.com/GoogleChromeLabs/jsbi) to enable backwards-compatibility for environments that don't support native bigints. If your project only ever runs in environments that do support native bigints (see [caniuse data](https://caniuse.com/bigint)), we highly recommend configuring the [JSBI Babel plugin](https://github.com/GoogleChromeLabs/babel-plugin-transform-jsbi-to-bigint) that translates JSBI calls to their native bigint equivalent, improving code-size and performance. We are exploring ways to provide separate builds for these use-cases in [#155](https://github.com/js-temporal/temporal-polyfill/issues/155).
+
 ## Contributing / Help Wanted
 
 We're eagerly welcoming to contributors who want to help build and maintain this polyfill.
