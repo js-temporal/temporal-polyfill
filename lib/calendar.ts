@@ -36,8 +36,8 @@ const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
 const ArraySort = Array.prototype.sort;
 const MathAbs = Math.abs;
 const MathFloor = Math.floor;
+const ObjectCreate = Object.create;
 const ObjectEntries = Object.entries;
-const ObjectKeys = Object.keys;
 
 /**
  * Shape of internal implementation of each built-in calendar. Note that
@@ -384,21 +384,18 @@ impl['iso8601'] = {
   fields(fields) {
     return fields;
   },
-  mergeFields(fields, additionalFields) {
-    const merged: typeof fields = {};
-    for (const nextKey of ObjectKeys(fields)) {
-      if (nextKey === 'month' || nextKey === 'monthCode') continue;
-      merged[nextKey] = fields[nextKey];
+  mergeFields(fieldsParam, additionalFieldsParam) {
+    const fields = ES.ToObject(fieldsParam);
+    const additionalFields = ES.ToObject(additionalFieldsParam);
+    const merged = ObjectCreate(null);
+    ES.CopyDataProperties(merged, fields, [], [undefined]);
+    const additionalFieldsCopy = ObjectCreate(null);
+    ES.CopyDataProperties(additionalFieldsCopy, additionalFields, [], [undefined]);
+    if ('month' in additionalFieldsCopy || 'monthCode' in additionalFieldsCopy) {
+      delete merged.month;
+      delete merged.monthCode;
     }
-    const newKeys = ObjectKeys(additionalFields);
-    for (const nextKey of newKeys) {
-      merged[nextKey] = additionalFields[nextKey];
-    }
-    if (!ArrayIncludes.call(newKeys, 'month') && !ArrayIncludes.call(newKeys, 'monthCode')) {
-      const { month, monthCode } = fields;
-      if (month !== undefined) merged.month = month;
-      if (monthCode !== undefined) merged.monthCode = monthCode;
-    }
+    ES.CopyDataProperties(merged, additionalFieldsCopy, []);
     return merged;
   },
   dateAdd(date, years, months, weeks, days, overflow, calendar) {
@@ -2338,9 +2335,17 @@ class NonIsoCalendar implements CalendarImpl {
     if (ArrayIncludes.call(fields, 'year')) fields = [...fields, 'era', 'eraYear'];
     return fields;
   }
-  mergeFields(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown> {
-    const fieldsCopy = { ...fields };
-    const additionalFieldsCopy = { ...additionalFields };
+  mergeFields(
+    fieldsParam: Record<string, unknown>,
+    additionalFieldsParam: Record<string, unknown>
+  ): Record<string, unknown> {
+    const fields = ES.ToObject(fieldsParam);
+    const additionalFields = ES.ToObject(additionalFieldsParam);
+    const fieldsCopy = {} as typeof fieldsParam;
+    ES.CopyDataProperties(fieldsCopy, fields, [], [undefined]);
+    const additionalFieldsCopy = {} as typeof additionalFieldsParam;
+    ES.CopyDataProperties(additionalFieldsCopy, additionalFields, [], [undefined]);
+
     // era and eraYear are intentionally unused
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { month, monthCode, year, era, eraYear, ...original } = fieldsCopy;
