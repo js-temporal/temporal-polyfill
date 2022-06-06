@@ -329,6 +329,21 @@ function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier: string) {
   return instance;
 }
 
+// Adapted from https://github.com/ljharb/es-abstract/blob/main/2022/CopyDataProperties.js
+// but simplified (e.g. removed assertions) for this polyfill to reduce bundle size.
+function CopyDataProperties<K extends string, T extends Record<K, unknown>>(target: T, source: T, excludedItems: K[]) {
+  if (typeof source === 'undefined' || source === null) return;
+
+  const keys = Object.getOwnPropertyNames(source) as (keyof T)[];
+  for (const nextKey of keys) {
+    const excluded = excludedItems.some((e) => Object.is(e, nextKey));
+    const enumerable = Object.prototype.propertyIsEnumerable.call(source, nextKey);
+    if (!excluded && enumerable) {
+      target[nextKey] = source[nextKey];
+    }
+  }
+}
+
 export function IsTemporalInstant(item: unknown): item is Temporal.Instant {
   return HasSlot(item, EPOCHNANOSECONDS) && !HasSlot(item, TIME_ZONE, CALENDAR);
 }
@@ -1216,15 +1231,6 @@ export function LargerOfTwoTemporalUnits<T1 extends Temporal.DateTimeUnit, T2 ex
 ) {
   if (UNITS_DESCENDING.indexOf(unit1) > UNITS_DESCENDING.indexOf(unit2)) return unit2;
   return unit1;
-}
-
-function MergeLargestUnitOption<T extends Temporal.DateTimeUnit>(
-  optionsParam: Temporal.DifferenceOptions<T> | undefined,
-  largestUnit: T
-): Temporal.DifferenceOptions<T> {
-  let options = optionsParam;
-  if (options === undefined) options = ObjectCreate(null);
-  return ObjectAssign(ObjectCreate(null), options, { largestUnit });
 }
 
 type FieldCompleteness = 'complete' | 'partial';
@@ -4262,7 +4268,9 @@ function DifferenceISODateTime(
   const date1 = CreateTemporalDate(y1, mon1, d1, calendar);
   const date2 = CreateTemporalDate(y2, mon2, d2, calendar);
   const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit);
-  const untilOptions = MergeLargestUnitOption(options, dateLargestUnit);
+  const untilOptions: typeof options = ObjectCreate(null);
+  CopyDataProperties(untilOptions, options, []);
+  untilOptions.largestUnit = dateLargestUnit;
   // TODO untilOptions doesn't want to compile as it seems that smallestUnit is not clamped?
   // Type 'SmallestUnit<DateTimeUnit> | undefined' is not assignable to type
   //      'SmallestUnit<"year" | "month" | "day" | "week"> | undefined'.
@@ -4432,7 +4440,9 @@ export function DifferenceTemporalPlainDate(
   if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
   const roundingIncrement = ToTemporalRoundingIncrement(options, undefined, false);
 
-  const untilOptions = MergeLargestUnitOption(options, largestUnit);
+  const untilOptions: typeof options = ObjectCreate(null);
+  CopyDataProperties(untilOptions, options, []);
+  untilOptions.largestUnit = largestUnit;
   let { years, months, weeks, days } = CalendarDateUntil(calendar, plainDate, other, untilOptions);
 
   if (smallestUnit !== 'day' || roundingIncrement !== 1) {
@@ -4680,7 +4690,9 @@ export function DifferenceTemporalPlainYearMonth(
   thisFields.day = 1;
   const thisDate = CalendarDateFromFields(calendar, thisFields as typeof thisFields & { day: number });
 
-  const untilOptions = MergeLargestUnitOption(options, largestUnit);
+  const untilOptions: typeof options = ObjectCreate(null);
+  CopyDataProperties(untilOptions, options, []);
+  untilOptions.largestUnit = largestUnit;
   let { years, months } = CalendarDateUntil(calendar, thisDate, otherDate, untilOptions);
 
   if (smallestUnit !== 'month' || roundingIncrement !== 1) {
@@ -4761,7 +4773,9 @@ export function DifferenceTemporalZonedDateTime(
           'or smaller because day lengths can vary between time zones due to DST or time zone offset changes.'
       );
     }
-    const untilOptions = MergeLargestUnitOption(options, largestUnit);
+    const untilOptions: typeof options = ObjectCreate(null);
+    CopyDataProperties(untilOptions, options, []);
+    untilOptions.largestUnit = largestUnit;
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       DifferenceZonedDateTime(ns1, ns2, timeZone, calendar, largestUnit, untilOptions));
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
