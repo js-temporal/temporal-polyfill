@@ -12,7 +12,6 @@ const NumberIsFinite = Number.isFinite;
 const NumberCtor = Number;
 const StringCtor = String;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
-const ObjectAssign = Object.assign;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
 const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
@@ -329,17 +328,31 @@ function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier: string) {
   return instance;
 }
 
+export function ToObject<T>(value: T): T extends Record<string, unknown> ? T : object {
+  if (typeof value === 'undefined' || value === null) {
+    throw new TypeError(`Expected object not ${value}`);
+  }
+  return Object(value);
+}
+
 // Adapted from https://github.com/ljharb/es-abstract/blob/main/2022/CopyDataProperties.js
 // but simplified (e.g. removed assertions) for this polyfill to reduce bundle size.
-function CopyDataProperties<K extends string, T extends Record<K, unknown>>(target: T, source: T, excludedItems: K[]) {
+export function CopyDataProperties<K extends string, T extends Record<K, unknown>>(
+  target: T,
+  source: T,
+  excludedKeys: K[],
+  excludedValues?: unknown[]
+) {
   if (typeof source === 'undefined' || source === null) return;
 
   const keys = Object.getOwnPropertyNames(source) as (keyof T)[];
   for (const nextKey of keys) {
-    const excluded = excludedItems.some((e) => Object.is(e, nextKey));
-    const enumerable = Object.prototype.propertyIsEnumerable.call(source, nextKey);
-    if (!excluded && enumerable) {
-      target[nextKey] = source[nextKey];
+    if (excludedKeys.some((e) => Object.is(e, nextKey))) continue;
+    if (Object.prototype.propertyIsEnumerable.call(source, nextKey)) {
+      const propValue = source[nextKey];
+      if (excludedValues && excludedValues.some((e) => Object.is(e, propValue))) continue;
+
+      target[nextKey] = propValue;
     }
   }
 }
@@ -4268,7 +4281,7 @@ function DifferenceISODateTime(
   const date1 = CreateTemporalDate(y1, mon1, d1, calendar);
   const date2 = CreateTemporalDate(y2, mon2, d2, calendar);
   const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit);
-  const untilOptions: typeof options = ObjectCreate(null);
+  const untilOptions = ObjectCreate(null) as typeof options;
   CopyDataProperties(untilOptions, options, []);
   untilOptions.largestUnit = dateLargestUnit;
   // TODO untilOptions doesn't want to compile as it seems that smallestUnit is not clamped?
@@ -4440,7 +4453,7 @@ export function DifferenceTemporalPlainDate(
   if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
   const roundingIncrement = ToTemporalRoundingIncrement(options, undefined, false);
 
-  const untilOptions: typeof options = ObjectCreate(null);
+  const untilOptions = ObjectCreate(null) as typeof options;
   CopyDataProperties(untilOptions, options, []);
   untilOptions.largestUnit = largestUnit;
   let { years, months, weeks, days } = CalendarDateUntil(calendar, plainDate, other, untilOptions);
@@ -4690,7 +4703,7 @@ export function DifferenceTemporalPlainYearMonth(
   thisFields.day = 1;
   const thisDate = CalendarDateFromFields(calendar, thisFields as typeof thisFields & { day: number });
 
-  const untilOptions: typeof options = ObjectCreate(null);
+  const untilOptions = ObjectCreate(null) as typeof options;
   CopyDataProperties(untilOptions, options, []);
   untilOptions.largestUnit = largestUnit;
   let { years, months } = CalendarDateUntil(calendar, thisDate, otherDate, untilOptions);
@@ -4773,7 +4786,7 @@ export function DifferenceTemporalZonedDateTime(
           'or smaller because day lengths can vary between time zones due to DST or time zone offset changes.'
       );
     }
-    const untilOptions: typeof options = ObjectCreate(null);
+    const untilOptions = ObjectCreate(null) as typeof options;
     CopyDataProperties(untilOptions, options, []);
     untilOptions.largestUnit = largestUnit;
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
@@ -5338,7 +5351,8 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   const startDate = CalendarDateFromFields(calendar, fields as typeof fields & { day: number });
   const Duration = GetIntrinsic('%Temporal.Duration%');
   const durationToAdd = new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
-  const optionsCopy = ObjectAssign(ObjectCreate(null), options);
+  const optionsCopy = ObjectCreate(null);
+  CopyDataProperties(optionsCopy, options, []);
   const addedDate = CalendarDateAdd(calendar, startDate, durationToAdd, options);
   const addedDateFields = PrepareTemporalFields(addedDate, fieldNames, []);
 

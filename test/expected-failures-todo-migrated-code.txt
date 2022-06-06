@@ -382,7 +382,6 @@ built-ins/Temporal/ZonedDateTime/prototype/since/nanoseconds-to-days-range-error
 built-ins/Temporal/ZonedDateTime/prototype/until/nanoseconds-to-days-loop-indefinitely-2.js
 built-ins/Temporal/ZonedDateTime/prototype/until/nanoseconds-to-days-range-errors.js
 built-ins/Temporal/Calendar/prototype/dateUntil/argument-propertybag-calendar-case-insensitive.js
-built-ins/Temporal/Calendar/prototype/mergeFields/arguments-not-object.js
 built-ins/Temporal/Calendar/prototype/yearOfWeek/argument-propertybag-calendar-case-insensitive.js
 built-ins/Temporal/Duration/prototype/round/roundingincrement-out-of-range.js
 built-ins/Temporal/PlainDate/compare/argument-propertybag-calendar-case-insensitive.js
