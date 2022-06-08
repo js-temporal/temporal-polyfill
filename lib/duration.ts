@@ -227,14 +227,14 @@ export class Duration implements Temporal.Duration {
       typeof optionsParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', optionsParam) as Exclude<typeof optionsParam, string>)
         : ES.GetOptionsObject(optionsParam);
-    let smallestUnit = ES.ToSmallestTemporalUnit(options, undefined);
+    let smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'datetime', undefined);
     let smallestUnitPresent = true;
     if (!smallestUnit) {
       smallestUnitPresent = false;
       smallestUnit = 'nanosecond';
     }
     defaultLargestUnit = ES.LargerOfTwoTemporalUnits(defaultLargestUnit, smallestUnit);
-    let largestUnit = ES.ToLargestTemporalUnit(options, undefined);
+    let largestUnit = ES.GetTemporalUnit(options, 'largestUnit', 'datetime', undefined, ['auto']);
     let largestUnitPresent = true;
     if (!largestUnit) {
       largestUnitPresent = false;
@@ -244,7 +244,9 @@ export class Duration implements Temporal.Duration {
     if (!smallestUnitPresent && !largestUnitPresent) {
       throw new RangeError('at least one of smallestUnit or largestUnit is required');
     }
-    ES.ValidateTemporalUnitRange(largestUnit, smallestUnit);
+    if (ES.LargerOfTwoTemporalUnits(largestUnit, smallestUnit) !== largestUnit) {
+      throw new RangeError(`largestUnit ${largestUnit} cannot be smaller than smallestUnit ${smallestUnit}`);
+    }
     const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
     const roundingIncrement = ES.ToTemporalDateTimeRoundingIncrement(options, smallestUnit);
     let relativeTo = ES.ToRelativeTemporalObject(options);
@@ -327,8 +329,7 @@ export class Duration implements Temporal.Duration {
       typeof optionsParam === 'string'
         ? (ES.CreateOnePropObject('unit', optionsParam) as Exclude<typeof optionsParam, string>)
         : ES.GetOptionsObject(optionsParam);
-    const unit = ES.ToTemporalDurationTotalUnit(options);
-    if (unit === undefined) throw new RangeError('unit option is required');
+    const unit = ES.GetTemporalUnit(options, 'unit', 'datetime', ES.REQUIRED);
     const relativeTo = ES.ToRelativeTemporalObject(options);
 
     // Convert larger units down to days
