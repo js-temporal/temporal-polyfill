@@ -48,14 +48,16 @@ export type AnyTemporalConstructor =
   | typeof Temporal.ZonedDateTime;
 */
 
-export type AnyTemporalLikeType =
-  | Temporal.DurationLike
-  | Temporal.PlainDateLike
-  | Temporal.PlainDateTimeLike
-  | Temporal.PlainMonthDayLike
-  | Temporal.PlainTimeLike
-  | Temporal.PlainYearMonthLike
-  | Temporal.ZonedDateTimeLike;
+export type AllTemporalLikeTypes = [
+  Temporal.DurationLike,
+  Temporal.PlainDateLike,
+  Temporal.PlainDateTimeLike,
+  Temporal.PlainMonthDayLike,
+  Temporal.PlainTimeLike,
+  Temporal.PlainYearMonthLike,
+  Temporal.ZonedDateTimeLike
+];
+export type AnyTemporalLikeType = AllTemporalLikeTypes[number];
 
 // The properties below are all the names of Temporal properties that can be set with `with`.
 // `timeZone` and `calendar` are not on the list because they have special methods to set them.

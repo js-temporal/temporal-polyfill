@@ -141,18 +141,23 @@ export class Duration implements Temporal.Duration {
   }
   with(durationLike: Params['with'][0]): Return['with'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    const props = ES.ToPartialRecord(durationLike, [
-      'days',
-      'hours',
-      'microseconds',
-      'milliseconds',
-      'minutes',
-      'months',
-      'nanoseconds',
-      'seconds',
-      'weeks',
-      'years'
-    ]);
+    const props = ES.PrepareTemporalFields(
+      durationLike,
+      // NOTE: Field order here is important.
+      [
+        'days',
+        'hours',
+        'microseconds',
+        'milliseconds',
+        'minutes',
+        'months',
+        'nanoseconds',
+        'seconds',
+        'weeks',
+        'years'
+      ],
+      'partial'
+    );
     if (!props) {
       throw new TypeError('invalid duration-like');
     }
