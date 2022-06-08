@@ -22,12 +22,7 @@ import {
   SetSlot
 } from './slots';
 import type { Temporal } from '..';
-import type {
-  BuiltinCalendarId,
-  CalendarParams as Params,
-  CalendarReturn as Return,
-  FieldRecord
-} from './internaltypes';
+import type { BuiltinCalendarId, CalendarParams as Params, CalendarReturn as Return } from './internaltypes';
 
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
@@ -351,7 +346,7 @@ DefineIntrinsic('Temporal.Calendar.from', Calendar.from);
 impl['iso8601'] = {
   dateFromFields(fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
-    let fields = ES.PrepareTemporalFields(fieldsParam as Omit<Temporal.PlainDateLike, 'calendar'>, [
+    let fields = ES.PrepareTemporalFields(fieldsParam, [
       ['day'],
       ['month', undefined],
       ['monthCode', undefined],
@@ -364,11 +359,7 @@ impl['iso8601'] = {
   },
   yearMonthFromFields(fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
-    let fields = ES.PrepareTemporalFields(fieldsParam as Omit<Temporal.PlainYearMonthLike, 'calendar'>, [
-      ['month', undefined],
-      ['monthCode', undefined],
-      ['year']
-    ]);
+    let fields = ES.PrepareTemporalFields(fieldsParam, [['month', undefined], ['monthCode', undefined], ['year']]);
     fields = resolveNonLunisolarMonth(fields);
     let { year, month } = fields;
     ({ year, month } = ES.RegulateISOYearMonth(year, month, overflow));
@@ -376,7 +367,7 @@ impl['iso8601'] = {
   },
   monthDayFromFields(fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
-    let fields = ES.PrepareTemporalFields(fieldsParam as Omit<Temporal.PlainMonthDayLike, 'calendar'>, [
+    let fields = ES.PrepareTemporalFields(fieldsParam, [
       ['day'],
       ['month', undefined],
       ['monthCode', undefined],
@@ -2312,7 +2303,7 @@ const nonIsoImpl: NonIsoImpl = {
       ['month', undefined],
       ['monthCode', undefined],
       ['year', undefined]
-    ] as FieldRecord<Temporal.PlainDateLike>[]);
+    ]);
     const { year, month, day } = this.helper.calendarToIsoDate(fields, overflow, cache);
     const result = ES.CreateTemporalDate(year, month, day, calendar);
     cache.setObject(result);
@@ -2328,7 +2319,7 @@ const nonIsoImpl: NonIsoImpl = {
       ['month', undefined],
       ['monthCode', undefined],
       ['year', undefined]
-    ] as FieldRecord<Temporal.PlainYearMonthLike>[]);
+    ]);
     const { year, month, day } = this.helper.calendarToIsoDate({ ...fields, day: 1 }, overflow, cache);
     const result = ES.CreateTemporalYearMonth(year, month, calendar, /* referenceISODay = */ day);
     cache.setObject(result);
@@ -2345,17 +2336,14 @@ const nonIsoImpl: NonIsoImpl = {
     // or `year` must be provided because `month` is ambiguous without a year or
     // a code.
     const cache = new OneObjectCache();
-    const fields = ES.PrepareTemporalFields(
-      fieldsParam as Omit<Temporal.PlainMonthDayLike, 'calendar'>,
-      [
-        ['day'],
-        ['era', undefined],
-        ['eraYear', undefined],
-        ['month', undefined],
-        ['monthCode', undefined],
-        ['year', undefined]
-      ] as FieldRecord<Temporal.PlainMonthDayLike>[]
-    );
+    const fields = ES.PrepareTemporalFields(fieldsParam, [
+      ['day'],
+      ['era', undefined],
+      ['eraYear', undefined],
+      ['month', undefined],
+      ['monthCode', undefined],
+      ['year', undefined]
+    ]);
     const { year, month, day } = this.helper.monthDayFromFields(fields, overflow, cache);
     // `year` is a reference year where this month/day exists in this calendar
     const result = ES.CreateTemporalMonthDay(month, day, calendar, /* referenceISOYear = */ year);

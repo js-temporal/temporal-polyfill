@@ -78,7 +78,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['month', 'monthCode', 'year'] as const);
-    const props = ES.ToPartialRecord(temporalYearMonthLike, fieldNames);
+    const props = ES.PrepareTemporalFields(temporalYearMonthLike, fieldNames, 'partial');
     if (!props) {
       throw new TypeError('invalid year-month-like');
     }

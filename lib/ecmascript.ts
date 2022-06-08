@@ -14,6 +14,7 @@ const StringCtor = String;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
+const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const ObjectIs = Object.is;
 const ReflectApply = Reflect.apply;
 
@@ -22,8 +23,8 @@ import JSBI from 'jsbi';
 
 import type { Temporal } from '..';
 import type {
+  AllTemporalLikeTypes,
   AnyTemporalLikeType,
-  PrimitivePropertyNames,
   UnitSmallerThanOrEqualTo,
   CalendarProtocolParams,
   TimeZoneProtocolParams,
@@ -37,7 +38,7 @@ import type {
   DurationParams,
   PlainDateTimeParams,
   PlainYearMonthParams,
-  FieldRecord,
+  PrimitiveFieldsOf,
   BuiltinCalendarId
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
@@ -197,7 +198,7 @@ function abs(x: JSBI): JSBI {
 }
 
 type BuiltinCastFunction = (v: unknown) => string | number;
-const BUILTIN_CASTS = new Map<PrimitivePropertyNames, BuiltinCastFunction>([
+const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
   ['year', ToIntegerThrowOnInfinity],
   ['month', ToPositiveInteger],
   ['monthCode', ToString],
@@ -239,6 +240,8 @@ const SINGULAR_PLURAL_UNITS = [
 const SINGULAR_FOR = new Map(SINGULAR_PLURAL_UNITS.map((e) => [e[0], e[1]] as const));
 const PLURAL_FOR = new Map(SINGULAR_PLURAL_UNITS.map(([p, s]) => [s, p]));
 const UNITS_DESCENDING = SINGULAR_PLURAL_UNITS.map(([, s]) => s);
+
+const DURATION_FIELDS = Array.from(SINGULAR_FOR.keys()).sort();
 
 import * as PARSE from './regex';
 
@@ -719,33 +722,58 @@ function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
       nanoseconds: GetSlot(item, NANOSECONDS)
     };
   }
-  const props = ToPartialRecord(item, [
-    'days',
-    'hours',
-    'microseconds',
-    'milliseconds',
-    'minutes',
-    'months',
-    'nanoseconds',
-    'seconds',
-    'weeks',
-    'years'
-  ]);
-  if (!props) throw new TypeError('invalid duration-like');
-  const {
-    years = 0,
-    months = 0,
-    weeks = 0,
-    days = 0,
-    hours = 0,
-    minutes = 0,
-    seconds = 0,
-    milliseconds = 0,
-    microseconds = 0,
-    nanoseconds = 0
-  } = props;
+  const result = {
+    years: 0,
+    months: 0,
+    weeks: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    milliseconds: 0,
+    microseconds: 0,
+    nanoseconds: 0
+  };
+  let partial = ToTemporalPartialDurationRecord(item);
+  for (const property of DURATION_FIELDS) {
+    const value = partial[property];
+    if (value !== undefined) {
+      result[property] = value;
+    }
+  }
+  let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = result;
   RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
+}
+
+function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.DurationLike | string) {
+  if (!IsObject(temporalDurationLike)) {
+    throw new TypeError('invalid duration-like');
+  }
+  const result: Record<typeof DURATION_FIELDS[number], number | undefined> = {
+    years: undefined,
+    months: undefined,
+    weeks: undefined,
+    days: undefined,
+    hours: undefined,
+    minutes: undefined,
+    seconds: undefined,
+    milliseconds: undefined,
+    microseconds: undefined,
+    nanoseconds: undefined
+  };
+  let any = false;
+  for (const property of DURATION_FIELDS) {
+    const value = temporalDurationLike[property];
+    if (value !== undefined) {
+      any = true;
+      result[property] = ToIntegerWithoutRounding(value);
+    }
+  }
+  if (!any) {
+    throw new TypeError('invalid duration-like');
+  }
+  return result;
 }
 
 function ToLimitedTemporalDuration(
@@ -1130,73 +1158,94 @@ function MergeLargestUnitOption<T extends Temporal.DateTimeUnit>(
   return { ...options, largestUnit };
 }
 
-export function ToPartialRecord<B extends AnyTemporalLikeType>(bagParam: B, fieldsParam: ReadonlyArray<keyof B>) {
-  // External callers are limited to specific types, but this function's
-  // implementation uses generic property types. The casts below (and at the
-  // end) convert to/from generic records.
-  const bag = bagParam as Record<PrimitivePropertyNames & keyof B, string | number | undefined>;
-  const fields = fieldsParam as ReadonlyArray<keyof B & PrimitivePropertyNames>;
+type FieldCompleteness = 'complete' | 'partial';
+type AllKeys<U> = Keys<U extends unknown ? U : never>;
+type AnyTemporalKey = Exclude<AllKeys<AnyTemporalLikeType>, symbol>;
+type Keys<T> = T extends Record<string, unknown> ? keyof T : never;
+type Values<T> = T[keyof T];
+type Entry<K> = K | readonly [K, (string | number | undefined)?];
+type ResolvedFieldTypes<T> = T extends Entry<infer K> ? K : never;
+type Owner<T extends AnyTemporalKey> = Values<{
+  [N in keyof AllTemporalLikeTypes]: [T] extends [keyof AllTemporalLikeTypes[N]] ? AllTemporalLikeTypes[N] : never;
+}>;
+
+interface FieldPrepareOptions {
+  emptySourceErrorMessage: string;
+}
+
+export function PrepareTemporalFields<
+  FieldKeys extends ResolvedFieldTypes<FieldSpec[number]>,
+  FieldSpec extends ReadonlyArray<Entry<AnyTemporalKey>>
+>(bag: Partial<Record<FieldKeys, unknown>>, fields: FieldSpec): Required<Owner<Exclude<FieldKeys, undefined>>>;
+export function PrepareTemporalFields<
+  FieldKeys extends ResolvedFieldTypes<FieldSpec[number]>,
+  FieldSpec extends ReadonlyArray<Entry<AnyTemporalKey>>
+>(
+  bag: Partial<Record<FieldKeys, unknown>>,
+  fields: FieldSpec,
+  completeness: 'partial',
+  opts?: FieldPrepareOptions
+): Owner<Exclude<FieldKeys, undefined>>;
+export function PrepareTemporalFields<
+  FieldKeys extends ResolvedFieldTypes<FieldSpec[number]>,
+  FieldSpec extends ReadonlyArray<Entry<AnyTemporalKey>>
+>(
+  bag: Partial<Record<FieldKeys, unknown>>,
+  fields: FieldSpec,
+  completeness: 'complete',
+  opts?: FieldPrepareOptions
+): Required<Owner<Exclude<FieldKeys, undefined>>>;
+export function PrepareTemporalFields<
+  FieldKeys extends ResolvedFieldTypes<FieldSpec[number]>,
+  FieldSpec extends ReadonlyArray<Entry<AnyTemporalKey>>
+>(
+  bag: Partial<Record<FieldKeys, unknown>>,
+  fields: FieldSpec,
+  completeness: FieldCompleteness = 'complete',
+  { emptySourceErrorMessage }: FieldPrepareOptions = { emptySourceErrorMessage: 'no supported properties found' }
+): Owner<Exclude<FieldKeys, undefined>> {
+  const result: Partial<Record<AnyTemporalKey, string | number | undefined>> = {};
   let any = false;
-  let result = {} as typeof bag;
-  for (const property of fields) {
-    const value = bag[property];
+  for (const fieldRecord of fields) {
+    // Unlike the spec, this interface supports field defaults via [field, default] pairs.
+    // But we still need to also support simple strings.
+    const wrappedFieldRecord: [FieldKeys, (string | number | undefined)?] = (IsObject(fieldRecord)
+      ? fieldRecord
+      : [fieldRecord]) as unknown as [FieldKeys, (string | number | undefined)?];
+    const [property, defaultValue] = wrappedFieldRecord;
+    let value = bag[property];
     if (value !== undefined) {
       any = true;
       if (BUILTIN_CASTS.has(property)) {
-        result[property] = (BUILTIN_CASTS.get(property) as BuiltinCastFunction)(value);
-      } else {
-        result[property] = value;
+        // We just has-checked this map access, so there will definitely be a
+        // value.
+        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+        value = BUILTIN_CASTS.get(property)!(value);
       }
-    }
-  }
-  return any ? (result as B) : false;
-}
-
-export function PrepareTemporalFields<B extends AnyTemporalLikeType>(
-  bagParam: B,
-  fieldsParam: ReadonlyArray<FieldRecord<B>>
-): Required<B> {
-  // External callers are limited to specific types, but this function's
-  // implementation uses generic property types. The casts below (and at the
-  // end) convert to/from generic records.
-  const bag = bagParam as Record<PrimitivePropertyNames & keyof B, string | number | undefined>;
-  const fields = fieldsParam as ReadonlyArray<FieldRecord<typeof bag>>;
-  const result = {} as typeof bag;
-  let any = false;
-  for (const fieldRecord of fields) {
-    const [property, defaultValue] = fieldRecord;
-    let value = bag[property];
-    if (value === undefined) {
-      if (fieldRecord.length === 1) {
+      result[property] = value as string | number | undefined;
+    } else if (completeness !== 'partial') {
+      if (wrappedFieldRecord.length === 1) {
         throw new TypeError(`required property '${property}' missing or undefined`);
       }
-      value = defaultValue;
-    } else {
-      any = true;
-      if (BUILTIN_CASTS.has(property as PrimitivePropertyNames)) {
-        value = (BUILTIN_CASTS.get(property) as BuiltinCastFunction)(value);
-      }
+      value = defaultValue as unknown as typeof value;
+      result[property] = value as string | number | undefined;
     }
-    result[property] = value;
   }
-  if (!any) {
-    throw new TypeError('no supported properties found');
+  if (completeness === 'partial' && !any) {
+    throw new TypeError(emptySourceErrorMessage);
   }
-  if (
-    ((result as { era: unknown })['era'] === undefined) !==
-    ((result as { eraYear: unknown })['eraYear'] === undefined)
-  ) {
+  if ((result.era === undefined) !== (result.eraYear === undefined)) {
     throw new RangeError("properties 'era' and 'eraYear' must be provided together");
   }
-  return result as unknown as Required<B>;
+  return result as unknown as Owner<Exclude<FieldKeys, undefined>>;
 }
 
 // field access in the following operations is intentionally alphabetical
 export function ToTemporalDateFields(
   bag: Temporal.PlainDateLike,
-  fieldNames: readonly (keyof Temporal.PlainDateLike)[]
-) {
-  const entries: [keyof Temporal.PlainDateLike, 0 | undefined][] = [
+  fieldNames: readonly (keyof PrimitiveFieldsOf<Temporal.PlainDateLike>)[]
+): Required<PrimitiveFieldsOf<Temporal.PlainDateLike>> {
+  const entries: [keyof PrimitiveFieldsOf<Temporal.PlainDateLike>, 0 | undefined][] = [
     ['day', undefined],
     ['month', undefined],
     ['monthCode', undefined],
@@ -1213,9 +1262,9 @@ export function ToTemporalDateFields(
 
 export function ToTemporalDateTimeFields(
   bag: Temporal.PlainDateTimeLike,
-  fieldNames: readonly (keyof Temporal.PlainDateTimeLike)[]
-) {
-  const entries: [keyof Temporal.PlainDateTimeLike, 0 | undefined][] = [
+  fieldNames: readonly (keyof PrimitiveFieldsOf<Temporal.PlainDateTimeLike>)[]
+): Required<PrimitiveFieldsOf<Temporal.PlainDateTimeLike>> {
+  const entries: [keyof PrimitiveFieldsOf<Temporal.PlainDateTimeLike>, 0 | undefined][] = [
     ['day', undefined],
     ['hour', 0],
     ['microsecond', 0],
@@ -1238,9 +1287,9 @@ export function ToTemporalDateTimeFields(
 
 export function ToTemporalMonthDayFields(
   bag: Temporal.PlainMonthDayLike,
-  fieldNames: readonly (keyof Temporal.PlainMonthDayLike)[]
-) {
-  const entries: [keyof Temporal.PlainMonthDayLike, 0 | undefined][] = [
+  fieldNames: readonly (keyof PrimitiveFieldsOf<Temporal.PlainMonthDayLike>)[]
+): Required<PrimitiveFieldsOf<Temporal.PlainMonthDayLike>> {
+  const entries: [keyof PrimitiveFieldsOf<Temporal.PlainMonthDayLike>, 0 | undefined][] = [
     ['day', undefined],
     ['month', undefined],
     ['monthCode', undefined],
@@ -1255,22 +1304,47 @@ export function ToTemporalMonthDayFields(
   return PrepareTemporalFields(bag, entries);
 }
 
-export function ToTemporalTimeRecord(bag: Temporal.PlainTimeLike) {
-  return PrepareTemporalFields(bag, [
-    ['hour', 0],
-    ['microsecond', 0],
-    ['millisecond', 0],
-    ['minute', 0],
-    ['nanosecond', 0],
-    ['second', 0]
-  ]);
+interface TimeRecord {
+  hour?: number;
+  minute?: number;
+  second?: number;
+  microsecond?: number;
+  millisecond?: number;
+  nanosecond?: number;
+}
+export function ToTemporalTimeRecord(bag: Partial<Record<keyof TimeRecord, unknown>>): Required<TimeRecord>;
+export function ToTemporalTimeRecord(
+  bag: Partial<Record<keyof TimeRecord, unknown>>,
+  completeness: 'partial'
+): Partial<TimeRecord>;
+export function ToTemporalTimeRecord(
+  bag: Partial<Record<keyof TimeRecord, unknown>>,
+  completeness: 'complete'
+): Required<TimeRecord>;
+export function ToTemporalTimeRecord(
+  bag: Partial<Record<keyof TimeRecord, unknown>>,
+  completeness: FieldCompleteness = 'complete'
+): Partial<TimeRecord> {
+  // NOTE: Field order here is important.
+  const fields = ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second'] as const;
+  const partial = PrepareTemporalFields(bag, fields, 'partial', { emptySourceErrorMessage: 'invalid time-like' });
+  const result: Partial<TimeRecord> = {};
+  for (const field of fields) {
+    const valueDesc = ObjectGetOwnPropertyDescriptor(partial, field);
+    if (valueDesc !== undefined) {
+      result[field] = valueDesc.value;
+    } else if (completeness === 'complete') {
+      result[field] = 0;
+    }
+  }
+  return result;
 }
 
 export function ToTemporalYearMonthFields(
   bag: Temporal.PlainYearMonthLike,
-  fieldNames: readonly (keyof Temporal.PlainYearMonthLike)[]
-) {
-  const entries: [keyof Temporal.PlainYearMonthLike, 0 | undefined][] = [
+  fieldNames: readonly (keyof PrimitiveFieldsOf<Temporal.PlainYearMonthLike>)[]
+): Required<PrimitiveFieldsOf<Temporal.PlainYearMonthLike>> {
+  const entries: [keyof PrimitiveFieldsOf<Temporal.PlainYearMonthLike>, 0 | undefined][] = [
     ['month', undefined],
     ['monthCode', undefined],
     ['year', undefined]
@@ -1286,9 +1360,9 @@ export function ToTemporalYearMonthFields(
 
 function ToTemporalZonedDateTimeFields(
   bag: Temporal.ZonedDateTimeLike,
-  fieldNames: readonly (keyof Temporal.ZonedDateTimeLike)[]
-) {
-  const entries: ([keyof Temporal.ZonedDateTimeLike, 0 | undefined] | ['timeZone'])[] = [
+  fieldNames: readonly (keyof PrimitiveFieldsOf<Temporal.ZonedDateTimeLike>)[]
+): Required<PrimitiveFieldsOf<Temporal.ZonedDateTimeLike> & Pick<Temporal.ZonedDateTimeLike, 'timeZone'>> {
+  const entries: [keyof Temporal.ZonedDateTimeLike, (0 | undefined)?][] = [
     ['day', undefined],
     ['hour', 0],
     ['microsecond', 0],
@@ -4516,9 +4590,7 @@ export function DifferenceTemporalPlainYearMonth(
   if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
   const roundingIncrement = ToTemporalRoundingIncrement(options, undefined, false);
 
-  const fieldNames = CalendarFields(calendar, ['monthCode', 'year']) as ReadonlyArray<
-    keyof Temporal.PlainYearMonthLike
-  >;
+  const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
   const otherFields = ToTemporalYearMonthFields(other, fieldNames);
   const thisFields = ToTemporalYearMonthFields(yearMonth, fieldNames);
   const otherDate = CalendarDateFromFields(calendar, { ...otherFields, day: 1 });
@@ -5161,9 +5233,7 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   const options = GetOptionsObject(optionsParam);
 
   const calendar = GetSlot(yearMonth, CALENDAR);
-  const fieldNames = CalendarFields(calendar, ['monthCode', 'year']) as ReadonlyArray<
-    keyof Temporal.PlainYearMonthLike
-  >;
+  const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
   const fields = ToTemporalYearMonthFields(yearMonth, fieldNames);
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   const day = sign < 0 ? ToPositiveInteger(CalendarDaysInMonth(calendar, yearMonth)) : 1;

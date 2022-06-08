@@ -18,7 +18,7 @@ import {
 } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
-import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
+import type { PrimitiveFieldsOf, ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
 import { BILLION, MILLION, THOUSAND, ZERO } from './ecmascript';
@@ -200,12 +200,16 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       'year'
     ] as const);
     ArrayPrototypePush.call(fieldNames, 'offset');
-    const props = ES.ToPartialRecord(temporalZonedDateTimeLike, fieldNames);
+    const props = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNames, 'partial');
     if (!props) {
       throw new TypeError('invalid zoned-date-time-like');
     }
     // Unlike ToTemporalZonedDateTimeFields, the offset property will be required.
-    const entries: ([keyof Temporal.ZonedDateTimeLike, 0 | undefined] | ['timeZone'] | ['offset'])[] = [
+    const entries: (
+      | [keyof PrimitiveFieldsOf<Temporal.ZonedDateTimeLike>, 0 | undefined]
+      | ['timeZone']
+      | ['offset']
+    )[] = [
       ['day', undefined],
       ['hour', 0],
       ['microsecond', 0],
