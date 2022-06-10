@@ -11,6 +11,7 @@ const NumberIsNaN = Number.isNaN;
 const NumberIsFinite = Number.isFinite;
 const NumberCtor = Number;
 const StringCtor = String;
+const StringPrototypeSlice = String.prototype.slice;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
 const ObjectAssign = Object.assign;
 const ObjectCreate = Object.create;
@@ -477,15 +478,19 @@ export function ParseTemporalTimeString(isoString: string) {
   if (/[tT ][0-9][0-9]/.test(isoString)) {
     return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
   }
-  // slow but non-grammar-dependent way to ensure that time-only strings that
-  // are also valid PlainMonthDay and PlainYearMonth throw. corresponds to
-  // assertion in spec text
+  // Reject strings that are ambiguous with PlainMonthDay or PlainYearMonth.
+  // The calendar suffix is `[u-ca=${calendar}]`, i.e. calendar plus 7 characters,
+  // and must be stripped so presence of a calendar doesn't result in interpretation
+  // of otherwise ambiguous input as a time.
+  const isoStringWithoutCalendar = calendar
+    ? StringPrototypeSlice.call(isoString, 0, isoString.length - calendar.length - 7)
+    : isoString;
   try {
-    const { month, day } = ParseTemporalMonthDayString(isoString);
+    const { month, day } = ParseTemporalMonthDayString(isoStringWithoutCalendar);
     RejectISODate(1972, month, day);
   } catch {
     try {
-      const { year, month } = ParseTemporalYearMonthString(isoString);
+      const { year, month } = ParseTemporalYearMonthString(isoStringWithoutCalendar);
       RejectISODate(year, month, 1);
     } catch {
       return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
