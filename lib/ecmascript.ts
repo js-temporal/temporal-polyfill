@@ -3386,7 +3386,8 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
     GetSlot(dtEnd, ISO_MICROSECOND),
     GetSlot(dtEnd, ISO_NANOSECOND),
     calendar,
-    'day'
+    'day',
+    ObjectCreate(null)
   );
   let intermediateNs = AddZonedDateTime(start, timeZone, calendar, 0, 0, 0, days, 0, 0, 0, 0, 0, 0);
   // may disambiguate
@@ -4132,7 +4133,7 @@ function DifferenceISODateTime(
   ns2: number,
   calendar: Temporal.CalendarProtocol,
   largestUnit: Temporal.DateTimeUnit,
-  options?: Temporal.DifferenceOptions<Temporal.DateTimeUnit>
+  options: Temporal.DifferenceOptions<Temporal.DateTimeUnit>
 ) {
   let y1 = y1Param;
   let mon1 = mon1Param;
@@ -4200,7 +4201,7 @@ function DifferenceZonedDateTime(
   timeZone: Temporal.TimeZoneProtocol,
   calendar: Temporal.CalendarProtocol,
   largestUnit: Temporal.DateTimeUnit,
-  options?: Temporal.DifferenceOptions<Temporal.DateTimeUnit>
+  options: Temporal.DifferenceOptions<Temporal.DateTimeUnit>
 ) {
   const nsDiff = JSBI.subtract(ns2, ns1);
   if (JSBI.equal(nsDiff, ZERO)) {
@@ -4934,7 +4935,14 @@ function AddDuration(
       ));
     } else {
       ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-        DifferenceZonedDateTime(GetSlot(relativeTo, EPOCHNANOSECONDS), endNs, timeZone, calendar, largestUnit));
+        DifferenceZonedDateTime(
+          GetSlot(relativeTo, EPOCHNANOSECONDS),
+          endNs,
+          timeZone,
+          calendar,
+          largestUnit,
+          ObjectCreate(null)
+        ));
     }
   }
 
