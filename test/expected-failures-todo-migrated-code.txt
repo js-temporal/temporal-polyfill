@@ -224,7 +224,6 @@ built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-timezone-inst
 built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-timezone-wrong-type.js
 built-ins/Temporal/Duration/prototype/total/relativeto-string-datetime.js
 built-ins/Temporal/Duration/prototype/total/relativeto-zoneddatetime-timezone-getoffsetnanosecondsfor-out-of-range.js
-built-ins/Temporal/Duration/prototype/total/total-value-infinity.js
 built-ins/Temporal/Instant/compare/argument-string-calendar-annotation.js
 built-ins/Temporal/Instant/compare/argument-string-date-with-utc-offset.js
 built-ins/Temporal/Instant/compare/argument-string-time-zone-annotation.js

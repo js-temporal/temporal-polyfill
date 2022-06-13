@@ -344,7 +344,7 @@ export class Duration implements Temporal.Duration {
     if (ES.IsTemporalZonedDateTime(relativeTo)) {
       intermediate = ES.MoveRelativeZonedDateTime(relativeTo, years, months, weeks, 0);
     }
-    ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceDuration(
+    let balanceResult = ES.BalancePossiblyInfiniteDuration(
       days,
       hours,
       minutes,
@@ -354,7 +354,13 @@ export class Duration implements Temporal.Duration {
       nanoseconds,
       unit,
       intermediate
-    ));
+    );
+    if (balanceResult === 'positive overflow') {
+      return Infinity;
+    } else if (balanceResult === 'negative overflow') {
+      return -Infinity;
+    }
+    ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = balanceResult);
     // Finally, truncate to the correct unit and calculate remainder
     const { total } = ES.RoundDuration(
       years,
