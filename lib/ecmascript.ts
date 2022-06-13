@@ -3423,6 +3423,35 @@ export function BalanceDuration(
   largestUnit: Temporal.DateTimeUnit,
   relativeTo: ReturnType<typeof ToRelativeTemporalObject> = undefined
 ) {
+  let result = BalancePossiblyInfiniteDuration(
+    daysParam,
+    hoursParam,
+    minutesParam,
+    secondsParam,
+    millisecondsParam,
+    microsecondsParam,
+    nanosecondsParam,
+    largestUnit,
+    relativeTo
+  );
+  if (result === 'positive overflow' || result === 'negative overflow') {
+    throw new RangeError('Duration out of range');
+  } else {
+    return result;
+  }
+}
+
+export function BalancePossiblyInfiniteDuration(
+  daysParam: number,
+  hoursParam: number,
+  minutesParam: number,
+  secondsParam: number,
+  millisecondsParam: number,
+  microsecondsParam: number,
+  nanosecondsParam: number,
+  largestUnit: Temporal.DateTimeUnit,
+  relativeTo: ReturnType<typeof ToRelativeTemporalObject> = undefined
+) {
   let days = daysParam;
   let nanosecondsBigInt: JSBI,
     microsecondsBigInt: JSBI,
@@ -3512,6 +3541,16 @@ export function BalanceDuration(
   const milliseconds = JSBI.toNumber(millisecondsBigInt) * sign;
   const microseconds = JSBI.toNumber(microsecondsBigInt) * sign;
   const nanoseconds = JSBI.toNumber(nanosecondsBigInt) * sign;
+
+  for (const prop of [days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds]) {
+    if (!NumberIsFinite(prop)) {
+      if (sign === 1) {
+        return 'positive overflow' as const;
+      } else {
+        return 'negative overflow' as const;
+      }
+    }
+  }
 
   return { days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
