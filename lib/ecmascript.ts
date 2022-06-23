@@ -5235,7 +5235,7 @@ export const SystemUTCEpochNanoSeconds: () => JSBI = (() => {
   return () => {
     const ms = JSBI.BigInt(Date.now());
     const result = JSBI.add(JSBI.multiply(ms, MILLION), ns);
-    ns = JSBI.divide(ms, MILLION);
+    ns = JSBI.remainder(ms, MILLION);
     if (JSBI.greaterThan(result, NS_MAX)) return NS_MAX;
     if (JSBI.lessThan(result, NS_MIN)) return NS_MIN;
     return result;
