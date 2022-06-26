@@ -4095,7 +4095,7 @@ function DifferenceTime(
     nanosecond: nanoseconds
   } = BalanceTime(hours, minutes, seconds, milliseconds, microseconds, nanoseconds));
 
-  deltaDays *= sign;
+  if (deltaDays != 0) throw new Error('assertion failure in DifferenceTime: _bt_.[[Days]] should be 0');
   hours *= sign;
   minutes *= sign;
   seconds *= sign;
@@ -4103,7 +4103,7 @@ function DifferenceTime(
   microseconds *= sign;
   nanoseconds *= sign;
 
-  return { deltaDays, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
+  return { hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
 function DifferenceInstant(
@@ -4154,7 +4154,7 @@ function DifferenceISODateTime(
   let mon1 = mon1Param;
   let d1 = d1Param;
 
-  let { deltaDays, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceTime(
+  let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceTime(
     h1,
     min1,
     s1,
@@ -4169,8 +4169,7 @@ function DifferenceISODateTime(
     ns2
   );
 
-  const timeSign = DurationSign(0, 0, 0, deltaDays, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-  ({ year: y1, month: mon1, day: d1 } = BalanceISODate(y1, mon1, d1 + deltaDays));
+  const timeSign = DurationSign(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   const dateSign = CompareISODate(y2, mon2, d2, y1, mon1, d1);
   if (dateSign === -timeSign) {
     ({ year: y1, month: mon1, day: d1 } = BalanceISODate(y1, mon1, d1 - timeSign));
