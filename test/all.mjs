@@ -21,7 +21,6 @@ import './now.mjs';
 import './timezone.mjs';
 import './instant.mjs';
 import './zoneddatetime.mjs';
-import './plaindate.mjs';
 import './plaintime.mjs';
 import './duration.mjs';
 import './intl.mjs';
