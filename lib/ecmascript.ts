@@ -842,7 +842,12 @@ export function ToTemporalRoundingMode(
   options: { roundingMode?: Temporal.RoundingMode },
   fallback: Temporal.RoundingMode
 ) {
-  return GetOption(options, 'roundingMode', ['ceil', 'floor', 'trunc', 'halfExpand'], fallback);
+  return GetOption(
+    options,
+    'roundingMode',
+    ['ceil', 'floor', 'expand', 'trunc', 'halfCeil', 'halfFloor', 'halfExpand', 'halfTrunc', 'halfEven'],
+    fallback
+  );
 }
 
 function NegateTemporalRoundingMode(roundingMode: Temporal.RoundingMode) {
@@ -851,6 +856,10 @@ function NegateTemporalRoundingMode(roundingMode: Temporal.RoundingMode) {
       return 'floor';
     case 'floor':
       return 'ceil';
+    case 'halfCeil':
+      return 'halfFloor';
+    case 'halfFloor':
+      return 'halfCeil';
     default:
       return roundingMode;
   }
@@ -5317,6 +5326,9 @@ function RoundNumberToIncrement(quantity: JSBI, increment: number, mode: Tempora
   let { quotient, remainder } = divmod(quantity, JSBI.BigInt(increment));
   if (JSBI.equal(remainder, ZERO)) return quantity;
   const sign = JSBI.lessThan(remainder, ZERO) ? -1 : 1;
+  const tiebreaker = abs(JSBI.multiply(remainder, JSBI.BigInt(2)));
+  const tie = JSBI.equal(tiebreaker, JSBI.BigInt(increment));
+  const expandIsNearer = JSBI.greaterThan(tiebreaker, JSBI.BigInt(increment));
   switch (mode) {
     case 'ceil':
       if (sign > 0) quotient = JSBI.add(quotient, JSBI.BigInt(sign));
@@ -5324,12 +5336,36 @@ function RoundNumberToIncrement(quantity: JSBI, increment: number, mode: Tempora
     case 'floor':
       if (sign < 0) quotient = JSBI.add(quotient, JSBI.BigInt(sign));
       break;
+    case 'expand':
+      // always expand if there is a remainder
+      quotient = JSBI.add(quotient, JSBI.BigInt(sign));
+      break;
     case 'trunc':
       // no change needed, because divmod is a truncation
       break;
+    case 'halfCeil':
+      if (expandIsNearer || (tie && sign > 0)) {
+        quotient = JSBI.add(quotient, JSBI.BigInt(sign));
+      }
+      break;
+    case 'halfFloor':
+      if (expandIsNearer || (tie && sign < 0)) {
+        quotient = JSBI.add(quotient, JSBI.BigInt(sign));
+      }
+      break;
     case 'halfExpand':
       // "half up away from zero"
-      if (JSBI.toNumber(abs(JSBI.multiply(remainder, JSBI.BigInt(2)))) >= increment) {
+      if (expandIsNearer || tie) {
+        quotient = JSBI.add(quotient, JSBI.BigInt(sign));
+      }
+      break;
+    case 'halfTrunc':
+      if (expandIsNearer) {
+        quotient = JSBI.add(quotient, JSBI.BigInt(sign));
+      }
+      break;
+    case 'halfEven':
+      if (expandIsNearer || (tie && JSBI.toNumber(JSBI.remainder(abs(quotient), JSBI.BigInt(2))) === 1)) {
         quotient = JSBI.add(quotient, JSBI.BigInt(sign));
       }
       break;
