@@ -3785,20 +3785,14 @@ export function CalculateOffsetShift(
   y: number,
   mon: number,
   w: number,
-  d: number,
-  h: number,
-  min: number,
-  s: number,
-  ms: number,
-  µs: number,
-  ns: number
+  d: number
 ) {
   if (IsTemporalZonedDateTime(relativeTo)) {
     const instant = GetSlot(relativeTo, INSTANT);
     const timeZone = GetSlot(relativeTo, TIME_ZONE);
     const calendar = GetSlot(relativeTo, CALENDAR);
     const offsetBefore = GetOffsetNanosecondsFor(timeZone, instant);
-    const after = AddZonedDateTime(instant, timeZone, calendar, y, mon, w, d, h, min, s, ms, µs, ns);
+    const after = AddZonedDateTime(instant, timeZone, calendar, y, mon, w, d, 0, 0, 0, 0, 0, 0);
     const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
     const instantAfter = new TemporalInstant(after);
     const offsetAfter = GetOffsetNanosecondsFor(timeZone, instantAfter);
