@@ -5271,8 +5271,10 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   fields.day = sign < 0 ? ToPositiveInteger(CalendarDaysInMonth(calendar, yearMonth)) : 1;
   const startDate = CalendarDateFromFields(calendar, fields);
+  const Duration = GetIntrinsic('%Temporal.Duration%');
+  const durationToAdd = new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   const optionsCopy = ObjectAssign(ObjectCreate(null), options);
-  const addedDate = CalendarDateAdd(calendar, startDate, { ...duration, days }, options);
+  const addedDate = CalendarDateAdd(calendar, startDate, durationToAdd, options);
   const addedDateFields = ToTemporalYearMonthFields(addedDate, fieldNames);
 
   return CalendarYearMonthFromFields(calendar, addedDateFields, optionsCopy);
