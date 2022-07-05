@@ -3,7 +3,7 @@ import { MakeIntrinsicClass } from './intrinsicclass';
 import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, GetSlot } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
-import type { FieldRecord, PlainYearMonthParams as Params, PlainYearMonthReturn as Return } from './internaltypes';
+import type { PlainYearMonthParams as Params, PlainYearMonthReturn as Return } from './internaltypes';
 
 const ObjectCreate = Object.create;
 
@@ -82,9 +82,9 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     if (!props) {
       throw new TypeError('invalid year-month-like');
     }
-    let fields = ES.ToTemporalYearMonthFields(this, fieldNames);
+    let fields = ES.PrepareTemporalFields(this, fieldNames, []);
     fields = ES.CalendarMergeFields(calendar, fields, props);
-    fields = ES.ToTemporalYearMonthFields(fields, fieldNames);
+    fields = ES.PrepareTemporalFields(fields, fieldNames, []);
 
     const options = ES.GetOptionsObject(optionsParam);
 
@@ -145,30 +145,15 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     const calendar = GetSlot(this, CALENDAR);
 
     const receiverFieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
-    const fields = ES.ToTemporalYearMonthFields(this, receiverFieldNames);
+    const fields = ES.PrepareTemporalFields(this, receiverFieldNames, []);
 
-    const inputFieldNames = ES.CalendarFields(calendar, ['day']);
-    const inputEntries: FieldRecord<Temporal.PlainYearMonthLike & { day?: number }>[] = [['day']];
-    // Add extra fields from the calendar at the end
-    inputFieldNames.forEach((fieldName) => {
-      if (!inputEntries.some(([name]) => name === fieldName)) {
-        (inputEntries as unknown as Array<typeof inputEntries[number]>).push([
-          fieldName,
-          undefined
-        ] as unknown as typeof inputEntries[number]); // Make TS ignore extra fields
-      }
-    });
-    const inputFields = ES.PrepareTemporalFields(item, inputEntries);
+    const inputFieldNames = ES.CalendarFields(calendar, ['day'] as const);
+    const inputFields = ES.PrepareTemporalFields(item, inputFieldNames, []);
     let mergedFields = ES.CalendarMergeFields(calendar, fields, inputFields);
 
+    // TODO: Use MergeLists abstract operation.
     const mergedFieldNames = [...new Set([...receiverFieldNames, ...inputFieldNames])];
-    const mergedEntries: FieldRecord<Temporal.PlainMonthDayLike>[] = [];
-    mergedFieldNames.forEach((fieldName) => {
-      if (!mergedEntries.some(([name]) => name === fieldName)) {
-        mergedEntries.push([fieldName, undefined] as typeof mergedEntries[number]);
-      }
-    });
-    mergedFields = ES.PrepareTemporalFields(mergedFields, mergedEntries);
+    mergedFields = ES.PrepareTemporalFields(mergedFields, mergedFieldNames, []);
     const options = ObjectCreate(null);
     options.overflow = 'reject';
     return ES.CalendarDateFromFields(calendar, mergedFields, options);

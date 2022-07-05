@@ -346,12 +346,7 @@ DefineIntrinsic('Temporal.Calendar.from', Calendar.from);
 impl['iso8601'] = {
   dateFromFields(fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
-    let fields = ES.PrepareTemporalFields(fieldsParam, [
-      ['day'],
-      ['month', undefined],
-      ['monthCode', undefined],
-      ['year']
-    ]);
+    let fields = ES.PrepareTemporalFields(fieldsParam, ['day', 'month', 'monthCode', 'year'], ['year', 'day']);
     fields = resolveNonLunisolarMonth(fields);
     let { year, month, day } = fields;
     ({ year, month, day } = ES.RegulateISODate(year, month, day, overflow));
@@ -359,7 +354,7 @@ impl['iso8601'] = {
   },
   yearMonthFromFields(fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
-    let fields = ES.PrepareTemporalFields(fieldsParam, [['month', undefined], ['monthCode', undefined], ['year']]);
+    let fields = ES.PrepareTemporalFields(fieldsParam, ['month', 'monthCode', 'year'], ['year']);
     fields = resolveNonLunisolarMonth(fields);
     let { year, month } = fields;
     ({ year, month } = ES.RegulateISOYearMonth(year, month, overflow));
@@ -367,12 +362,7 @@ impl['iso8601'] = {
   },
   monthDayFromFields(fieldsParam, options, calendar) {
     const overflow = ES.ToTemporalOverflow(options);
-    let fields = ES.PrepareTemporalFields(fieldsParam, [
-      ['day'],
-      ['month', undefined],
-      ['monthCode', undefined],
-      ['year', undefined]
-    ]);
+    let fields = ES.PrepareTemporalFields(fieldsParam, ['day', 'month', 'monthCode', 'year'], ['day']);
     if (fields.month !== undefined && fields.year === undefined && fields.monthCode === undefined) {
       throw new TypeError('either year or monthCode required with month');
     }
@@ -1028,8 +1018,8 @@ abstract class HelperBase {
   compareCalendarDates(date1Param: Partial<CalendarYMD>, date2Param: Partial<CalendarYMD>): 0 | 1 | -1 {
     // `date1` and `date2` are already records. The calls below simply validate
     // that all three required fields are present.
-    const date1 = ES.PrepareTemporalFields(date1Param, [['day'], ['month'], ['year']]);
-    const date2 = ES.PrepareTemporalFields(date2Param, [['day'], ['month'], ['year']]);
+    const date1 = ES.PrepareTemporalFields(date1Param, ['day', 'month', 'year'], ['day', 'month', 'year']);
+    const date2 = ES.PrepareTemporalFields(date2Param, ['day', 'month', 'year'], ['day', 'month', 'year']);
     if (date1.year !== date2.year) return ES.ComparisonResult(date1.year - date2.year);
     if (date1.month !== date2.month) return ES.ComparisonResult(date1.month - date2.month);
     if (date1.day !== date2.day) return ES.ComparisonResult(date1.day - date2.day);
@@ -2299,14 +2289,11 @@ const nonIsoImpl: NonIsoImpl = {
     const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     // Intentionally alphabetical
-    const fields = ES.PrepareTemporalFields(fieldsParam, [
-      ['day'],
-      ['era', undefined],
-      ['eraYear', undefined],
-      ['month', undefined],
-      ['monthCode', undefined],
-      ['year', undefined]
-    ]);
+    const fields = ES.PrepareTemporalFields(
+      fieldsParam,
+      ['day', 'era', 'eraYear', 'month', 'monthCode', 'year'],
+      ['day']
+    );
     const { year, month, day } = this.helper.calendarToIsoDate(fields, overflow, cache);
     const result = ES.CreateTemporalDate(year, month, day, calendar);
     cache.setObject(result);
@@ -2316,13 +2303,7 @@ const nonIsoImpl: NonIsoImpl = {
     const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     // Intentionally alphabetical
-    const fields = ES.PrepareTemporalFields(fieldsParam, [
-      ['era', undefined],
-      ['eraYear', undefined],
-      ['month', undefined],
-      ['monthCode', undefined],
-      ['year', undefined]
-    ]);
+    const fields = ES.PrepareTemporalFields(fieldsParam, ['era', 'eraYear', 'month', 'monthCode', 'year'], []);
     const { year, month, day } = this.helper.calendarToIsoDate({ ...fields, day: 1 }, overflow, cache);
     const result = ES.CreateTemporalYearMonth(year, month, calendar, /* referenceISODay = */ day);
     cache.setObject(result);
@@ -2339,14 +2320,11 @@ const nonIsoImpl: NonIsoImpl = {
     // or `year` must be provided because `month` is ambiguous without a year or
     // a code.
     const cache = new OneObjectCache();
-    const fields = ES.PrepareTemporalFields(fieldsParam, [
-      ['day'],
-      ['era', undefined],
-      ['eraYear', undefined],
-      ['month', undefined],
-      ['monthCode', undefined],
-      ['year', undefined]
-    ]);
+    const fields = ES.PrepareTemporalFields(
+      fieldsParam,
+      ['day', 'era', 'eraYear', 'month', 'monthCode', 'year'],
+      ['day']
+    );
     const { year, month, day } = this.helper.monthDayFromFields(fields, overflow, cache);
     // `year` is a reference year where this month/day exists in this calendar
     const result = ES.CreateTemporalMonthDay(month, day, calendar, /* referenceISOYear = */ year);

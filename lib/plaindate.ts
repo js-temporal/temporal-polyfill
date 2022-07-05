@@ -113,9 +113,9 @@ export class PlainDate implements Temporal.PlainDate {
     if (!props) {
       throw new TypeError('invalid date-like');
     }
-    let fields = ES.ToTemporalDateFields(this, fieldNames);
+    let fields = ES.PrepareTemporalFields(this, fieldNames, []);
     fields = ES.CalendarMergeFields(calendar, fields, props);
-    fields = ES.ToTemporalDateFields(fields, fieldNames);
+    fields = ES.PrepareTemporalFields(fields, fieldNames, []);
 
     const options = ES.GetOptionsObject(optionsParam);
 
@@ -275,14 +275,14 @@ export class PlainDate implements Temporal.PlainDate {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
-    const fields = ES.ToTemporalYearMonthFields(this, fieldNames);
+    const fields = ES.PrepareTemporalFields(this, fieldNames, []);
     return ES.CalendarYearMonthFromFields(calendar, fields);
   }
   toPlainMonthDay(): Return['toPlainMonthDay'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode'] as const);
-    const fields = ES.ToTemporalMonthDayFields(this, fieldNames);
+    const fields = ES.PrepareTemporalFields(this, fieldNames, []);
     return ES.CalendarMonthDayFromFields(calendar, fields);
   }
   getISOFields(): Return['getISOFields'] {

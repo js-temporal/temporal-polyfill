@@ -18,12 +18,10 @@ import {
 } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
-import type { PrimitiveFieldsOf, ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
+import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
 import { BILLION, MILLION, THOUSAND, ZERO } from './ecmascript';
-
-const ArrayPrototypePush = Array.prototype.push;
 
 export class ZonedDateTime implements Temporal.ZonedDateTime {
   constructor(
@@ -181,6 +179,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     }
     ES.RejectObjectWithCalendarOrTimeZone(temporalZonedDateTimeLike);
 
+    // TODO: Reorder according to spec.
     const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
     const offset = ES.ToTemporalOffset(options, 'prefer');
@@ -199,40 +198,13 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       'second',
       'year'
     ] as const);
-    ArrayPrototypePush.call(fieldNames, 'offset');
-    const props = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNames, 'partial');
-    if (!props) {
-      throw new TypeError('invalid zoned-date-time-like');
-    }
-    // Unlike ToTemporalZonedDateTimeFields, the offset property will be required.
-    const entries: (
-      | [keyof PrimitiveFieldsOf<Temporal.ZonedDateTimeLike>, 0 | undefined]
-      | ['timeZone']
-      | ['offset']
-    )[] = [
-      ['day', undefined],
-      ['hour', 0],
-      ['microsecond', 0],
-      ['millisecond', 0],
-      ['minute', 0],
-      ['month', undefined],
-      ['monthCode', undefined],
-      ['nanosecond', 0],
-      ['second', 0],
-      ['year', undefined],
-      ['offset'],
-      ['timeZone']
-    ];
-    // Add extra fields from the calendar at the end
-    fieldNames.forEach((fieldName) => {
-      if (!entries.some(([name]) => name === fieldName)) {
-        entries.push([fieldName, undefined]);
-      }
-    });
-    let fields = ES.PrepareTemporalFields(this, entries);
+    const fieldsWithOffset = ES.ArrayPush(fieldNames, 'offset');
+    const props = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldsWithOffset, 'partial');
+    const fieldsWithTimeZoneAndOffset = ES.ArrayPush(fieldsWithOffset, 'timeZone');
+    let fields = ES.PrepareTemporalFields(this, fieldsWithTimeZoneAndOffset, ['timeZone', 'offset']);
     fields = ES.CalendarMergeFields(calendar, fields, props);
-    fields = ES.PrepareTemporalFields(fields, entries);
-    const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
+    fields = ES.PrepareTemporalFields(fields, fieldsWithTimeZoneAndOffset, ['timeZone', 'offset']);
+    let { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
       ES.InterpretTemporalDateTimeFields(calendar, fields, options);
     const offsetNs = ES.ParseTimeZoneOffsetString(fields.offset);
     const epochNanoseconds = ES.InterpretISODateTimeOffset(
@@ -519,14 +491,14 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
-    const fields = ES.ToTemporalYearMonthFields(this, fieldNames);
+    const fields = ES.PrepareTemporalFields(this, fieldNames, []);
     return ES.CalendarYearMonthFromFields(calendar, fields);
   }
   toPlainMonthDay(): Return['toPlainMonthDay'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode'] as const);
-    const fields = ES.ToTemporalMonthDayFields(this, fieldNames);
+    const fields = ES.PrepareTemporalFields(this, fieldNames, []);
     return ES.CalendarMonthDayFromFields(calendar, fields);
   }
   getISOFields(): Return['getISOFields'] {

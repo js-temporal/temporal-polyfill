@@ -48,7 +48,9 @@ export type AnyTemporalConstructor =
   | typeof Temporal.ZonedDateTime;
 */
 
-export type AllTemporalLikeTypes = [
+// Used in AnyTemporalLikeType
+// ts-prune-ignore-next
+type AllTemporalLikeTypes = [
   Temporal.DurationLike,
   Temporal.PlainDateLike,
   Temporal.PlainDateTimeLike,
@@ -110,8 +112,6 @@ export type UnitSmallerThanOrEqualTo<T extends Temporal.DateTimeUnit> = T extend
   : T extends 'microsecond'
   ? 'nanosecond'
   : never;
-
-export type FieldRecord<B extends AnyTemporalLikeType> = readonly [keyof B, 0 | undefined] | readonly [keyof B];
 
 // ts-prune complains about the type definitions below, even though they're used
 // by exported types Not sure why and don't have time to investigate, so just
