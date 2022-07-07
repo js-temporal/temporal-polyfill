@@ -20,10 +20,14 @@ TIMEOUT=${TIMEOUT:-10000}
 
 if [ "$(uname)" = 'Darwin' ]; then
   threads=$(sysctl -n hw.logicalcpu)
+  ((threads = threads * 2))
 else
   threads=$(nproc --ignore 1)
+  if [ $threads -lt 4 ]; then threads=4; fi
 fi
-if [ $threads -gt 8 ]; then threads=8; fi
+if [ $threads -gt 32 ]; then threads=32; fi
+
+echo "Using $threads threads"
 
 if [ ! -d "$(dirname "$0")"/../test262/test/ ]; then
   echo "Missing Test262 directory. Try initializing the submodule with 'git submodule init && git submodule update'";
