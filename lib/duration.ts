@@ -15,7 +15,7 @@ import {
   GetSlot,
   SetSlot
 } from './slots';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
 import JSBI from 'jsbi';
 
@@ -43,23 +43,7 @@ export class Duration implements Temporal.Duration {
     const microseconds = ES.ToIntegerWithoutRounding(microsecondsParam);
     const nanoseconds = ES.ToIntegerWithoutRounding(nanosecondsParam);
 
-    const sign = ES.DurationSign(
-      years,
-      months,
-      weeks,
-      days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds
-    );
-    for (const prop of [years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds]) {
-      if (!Number.isFinite(prop)) throw new RangeError('infinite values not allowed as duration fields');
-      const propSign = Math.sign(prop);
-      if (propSign !== 0 && propSign !== sign) throw new RangeError('mixed-sign values not allowed as duration fields');
-    }
+    ES.RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
 
     CreateSlots(this);
     SetSlot(this, YEARS, years);
@@ -204,67 +188,13 @@ export class Duration implements Temporal.Duration {
       Math.abs(GetSlot(this, NANOSECONDS))
     );
   }
-  add(other: Params['add'][0], optionsParam: Params['add'][1] = undefined) {
+  add(other: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-      ES.ToLimitedTemporalDuration(other);
-    const options = ES.GetOptionsObject(optionsParam);
-    const relativeTo = ES.ToRelativeTemporalObject(options);
-    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.AddDuration(
-      GetSlot(this, YEARS),
-      GetSlot(this, MONTHS),
-      GetSlot(this, WEEKS),
-      GetSlot(this, DAYS),
-      GetSlot(this, HOURS),
-      GetSlot(this, MINUTES),
-      GetSlot(this, SECONDS),
-      GetSlot(this, MILLISECONDS),
-      GetSlot(this, MICROSECONDS),
-      GetSlot(this, NANOSECONDS),
-      years,
-      months,
-      weeks,
-      days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      relativeTo
-    ));
-    return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+    return ES.AddDurationToOrSubtractDurationFromDuration('add', this, other, options);
   }
-  subtract(other: Params['subtract'][0], optionsParam: Params['subtract'][1] = undefined) {
+  subtract(other: Params['subtract'][0], options: Params['subtract'][1] = undefined): Return['subtract'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-      ES.ToLimitedTemporalDuration(other);
-    const options = ES.GetOptionsObject(optionsParam);
-    const relativeTo = ES.ToRelativeTemporalObject(options);
-    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.AddDuration(
-      GetSlot(this, YEARS),
-      GetSlot(this, MONTHS),
-      GetSlot(this, WEEKS),
-      GetSlot(this, DAYS),
-      GetSlot(this, HOURS),
-      GetSlot(this, MINUTES),
-      GetSlot(this, SECONDS),
-      GetSlot(this, MILLISECONDS),
-      GetSlot(this, MICROSECONDS),
-      GetSlot(this, NANOSECONDS),
-      -years,
-      -months,
-      -weeks,
-      -days,
-      -hours,
-      -minutes,
-      -seconds,
-      -milliseconds,
-      -microseconds,
-      -nanoseconds,
-      relativeTo
-    ));
-    return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+    return ES.AddDurationToOrSubtractDurationFromDuration('subtract', this, other, options);
   }
   round(optionsParam: Params['round'][0]): Return['round'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
@@ -509,8 +439,8 @@ export class Duration implements Temporal.Duration {
     const ms2 = GetSlot(two, MILLISECONDS);
     const µs2 = GetSlot(two, MICROSECONDS);
     let ns2 = GetSlot(two, NANOSECONDS);
-    const shift1 = ES.CalculateOffsetShift(relativeTo, y1, mon1, w1, d1, h1, min1, s1, ms1, µs1, ns1);
-    const shift2 = ES.CalculateOffsetShift(relativeTo, y2, mon2, w2, d2, h2, min2, s2, ms2, µs2, ns2);
+    const shift1 = ES.CalculateOffsetShift(relativeTo, y1, mon1, w1, d1, 0, 0, 0, 0, 0, 0);
+    const shift2 = ES.CalculateOffsetShift(relativeTo, y2, mon2, w2, d2, 0, 0, 0, 0, 0, 0);
     if (y1 !== 0 || y2 !== 0 || mon1 !== 0 || mon2 !== 0 || w1 !== 0 || w2 !== 0) {
       ({ days: d1 } = ES.UnbalanceDurationRelative(y1, mon1, w1, d1, 'day', relativeTo));
       ({ days: d2 } = ES.UnbalanceDurationRelative(y2, mon2, w2, d2, 'day', relativeTo));

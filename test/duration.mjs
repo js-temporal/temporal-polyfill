@@ -11,247 +11,7 @@ import * as Temporal from '@js-temporal/polyfill';
 const { Duration } = Temporal;
 
 describe('Duration', () => {
-  describe('Structure', () => {
-    it('Duration is a Function', () => {
-      equal(typeof Duration, 'function');
-    });
-    it('Duration has a prototype', () => {
-      assert(Duration.prototype);
-      equal(typeof Duration.prototype, 'object');
-    });
-    describe('Duration.prototype', () => {
-      it('Duration.prototype has sign', () => {
-        assert('sign' in Duration.prototype);
-      });
-      it('Duration.prototype has blank', () => {
-        assert('blank' in Duration.prototype);
-      });
-      it('Duration.prototype.with is a Function', () => {
-        equal(typeof Duration.prototype.with, 'function');
-      });
-      it('Duration.prototype.add is a Function', () => {
-        equal(typeof Duration.prototype.add, 'function');
-      });
-      it('Duration.prototype.subtract is a Function', () => {
-        equal(typeof Duration.prototype.subtract, 'function');
-      });
-      it('Duration.prototype.negated is a Function', () => {
-        equal(typeof Duration.prototype.negated, 'function');
-      });
-      it('Duration.prototype.abs is a Function', () => {
-        equal(typeof Duration.prototype.abs, 'function');
-      });
-      it('Duration.prototype.round is a Function', () => {
-        equal(typeof Duration.prototype.round, 'function');
-      });
-    });
-    it('Duration.compare is a Function', () => {
-      equal(typeof Duration.compare, 'function');
-    });
-  });
-  describe('Construction', () => {
-    it('positive duration, sets fields', () => {
-      const d = new Duration(5, 5, 5, 5, 5, 5, 5, 5, 5, 0);
-      equal(d.sign, 1);
-      equal(d.years, 5);
-      equal(d.months, 5);
-      equal(d.weeks, 5);
-      equal(d.days, 5);
-      equal(d.hours, 5);
-      equal(d.minutes, 5);
-      equal(d.seconds, 5);
-      equal(d.milliseconds, 5);
-      equal(d.microseconds, 5);
-      equal(d.nanoseconds, 0);
-    });
-    it('negative duration, sets fields', () => {
-      const d = new Duration(-5, -5, -5, -5, -5, -5, -5, -5, -5, 0);
-      equal(d.sign, -1);
-      equal(d.years, -5);
-      equal(d.months, -5);
-      equal(d.weeks, -5);
-      equal(d.days, -5);
-      equal(d.hours, -5);
-      equal(d.minutes, -5);
-      equal(d.seconds, -5);
-      equal(d.milliseconds, -5);
-      equal(d.microseconds, -5);
-      equal(d.nanoseconds, 0);
-    });
-    it('zero-length, sets fields', () => {
-      const d = new Duration();
-      equal(d.sign, 0);
-      equal(d.years, 0);
-      equal(d.months, 0);
-      equal(d.weeks, 0);
-      equal(d.days, 0);
-      equal(d.hours, 0);
-      equal(d.minutes, 0);
-      equal(d.seconds, 0);
-      equal(d.milliseconds, 0);
-      equal(d.microseconds, 0);
-      equal(d.nanoseconds, 0);
-    });
-    it('constructor treats -0 as 0', () => {
-      const d = new Duration(-0, -0, -0, -0, -0, -0, -0, -0, -0, -0);
-      equal(d.sign, 0);
-      equal(d.years, 0);
-      equal(d.months, 0);
-      equal(d.weeks, 0);
-      equal(d.days, 0);
-      equal(d.hours, 0);
-      equal(d.minutes, 0);
-      equal(d.seconds, 0);
-      equal(d.milliseconds, 0);
-      equal(d.microseconds, 0);
-      equal(d.nanoseconds, 0);
-    });
-    it('mixed positive and negative values throw', () => {
-      throws(() => new Duration(-1, 1, 1, 1, 1, 1, 1, 1, 1, 1), RangeError);
-      throws(() => new Duration(1, -1, 1, 1, 1, 1, 1, 1, 1, 1), RangeError);
-      throws(() => new Duration(1, 1, -1, 1, 1, 1, 1, 1, 1, 1), RangeError);
-      throws(() => new Duration(1, 1, 1, -1, 1, 1, 1, 1, 1, 1), RangeError);
-      throws(() => new Duration(1, 1, 1, 1, -1, 1, 1, 1, 1, 1), RangeError);
-      throws(() => new Duration(1, 1, 1, 1, 1, -1, 1, 1, 1, 1), RangeError);
-      throws(() => new Duration(1, 1, 1, 1, 1, 1, -1, 1, 1, 1), RangeError);
-      throws(() => new Duration(1, 1, 1, 1, 1, 1, 1, -1, 1, 1), RangeError);
-      throws(() => new Duration(1, 1, 1, 1, 1, 1, 1, 1, -1, 1), RangeError);
-      throws(() => new Duration(1, 1, 1, 1, 1, 1, 1, 1, 1, -1), RangeError);
-    });
-    it('fractional values throw', () => {
-      throws(() => new Duration(1.1), RangeError);
-      throws(() => new Duration(0, 1.1), RangeError);
-      throws(() => new Duration(0, 0, 1.1), RangeError);
-      throws(() => new Duration(0, 0, 0, 1.1), RangeError);
-      throws(() => new Duration(0, 0, 0, 0, 1.1), RangeError);
-      throws(() => new Duration(0, 0, 0, 0, 0, 1.1), RangeError);
-      throws(() => new Duration(0, 0, 0, 0, 0, 0, 1.1), RangeError);
-      throws(() => new Duration(0, 0, 0, 0, 0, 0, 0, 1.1), RangeError);
-      throws(() => new Duration(0, 0, 0, 0, 0, 0, 0, 0, 1.1), RangeError);
-      throws(() => new Duration(0, 0, 0, 0, 0, 0, 0, 0, 0, 1.1), RangeError);
-    });
-  });
-  describe('from()', () => {
-    it('Duration.from(P5Y) is not the same object', () => {
-      const orig = new Duration(5);
-      const from = Duration.from(orig);
-      notEqual(from, orig);
-    });
-    it('Duration.from({ milliseconds: 5 }) == PT0.005S', () =>
-      equal(`${Duration.from({ milliseconds: 5 })}`, 'PT0.005S'));
-    it('Duration.from("P1D") == P1D', () => equal(`${Duration.from('P1D')}`, 'P1D'));
-    it('lowercase variant', () => equal(`${Duration.from('p1y1m1dt1h1m1s')}`, 'P1Y1M1DT1H1M1S'));
-    it('upto nine decimal places work', () => {
-      equal(`${Duration.from('P1Y1M1W1DT1H1M1.1S')}`, 'P1Y1M1W1DT1H1M1.1S');
-      equal(`${Duration.from('P1Y1M1W1DT1H1M1.12S')}`, 'P1Y1M1W1DT1H1M1.12S');
-      equal(`${Duration.from('P1Y1M1W1DT1H1M1.123S')}`, 'P1Y1M1W1DT1H1M1.123S');
-      equal(`${Duration.from('P1Y1M1W1DT1H1M1.1234S')}`, 'P1Y1M1W1DT1H1M1.1234S');
-      equal(`${Duration.from('P1Y1M1W1DT1H1M1.12345S')}`, 'P1Y1M1W1DT1H1M1.12345S');
-      equal(`${Duration.from('P1Y1M1W1DT1H1M1.123456S')}`, 'P1Y1M1W1DT1H1M1.123456S');
-      equal(`${Duration.from('P1Y1M1W1DT1H1M1.1234567S')}`, 'P1Y1M1W1DT1H1M1.1234567S');
-      equal(`${Duration.from('P1Y1M1W1DT1H1M1.12345678S')}`, 'P1Y1M1W1DT1H1M1.12345678S');
-      equal(`${Duration.from('P1Y1M1W1DT1H1M1.123456789S')}`, 'P1Y1M1W1DT1H1M1.123456789S');
-    });
-    it('above nine decimal places throw', () => {
-      throws(() => Duration.from('P1Y1M1W1DT1H1M1.123456789123S'), RangeError);
-    });
-    it('variant decimal separator', () => {
-      equal(`${Duration.from('P1Y1M1W1DT1H1M1,12S')}`, 'P1Y1M1W1DT1H1M1.12S');
-    });
-    it('decimal places only allowed in time units', () => {
-      [
-        'P0.5Y',
-        'P1Y0,5M',
-        'P1Y1M0.5W',
-        'P1Y1M1W0,5D',
-        { years: 0.5 },
-        { months: 0.5 },
-        { weeks: 0.5 },
-        { days: 0.5 }
-      ].forEach((str) => throws(() => Duration.from(str), RangeError));
-    });
-    it('decimal places only allowed in last non-zero unit', () => {
-      [
-        'P1Y1M1W1DT0.5H5S',
-        'P1Y1M1W1DT1.5H0,5M',
-        'P1Y1M1W1DT1H0.5M0.5S',
-        { hours: 0.5, minutes: 20 },
-        { hours: 0.5, seconds: 15 },
-        { minutes: 10.7, nanoseconds: 400 }
-      ].forEach((str) => throws(() => Duration.from(str), RangeError));
-    });
-    it('decimal places are properly handled on valid units', () => {
-      equal(`${Duration.from('P1DT0.5M')}`, 'P1DT30S');
-      equal(`${Duration.from('P1DT0,5H')}`, 'P1DT30M');
-    });
-    it('"P" by itself is not a valid string', () => {
-      ['P', 'PT', '-P', '-PT', '+P', '+PT'].forEach((s) => throws(() => Duration.from(s), RangeError));
-    });
-    it('no junk at end of string', () => throws(() => Duration.from('P1Y1M1W1DT1H1M1.01Sjunk'), RangeError));
-    it('with a + sign', () => {
-      const d = Duration.from('+P1D');
-      equal(d.days, 1);
-    });
-    it('with a - sign', () => {
-      const d = Duration.from('-P1D');
-      equal(d.days, -1);
-    });
-    it('variant minus sign', () => {
-      const d = Duration.from('\u2212P1D');
-      equal(d.days, -1);
-    });
-    it('all units have the same sign', () => {
-      const d = Duration.from('-P1Y1M1W1DT1H1M1.123456789S');
-      equal(d.years, -1);
-      equal(d.months, -1);
-      equal(d.weeks, -1);
-      equal(d.days, -1);
-      equal(d.hours, -1);
-      equal(d.minutes, -1);
-      equal(d.seconds, -1);
-      equal(d.milliseconds, -123);
-      equal(d.microseconds, -456);
-      equal(d.nanoseconds, -789);
-    });
-    it('does not accept minus signs in individual units', () => {
-      throws(() => Duration.from('P-1Y1M'), RangeError);
-      throws(() => Duration.from('P1Y-1M'), RangeError);
-    });
-    it('mixed positive and negative values throw', () => {
-      throws(() => Duration.from({ hours: 1, minutes: -30 }), RangeError);
-    });
-    it('excessive values unchanged', () => {
-      equal(`${Duration.from({ minutes: 100 })}`, 'PT100M');
-    });
-    it('object must contain at least one correctly-spelled property', () => {
-      throws(() => Duration.from({}), TypeError);
-      throws(() => Duration.from({ month: 12 }), TypeError);
-    });
-    it('incorrectly-spelled properties are ignored', () => {
-      equal(`${Duration.from({ month: 1, days: 1 })}`, 'P1D');
-    });
-  });
   describe('toString()', () => {
-    it('excessive sub-second units balance themselves when serializing', () => {
-      equal(`${Duration.from({ milliseconds: 3500 })}`, 'PT3.5S');
-      equal(`${Duration.from({ microseconds: 3500 })}`, 'PT0.0035S');
-      equal(`${Duration.from({ nanoseconds: 3500 })}`, 'PT0.0000035S');
-      equal(`${new Duration(0, 0, 0, 0, 0, 0, 0, 1111, 1111, 1111)}`, 'PT1.112112111S');
-      equal(`${Duration.from({ seconds: 120, milliseconds: 3500 })}`, 'PT123.5S');
-    });
-    it('negative sub-second units are balanced correctly', () => {
-      equal(`${Duration.from({ milliseconds: -250 })}`, '-PT0.25S');
-      equal(`${Duration.from({ milliseconds: -3500 })}`, '-PT3.5S');
-      equal(`${Duration.from({ microseconds: -250 })}`, '-PT0.00025S');
-      equal(`${Duration.from({ microseconds: -3500 })}`, '-PT0.0035S');
-      equal(`${Duration.from({ nanoseconds: -250 })}`, '-PT0.00000025S');
-      equal(`${Duration.from({ nanoseconds: -3500 })}`, '-PT0.0000035S');
-      equal(`${new Duration(0, 0, 0, 0, 0, 0, 0, -1111, -1111, -1111)}`, '-PT1.112112111S');
-      equal(`${Duration.from({ seconds: -120, milliseconds: -3500 })}`, '-PT123.5S');
-    });
-    it('emits a negative sign for a negative duration', () => {
-      equal(`${Duration.from({ weeks: -1, days: -1 })}`, '-P1W1D');
-    });
     it("serializing balance doesn't trip out-of-range", () => {
       const d = Duration.from({ seconds: Number.MAX_VALUE, milliseconds: Number.MAX_VALUE });
       const str = d.toString();
@@ -263,92 +23,9 @@ describe('Duration', () => {
       const d = Duration.from({ milliseconds: Number.MAX_SAFE_INTEGER, microseconds: Number.MAX_SAFE_INTEGER });
       equal(`${d}`, 'PT9016206453995.731991S');
     });
-    const d1 = new Duration(0, 0, 0, 0, 15, 23);
-    const d2 = new Duration(0, 0, 0, 0, 15, 23, 30);
-    const d3 = new Duration(0, 0, 0, 0, 15, 23, 30, 543, 200);
-    it('smallestUnits are aliases for fractional digits', () => {
-      equal(d3.toString({ smallestUnit: 'seconds' }), d3.toString({ fractionalSecondDigits: 0 }));
-      equal(d3.toString({ smallestUnit: 'milliseconds' }), d3.toString({ fractionalSecondDigits: 3 }));
-      equal(d3.toString({ smallestUnit: 'microseconds' }), d3.toString({ fractionalSecondDigits: 6 }));
-      equal(d3.toString({ smallestUnit: 'nanoseconds' }), d3.toString({ fractionalSecondDigits: 9 }));
-    });
-    it('throws on invalid or disallowed smallestUnit', () => {
-      ['eras', 'years', 'months', 'weeks', 'days', 'hours', 'minutes', 'nonsense'].forEach((smallestUnit) =>
-        throws(() => d1.toString({ smallestUnit }), RangeError)
-      );
-    });
-    it('accepts singular units', () => {
-      equal(d3.toString({ smallestUnit: 'second' }), d3.toString({ smallestUnit: 'seconds' }));
-      equal(d3.toString({ smallestUnit: 'millisecond' }), d3.toString({ smallestUnit: 'milliseconds' }));
-      equal(d3.toString({ smallestUnit: 'microsecond' }), d3.toString({ smallestUnit: 'microseconds' }));
-      equal(d3.toString({ smallestUnit: 'nanosecond' }), d3.toString({ smallestUnit: 'nanoseconds' }));
-    });
-    it('truncates or pads to 2 places', () => {
-      const options = { fractionalSecondDigits: 2 };
-      equal(d1.toString(options), 'PT15H23M0.00S');
-      equal(d2.toString(options), 'PT15H23M30.00S');
-      equal(d3.toString(options), 'PT15H23M30.54S');
-    });
-    it('pads to 7 places', () => {
-      const options = { fractionalSecondDigits: 7 };
-      equal(d1.toString(options), 'PT15H23M0.0000000S');
-      equal(d2.toString(options), 'PT15H23M30.0000000S');
-      equal(d3.toString(options), 'PT15H23M30.5432000S');
-    });
-    it('auto is the default', () => {
-      [d1, d2, d3].forEach((d) => equal(d.toString({ fractionalSecondDigits: 'auto' }), d.toString()));
-    });
-    it('throws on out of range or invalid fractionalSecondDigits', () => {
-      [-1, 10, Infinity, NaN, 'not-auto'].forEach((fractionalSecondDigits) =>
-        throws(() => d1.toString({ fractionalSecondDigits }), RangeError)
-      );
-    });
-    it('accepts and truncates fractional fractionalSecondDigits', () => {
-      equal(d3.toString({ fractionalSecondDigits: 5.5 }), 'PT15H23M30.54320S');
-    });
-    it('smallestUnit overrides fractionalSecondDigits', () => {
-      equal(d3.toString({ smallestUnit: 'seconds', fractionalSecondDigits: 9 }), 'PT15H23M30S');
-    });
-    it('throws on invalid roundingMode', () => {
-      throws(() => d1.toString({ roundingMode: 'cile' }), RangeError);
-    });
-    it('rounds to nearest', () => {
-      equal(d3.toString({ smallestUnit: 'seconds', roundingMode: 'halfExpand' }), 'PT15H23M31S');
-      equal(d3.toString({ fractionalSecondDigits: 3, roundingMode: 'halfExpand' }), 'PT15H23M30.543S');
-    });
-    it('rounds up', () => {
-      equal(d3.toString({ smallestUnit: 'seconds', roundingMode: 'ceil' }), 'PT15H23M31S');
-      equal(d3.toString({ fractionalSecondDigits: 3, roundingMode: 'ceil' }), 'PT15H23M30.544S');
-    });
-    it('rounds down', () => {
-      equal(d3.negated().toString({ smallestUnit: 'seconds', roundingMode: 'floor' }), '-PT15H23M31S');
-      equal(d3.negated().toString({ fractionalSecondDigits: 3, roundingMode: 'floor' }), '-PT15H23M30.544S');
-    });
-    it('truncates', () => {
-      equal(d3.toString({ smallestUnit: 'seconds', roundingMode: 'trunc' }), 'PT15H23M30S');
-      equal(d3.toString({ fractionalSecondDigits: 3, roundingMode: 'trunc' }), 'PT15H23M30.543S');
-    });
     it('rounding can affect units up to seconds', () => {
       const d4 = Duration.from('P1Y1M1W1DT23H59M59.999999999S');
       equal(d4.toString({ fractionalSecondDigits: 8, roundingMode: 'halfExpand' }), 'P1Y1M1W1DT23H59M60.00000000S');
-    });
-    it('options may only be an object or undefined', () => {
-      [null, 1, 'hello', true, Symbol('foo'), 1n].forEach((badOptions) =>
-        throws(() => d1.toString(badOptions), TypeError)
-      );
-      [{}, () => {}, undefined].forEach((options) => equal(d1.toString(options), 'PT15H23M'));
-    });
-  });
-  describe('toJSON()', () => {
-    it('is like toString but always with auto precision', () => {
-      const d = Duration.from({ hours: 1 });
-      equal(d.toJSON(), d.toString({ fractionalSecondDigits: 'auto' }));
-    });
-  });
-  describe('toLocaleString()', () => {
-    it('produces an implementation-defined string', () => {
-      const duration = Duration.from({ hours: 12, minutes: 30 });
-      equal(typeof duration.toLocaleString(), 'string');
     });
   });
   describe('min/max values', () => {
@@ -429,160 +106,15 @@ describe('Duration', () => {
       test(9, 'PT', 'S', '.');
     });
   });
-  describe('Duration.with()', () => {
-    const duration = new Duration(5, 5, 5, 5, 5, 5, 5, 5, 5, 5);
-    it('duration.with({ years: 1 } works', () => {
-      equal(`${duration.with({ years: 1 })}`, 'P1Y5M5W5DT5H5M5.005005005S');
-    });
-    it('duration.with({ months: 1 } works', () => {
-      equal(`${duration.with({ months: 1 })}`, 'P5Y1M5W5DT5H5M5.005005005S');
-    });
-    it('duration.with({ weeks: 1 } works', () => {
-      equal(`${duration.with({ weeks: 1 })}`, 'P5Y5M1W5DT5H5M5.005005005S');
-    });
-    it('duration.with({ days: 1 } works', () => {
-      equal(`${duration.with({ days: 1 })}`, 'P5Y5M5W1DT5H5M5.005005005S');
-    });
-    it('duration.with({ hours: 1 } works', () => {
-      equal(`${duration.with({ hours: 1 })}`, 'P5Y5M5W5DT1H5M5.005005005S');
-    });
-    it('duration.with({ minutes: 1 } works', () => {
-      equal(`${duration.with({ minutes: 1 })}`, 'P5Y5M5W5DT5H1M5.005005005S');
-    });
-    it('duration.with({ seconds: 1 } works', () => {
-      equal(`${duration.with({ seconds: 1 })}`, 'P5Y5M5W5DT5H5M1.005005005S');
-    });
-    it('duration.with({ milliseconds: 1 } works', () => {
-      equal(`${duration.with({ milliseconds: 1 })}`, 'P5Y5M5W5DT5H5M5.001005005S');
-    });
-    it('duration.with({ microseconds: 1 } works', () => {
-      equal(`${duration.with({ microseconds: 1 })}`, 'P5Y5M5W5DT5H5M5.005001005S');
-    });
-    it('duration.with({ nanoseconds: 1 } works', () => {
-      equal(`${duration.with({ nanoseconds: 1 })}`, 'P5Y5M5W5DT5H5M5.005005001S');
-    });
-    it('duration.with({ months: 1, seconds: 15 } works', () => {
-      equal(`${duration.with({ months: 1, seconds: 15 })}`, 'P5Y1M5W5DT5H5M15.005005005S');
-    });
-    it('mixed positive and negative values throw', () => {
-      throws(() => duration.with({ hours: 1, minutes: -1 }), RangeError);
-    });
-    it('can reverse the sign if all the fields are replaced', () => {
-      const d = Duration.from({ years: 5, days: 1 });
-      const d2 = d.with({ years: -1, days: -1, minutes: 0 });
-      equal(`${d2}`, '-P1Y1D');
-      notEqual(d.sign, d2.sign);
-    });
-    it('throws if new fields have a different sign from the old fields', () => {
-      const d = Duration.from({ years: 5, days: 1 });
-      throws(() => d.with({ months: -5, minutes: 0 }), RangeError);
-    });
-    it('sign cannot be manipulated independently', () => {
-      throws(() => duration.with({ sign: -1 }), TypeError);
-    });
-    it('object must contain at least one correctly-spelled property', () => {
-      throws(() => duration.with({}), TypeError);
-      throws(() => duration.with({ month: 12 }), TypeError);
-    });
-    it('incorrectly-spelled properties are ignored', () => {
-      equal(`${duration.with({ month: 1, days: 1 })}`, 'P5Y5M5W1DT5H5M5.005005005S');
-    });
-  });
   describe('Duration.add()', () => {
-    const duration = Duration.from({ days: 1, minutes: 5 });
-    it('adds same units', () => {
-      equal(`${duration.add({ days: 2, minutes: 5 })}`, 'P3DT10M');
-    });
-    it('adds different units', () => {
-      equal(`${duration.add({ hours: 12, seconds: 30 })}`, 'P1DT12H5M30S');
-    });
-    it('symmetric with regard to negative durations', () => {
-      equal(`${Duration.from('P3DT10M').add({ days: -2, minutes: -5 })}`, 'P1DT5M');
-      equal(`${Duration.from('P1DT12H5M30S').add({ hours: -12, seconds: -30 })}`, 'P1DT5M');
-    });
-    it('balances time units even if both operands are positive', () => {
-      const d = Duration.from('P50DT50H50M50.500500500S');
-      const result = d.add(d);
-      equal(result.days, 104);
-      equal(result.hours, 5);
-      equal(result.minutes, 41);
-      equal(result.seconds, 41);
-      equal(result.milliseconds, 1);
-      equal(result.microseconds, 1);
-      equal(result.nanoseconds, 0);
-    });
-    it('balances correctly if adding different units flips the overall sign', () => {
-      const d1 = Duration.from({ hours: -1, seconds: -60 });
-      equal(`${d1.add({ minutes: 122 })}`, 'PT1H1M');
-      const d2 = Duration.from({ hours: -1, seconds: -3721 });
-      equal(`${d2.add({ minutes: 61, nanoseconds: 3722000000001 })}`, 'PT1M1.000000001S');
-    });
     const max = new Duration(0, 0, 0, ...Array(7).fill(Number.MAX_VALUE));
     it('always throws when addition overflows', () => {
       throws(() => max.add(max), RangeError);
     });
-    it('mixed positive and negative values always throw', () => {
-      throws(() => duration.add({ hours: 1, minutes: -30 }), RangeError);
-    });
-    it('relativeTo required for years, months, and weeks', () => {
-      const d = Duration.from({ hours: 1 });
-      const dy = Duration.from({ years: 1 });
-      const dm = Duration.from({ months: 1 });
-      const dw = Duration.from({ weeks: 1 });
-      throws(() => d.add(dy), RangeError);
-      throws(() => d.add(dm), RangeError);
-      throws(() => d.add(dw), RangeError);
-      throws(() => dy.add(d), RangeError);
-      throws(() => dm.add(d), RangeError);
-      throws(() => dw.add(d), RangeError);
-      const relativeTo = Temporal.PlainDateTime.from('2000-01-01');
-      equal(`${d.add(dy, { relativeTo })}`, 'P1YT1H');
-      equal(`${d.add(dm, { relativeTo })}`, 'P1MT1H');
-      equal(`${d.add(dw, { relativeTo })}`, 'P1WT1H');
-      equal(`${dy.add(d, { relativeTo })}`, 'P1YT1H');
-      equal(`${dm.add(d, { relativeTo })}`, 'P1MT1H');
-      equal(`${dw.add(d, { relativeTo })}`, 'P1WT1H');
-    });
-    it('options may only be an object or undefined', () => {
-      [null, 1, 'hello', true, Symbol('foo'), 1n].forEach((badOptions) =>
-        throws(() => duration.add({ hours: 1 }, badOptions), TypeError)
-      );
-      [{}, () => {}, undefined].forEach((options) => equal(duration.add({ hours: 1 }, options).hours, 1));
-    });
-    it('object must contain at least one correctly-spelled property', () => {
-      throws(() => duration.add({}), TypeError);
-      throws(() => duration.add({ month: 12 }), TypeError);
-    });
-    it('incorrectly-spelled properties are ignored', () => {
-      equal(`${duration.add({ month: 1, days: 1 })}`, 'P2DT5M');
-    });
-    it('casts argument', () => {
-      equal(`${duration.add(Temporal.Duration.from('P2DT5M'))}`, 'P3DT10M');
-      equal(`${duration.add('P2DT5M')}`, 'P3DT10M');
-    });
-    it('relativeTo affects year length', () => {
-      const oneYear = new Duration(1);
-      const days365 = new Duration(0, 0, 0, 365);
-      equal(`${oneYear.add(days365, { relativeTo: Temporal.PlainDateTime.from('2016-01-01') })}`, 'P2Y');
-      equal(`${oneYear.add(days365, { relativeTo: Temporal.PlainDateTime.from('2015-01-01') })}`, 'P1Y11M30D');
-    });
-    it('relativeTo affects month length', () => {
-      const oneMonth = new Duration(0, 1);
-      const days30 = new Duration(0, 0, 0, 30);
-      equal(`${oneMonth.add(days30, { relativeTo: Temporal.PlainDateTime.from('2018-01-01') })}`, 'P2M2D');
-      equal(`${oneMonth.add(days30, { relativeTo: Temporal.PlainDateTime.from('2018-02-01') })}`, 'P1M30D');
-      equal(`${oneMonth.add(days30, { relativeTo: Temporal.PlainDateTime.from('2018-03-01') })}`, 'P2M');
-    });
-    it('first this is resolved against relativeTo, then the argument against relativeTo + this', () => {
-      const d1 = new Duration(0, 1, 0, 1);
-      const d2 = new Duration(0, 1, 0, 1);
-      const relativeTo = new Temporal.PlainDateTime(2000, 1, 1);
-      equal(`${d1.add(d2, { relativeTo })}`, 'P2M2D');
-    });
     const oneDay = new Duration(0, 0, 0, 1);
     const hours24 = new Duration(0, 0, 0, 0, 24);
-    it('relativeTo does not affect days if PlainDateTime', () => {
-      const relativeTo = Temporal.PlainDateTime.from('2017-01-01');
+    it('relativeTo does not affect days if PlainDate', () => {
+      const relativeTo = Temporal.PlainDate.from('2017-01-01');
       equal(`${oneDay.add(hours24, { relativeTo })}`, 'P2D');
     });
     it('relativeTo does not affect days if ZonedDateTime, and duration encompasses no DST change', () => {
@@ -663,8 +195,8 @@ describe('Duration', () => {
         'P1DT24H'
       );
     });
-    it('casts relativeTo to PlainDateTime if possible', () => {
-      equal(`${oneDay.add(hours24, { relativeTo: '2019-11-02T00:00' })}`, 'P2D');
+    it('casts relativeTo to PlainDate if possible', () => {
+      equal(`${oneDay.add(hours24, { relativeTo: '2019-11-02' })}`, 'P2D');
       equal(`${oneDay.add(hours24, { relativeTo: { year: 2019, month: 11, day: 2 } })}`, 'P2D');
     });
     it('throws on wrong offset for ZonedDateTime relativeTo string', () => {
@@ -698,127 +230,10 @@ describe('Duration', () => {
     });
   });
   describe('Duration.subtract()', () => {
-    const duration = Duration.from({ days: 3, hours: 1, minutes: 10 });
-    it('subtracts same units with positive result', () => {
-      equal(`${duration.subtract({ days: 1, minutes: 5 })}`, 'P2DT1H5M');
-    });
-    it('subtracts same units with zero result', () => {
-      equal(`${duration.subtract(duration)}`, 'PT0S');
-      equal(`${duration.subtract({ days: 3 })}`, 'PT1H10M');
-      equal(`${duration.subtract({ minutes: 10 })}`, 'P3DT1H');
-    });
-    it('balances when subtracting same units with negative result', () => {
-      equal(`${duration.subtract({ minutes: 15 })}`, 'P3DT55M');
-    });
-    it('balances when subtracting different units', () => {
-      equal(`${duration.subtract({ seconds: 30 })}`, 'P3DT1H9M30S');
-    });
-    it('symmetric with regard to negative durations', () => {
-      equal(`${Duration.from('P2DT1H5M').subtract({ days: -1, minutes: -5 })}`, 'P3DT1H10M');
-      equal(`${new Duration().subtract({ days: -3, hours: -1, minutes: -10 })}`, 'P3DT1H10M');
-      equal(`${Duration.from('PT1H10M').subtract({ days: -3 })}`, 'P3DT1H10M');
-      equal(`${Duration.from('P3DT1H').subtract({ minutes: -10 })}`, 'P3DT1H10M');
-      equal(`${Duration.from('P3DT55M').subtract({ minutes: -15 })}`, 'P3DT1H10M');
-      equal(`${Duration.from('P3DT1H9M30S').subtract({ seconds: -30 })}`, 'P3DT1H10M');
-    });
-    it('balances positive units up to the largest nonzero unit', () => {
-      const d = Duration.from({
-        minutes: 100,
-        seconds: 100,
-        milliseconds: 2000,
-        microseconds: 2000,
-        nanoseconds: 2000
-      });
-      const less = Duration.from({
-        minutes: 10,
-        seconds: 10,
-        milliseconds: 500,
-        microseconds: 500,
-        nanoseconds: 500
-      });
-      const result = d.subtract(less);
-      equal(result.minutes, 91);
-      equal(result.seconds, 31);
-      equal(result.milliseconds, 501);
-      equal(result.microseconds, 501);
-      equal(result.nanoseconds, 500);
-    });
-    const tenDays = Duration.from('P10D');
-    const tenMinutes = Duration.from('PT10M');
-    it('has correct negative result', () => {
-      let result = tenDays.subtract({ days: 15 });
-      equal(result.days, -5);
-      result = tenMinutes.subtract({ minutes: 15 });
-      equal(result.minutes, -5);
-    });
-    it('balances correctly if subtracting different units flips the overall sign', () => {
-      const d1 = Duration.from({ hours: 1, seconds: 60 });
-      equal(`${d1.subtract({ minutes: 122 })}`, '-PT1H1M');
-      const d2 = Duration.from({ hours: 1, seconds: 3721 });
-      equal(`${d2.subtract({ minutes: 61, nanoseconds: 3722000000001 })}`, '-PT1M1.000000001S');
-    });
-    it('mixed positive and negative values always throw', () => {
-      throws(() => duration.subtract({ hours: 1, minutes: -30 }), RangeError);
-    });
-    it('relativeTo required for years, months, and weeks', () => {
-      const d = Duration.from({ hours: 1 });
-      const dy = Duration.from({ years: 1, hours: 1 });
-      const dm = Duration.from({ months: 1, hours: 1 });
-      const dw = Duration.from({ weeks: 1, hours: 1 });
-      throws(() => d.subtract(dy), RangeError);
-      throws(() => d.subtract(dm), RangeError);
-      throws(() => d.subtract(dw), RangeError);
-      throws(() => dy.subtract(d), RangeError);
-      throws(() => dm.subtract(d), RangeError);
-      throws(() => dw.subtract(d), RangeError);
-      const relativeTo = Temporal.PlainDateTime.from('2000-01-01');
-      equal(`${d.subtract(dy, { relativeTo })}`, '-P1Y');
-      equal(`${d.subtract(dm, { relativeTo })}`, '-P1M');
-      equal(`${d.subtract(dw, { relativeTo })}`, '-P1W');
-      equal(`${dy.subtract(d, { relativeTo })}`, 'P1Y');
-      equal(`${dm.subtract(d, { relativeTo })}`, 'P1M');
-      equal(`${dw.subtract(d, { relativeTo })}`, 'P1W');
-    });
-    it('options may only be an object or undefined', () => {
-      [null, 1, 'hello', true, Symbol('foo'), 1n].forEach((badOptions) =>
-        throws(() => duration.subtract({ hours: 1 }, badOptions), TypeError)
-      );
-      [{}, () => {}, undefined].forEach((options) => equal(duration.subtract({ hours: 1 }, options).hours, 0));
-    });
-    it('object must contain at least one correctly-spelled property', () => {
-      throws(() => duration.subtract({}), TypeError);
-      throws(() => duration.subtract({ month: 12 }), TypeError);
-    });
-    it('incorrectly-spelled properties are ignored', () => {
-      equal(`${duration.subtract({ month: 1, days: 1 })}`, 'P2DT1H10M');
-    });
-    it('casts argument', () => {
-      equal(`${duration.subtract(Temporal.Duration.from('P1DT5M'))}`, 'P2DT1H5M');
-      equal(`${duration.subtract('P1DT5M')}`, 'P2DT1H5M');
-    });
-    it('relativeTo affects year length', () => {
-      const oneYear = new Duration(1);
-      const days365 = new Duration(0, 0, 0, 365);
-      equal(`${oneYear.subtract(days365, { relativeTo: Temporal.PlainDateTime.from('2017-01-01') })}`, 'PT0S');
-      equal(`${oneYear.subtract(days365, { relativeTo: Temporal.PlainDateTime.from('2016-01-01') })}`, 'P1D');
-    });
-    it('relativeTo affects month length', () => {
-      const oneMonth = new Duration(0, 1);
-      const days30 = new Duration(0, 0, 0, 30);
-      equal(`${oneMonth.subtract(days30, { relativeTo: Temporal.PlainDateTime.from('2018-02-01') })}`, '-P2D');
-      equal(`${oneMonth.subtract(days30, { relativeTo: Temporal.PlainDateTime.from('2018-03-01') })}`, 'P1D');
-      equal(`${oneMonth.subtract(days30, { relativeTo: Temporal.PlainDateTime.from('2018-04-01') })}`, 'PT0S');
-    });
-    it('first this is resolved against relativeTo, then the argument against relativeTo + this', () => {
-      const d1 = new Duration(0, 2, 1, 4);
-      const d2 = new Duration(0, 1, 1, 1);
-      const relativeTo = new Temporal.PlainDateTime(2000, 1, 1);
-      equal(`${d1.subtract(d2, { relativeTo })}`, 'P1M3D');
-    });
     const oneDay = new Duration(0, 0, 0, 1);
     const hours24 = new Duration(0, 0, 0, 0, 24);
-    it('relativeTo does not affect days if PlainDateTime', () => {
-      const relativeTo = Temporal.PlainDateTime.from('2017-01-01');
+    it('relativeTo does not affect days if PlainDate', () => {
+      const relativeTo = Temporal.PlainDate.from('2017-01-01');
       equal(`${oneDay.subtract(hours24, { relativeTo })}`, 'PT0S');
     });
     it('relativeTo does not affect days if ZonedDateTime, and duration encompasses no DST change', () => {
@@ -873,8 +288,8 @@ describe('Duration', () => {
         'PT1H'
       );
     });
-    it('casts relativeTo to PlainDateTime if possible', () => {
-      equal(`${oneDay.subtract(hours24, { relativeTo: '2019-11-02T00:00' })}`, 'PT0S');
+    it('casts relativeTo to PlainDate if possible', () => {
+      equal(`${oneDay.subtract(hours24, { relativeTo: '2019-11-02' })}`, 'PT0S');
       equal(`${oneDay.subtract(hours24, { relativeTo: { year: 2019, month: 11, day: 2 } })}`, 'PT0S');
     });
     it('throws on wrong offset for ZonedDateTime relativeTo string', () => {
@@ -897,48 +312,6 @@ describe('Duration', () => {
       throws(() => oneDay.subtract(hours24, { relativeTo: { year: 2019, month: 11 } }), TypeError);
       throws(() => oneDay.subtract(hours24, { relativeTo: { year: 2019, day: 3 } }), TypeError);
     });
-  });
-  describe("Comparison operators don't work", () => {
-    const d1 = Duration.from('P3DT1H');
-    const d1again = Duration.from('P3DT1H');
-    const d2 = Duration.from('PT2H20M30S');
-    it('=== is object equality', () => equal(d1, d1));
-    it('!== is object equality', () => notEqual(d1, d1again));
-    it('<', () => throws(() => d1 < d2));
-    it('>', () => throws(() => d1 > d2));
-    it('<=', () => throws(() => d1 <= d2));
-    it('>=', () => throws(() => d1 >= d2));
-  });
-  describe('Duration.negated()', () => {
-    it('makes a positive duration negative', () => {
-      const pos = Duration.from('P3DT1H');
-      const neg = pos.negated();
-      equal(`${neg}`, '-P3DT1H');
-      equal(neg.sign, -1);
-    });
-    it('makes a negative duration positive', () => {
-      const neg = Duration.from('-PT2H20M30S');
-      const pos = neg.negated();
-      equal(`${pos}`, 'PT2H20M30S');
-      equal(pos.sign, 1);
-    });
-    it('makes a copy of a zero duration', () => {
-      const zero = Duration.from('PT0S');
-      const zero2 = zero.negated();
-      equal(`${zero}`, `${zero2}`);
-      notEqual(zero, zero2);
-      equal(zero2.sign, 0);
-      equal(zero2.years, 0);
-      equal(zero2.months, 0);
-      equal(zero2.weeks, 0);
-      equal(zero2.days, 0);
-      equal(zero2.hours, 0);
-      equal(zero2.minutes, 0);
-      equal(zero2.seconds, 0);
-      equal(zero2.milliseconds, 0);
-      equal(zero2.microseconds, 0);
-      equal(zero2.nanoseconds, 0);
-    });
     it('throws with invalid offset in relativeTo', () => {
       throws(
         () =>
@@ -949,141 +322,19 @@ describe('Duration', () => {
       );
     });
   });
-  describe('Duration.abs()', () => {
-    it('makes a copy of a positive duration', () => {
-      const pos = Duration.from('P3DT1H');
-      const pos2 = pos.abs();
-      equal(`${pos}`, `${pos2}`);
-      notEqual(pos, pos2);
-      equal(pos2.sign, 1);
-    });
-    it('makes a negative duration positive', () => {
-      const neg = Duration.from('-PT2H20M30S');
-      const pos = neg.abs();
-      equal(`${pos}`, 'PT2H20M30S');
-      equal(pos.sign, 1);
-    });
-    it('makes a copy of a zero duration', () => {
-      const zero = Duration.from('PT0S');
-      const zero2 = zero.abs();
-      equal(`${zero}`, `${zero2}`);
-      notEqual(zero, zero2);
-      equal(zero2.sign, 0);
-    });
-  });
-  describe('Duration.blank', () => {
-    it('works', () => {
-      assert(!Duration.from('P3DT1H').blank);
-      assert(!Duration.from('-PT2H20M30S').blank);
-      assert(Duration.from('PT0S').blank);
-    });
-    it('zero regardless of how many fields are in the duration', () => {
-      const zero = Duration.from({
-        years: 0,
-        months: 0,
-        weeks: 0,
-        days: 0,
-        hours: 0,
-        minutes: 0,
-        seconds: 0,
-        milliseconds: 0,
-        microseconds: 0,
-        nanoseconds: 0
-      });
-      assert(zero.blank);
-    });
-  });
   describe('Duration.round()', () => {
     const d = new Duration(5, 5, 5, 5, 5, 5, 5, 5, 5, 5);
     const d2 = new Duration(0, 0, 0, 5, 5, 5, 5, 5, 5, 5);
-    const relativeTo = Temporal.PlainDateTime.from('2020-01-01T00:00');
-    it('parameter may only be an object or string', () => {
-      [null, 1, true, Symbol('foo'), 1n].forEach((badOptions) => throws(() => d.round(badOptions), TypeError));
-    });
-    it('throws without parameter', () => {
-      throws(() => d.round(), TypeError);
-    });
-    it('throws with empty object', () => {
-      throws(() => d.round({}), RangeError);
-    });
+    const relativeTo = Temporal.PlainDate.from('2020-01-01');
     it("succeeds with largestUnit: 'auto'", () => {
       equal(`${Duration.from({ hours: 25 }).round({ largestUnit: 'auto' })}`, 'PT25H');
-    });
-    it('throws on disallowed or invalid smallestUnit (object param)', () => {
-      ['era', 'nonsense'].forEach((smallestUnit) => {
-        throws(() => d.round({ smallestUnit }), RangeError);
-      });
-    });
-    it('throws on disallowed or invalid smallestUnit (string param)', () => {
-      ['era', 'nonsense'].forEach((smallestUnit) => {
-        throws(() => d.round(smallestUnit), RangeError);
-      });
-    });
-    it('throws if smallestUnit is larger than largestUnit', () => {
-      const units = [
-        'years',
-        'months',
-        'weeks',
-        'days',
-        'hours',
-        'minutes',
-        'seconds',
-        'milliseconds',
-        'microseconds',
-        'nanoseconds'
-      ];
-      for (let largestIdx = 1; largestIdx < units.length; largestIdx++) {
-        for (let smallestIdx = 0; smallestIdx < largestIdx; smallestIdx++) {
-          const largestUnit = units[largestIdx];
-          const smallestUnit = units[smallestIdx];
-          throws(() => d.round({ largestUnit, smallestUnit, relativeTo }), RangeError);
-        }
-      }
-    });
-    it('accepts string parameter as a shortcut for {smallestUnit}', () => {
-      const d = Temporal.Duration.from({
-        days: 1,
-        hours: 2,
-        minutes: 3,
-        seconds: 4,
-        milliseconds: 5,
-        microseconds: 6,
-        nanoseconds: 7
-      });
-      equal(d.round('day').toString(), 'P1D');
-      equal(d.round('hour').toString(), 'P1DT2H');
-      equal(d.round('minute').toString(), 'P1DT2H3M');
-      equal(d.round('second').toString(), 'P1DT2H3M4S');
-      equal(d.round('millisecond').toString(), 'P1DT2H3M4.005S');
-      equal(d.round('microsecond').toString(), 'P1DT2H3M4.005006S');
-      equal(d.round('nanosecond').toString(), 'P1DT2H3M4.005006007S');
-    });
-    it('assumes a different default for largestUnit if smallestUnit is larger than the default', () => {
-      const almostYear = Duration.from({ days: 364 });
-      equal(`${almostYear.round({ smallestUnit: 'years', relativeTo })}`, 'P1Y');
-      const almostMonth = Duration.from({ days: 27 });
-      equal(`${almostMonth.round({ smallestUnit: 'months', relativeTo })}`, 'P1M');
-      const almostWeek = Duration.from({ days: 6 });
-      equal(`${almostWeek.round({ smallestUnit: 'weeks', relativeTo })}`, 'P1W');
-      const almostDay = Duration.from({ seconds: 86399 });
-      equal(`${almostDay.round({ smallestUnit: 'days' })}`, 'P1D');
-      const almostHour = Duration.from({ seconds: 3599 });
-      equal(`${almostHour.round({ smallestUnit: 'hours' })}`, 'PT1H');
-      const almostMinute = Duration.from({ seconds: 59 });
-      equal(`${almostMinute.round({ smallestUnit: 'minutes' })}`, 'PT1M');
-      const almostSecond = Duration.from({ nanoseconds: 999999999 });
-      equal(`${almostSecond.round({ smallestUnit: 'seconds' })}`, 'PT1S');
-      const almostMillisecond = Duration.from({ nanoseconds: 999999 });
-      equal(`${almostMillisecond.round({ smallestUnit: 'milliseconds' })}`, 'PT0.001S');
-      const almostMicrosecond = Duration.from({ nanoseconds: 999 });
-      equal(`${almostMicrosecond.round({ smallestUnit: 'microseconds' })}`, 'PT0.000001S');
     });
     const hours25 = new Duration(0, 0, 0, 0, 25);
     it('days are 24 hours if relativeTo not given', () => {
       equal(`${hours25.round({ largestUnit: 'days' })}`, 'P1DT1H');
     });
-    it('days are 24 hours if relativeTo is PlainDateTime', () => {
-      const relativeTo = Temporal.PlainDateTime.from('2017-01-01');
+    it('days are 24 hours if relativeTo is PlainDate', () => {
+      const relativeTo = Temporal.PlainDate.from('2017-01-01');
       equal(`${hours25.round({ largestUnit: 'days', relativeTo })}`, 'P1DT1H');
     });
     it('days are 24 hours if relativeTo is ZonedDateTime, and duration encompasses no DST change', () => {
@@ -1168,24 +419,16 @@ describe('Duration', () => {
         'P1D'
       );
     });
-    it('casts relativeTo to PlainDateTime if possible', () => {
-      equal(`${hours25.round({ largestUnit: 'days', relativeTo: '2019-11-02T00:00' })}`, 'P1DT1H');
+    it('casts relativeTo to PlainDate if possible', () => {
+      equal(`${hours25.round({ largestUnit: 'days', relativeTo: '2019-11-02' })}`, 'P1DT1H');
       equal(`${hours25.round({ largestUnit: 'days', relativeTo: { year: 2019, month: 11, day: 2 } })}`, 'P1DT1H');
     });
     it('accepts datetime string equivalents or fields for relativeTo', () => {
-      ['2020-01-01', '2020-01-01T00:00:00.000000000', 20200101, 20200101n, { year: 2020, month: 1, day: 1 }].forEach(
+      ['2020-01-01', '2020-01-01T00:00:00.000000000', 20200101n, { year: 2020, month: 1, day: 1 }].forEach(
         (relativeTo) => {
           equal(`${d.round({ smallestUnit: 'seconds', relativeTo })}`, 'P5Y5M5W5DT5H5M5S');
         }
       );
-    });
-    it("throws on relativeTo that can't be converted to datetime string", () => {
-      throws(() => d.round({ smallestUnit: 'seconds', relativeTo: Symbol('foo') }), TypeError);
-    });
-    it('throws on relativeTo that converts to an invalid datetime string', () => {
-      [3.14, true, null, 'hello', 1n].forEach((relativeTo) => {
-        throws(() => d.round({ smallestUnit: 'seconds', relativeTo }), RangeError);
-      });
     });
     it('throws on wrong offset for ZonedDateTime relativeTo string', () => {
       throws(
@@ -1220,9 +463,6 @@ describe('Duration', () => {
         `${oneMonth.round({ largestUnit: 'days', relativeTo: { year: 2020, month: 1, day: 1, months: 2 } })}`,
         'P31D'
       );
-    });
-    it('throws on invalid roundingMode', () => {
-      throws(() => d2.round({ smallestUnit: 'nanoseconds', roundingMode: 'cile' }), RangeError);
     });
     it('throws if neither one of largestUnit or smallestUnit is given', () => {
       const hoursOnly = new Duration(0, 0, 0, 0, 1);
@@ -1546,19 +786,7 @@ describe('Duration', () => {
   describe('Duration.total()', () => {
     const d = new Duration(5, 5, 5, 5, 5, 5, 5, 5, 5, 5);
     const d2 = new Duration(0, 0, 0, 5, 5, 5, 5, 5, 5, 5);
-    const relativeTo = Temporal.PlainDateTime.from('2020-01-01T00:00');
-    it('parameter may only be an object or string', () => {
-      [null, 1, true, Symbol('foo'), 1n].forEach((badOptions) => throws(() => d.total(badOptions), TypeError));
-    });
-    it('accepts string parameter as shortcut for {unit}', () => {
-      equal(d2.total({ unit: 'days' }).toString(), d2.total('days').toString());
-      equal(d2.total({ unit: 'hours' }).toString(), d2.total('hours').toString());
-      equal(d2.total({ unit: 'minutes' }).toString(), d2.total('minutes').toString());
-      equal(d2.total({ unit: 'seconds' }).toString(), d2.total('seconds').toString());
-      equal(d2.total({ unit: 'milliseconds' }).toString(), d2.total('milliseconds').toString());
-      equal(d2.total({ unit: 'microseconds' }).toString(), d2.total('microseconds').toString());
-      equal(d2.total({ unit: 'nanoseconds' }).toString(), d2.total('nanoseconds').toString());
-    });
+    const relativeTo = Temporal.PlainDate.from('2020-01-01');
     it('throws on disallowed or invalid unit (object param)', () => {
       ['era', 'nonsense'].forEach((unit) => {
         throws(() => d.total({ unit }), RangeError);
@@ -1574,7 +802,7 @@ describe('Duration', () => {
       equal(s, 0.002031);
     });
     it('accepts datetime string equivalents or fields for relativeTo', () => {
-      ['2020-01-01', '2020-01-01T00:00:00.000000000', 20200101, 20200101n, { year: 2020, month: 1, day: 1 }].forEach(
+      ['2020-01-01', '2020-01-01T00:00:00.000000000', 20200101n, { year: 2020, month: 1, day: 1 }].forEach(
         (relativeTo) => {
           const daysPastJuly1 = 5 * 7 + 5 - 30; // 5 weeks + 5 days - 30 days in June
           const partialDayNanos =
@@ -1591,14 +819,6 @@ describe('Duration', () => {
           equal(total.toPrecision(15), totalMonths.toPrecision(15)); // 66.32930780242619
         }
       );
-    });
-    it("throws on relativeTo that can't be converted to datetime string", () => {
-      throws(() => d.total({ unit: 'months', relativeTo: Symbol('foo') }), TypeError);
-    });
-    it('throws on relativeTo that converts to an invalid datetime string', () => {
-      [3.14, true, null, 'hello', 1n].forEach((relativeTo) => {
-        throws(() => d.total({ unit: 'months', relativeTo }), RangeError);
-      });
     });
     it('throws on wrong offset for ZonedDateTime relativeTo string', () => {
       throws(() => d.total({ unit: 'months', relativeTo: '1971-01-01T00:00+02:00[Africa/Monrovia]' }), RangeError);
@@ -1699,7 +919,7 @@ describe('Duration', () => {
       equal(negativeD2.total({ unit: 'nanoseconds' }), -totalD2.nanoseconds);
     });
 
-    const endpoint = relativeTo.add(d);
+    const endpoint = relativeTo.toPlainDateTime().add(d);
     const options = (unit) => ({ largestUnit: unit, smallestUnit: unit, roundingMode: 'trunc' });
     const fullYears = 5;
     const fullDays = endpoint.since(relativeTo, options('days')).days;
@@ -1757,8 +977,8 @@ describe('Duration', () => {
       );
     });
     const oneDay = new Duration(0, 0, 0, 1);
-    it('relativeTo does not affect days if PlainDateTime', () => {
-      const relativeTo = Temporal.PlainDateTime.from('2017-01-01');
+    it('relativeTo does not affect days if PlainDate', () => {
+      const relativeTo = Temporal.PlainDate.from('2017-01-01');
       equal(oneDay.total({ unit: 'hours', relativeTo }), 24);
     });
     it('relativeTo does not affect days if ZonedDateTime, and duration encompasses no DST change', () => {
@@ -1869,18 +1089,6 @@ describe('Duration', () => {
       const twoYears = Duration.from({ months: -11, days: -396 });
       equal(twoYears.total({ unit: 'years', relativeTo: '2017-01-01' }), -2);
     });
-    it('accepts singular units', () => {
-      equal(d.total({ unit: 'year', relativeTo }), d.total({ unit: 'years', relativeTo }));
-      equal(d.total({ unit: 'month', relativeTo }), d.total({ unit: 'months', relativeTo }));
-      equal(d.total({ unit: 'day', relativeTo }), d.total({ unit: 'days', relativeTo }));
-      equal(d.total({ unit: 'hour', relativeTo }), d.total({ unit: 'hours', relativeTo }));
-      equal(d.total({ unit: 'minute', relativeTo }), d.total({ unit: 'minutes', relativeTo }));
-      equal(d.total({ unit: 'second', relativeTo }), d.total({ unit: 'seconds', relativeTo }));
-      equal(d.total({ unit: 'second', relativeTo }), d.total({ unit: 'seconds', relativeTo }));
-      equal(d.total({ unit: 'millisecond', relativeTo }), d.total({ unit: 'milliseconds', relativeTo }));
-      equal(d.total({ unit: 'microsecond', relativeTo }), d.total({ unit: 'microseconds', relativeTo }));
-      equal(d.total({ unit: 'nanosecond', relativeTo }), d.total({ unit: 'nanoseconds', relativeTo }));
-    });
     it('throws with invalid offset in relativeTo', () => {
       throws(
         () =>
@@ -1893,97 +1101,6 @@ describe('Duration', () => {
     });
   });
   describe('Duration.compare', () => {
-    describe('time units only', () => {
-      const d1 = new Duration(0, 0, 0, 0, 5, 5, 5, 5, 5, 5);
-      const d2 = new Duration(0, 0, 0, 0, 5, 4, 5, 5, 5, 5);
-      it('equal', () => equal(Duration.compare(d1, d1), 0));
-      it('smaller/larger', () => equal(Duration.compare(d2, d1), -1));
-      it('larger/smaller', () => equal(Duration.compare(d1, d2), 1));
-      it('negative/negative equal', () => equal(Duration.compare(d1.negated(), d1.negated()), 0));
-      it('negative/negative smaller/larger', () => equal(Duration.compare(d2.negated(), d1.negated()), 1));
-      it('negative/negative larger/smaller', () => equal(Duration.compare(d1.negated(), d2.negated()), -1));
-      it('negative/positive', () => equal(Duration.compare(d1.negated(), d2), -1));
-      it('positive/negative', () => equal(Duration.compare(d1, d2.negated()), 1));
-    });
-    describe('date units', () => {
-      const d1 = new Duration(5, 5, 5, 5, 5, 5, 5, 5, 5, 5);
-      const d2 = new Duration(5, 5, 5, 5, 5, 4, 5, 5, 5, 5);
-      const relativeTo = Temporal.PlainDateTime.from('2017-01-01');
-      it('relativeTo is required', () => throws(() => Duration.compare(d1, d2)), RangeError);
-      it('equal', () => equal(Duration.compare(d1, d1, { relativeTo }), 0));
-      it('smaller/larger', () => equal(Duration.compare(d2, d1, { relativeTo }), -1));
-      it('larger/smaller', () => equal(Duration.compare(d1, d2, { relativeTo }), 1));
-      it('negative/negative equal', () => equal(Duration.compare(d1.negated(), d1.negated(), { relativeTo }), 0));
-      it('negative/negative smaller/larger', () =>
-        equal(Duration.compare(d2.negated(), d1.negated(), { relativeTo }), 1));
-      it('negative/negative larger/smaller', () =>
-        equal(Duration.compare(d1.negated(), d2.negated(), { relativeTo }), -1));
-      it('negative/positive', () => equal(Duration.compare(d1.negated(), d2, { relativeTo }), -1));
-      it('positive/negative', () => equal(Duration.compare(d1, d2.negated(), { relativeTo }), 1));
-    });
-    it('casts first argument', () => {
-      equal(Duration.compare({ hours: 12 }, new Duration()), 1);
-      equal(Duration.compare('PT12H', new Duration()), 1);
-    });
-    it('casts second argument', () => {
-      equal(Duration.compare(new Duration(), { hours: 12 }), -1);
-      equal(Duration.compare(new Duration(), 'PT12H'), -1);
-    });
-    it('object must contain at least one correctly-spelled property', () => {
-      throws(() => Duration.compare({ hour: 12 }, new Duration()), TypeError);
-      throws(() => Duration.compare(new Duration(), { hour: 12 }), TypeError);
-    });
-    it('ignores incorrect properties', () => {
-      equal(Duration.compare({ hours: 12, minute: 5 }, { hours: 12, day: 5 }), 0);
-    });
-    it('relativeTo affects year length', () => {
-      const oneYear = new Duration(1);
-      const days365 = new Duration(0, 0, 0, 365);
-      equal(Duration.compare(oneYear, days365, { relativeTo: Temporal.PlainDateTime.from('2017-01-01') }), 0);
-      equal(Duration.compare(oneYear, days365, { relativeTo: Temporal.PlainDateTime.from('2016-01-01') }), 1);
-    });
-    it('relativeTo affects month length', () => {
-      const oneMonth = new Duration(0, 1);
-      const days30 = new Duration(0, 0, 0, 30);
-      equal(Duration.compare(oneMonth, days30, { relativeTo: Temporal.PlainDateTime.from('2018-04-01') }), 0);
-      equal(Duration.compare(oneMonth, days30, { relativeTo: Temporal.PlainDateTime.from('2018-03-01') }), 1);
-      equal(Duration.compare(oneMonth, days30, { relativeTo: Temporal.PlainDateTime.from('2018-02-01') }), -1);
-    });
-    const oneDay = new Duration(0, 0, 0, 1);
-    const hours24 = new Duration(0, 0, 0, 0, 24);
-    it('relativeTo not required for days', () => {
-      equal(Duration.compare(oneDay, hours24), 0);
-    });
-    it('relativeTo does not affect days if PlainDateTime', () => {
-      const relativeTo = Temporal.PlainDateTime.from('2017-01-01');
-      equal(Duration.compare(oneDay, hours24, { relativeTo }), 0);
-    });
-    it('relativeTo does not affect days if ZonedDateTime, and duration encompasses no DST change', () => {
-      const relativeTo = Temporal.ZonedDateTime.from('2017-01-01T00:00[America/Montevideo]');
-      equal(Duration.compare(oneDay, hours24, { relativeTo }), 0);
-    });
-    it('relativeTo does affect days if ZonedDateTime, and duration encompasses DST change', () => {
-      const relativeTo = Temporal.ZonedDateTime.from('2019-11-03T00:00[America/Vancouver]');
-      equal(Duration.compare(oneDay, hours24, { relativeTo }), 1);
-    });
-    it('casts relativeTo to ZonedDateTime if possible', () => {
-      equal(Duration.compare(oneDay, hours24, { relativeTo: '2019-11-03T00:00[America/Vancouver]' }), 1);
-      equal(
-        Duration.compare(oneDay, hours24, {
-          relativeTo: { year: 2019, month: 11, day: 3, timeZone: 'America/Vancouver' }
-        }),
-        1
-      );
-    });
-    it('casts relativeTo to PlainDateTime if possible', () => {
-      equal(Duration.compare(oneDay, hours24, { relativeTo: '2019-11-03T00:00' }), 0);
-      equal(Duration.compare(oneDay, hours24, { relativeTo: { year: 2019, month: 11, day: 3 } }), 0);
-    });
-    it('at least the required properties must be present in relativeTo', () => {
-      throws(() => Duration.compare(oneDay, hours24, { relativeTo: { month: 11, day: 3 } }), TypeError);
-      throws(() => Duration.compare(oneDay, hours24, { relativeTo: { year: 2019, month: 11 } }), TypeError);
-      throws(() => Duration.compare(oneDay, hours24, { relativeTo: { year: 2019, day: 3 } }), TypeError);
-    });
     it('does not lose precision when totaling everything down to nanoseconds', () => {
       notEqual(Duration.compare({ days: 200 }, { days: 200, nanoseconds: 1 }), 0);
     });

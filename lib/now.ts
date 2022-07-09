@@ -1,5 +1,5 @@
 import * as ES from './ecmascript';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import { Instant } from './instant';
 
 const instant: typeof Temporal.Now['instant'] = () => {

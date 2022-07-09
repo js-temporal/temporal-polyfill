@@ -63,6 +63,37 @@ function withCode(productionLike, func) {
   return new FromFunction(func, productionLike);
 }
 
+// Return a productionLike that defers to another productionLike for generation
+// but filters out any result that a validator function
+// rejects with SyntaxError.
+function withSyntaxConstraints(productionLike, validatorFunc) {
+  return { generate: filtered };
+
+  function filtered(data) {
+    let dataClone = { ...data };
+    let result = productionLike.generate(dataClone);
+    try {
+      validatorFunc(result, dataClone);
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        // Generated result violated a constraint; try again
+        // (but allow crashing if the call stack gets too deep).
+        return filtered(data);
+      } else {
+        // Propagate any other error.
+        throw e;
+      }
+    }
+
+    // Copy properties that were modified on the cloned input data.
+    for (let key of Reflect.ownKeys(dataClone)) {
+      data[key] = dataClone[key];
+    }
+
+    return result;
+  }
+}
+
 class Literal {
   constructor(str) {
     this.str = str;
@@ -185,18 +216,22 @@ const monthsDesignator = character('Mm');
 const durationDesignator = character('Pp');
 const secondsDesignator = character('Ss');
 const dateTimeSeparator = character(' Tt');
-const durationTimeDesignator = character('Tt');
+const timeDesignator = character('Tt');
 const weeksDesignator = character('Ww');
 const yearsDesignator = character('Yy');
 const utcDesignator = withCode(character('Zz'), (data) => {
   data.z = 'Z';
-  data.offset = '+00:00';
 });
 const timeFractionalPart = between(1, 9, digit());
 const fraction = seq(decimalSeparator, timeFractionalPart);
 
 const dateFourDigitYear = repeat(4, digit());
-const dateExtendedYear = seq(sign, repeat(6, digit()));
+
+const dateExtendedYear = withSyntaxConstraints(seq(sign, repeat(6, digit())), (result) => {
+  if (result === '-000000' || result === '−000000') {
+    throw new SyntaxError('Negative zero extended year');
+  }
+});
 const dateYear = withCode(
   choice(dateFourDigitYear, dateExtendedYear),
   (data, result) => (data.year = +result.replace('\u2212', '-'))
@@ -204,12 +239,26 @@ const dateYear = withCode(
 const dateMonth = withCode(zeroPaddedInclusive(1, 12, 2), (data, result) => (data.month = +result));
 const dateDay = withCode(zeroPaddedInclusive(1, 31, 2), (data, result) => (data.day = +result));
 
-const timeHour = withCode(hour, (data, result) => (data.hour = +result));
-const timeMinute = withCode(minuteSecond, (data, result) => (data.minute = +result));
-const timeSecond = withCode(choice(minuteSecond, '60'), (data, result) => {
+function saveHour(data, result) {
+  data.hour = +result;
+}
+function saveMinute(data, result) {
+  data.minute = +result;
+}
+function saveSecond(data, result) {
   data.second = +result;
   if (data.second === 60) data.second = 59;
-});
+}
+const timeHour = withCode(hour, saveHour);
+const timeMinute = withCode(minuteSecond, saveMinute);
+const timeSecond = withCode(choice(minuteSecond, '60'), saveSecond);
+const timeHourNotValidMonth = withCode(choice('00', zeroPaddedInclusive(13, 23, 2)), saveHour);
+const timeHourNot31DayMonth = withCode(choice('02', '04', '06', '09', '11'), saveHour);
+const timeHour2Only = withCode('02', saveHour);
+const timeMinuteNotValidDay = withCode(choice('00', zeroPaddedInclusive(32, 59, 2)), saveMinute);
+const timeMinute30Only = withCode('30', saveMinute);
+const timeMinute31Only = withCode('31', saveMinute);
+const timeSecondNotValidMonth = withCode(choice('00', zeroPaddedInclusive(13, 60, 2)), saveSecond);
 const timeFraction = withCode(fraction, (data, result) => {
   result = result.slice(1);
   const fraction = result.padEnd(9, '0');
@@ -221,14 +270,14 @@ const timeZoneUTCOffsetSign = withCode(
   sign,
   (data, result) => (data.offsetSign = result === '-' || result === '\u2212' ? '-' : '+')
 );
-const timeZoneUTCOffsetHour = withCode(hour, (data, result) => (data.offsetHour = +result));
-const timeZoneUTCOffsetMinute = withCode(minuteSecond, (data, result) => (data.offsetMinute = +result));
-const timeZoneUTCOffsetSecond = withCode(minuteSecond, (data, result) => (data.offsetSecond = +result));
-const timeZoneUTCOffsetFraction = withCode(fraction, (data, result) => {
-  result = result.slice(1);
-  const fraction = result.padEnd(9, '0');
-  data.offsetFraction = +fraction;
-});
+const timeZoneUTCOffsetHour = hour;
+const timeZoneUTCOffsetHourNotValidMonth = zeroPaddedInclusive(13, 23, 2);
+const timeZoneUTCOffsetMinute = minuteSecond;
+const timeZoneUTCOffsetSecond = minuteSecond;
+const timeZoneUTCOffsetFraction = fraction;
+function saveOffset(data, result) {
+  data.offset = ES.GetCanonicalTimeZoneIdentifier(result).toString();
+}
 const timeZoneNumericUTCOffset = withCode(
   seq(
     timeZoneUTCOffsetSign,
@@ -238,22 +287,25 @@ const timeZoneNumericUTCOffset = withCode(
       seq(':', timeZoneUTCOffsetMinute, [':', timeZoneUTCOffsetSecond, [timeZoneUTCOffsetFraction]])
     )
   ),
-  (data) => {
-    if (data.offsetSign !== undefined && data.offsetHour !== undefined) {
-      const h = `${data.offsetHour}`.padStart(2, '0');
-      const m = `${data.offsetMinute || 0}`.padStart(2, '0');
-      const s = `${data.offsetSecond || 0}`.padStart(2, '0');
-      data.offset = `${data.offsetSign}${h}:${m}`;
-      if (data.offsetFraction) {
-        let fraction = `${data.offsetFraction}`.padStart(9, '0');
-        while (fraction.endsWith('0')) fraction = fraction.slice(0, -1);
-        data.offset += `:${s}.${fraction}`;
-      } else if (data.offsetSecond) {
-        data.offset += `:${s}`;
-      }
-      if (data.offset === '-00:00') data.offset = '+00:00';
-    }
-  }
+  saveOffset
+);
+const timeZoneNumericUTCOffsetNotAmbiguous = withCode(
+  choice(
+    seq(character('+\u2212'), timeZoneUTCOffsetHour),
+    seq(
+      timeZoneUTCOffsetSign,
+      timeZoneUTCOffsetHour,
+      choice(
+        seq(timeZoneUTCOffsetMinute, [timeZoneUTCOffsetSecond, [timeZoneUTCOffsetFraction]]),
+        seq(':', timeZoneUTCOffsetMinute, [':', timeZoneUTCOffsetSecond, [timeZoneUTCOffsetFraction]])
+      )
+    )
+  ),
+  saveOffset
+);
+const timeZoneNumericUTCOffsetNotAmbiguousAllowedNegativeHour = withCode(
+  choice(timeZoneNumericUTCOffsetNotAmbiguous, seq('-', timeZoneUTCOffsetHourNotValidMonth)),
+  saveOffset
 );
 const timeZoneUTCOffset = choice(utcDesignator, timeZoneNumericUTCOffset);
 const timeZoneUTCOffsetName = seq(
@@ -261,15 +313,12 @@ const timeZoneUTCOffsetName = seq(
   hour,
   choice([minuteSecond, [minuteSecond, [fraction]]], seq(':', minuteSecond, [':', minuteSecond, [fraction]]))
 );
-const timeZoneBracketedName = withCode(
-  choice(timeZoneUTCOffsetName, ...timezoneNames),
+const timeZoneIANAName = choice(...timezoneNames);
+const timeZoneIdentifier = withCode(
+  choice(timeZoneUTCOffsetName, timeZoneIANAName),
   (data, result) => (data.ianaName = ES.GetCanonicalTimeZoneIdentifier(result).toString())
 );
-const timeZoneBracketedAnnotation = seq('[', timeZoneBracketedName, ']');
-const timeZoneIANAName = withCode(
-  choice(...timezoneNames),
-  (data, result) => (data.ianaName = ES.GetCanonicalTimeZoneIdentifier(result).toString())
-);
+const timeZoneBracketedAnnotation = seq('[', timeZoneIdentifier, ']');
 const timeZoneOffsetRequired = withCode(seq(timeZoneUTCOffset, [timeZoneBracketedAnnotation]), (data) => {
   if (!('offset' in data)) data.offset = undefined;
 });
@@ -277,23 +326,54 @@ const timeZoneNameRequired = withCode(seq([timeZoneUTCOffset], timeZoneBracketed
   if (!('offset' in data)) data.offset = undefined;
 });
 const timeZone = choice(timeZoneOffsetRequired, timeZoneNameRequired);
-const temporalTimeZoneIdentifier = withCode(choice(timeZoneNumericUTCOffset, timeZoneIANAName), (data) => {
-  if (!('offset' in data)) data.offset = undefined;
-});
 const calendarName = withCode(choice(...calendarNames), (data, result) => (data.calendar = result));
 const calendar = seq('[u-ca=', calendarName, ']');
 const timeSpec = seq(
   timeHour,
   choice([':', timeMinute, [':', timeSecond, [timeFraction]]], seq(timeMinute, [timeSecond, [timeFraction]]))
 );
+const timeSpecWithOptionalTimeZoneNotAmbiguous = choice(
+  seq(timeHour, [timeZoneNumericUTCOffsetNotAmbiguous], [timeZoneBracketedAnnotation]),
+  seq(timeHourNotValidMonth, timeZone),
+  seq(
+    choice(
+      seq(timeHourNotValidMonth, timeMinute),
+      seq(timeHour, timeMinuteNotValidDay),
+      seq(timeHourNot31DayMonth, timeMinute31Only),
+      seq(timeHour2Only, timeMinute30Only)
+    ),
+    [timeZoneBracketedAnnotation]
+  ),
+  seq(
+    timeHour,
+    timeMinute,
+    choice(
+      seq(timeZoneNumericUTCOffsetNotAmbiguousAllowedNegativeHour, [timeZoneBracketedAnnotation]),
+      seq(timeSecondNotValidMonth, [timeZone]),
+      seq(timeSecond, timeFraction, [timeZone])
+    )
+  ),
+  seq(timeHour, ':', timeMinute, [':', timeSecond, [timeFraction]], [timeZone])
+);
 const timeSpecSeparator = seq(dateTimeSeparator, timeSpec);
 
-const dateSpecMonthDay = seq(['--'], dateMonth, ['-'], dateDay);
+function validateDayOfMonth(result, { year, month, day }) {
+  if (day > ES.ISODaysInMonth(year, month)) throw SyntaxError('retry if bad day of month');
+}
+const dateSpecMonthDay = withSyntaxConstraints(seq(['--'], dateMonth, ['-'], dateDay), validateDayOfMonth);
 const dateSpecYearMonth = seq(dateYear, ['-'], dateMonth);
-const date = choice(seq(dateYear, '-', dateMonth, '-', dateDay), seq(dateYear, dateMonth, dateDay));
-const time = seq(timeSpec, [timeZone]);
+const date = withSyntaxConstraints(
+  choice(seq(dateYear, '-', dateMonth, '-', dateDay), seq(dateYear, dateMonth, dateDay)),
+  validateDayOfMonth
+);
 const dateTime = seq(date, [timeSpecSeparator], [timeZone]);
 const calendarDateTime = seq(dateTime, [calendar]);
+const calendarDateTimeTimeRequired = seq(date, timeSpecSeparator, [timeZone], [calendar]);
+const calendarTime = choice(
+  seq(timeDesignator, timeSpec, [timeZone], [calendar]),
+  seq(timeSpec, [timeZone], calendar),
+  seq(timeSpecWithOptionalTimeZoneNotAmbiguous)
+);
 
 const durationFractionalPart = withCode(between(1, 9, digit()), (data, result) => {
   const fraction = result.padEnd(9, '0');
@@ -302,38 +382,41 @@ const durationFractionalPart = withCode(between(1, 9, digit()), (data, result) =
   data.nanoseconds = +fraction.slice(6, 9) * data.factor;
 });
 const durationFraction = seq(decimalSeparator, durationFractionalPart);
+const digitsNotInfinite = withSyntaxConstraints(oneOrMore(digit()), (result) => {
+  if (!Number.isFinite(+result)) throw new SyntaxError('try again on infinity');
+});
 const durationSeconds = seq(
-  withCode(oneOrMore(digit()), (data, result) => (data.seconds = +result * data.factor)),
+  withCode(digitsNotInfinite, (data, result) => (data.seconds = +result * data.factor)),
   [durationFraction],
   secondsDesignator
 );
 const durationMinutes = seq(
-  withCode(oneOrMore(digit()), (data, result) => (data.minutes = +result * data.factor)),
+  withCode(digitsNotInfinite, (data, result) => (data.minutes = +result * data.factor)),
   minutesDesignator,
   [durationSeconds]
 );
 const durationHours = seq(
-  withCode(oneOrMore(digit()), (data, result) => (data.hours = +result * data.factor)),
+  withCode(digitsNotInfinite, (data, result) => (data.hours = +result * data.factor)),
   hoursDesignator,
   [choice(durationMinutes, durationSeconds)]
 );
-const durationTime = seq(durationTimeDesignator, choice(durationHours, durationMinutes, durationSeconds));
+const durationTime = seq(timeDesignator, choice(durationHours, durationMinutes, durationSeconds));
 const durationDays = seq(
-  withCode(oneOrMore(digit()), (data, result) => (data.days = +result * data.factor)),
+  withCode(digitsNotInfinite, (data, result) => (data.days = +result * data.factor)),
   daysDesignator
 );
 const durationWeeks = seq(
-  withCode(oneOrMore(digit()), (data, result) => (data.weeks = +result * data.factor)),
+  withCode(digitsNotInfinite, (data, result) => (data.weeks = +result * data.factor)),
   weeksDesignator,
   [durationDays]
 );
 const durationMonths = seq(
-  withCode(oneOrMore(digit()), (data, result) => (data.months = +result * data.factor)),
+  withCode(digitsNotInfinite, (data, result) => (data.months = +result * data.factor)),
   monthsDesignator,
   [choice(durationWeeks, durationDays)]
 );
 const durationYears = seq(
-  withCode(oneOrMore(digit()), (data, result) => (data.years = +result * data.factor)),
+  withCode(digitsNotInfinite, (data, result) => (data.years = +result * data.factor)),
   yearsDesignator,
   [choice(durationMonths, durationWeeks, durationDays)]
 );
@@ -353,10 +436,10 @@ const goals = {
   Date: calendarDateTime,
   DateTime: calendarDateTime,
   Duration: duration,
-  MonthDay: choice(dateSpecMonthDay, dateTime),
-  Time: choice(time, dateTime),
-  TimeZone: choice(temporalTimeZoneIdentifier, seq(date, [timeSpecSeparator], timeZone, [calendar])),
-  YearMonth: choice(dateSpecYearMonth, dateTime),
+  MonthDay: choice(dateSpecMonthDay, calendarDateTime),
+  Time: choice(calendarTime, calendarDateTimeTimeRequired),
+  TimeZone: choice(timeZoneIdentifier, seq(date, [timeSpecSeparator], timeZone, [calendar])),
+  YearMonth: choice(dateSpecYearMonth, calendarDateTime),
   ZonedDateTime: zonedDateTime
 };
 
@@ -378,37 +461,42 @@ const comparisonItems = {
     'microseconds',
     'nanoseconds'
   ],
-  MonthDay: ['month', 'day'],
-  Time: timeItems,
+  MonthDay: ['month', 'day', 'calendar'],
+  Time: [...timeItems, 'calendar'],
   TimeZone: ['offset', 'ianaName'],
-  YearMonth: ['year', 'month'],
+  YearMonth: ['year', 'month', 'calendar'],
   ZonedDateTime: [...dateItems, ...timeItems, 'offset', 'ianaName', 'calendar']
 };
 const plainModes = ['Date', 'DateTime', 'MonthDay', 'Time', 'YearMonth'];
 
-const mode = 'Instant';
-
-for (let count = 0; count < 1000; count++) {
-  let generatedData, fuzzed;
-  do {
-    generatedData = {};
-    fuzzed = goals[mode].generate(generatedData);
-  } while (plainModes.includes(mode) && /[0-9][zZ]/.test(fuzzed));
-  try {
-    const parsed = ES[`ParseTemporal${mode}String`](fuzzed);
-    for (let prop of comparisonItems[mode]) {
-      let expected = generatedData[prop];
-      if (prop !== 'ianaName' && prop !== 'offset' && prop !== 'calendar') expected = expected || 0;
-      assert.equal(parsed[prop], expected);
+function fuzzMode(mode) {
+  console.log('// starting to fuzz ' + mode);
+  for (let count = 0; count < 1000; count++) {
+    let generatedData, fuzzed;
+    do {
+      generatedData = {};
+      fuzzed = goals[mode].generate(generatedData);
+    } while (plainModes.includes(mode) && /[0-9][zZ]/.test(fuzzed));
+    try {
+      const parsed = ES[`ParseTemporal${mode}String`](fuzzed);
+      for (let prop of comparisonItems[mode]) {
+        let expected = generatedData[prop];
+        if (prop !== 'ianaName' && prop !== 'offset' && prop !== 'calendar') expected = expected || 0;
+        assert.equal(parsed[prop], expected);
+      }
+      console.log(`${fuzzed} => ok`);
+    } catch (e) {
+      if (e instanceof assert.AssertionError) {
+        console.log(`${fuzzed} => parsed wrong: expected`, e.expected, 'actual', e.actual);
+        console.log('generated data:', generatedData);
+      } else {
+        console.log(`${fuzzed} failed!`, e);
+      }
+      return 0;
     }
-    console.log(`${fuzzed} => ok`);
-  } catch (e) {
-    if (e instanceof assert.AssertionError) {
-      console.log(`${fuzzed} => parsed wrong: expected`, e.expected, 'actual', e.actual);
-      console.log('generated data:', generatedData);
-    } else {
-      console.log(`${fuzzed} failed!`, e);
-    }
-    break;
   }
+  console.log('// done fuzzing ' + mode);
+  return 1;
 }
+
+process.exit(Object.keys(goals).every(fuzzMode) ? 0 : 1);

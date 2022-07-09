@@ -13,12 +13,9 @@ import {
   EPOCHNANOSECONDS,
   GetSlot
 } from './slots';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainDateParams as Params, PlainDateReturn as Return } from './internaltypes';
-import { Duration } from './duration';
-
-const DISALLOWED_UNITS = ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'] as const;
 
 export class PlainDate implements Temporal.PlainDate {
   constructor(
@@ -121,7 +118,7 @@ export class PlainDate implements Temporal.PlainDate {
 
     const options = ES.GetOptionsObject(optionsParam);
 
-    return ES.DateFromFields(calendar, fields, options);
+    return ES.CalendarDateFromFields(calendar, fields, options);
   }
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
@@ -147,91 +144,13 @@ export class PlainDate implements Temporal.PlainDate {
 
     return ES.CalendarDateAdd(GetSlot(this, CALENDAR), this, duration, options);
   }
-  until(otherParam: Params['until'][0], optionsParam: Params['until'][1] = undefined): Return['until'] {
+  until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
-    const other = ES.ToTemporalDate(otherParam);
-    const calendar = GetSlot(this, CALENDAR);
-    const otherCalendar = GetSlot(other, CALENDAR);
-    const calendarId = ES.ToString(calendar);
-    const otherCalendarId = ES.ToString(otherCalendar);
-    if (calendarId !== otherCalendarId) {
-      throw new RangeError(`cannot compute difference between dates of ${calendarId} and ${otherCalendarId} calendars`);
-    }
-
-    const options = ES.GetOptionsObject(optionsParam);
-    const smallestUnit = ES.ToSmallestTemporalUnit(options, 'day', DISALLOWED_UNITS);
-    const defaultLargestUnit = ES.LargerOfTwoTemporalUnits('day', smallestUnit);
-    const largestUnit = ES.ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, defaultLargestUnit);
-    ES.ValidateTemporalUnitRange(largestUnit, smallestUnit);
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
-    const roundingIncrement = ES.ToTemporalRoundingIncrement(options, undefined, false);
-
-    const untilOptions = { ...options, largestUnit };
-    const result = ES.CalendarDateUntil(calendar, this, other, untilOptions);
-    if (smallestUnit === 'day' && roundingIncrement === 1) return result;
-
-    let { years, months, weeks, days } = result;
-    ({ years, months, weeks, days } = ES.RoundDuration(
-      years,
-      months,
-      weeks,
-      days,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      roundingIncrement,
-      smallestUnit,
-      roundingMode,
-      this
-    ));
-
-    return new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
+    return ES.DifferenceTemporalPlainDate('until', this, other, options);
   }
-  since(otherParam: Params['since'][0], optionsParam: Params['since'][1] = undefined): Return['since'] {
+  since(other: Params['since'][0], options: Params['since'][1] = undefined): Return['since'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
-    const other = ES.ToTemporalDate(otherParam);
-    const calendar = GetSlot(this, CALENDAR);
-    const otherCalendar = GetSlot(other, CALENDAR);
-    const calendarId = ES.ToString(calendar);
-    const otherCalendarId = ES.ToString(otherCalendar);
-    if (calendarId !== otherCalendarId) {
-      throw new RangeError(`cannot compute difference between dates of ${calendarId} and ${otherCalendarId} calendars`);
-    }
-
-    const options = ES.GetOptionsObject(optionsParam);
-    const smallestUnit = ES.ToSmallestTemporalUnit(options, 'day', DISALLOWED_UNITS);
-    const defaultLargestUnit = ES.LargerOfTwoTemporalUnits('day', smallestUnit);
-    const largestUnit = ES.ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, defaultLargestUnit);
-    ES.ValidateTemporalUnitRange(largestUnit, smallestUnit);
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
-    const roundingIncrement = ES.ToTemporalRoundingIncrement(options, undefined, false);
-
-    const untilOptions = { ...options, largestUnit };
-    let { years, months, weeks, days } = ES.CalendarDateUntil(calendar, this, other, untilOptions);
-    if (smallestUnit === 'day' && roundingIncrement === 1) {
-      return new Duration(-years, -months, -weeks, -days, 0, 0, 0, 0, 0, 0);
-    }
-    ({ years, months, weeks, days } = ES.RoundDuration(
-      years,
-      months,
-      weeks,
-      days,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      roundingIncrement,
-      smallestUnit,
-      ES.NegateTemporalRoundingMode(roundingMode),
-      this
-    ));
-
-    return new Duration(-years, -months, -weeks, -days, 0, 0, 0, 0, 0, 0);
+    return ES.DifferenceTemporalPlainDate('since', this, other, options);
   }
   equals(otherParam: Params['equals'][0]): Return['equals'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
@@ -356,14 +275,14 @@ export class PlainDate implements Temporal.PlainDate {
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
     const fields = ES.ToTemporalYearMonthFields(this, fieldNames);
-    return ES.YearMonthFromFields(calendar, fields);
+    return ES.CalendarYearMonthFromFields(calendar, fields);
   }
   toPlainMonthDay(): Return['toPlainMonthDay'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode'] as const);
     const fields = ES.ToTemporalMonthDayFields(this, fieldNames);
-    return ES.MonthDayFromFields(calendar, fields);
+    return ES.CalendarMonthDayFromFields(calendar, fields);
   }
   getISOFields(): Return['getISOFields'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');

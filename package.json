@@ -1,6 +1,6 @@
 {
   "name": "@js-temporal/polyfill",
-  "version": "0.3.0",
+  "version": "0.4.1",
   "description": "Polyfill for Tc39 Stage 3 proposal Temporal (https://github.com/tc39/proposal-temporal)",
   "type": "module",
   "main": "./dist/index.cjs",
@@ -9,7 +9,10 @@
   "exports": {
     ".": [
       {
-        "import": "./dist/index.esm.js",
+        "import": {
+          "types": "./index.d.ts",
+          "default": "./dist/index.esm.js"
+        },
         "default": "./dist/index.cjs"
       },
       "./dist/index.cjs"
@@ -17,8 +20,9 @@
   },
   "types": "./index.d.ts",
   "scripts": {
-    "test": "tsc && node --no-warnings --experimental-modules --experimental-specifier-resolution=node --icu-data-dir node_modules/full-icu --loader ./test/resolve.source.mjs ./test/all.mjs",
+    "test": "npm run build && node --no-warnings --experimental-modules --experimental-specifier-resolution=node --icu-data-dir node_modules/full-icu --loader ./test/resolve.source.mjs ./test/all.mjs",
     "test262": "TEST262=1 npm run build && ./test/test262.sh",
+    "testValidStrings": "npm run build && node --experimental-modules --experimental-specifier-resolution=node --no-warnings --icu-data-dir ./node_modules/full-icu/ --loader ./test/resolve.source.mjs test/validStrings.mjs",
     "build": "rm -rf dist/* tsc-out/* && tsc && rollup -c rollup.config.js",
     "prepare": "npm run build",
     "prepublishOnly": "npm run build",

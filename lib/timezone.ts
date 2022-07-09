@@ -17,7 +17,7 @@ import {
   SetSlot
 } from './slots';
 import JSBI from 'jsbi';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import type { TimeZoneParams as Params, TimeZoneReturn as Return } from './internaltypes';
 import { Instant } from './instant';
 
@@ -43,6 +43,7 @@ export class TimeZone implements Temporal.TimeZone {
     }
   }
   get id(): Return['id'] {
+    if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     return ES.ToString(this);
   }
   getOffsetNanosecondsFor(instantParam: Params['getOffsetNanosecondsFor'][0]): Return['getOffsetNanosecondsFor'] {
@@ -124,7 +125,7 @@ export class TimeZone implements Temporal.TimeZone {
       return null;
     }
 
-    let epochNanoseconds = GetSlot(startingPoint, EPOCHNANOSECONDS);
+    let epochNanoseconds: JSBI | null = GetSlot(startingPoint, EPOCHNANOSECONDS);
     epochNanoseconds = ES.GetIANATimeZoneNextTransition(epochNanoseconds, id);
     return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
   }
@@ -138,7 +139,7 @@ export class TimeZone implements Temporal.TimeZone {
       return null;
     }
 
-    let epochNanoseconds = GetSlot(startingPoint, EPOCHNANOSECONDS);
+    let epochNanoseconds: JSBI | null = GetSlot(startingPoint, EPOCHNANOSECONDS);
     epochNanoseconds = ES.GetIANATimeZonePreviousTransition(epochNanoseconds, id);
     return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
   }
@@ -147,6 +148,7 @@ export class TimeZone implements Temporal.TimeZone {
     return ES.ToString(GetSlot(this, TIMEZONE_ID));
   }
   toJSON(): Return['toJSON'] {
+    if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     return ES.ToString(this);
   }
   static from(item: Params['from'][0]): Return['from'] {

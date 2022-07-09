@@ -1,4 +1,4 @@
-import JSBI from 'jsbi';
+import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type { BuiltinCalendarId, AnyTemporalType } from './internaltypes';
 

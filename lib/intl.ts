@@ -14,17 +14,8 @@ import {
   CALENDAR,
   TIME_ZONE
 } from './slots';
-import { Temporal, Intl } from '..';
-import {
-  DateTimeFormatParams as Params,
-  DateTimeFormatReturn as Return,
-  InstantParams,
-  PlainDateParams,
-  PlainDateTimeParams,
-  PlainMonthDayParams,
-  PlainTimeParams,
-  PlainYearMonthParams
-} from './internaltypes';
+import type { Temporal, Intl } from '..';
+import type { DateTimeFormatParams as Params, DateTimeFormatReturn as Return } from './internaltypes';
 import { PlainDateTime } from './plaindatetime';
 
 const DATE = Symbol('date');
@@ -217,11 +208,31 @@ function adjustFormatterTimeZone(
   if (!timeZone) return formatter;
   const options = formatter.resolvedOptions();
   if (options.timeZone === timeZone) return formatter;
-  // Existing Intl isn't typed to accept Temporal-specific options, but will not
-  // break at runtime if we pass them. Also, the lib types for resolved options
-  // are less restrictive than the types for options. For example, `weekday` is
+  // Existing Intl isn't typed to accept Temporal-specific options and the lib
+  // types for resolved options are less restrictive than the types for options.
+  // For example, `weekday` is
   // `'long' | 'short' | 'narrow'` in options but `string` in resolved options.
   // TODO: investigate why, and file an issue against TS if it's a bug.
+  if ((options as any)['dateStyle'] || (options as any)['timeStyle']) {
+    // Unfortunately, Safari's resolvedOptions include parameters that will
+    // cause errors at runtime if passed along with
+    // dateStyle or timeStyle options as per
+    // https://tc39.es/proposal-intl-datetime-style/#table-datetimeformat-components.
+    // This has been fixed in newer versions of Safari:
+    // https://bugs.webkit.org/show_bug.cgi?id=231041
+    delete options['weekday'];
+    delete options['era'];
+    delete options['year'];
+    delete options['month'];
+    delete options['day'];
+    delete options['hour'];
+    delete options['minute'];
+    delete options['second'];
+    delete options['timeZoneName'];
+    delete (options as any)['hourCycle'];
+    delete options['hour12'];
+    delete (options as any)['dayPeriod'];
+  }
   return new IntlDateTimeFormat(options.locale, { ...(options as globalThis.Intl.DateTimeFormatOptions), timeZone });
 }
 
@@ -340,7 +351,9 @@ function amend(optionsParam: Intl.DateTimeFormatOptions = {}, amended: MaybeFals
   return options as globalThis.Intl.DateTimeFormatOptions;
 }
 
-function timeAmend(optionsParam: Intl.DateTimeFormatOptions) {
+type OptionsType<T extends TypesWithToLocaleString> = NonNullable<Parameters<T['toLocaleString']>[1]>;
+
+function timeAmend(optionsParam: OptionsType<Temporal.PlainTime>) {
   let options = amend(optionsParam, {
     year: false,
     month: false,
@@ -359,7 +372,7 @@ function timeAmend(optionsParam: Intl.DateTimeFormatOptions) {
   return options;
 }
 
-function yearMonthAmend(optionsParam: PlainYearMonthParams['toLocaleString'][1]) {
+function yearMonthAmend(optionsParam: OptionsType<Temporal.PlainYearMonth>) {
   let options = amend(optionsParam, {
     day: false,
     hour: false,
@@ -377,7 +390,7 @@ function yearMonthAmend(optionsParam: PlainYearMonthParams['toLocaleString'][1])
   return options;
 }
 
-function monthDayAmend(optionsParam: PlainMonthDayParams['toLocaleString'][1]) {
+function monthDayAmend(optionsParam: OptionsType<Temporal.PlainMonthDay>) {
   let options = amend(optionsParam, {
     year: false,
     hour: false,
@@ -395,7 +408,7 @@ function monthDayAmend(optionsParam: PlainMonthDayParams['toLocaleString'][1]) {
   return options;
 }
 
-function dateAmend(optionsParam: PlainDateParams['toLocaleString'][1]) {
+function dateAmend(optionsParam: OptionsType<Temporal.PlainDate>) {
   let options = amend(optionsParam, {
     hour: false,
     minute: false,
@@ -414,7 +427,7 @@ function dateAmend(optionsParam: PlainDateParams['toLocaleString'][1]) {
   return options;
 }
 
-function datetimeAmend(optionsParam: PlainDateTimeParams['toLocaleString'][1]) {
+function datetimeAmend(optionsParam: OptionsType<Temporal.PlainDateTime>) {
   let options = amend(optionsParam, { timeZoneName: false });
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
     options = ObjectAssign({}, options, {
@@ -429,7 +442,7 @@ function datetimeAmend(optionsParam: PlainDateTimeParams['toLocaleString'][1]) {
   return options;
 }
 
-function zonedDateTimeAmend(optionsParam: PlainTimeParams['toLocaleString'][1]) {
+function zonedDateTimeAmend(optionsParam: OptionsType<Temporal.PlainTime>) {
   let options = optionsParam;
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
     options = ObjectAssign({}, options, {
@@ -445,7 +458,7 @@ function zonedDateTimeAmend(optionsParam: PlainTimeParams['toLocaleString'][1]) 
   return options;
 }
 
-function instantAmend(optionsParam: InstantParams['toLocaleString'][1]) {
+function instantAmend(optionsParam: OptionsType<Temporal.Instant>) {
   let options = optionsParam;
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
     options = ObjectAssign({}, options, {
@@ -460,11 +473,11 @@ function instantAmend(optionsParam: InstantParams['toLocaleString'][1]) {
   return options;
 }
 
-function hasDateOptions(options: Parameters<TypesWithToLocaleString['toLocaleString']>[1]) {
+function hasDateOptions(options: OptionsType<TypesWithToLocaleString>) {
   return 'year' in options || 'month' in options || 'day' in options || 'weekday' in options || 'dateStyle' in options;
 }
 
-function hasTimeOptions(options: Parameters<TypesWithToLocaleString['toLocaleString']>[1]) {
+function hasTimeOptions(options: OptionsType<TypesWithToLocaleString>) {
   return (
     'hour' in options || 'minute' in options || 'second' in options || 'timeStyle' in options || 'dayPeriod' in options
   );
@@ -509,7 +522,8 @@ type TypesWithToLocaleString =
   | Temporal.PlainTime
   | Temporal.PlainYearMonth
   | Temporal.PlainMonthDay
-  | Temporal.ZonedDateTime;
+  | Temporal.ZonedDateTime
+  | Temporal.Instant;
 
 function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormatImpl) {
   if (ES.IsTemporalTime(temporalObj)) {

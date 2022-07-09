@@ -17,23 +17,12 @@ import {
   GetSlot,
   SetSlot
 } from './slots';
-import { Temporal } from '..';
+import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainTimeParams as Params, PlainTimeReturn as Return } from './internaltypes';
-import { Duration } from './duration';
 import { PlainDateTime } from './plaindatetime';
 
 const ObjectAssign = Object.assign;
-
-const DISALLOWED_UNITS = ['year', 'month', 'week', 'day'] as const;
-const MAX_INCREMENTS = {
-  hour: 24,
-  minute: 60,
-  second: 60,
-  millisecond: 1000,
-  microsecond: 1000,
-  nanosecond: 1000
-};
 
 type TemporalTimeToStringOptions = {
   unit: ReturnType<typeof ES.ToSecondsStringPrecision>['unit'];
@@ -44,7 +33,7 @@ type TemporalTimeToStringOptions = {
 function TemporalTimeToString(
   time: Temporal.PlainTime,
   precision: ReturnType<typeof ES.ToSecondsStringPrecision>['precision'],
-  options: TemporalTimeToStringOptions = undefined
+  options: TemporalTimeToStringOptions | undefined = undefined
 ) {
   let hour = GetSlot(time, ISO_HOUR);
   let minute = GetSlot(time, ISO_MINUTE);
@@ -176,179 +165,19 @@ export class PlainTime implements Temporal.PlainTime {
   }
   add(temporalDurationLike: Params['add'][0]): Return['add'] {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    const duration = ES.ToLimitedTemporalDuration(temporalDurationLike);
-    const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
-    let hour = GetSlot(this, ISO_HOUR);
-    let minute = GetSlot(this, ISO_MINUTE);
-    let second = GetSlot(this, ISO_SECOND);
-    let millisecond = GetSlot(this, ISO_MILLISECOND);
-    let microsecond = GetSlot(this, ISO_MICROSECOND);
-    let nanosecond = GetSlot(this, ISO_NANOSECOND);
-    ({ hour, minute, second, millisecond, microsecond, nanosecond } = ES.AddTime(
-      hour,
-      minute,
-      second,
-      millisecond,
-      microsecond,
-      nanosecond,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds
-    ));
-    ({ hour, minute, second, millisecond, microsecond, nanosecond } = ES.RegulateTime(
-      hour,
-      minute,
-      second,
-      millisecond,
-      microsecond,
-      nanosecond,
-      'reject'
-    ));
-    return new PlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
+    return ES.AddDurationToOrSubtractDurationFromPlainTime('add', this, temporalDurationLike);
   }
   subtract(temporalDurationLike: Params['subtract'][0]): Return['subtract'] {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    const duration = ES.ToLimitedTemporalDuration(temporalDurationLike);
-    const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
-    let hour = GetSlot(this, ISO_HOUR);
-    let minute = GetSlot(this, ISO_MINUTE);
-    let second = GetSlot(this, ISO_SECOND);
-    let millisecond = GetSlot(this, ISO_MILLISECOND);
-    let microsecond = GetSlot(this, ISO_MICROSECOND);
-    let nanosecond = GetSlot(this, ISO_NANOSECOND);
-    ({ hour, minute, second, millisecond, microsecond, nanosecond } = ES.AddTime(
-      hour,
-      minute,
-      second,
-      millisecond,
-      microsecond,
-      nanosecond,
-      -hours,
-      -minutes,
-      -seconds,
-      -milliseconds,
-      -microseconds,
-      -nanoseconds
-    ));
-    ({ hour, minute, second, millisecond, microsecond, nanosecond } = ES.RegulateTime(
-      hour,
-      minute,
-      second,
-      millisecond,
-      microsecond,
-      nanosecond,
-      'reject'
-    ));
-    return new PlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
+    return ES.AddDurationToOrSubtractDurationFromPlainTime('subtract', this, temporalDurationLike);
   }
-  until(otherParam: Params['until'][0], optionsParam: Params['until'][1] = undefined): Return['until'] {
+  until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    const other = ES.ToTemporalTime(otherParam);
-    const options = ES.GetOptionsObject(optionsParam);
-    const largestUnit = ES.ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, 'hour');
-    const smallestUnit = ES.ToSmallestTemporalUnit(options, 'nanosecond', DISALLOWED_UNITS);
-    ES.ValidateTemporalUnitRange(largestUnit, smallestUnit);
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
-    const roundingIncrement = ES.ToTemporalRoundingIncrement(options, MAX_INCREMENTS[smallestUnit], false);
-    let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.DifferenceTime(
-      GetSlot(this, ISO_HOUR),
-      GetSlot(this, ISO_MINUTE),
-      GetSlot(this, ISO_SECOND),
-      GetSlot(this, ISO_MILLISECOND),
-      GetSlot(this, ISO_MICROSECOND),
-      GetSlot(this, ISO_NANOSECOND),
-      GetSlot(other, ISO_HOUR),
-      GetSlot(other, ISO_MINUTE),
-      GetSlot(other, ISO_SECOND),
-      GetSlot(other, ISO_MILLISECOND),
-      GetSlot(other, ISO_MICROSECOND),
-      GetSlot(other, ISO_NANOSECOND)
-    );
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.RoundDuration(
-      0,
-      0,
-      0,
-      0,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      roundingIncrement,
-      smallestUnit,
-      roundingMode
-    ));
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceDuration(
-      0,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      largestUnit
-    ));
-    return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+    return ES.DifferenceTemporalPlainTime('until', this, other, options);
   }
-  since(otherParam: Params['since'][0], optionsParam: Params['since'][1] = undefined): Return['since'] {
+  since(other: Params['since'][0], options: Params['since'][1] = undefined): Return['since'] {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    const other = ES.ToTemporalTime(otherParam);
-    const options = ES.GetOptionsObject(optionsParam);
-    const largestUnit = ES.ToLargestTemporalUnit(options, 'auto', DISALLOWED_UNITS, 'hour');
-    const smallestUnit = ES.ToSmallestTemporalUnit(options, 'nanosecond', DISALLOWED_UNITS);
-    ES.ValidateTemporalUnitRange(largestUnit, smallestUnit);
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
-    const roundingIncrement = ES.ToTemporalRoundingIncrement(options, MAX_INCREMENTS[smallestUnit], false);
-    let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.DifferenceTime(
-      GetSlot(other, ISO_HOUR),
-      GetSlot(other, ISO_MINUTE),
-      GetSlot(other, ISO_SECOND),
-      GetSlot(other, ISO_MILLISECOND),
-      GetSlot(other, ISO_MICROSECOND),
-      GetSlot(other, ISO_NANOSECOND),
-      GetSlot(this, ISO_HOUR),
-      GetSlot(this, ISO_MINUTE),
-      GetSlot(this, ISO_SECOND),
-      GetSlot(this, ISO_MILLISECOND),
-      GetSlot(this, ISO_MICROSECOND),
-      GetSlot(this, ISO_NANOSECOND)
-    );
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.RoundDuration(
-      0,
-      0,
-      0,
-      0,
-      -hours,
-      -minutes,
-      -seconds,
-      -milliseconds,
-      -microseconds,
-      -nanoseconds,
-      roundingIncrement,
-      smallestUnit,
-      ES.NegateTemporalRoundingMode(roundingMode)
-    ));
-    hours = -hours;
-    minutes = -minutes;
-    seconds = -seconds;
-    milliseconds = -milliseconds;
-    microseconds = -microseconds;
-    nanoseconds = -nanoseconds;
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceDuration(
-      0,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      largestUnit
-    ));
-    return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+    return ES.DifferenceTemporalPlainTime('since', this, other, options);
   }
   round(optionsParam: Params['round'][0]): Return['round'] {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
@@ -357,9 +186,18 @@ export class PlainTime implements Temporal.PlainTime {
       typeof optionsParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', optionsParam) as Exclude<typeof optionsParam, string>)
         : ES.GetOptionsObject(optionsParam);
+    const DISALLOWED_UNITS = ['year', 'month', 'week', 'day'] as const;
     const smallestUnit = ES.ToSmallestTemporalUnit(options, undefined, DISALLOWED_UNITS);
     if (smallestUnit === undefined) throw new RangeError('smallestUnit is required');
     const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
+    const MAX_INCREMENTS = {
+      hour: 24,
+      minute: 60,
+      second: 60,
+      millisecond: 1000,
+      microsecond: 1000,
+      nanosecond: 1000
+    };
     const roundingIncrement = ES.ToTemporalRoundingIncrement(options, MAX_INCREMENTS[smallestUnit], false);
 
     let hour = GetSlot(this, ISO_HOUR);

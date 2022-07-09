@@ -217,6 +217,114 @@ describe('TimeZone', () => {
       }
     });
   });
+  const checkTime = (limitMsecs, func) => {
+    const now = Date.now();
+    func();
+    const msecs = Date.now() - now;
+    if (msecs > limitMsecs) assert(false, `Expected ${limitMsecs}ms or less, actual: ${msecs}ms`);
+  };
+  describe('Far-future transitions (time zone currently has DST)', () => {
+    const zone = new Temporal.TimeZone('America/Los_Angeles');
+    const inst = Temporal.Instant.from('+200000-01-01T00:00-08:00');
+    it('next transition is valid', () => {
+      const nextTransition = zone.getNextTransition(inst, zone);
+      const zdtTransition = nextTransition.toZonedDateTimeISO(zone);
+      equal(zdtTransition.offset, '-07:00');
+      equal(zdtTransition.month, 3);
+      equal(zdtTransition.subtract({ nanoseconds: 1 }).offset, '-08:00');
+    });
+    it('getNextTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getNextTransition(inst, zone));
+    });
+    it('previous transition is valid', () => {
+      const prevTransition = zone.getPreviousTransition(inst, zone);
+      const zdtTransition = prevTransition.toZonedDateTimeISO(zone);
+      equal(zdtTransition.offset, '-08:00');
+      equal(zdtTransition.month, 11);
+      equal(zdtTransition.subtract({ nanoseconds: 1 }).offset, '-07:00');
+    });
+    it('getPreviousTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getPreviousTransition(inst, zone));
+    });
+  });
+  describe('Far-future transitions (time zone has no DST now, but has past transitions)', () => {
+    const zone = new Temporal.TimeZone('Asia/Kolkata');
+    const inst = Temporal.Instant.from('+200000-01-01T00:00+05:30');
+    it('next transition is valid', () => {
+      const nextTransition = zone.getNextTransition(inst, zone);
+      equal(nextTransition, null);
+    });
+    it('getNextTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getNextTransition(inst, zone));
+    });
+    it('previous transition is valid', () => {
+      const prevTransition = zone.getPreviousTransition(inst, zone);
+      const zdtTransition = prevTransition.toZonedDateTimeISO(zone);
+      equal(zdtTransition.offset, '+05:30');
+      equal(prevTransition.toString(), '1945-10-14T17:30:00Z');
+      equal(zdtTransition.subtract({ nanoseconds: 1 }).offset, '+06:30');
+    });
+    it('getPreviousTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getPreviousTransition(inst, zone));
+    });
+  });
+  describe('Far-future transitions (time zone has never had any offset transitions)', () => {
+    const zone = new Temporal.TimeZone('Etc/GMT+8');
+    const inst = Temporal.Instant.from('+200000-01-01T00:00-08:00');
+    it('next transition is valid', () => {
+      const nextTransition = zone.getNextTransition(inst, zone);
+      equal(nextTransition, null);
+    });
+    it('getNextTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getNextTransition(inst, zone));
+    });
+    it('previous transition is valid', () => {
+      const prevTransition = zone.getPreviousTransition(inst, zone);
+      equal(prevTransition, null);
+    });
+    it('getPreviousTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getPreviousTransition(inst, zone));
+    });
+  });
+  describe('Far-past transitions (time zone with some transitions)', () => {
+    const zone = new Temporal.TimeZone('America/Los_Angeles');
+    const inst = Temporal.Instant.from('-200000-01-01T00:00-08:00');
+    const zdt = inst.toZonedDateTimeISO(zone);
+    it('next transition is valid', () => {
+      const nextTransition = zone.getNextTransition(inst, zone);
+      const zdtTransition = nextTransition.toZonedDateTimeISO(zone);
+      equal(zdt.offset, '-07:52:58');
+      equal(zdtTransition.toString(), '1883-11-18T12:00:00-08:00[America/Los_Angeles]');
+    });
+    it('getNextTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getNextTransition(inst, zone));
+    });
+    it('previous transition is valid', () => {
+      const prevTransition = zone.getPreviousTransition(inst, zone);
+      equal(prevTransition, null);
+    });
+    it('getPreviousTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getPreviousTransition(inst, zone));
+    });
+  });
+  describe('Far-past transitions (time zone has never had any offset transitions)', () => {
+    const zone = new Temporal.TimeZone('Etc/GMT+8');
+    const inst = Temporal.Instant.from('-200000-01-01T00:00-08:00');
+    it('next transition is valid', () => {
+      const nextTransition = zone.getNextTransition(inst, zone);
+      equal(nextTransition, null);
+    });
+    it('getNextTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getNextTransition(inst, zone));
+    });
+    it('previous transition is valid', () => {
+      const prevTransition = zone.getPreviousTransition(inst, zone);
+      equal(prevTransition, null);
+    });
+    it('getPreviousTransition takes less than 800ms', () => {
+      checkTime(800, () => zone.getPreviousTransition(inst, zone));
+    });
+  });
   describe('sub-minute offset', () => {
     const zone = new Temporal.TimeZone('Europe/Amsterdam');
     const inst = Temporal.Instant.from('1900-01-01T12:00Z');
@@ -282,21 +390,27 @@ describe('TimeZone', () => {
       equal(`${tz.getInstantFor(dt)}`, '2019-10-29T09:46:38.271986102Z');
     });
     it('year ≤ 99', () => {
-      const dt = Temporal.PlainDateTime.from('+000098-10-29T10:46:38.271986102');
+      let dt = Temporal.PlainDateTime.from('0098-10-29T10:46:38.271986102');
       const tz = Temporal.TimeZone.from('+06:00');
-      equal(`${tz.getInstantFor(dt)}`, '+000098-10-29T04:46:38.271986102Z');
+      equal(`${tz.getInstantFor(dt)}`, '0098-10-29T04:46:38.271986102Z');
+      dt = Temporal.PlainDateTime.from('+000098-10-29T10:46:38.271986102');
+      equal(`${tz.getInstantFor(dt)}`, '0098-10-29T04:46:38.271986102Z');
     });
     it('year < 1', () => {
-      let dt = Temporal.PlainDateTime.from('+000000-10-29T10:46:38.271986102');
+      let dt = Temporal.PlainDateTime.from('0000-10-29T10:46:38.271986102');
       const tz = Temporal.TimeZone.from('+06:00');
-      equal(`${tz.getInstantFor(dt)}`, '+000000-10-29T04:46:38.271986102Z');
+      equal(`${tz.getInstantFor(dt)}`, '0000-10-29T04:46:38.271986102Z');
+      dt = Temporal.PlainDateTime.from('+000000-10-29T10:46:38.271986102');
+      equal(`${tz.getInstantFor(dt)}`, '0000-10-29T04:46:38.271986102Z');
       dt = Temporal.PlainDateTime.from('-001000-10-29T10:46:38.271986102');
       equal(`${tz.getInstantFor(dt)}`, '-001000-10-29T04:46:38.271986102Z');
     });
     it('year 0 leap day', () => {
-      const dt = Temporal.PlainDateTime.from('+000000-02-29T00:00');
+      let dt = Temporal.PlainDateTime.from('0000-02-29T00:00');
       const tz = Temporal.TimeZone.from('Europe/London');
-      equal(`${tz.getInstantFor(dt)}`, '+000000-02-29T00:01:15Z');
+      equal(`${tz.getInstantFor(dt)}`, '0000-02-29T00:01:15Z');
+      dt = Temporal.PlainDateTime.from('+000000-02-29T00:00');
+      equal(`${tz.getInstantFor(dt)}`, '0000-02-29T00:01:15Z');
     });
     it('outside of Instant range', () => {
       const max = Temporal.PlainDateTime.from('+275760-09-13T23:59:59.999999999');
@@ -306,16 +420,6 @@ describe('TimeZone', () => {
 
       const namedTz = Temporal.TimeZone.from('America/Godthab');
       throws(() => namedTz.getInstantFor(max), RangeError);
-    });
-    it('options may only be an object or undefined', () => {
-      const dt = Temporal.PlainDateTime.from('2019-10-29T10:46:38.271986102');
-      const tz = Temporal.TimeZone.from('America/Sao_Paulo');
-      [null, 1, 'hello', true, Symbol('foo'), 1n].forEach((badOptions) =>
-        throws(() => tz.getInstantFor(dt, badOptions), TypeError)
-      );
-      [{}, () => {}, undefined].forEach((options) =>
-        equal(`${tz.getInstantFor(dt, options)}`, '2019-10-29T13:46:38.271986102Z')
-      );
     });
     it('casts argument', () => {
       const tz = Temporal.TimeZone.from('Europe/Amsterdam');
