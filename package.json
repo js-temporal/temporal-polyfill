@@ -16,7 +16,8 @@
         "default": "./dist/index.cjs"
       },
       "./dist/index.cjs"
-    ]
+    ],
+    "./bigint": "./dist/bigint/index.esm.js"
   },
   "types": "./index.d.ts",
   "scripts": {
@@ -90,6 +91,7 @@
     "@rollup/plugin-typescript": "^8.3.0",
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
+    "babel-plugin-transform-jsbi-to-bigint": "^1.4.0",
     "eslint": "^8.4.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
