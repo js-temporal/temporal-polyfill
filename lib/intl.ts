@@ -172,21 +172,21 @@ DateTimeFormatImpl.supportedLocalesOf = function (
   return IntlDateTimeFormat.supportedLocalesOf(locales, options as globalThis.Intl.DateTimeFormatOptions);
 };
 
-const properties: Partial<typeof IntlDateTimeFormat.prototype> = {
+const propertyDescriptors: Partial<Record<keyof Intl.DateTimeFormat, PropertyDescriptor>>  = {
   resolvedOptions: descriptor(resolvedOptions),
   format: descriptor(format),
   formatRange: descriptor(formatRange)
 };
 
 if ('formatToParts' in IntlDateTimeFormat.prototype) {
-  properties.formatToParts = descriptor(formatToParts);
+  propertyDescriptors.formatToParts = descriptor(formatToParts);
 }
 
 if ('formatRangeToParts' in IntlDateTimeFormat.prototype) {
-  properties.formatRangeToParts = descriptor(formatRangeToParts);
+  propertyDescriptors.formatRangeToParts = descriptor(formatRangeToParts);
 }
 
-DateTimeFormatImpl.prototype = Object.create(IntlDateTimeFormat.prototype, properties);
+DateTimeFormatImpl.prototype = Object.create(IntlDateTimeFormat.prototype, propertyDescriptors);
 
 // Ensure that the prototype isn't writeable.
 Object.defineProperty(DateTimeFormatImpl, 'prototype', {
