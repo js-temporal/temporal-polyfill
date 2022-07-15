@@ -172,7 +172,7 @@ DateTimeFormatImpl.supportedLocalesOf = function (
   return IntlDateTimeFormat.supportedLocalesOf(locales, options as globalThis.Intl.DateTimeFormatOptions);
 };
 
-const propertyDescriptors: Partial<Record<keyof Intl.DateTimeFormat, PropertyDescriptor>>  = {
+const propertyDescriptors: Partial<Record<keyof Intl.DateTimeFormat, PropertyDescriptor>> = {
   resolvedOptions: descriptor(resolvedOptions),
   format: descriptor(format),
   formatRange: descriptor(formatRange)
