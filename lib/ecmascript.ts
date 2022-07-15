@@ -5938,14 +5938,15 @@ export function CreateOnePropObject<K extends string, V>(propName: K, propValue:
   return o;
 }
 
-function GetOption<P extends string, O extends Partial<Record<P, unknown>>>(
+type StringlyTypedKeys<T> = Exclude<keyof T, symbol | number>;
+function GetOption<P extends StringlyTypedKeys<O>, O extends Partial<Record<P, unknown>>>(
   options: O,
   property: P,
   allowedValues: ReadonlyArray<O[P]>,
   fallback: undefined
 ): O[P];
 function GetOption<
-  P extends string,
+  P extends StringlyTypedKeys<O>,
   O extends Partial<Record<P, unknown>>,
   Fallback extends Required<O>[P] | undefined
 >(
@@ -5955,7 +5956,7 @@ function GetOption<
   fallback: Fallback
 ): Fallback extends undefined ? O[P] | undefined : Required<O>[P];
 function GetOption<
-  P extends string,
+  P extends StringlyTypedKeys<O>,
   O extends Partial<Record<P, unknown>>,
   Fallback extends Required<O>[P] | undefined
 >(
@@ -5975,7 +5976,7 @@ function GetOption<
   return fallback;
 }
 
-function GetNumberOption<P extends string, T extends Partial<Record<P, unknown>>>(
+function GetNumberOption<P extends StringlyTypedKeys<T>, T extends Partial<Record<P, unknown>>>(
   options: T,
   property: P,
   minimum: number,
@@ -5986,7 +5987,7 @@ function GetNumberOption<P extends string, T extends Partial<Record<P, unknown>>
   if (valueRaw === undefined) return fallback;
   const value = ToNumber(valueRaw);
   if (NumberIsNaN(value) || value < minimum || value > maximum) {
-    throw new RangeError(`${property} must be between ${minimum} and ${maximum}, not ${value}`);
+    throw new RangeError(`${String(property)} must be between ${minimum} and ${maximum}, not ${value}`);
   }
   return MathFloor(value);
 }
