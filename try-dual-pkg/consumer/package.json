@@ -4,7 +4,6 @@
   "scripts": {
     "test": "node index.mjs"
   },
-  "license": "ISC",
   "dependencies": {
     "@js-temporal/polyfill": "file:../..",
     "lib-cjs": "file:../lib-cjs",
