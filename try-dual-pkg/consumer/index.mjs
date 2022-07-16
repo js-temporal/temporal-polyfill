@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import { Temporal } from '@js-temporal/polyfill';
 import { createCurrentZDT, getDurationInHours } from 'lib-esm';
 import { createZDT } from 'lib-cjs';
@@ -13,7 +15,6 @@ const zdtB = Temporal.ZonedDateTime.from({
 const zdtC = createCurrentZDT();
 const zdtD = createZDT(2022, 1, 2);
 
-/* eslint-disable no-console */
 console.log(getDurationInHours(zdtA, zdtB)); // This will throw TypeError: invalid result
 // console.log(getDurationInHours(zdtB, zdtC)); // This will not throw because both are esm
 // console.log(getDurationInHours(zdtA, zdtD)); // This will not throw because both are cjs
