@@ -1,0 +1,8 @@
+{
+  "name": "lib-cjs",
+  "main": "index.cjs",
+  "type": "commonjs",
+  "dependencies": {
+    "@js-temporal/polyfill": "file:../.."
+  }
+}

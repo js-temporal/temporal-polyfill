@@ -1,0 +1,13 @@
+{
+  "name": "consumer",
+  "type": "module",
+  "scripts": {
+    "test": "node index.mjs"
+  },
+  "license": "ISC",
+  "dependencies": {
+    "@js-temporal/polyfill": "file:../..",
+    "lib-cjs": "file:../lib-cjs",
+    "lib-esm": "file:../lib-esm"
+  }
+}
