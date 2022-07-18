@@ -1,6 +1,15 @@
+# 0.4.2
+
+This version is a patch version enabling TypeScript Node16 support for this
+package.
+
+Bug Fixes:
+
+- Add types to exports/./import to support Typescript Node16 ([304c86dd])
+
 # 0.4.1
 
-This version is a patch version enabling polyfill compatibilit with Safari
+This version is a patch version enabling polyfill compatibility with Safari
 versions <15.1 (October 2021 and earlier).
 
 Bug fixes:
@@ -91,6 +100,7 @@ Other:
 - The polyfill's source was ported to TypeScript ([12e4d529], [ac78fd9d], [53f32e0f], [06b806c9], [66fdc765], [50b1c34b], [4724b017], [947a8a5e], [fdbf7e01], [fa60af6a], [da753f2f], [f4db8b0b], [4a38420d])
 - Document the release process for this polyfill ([c55818b6])
 
+[304c86dd]: https://github.com/js-temporal/temporal-polyfill/commit/304c86dd61e7107095ed42149e85d919e3a6cac8
 [b733c213]: https://github.com/js-temporal/temporal-polyfill/commit/b733c213cba462f79eb9ee3a084661ea5344d9ea
 [670cda6b]: https://github.com/js-temporal/temporal-polyfill/commit/670cda6bd269db66c8ce97eb73f941b20abb92ec
 [670cda6b]: https://github.com/js-temporal/temporal-polyfill/commit/670cda6bd269db66c8ce97eb73f941b20abb92ec
