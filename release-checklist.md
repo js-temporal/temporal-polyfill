@@ -15,7 +15,7 @@
 - Open a pull request with the above change, get it approved, and merge it into
   `main`
 - Create the new release on GitHub https://github.com/js-temporal/temporal-polyfill/releases/new
-  - In the release desdription, include a permalink to the CHANGELOG.md file at the commit created earlier.
+  - In the release description, include a permalink to the CHANGELOG.md file at the commit created earlier.
   - Thank everyone who contributed to the release (e.g. `git shortlog <old-version-tag>..<new-version-tag>` to see the contributors)
   - Make the release target point at the commit created above (or, for a patch
     release, create a branch with the release commit + the relevant
