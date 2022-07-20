@@ -1,0 +1,8 @@
+{
+  "name": "lib-esm",
+  "main": "index.mjs",
+  "type": "module",
+  "dependencies": {
+    "@js-temporal/polyfill": "file:../.."
+  }
+}

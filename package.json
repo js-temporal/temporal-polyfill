@@ -35,7 +35,9 @@
     "prettierfix": "prettier lib/* ./test/*.mjs ./*.md ./*.json ./*.d.ts ./*.js ./.*.yml  --check --write",
     "eslintfix": "eslint . --ext ts,js,mjs,.d.ts --fix",
     "fix": "npm run eslintfix && npm run prettierfix",
-    "tscheck": "tsc index.d.ts --noEmit --strict --lib ESNext"
+    "tscheck": "tsc index.d.ts --noEmit --strict --lib ESNext",
+    "try-dual-pkg:prepare": "npm i --prefix ./try-dual-pkg/consumer && npm i --prefix ./try-dual-pkg/lib-esm && npm i --prefix ./try-dual-pkg/lib-cjs",
+    "try-dual-pkg": "npm run build && npm run test --prefix ./try-dual-pkg/consumer"
   },
   "keywords": [
     "Calendar",

@@ -1,0 +1,12 @@
+{
+  "name": "consumer",
+  "type": "module",
+  "scripts": {
+    "test": "node index.mjs"
+  },
+  "dependencies": {
+    "@js-temporal/polyfill": "file:../..",
+    "lib-cjs": "file:../lib-cjs",
+    "lib-esm": "file:../lib-esm"
+  }
+}
