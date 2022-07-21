@@ -1,6 +1,6 @@
 import commonjs from '@rollup/plugin-commonjs';
 import { nodeResolve } from '@rollup/plugin-node-resolve';
-import babel from '@rollup/plugin-babel';
+import babel, { getBabelOutputPlugin } from '@rollup/plugin-babel';
 import replace from '@rollup/plugin-replace';
 import { terser } from 'rollup-plugin-terser';
 import { env } from 'process';
@@ -57,15 +57,20 @@ const external = [
   ...Object.keys(pkg.peerDependencies || {})
 ].map((dep) => new RegExp(dep + '*'));
 
-function outputEntry(file, format) {
+function outputEntry(file, format, plugins = []) {
   return {
     name: libName,
     file,
     format,
     exports: 'named',
-    sourcemap: true
+    sourcemap: true,
+    plugins
   };
 }
+
+const bigintBabelConfig = {
+  plugins: ['transform-jsbi-to-bigint']
+};
 
 const es5BundleBabelConfig = {
   babelHelpers: 'bundled',
@@ -130,16 +135,13 @@ if (isTest262Build) {
       // CJS bundle.
       // Note that because package.json specifies "type":"module", the name of
       // this file MUST end in ".cjs" in order to be treated as a CommonJS file.
-      outputEntry(pkg.main, 'cjs')
+      outputEntry(pkg.main, 'cjs'),
+      // BigInt bundle
+      outputEntry(pkg.exports['./bigint'], 'es', [getBabelOutputPlugin(bigintBabelConfig)])
     ],
     plugins: withPlugins({
       debugBuild: !isProduction,
       optimize: isProduction
-      // Here is where we could insert the JSBI -> native BigInt plugin if we
-      // could find a way to provide a separate bundle for modern browsers
-      // that can use native BigInt.
-      // Maybe use node's exports + a user-defined condition?
-      // https://nodejs.org/api/packages.html#resolving-user-conditions
     })
   };
   // A legacy build that
