@@ -1,5 +1,4 @@
 import * as ES from './ecmascript';
-import { MakeIntrinsicClass } from './intrinsicclass';
 import { ISO_MONTH, ISO_DAY, ISO_YEAR, CALENDAR, GetSlot } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
@@ -148,5 +147,3 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   }
   [Symbol.toStringTag]!: 'Temporal.PlainMonthDay';
 }
-
-MakeIntrinsicClass(PlainMonthDay, 'Temporal.PlainMonthDay');

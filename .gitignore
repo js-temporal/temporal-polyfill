@@ -5,3 +5,4 @@ tsc-out/
 .vscode/*
 !.vscode/launch.json
 *.tgz
+.DS_Store

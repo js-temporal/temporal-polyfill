@@ -109,11 +109,7 @@
   "prettier": {
     "printWidth": 120,
     "trailingComma": "none",
-    "tabWidth": 2,
-    "semi": true,
-    "singleQuote": true,
-    "bracketSpacing": true,
-    "arrowParens": "always"
+    "singleQuote": true
   },
   "directories": {
     "lib": "lib",
