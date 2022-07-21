@@ -150,7 +150,12 @@ interface SlotsToTypes {
 
 type SlotKey = keyof SlotsToTypes;
 
-const slots = new WeakMap();
+const globalTemporalSlotMapKey = Symbol.for('@@Temporal__slots__private_do_not_use');
+
+(globalThis as any)[globalTemporalSlotMapKey] ||= new WeakMap();
+
+const slots = (globalThis as any)[globalTemporalSlotMapKey];
+
 export function CreateSlots(container: AnyTemporalType): void {
   slots.set(container, Object.create(null));
 }
