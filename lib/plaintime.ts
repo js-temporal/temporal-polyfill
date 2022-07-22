@@ -136,22 +136,12 @@ export class PlainTime implements Temporal.PlainTime {
     }
     ES.RejectObjectWithCalendarOrTimeZone(temporalTimeLike);
 
+    const partialTime = ES.ToTemporalTimeRecord(temporalTimeLike, 'partial');
     const options = ES.GetOptionsObject(optionsParam);
     const overflow = ES.ToTemporalOverflow(options);
 
-    const props = ES.ToPartialRecord(temporalTimeLike, [
-      'hour',
-      'microsecond',
-      'millisecond',
-      'minute',
-      'nanosecond',
-      'second'
-    ]);
-    if (!props) {
-      throw new TypeError('invalid time-like');
-    }
     const fields = ES.ToTemporalTimeRecord(this);
-    let { hour, minute, second, millisecond, microsecond, nanosecond } = ObjectAssign(fields, props);
+    let { hour, minute, second, millisecond, microsecond, nanosecond } = ObjectAssign(fields, partialTime);
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = ES.RegulateTime(
       hour,
       minute,
@@ -186,9 +176,7 @@ export class PlainTime implements Temporal.PlainTime {
       typeof optionsParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', optionsParam) as Exclude<typeof optionsParam, string>)
         : ES.GetOptionsObject(optionsParam);
-    const DISALLOWED_UNITS = ['year', 'month', 'week', 'day'] as const;
-    const smallestUnit = ES.ToSmallestTemporalUnit(options, undefined, DISALLOWED_UNITS);
-    if (smallestUnit === undefined) throw new RangeError('smallestUnit is required');
+    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', ES.REQUIRED);
     const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
     const MAX_INCREMENTS = {
       hour: 24,

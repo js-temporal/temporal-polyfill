@@ -18,7 +18,11 @@ import {
 } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
-import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
+import type {
+  PrimitivePropertyNames,
+  ZonedDateTimeParams as Params,
+  ZonedDateTimeReturn as Return
+} from './internaltypes';
 
 import JSBI from 'jsbi';
 import { BILLION, MILLION, THOUSAND, ZERO } from './ecmascript';
@@ -200,12 +204,16 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       'year'
     ] as const);
     ArrayPrototypePush.call(fieldNames, 'offset');
-    const props = ES.ToPartialRecord(temporalZonedDateTimeLike, fieldNames);
+    const props = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNames, 'partial');
     if (!props) {
       throw new TypeError('invalid zoned-date-time-like');
     }
     // Unlike ToTemporalZonedDateTimeFields, the offset property will be required.
-    const entries: ([keyof Temporal.ZonedDateTimeLike, 0 | undefined] | ['timeZone'] | ['offset'])[] = [
+    const entries: (
+      | [keyof Temporal.ZonedDateTimeLike & PrimitivePropertyNames, 0 | undefined]
+      | ['timeZone']
+      | ['offset']
+    )[] = [
       ['day', undefined],
       ['hour', 0],
       ['microsecond', 0],
@@ -357,8 +365,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       typeof optionsParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', optionsParam) as Exclude<typeof optionsParam, string>)
         : ES.GetOptionsObject(optionsParam);
-    const smallestUnit = ES.ToSmallestTemporalUnit(options, undefined, ['year', 'month', 'week']);
-    if (smallestUnit === undefined) throw new RangeError('smallestUnit is required');
+    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', ES.REQUIRED, ['day']);
     const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
     const maximumIncrements = {
       day: 1,

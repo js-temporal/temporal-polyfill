@@ -170,7 +170,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       'second',
       'year'
     ] as const);
-    const props = ES.ToPartialRecord(temporalDateTimeLike, fieldNames);
+    const props = ES.PrepareTemporalFields(temporalDateTimeLike, fieldNames, 'partial');
     if (!props) {
       throw new TypeError('invalid date-time-like');
     }
@@ -295,8 +295,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       typeof optionsParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', optionsParam) as Exclude<typeof optionsParam, string>)
         : ES.GetOptionsObject(optionsParam);
-    const smallestUnit = ES.ToSmallestTemporalUnit(options, undefined, ['year', 'month', 'week']);
-    if (smallestUnit === undefined) throw new RangeError('smallestUnit is required');
+    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', ES.REQUIRED, ['day']);
     const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
     const maximumIncrements = {
       day: 1,
