@@ -29,6 +29,9 @@ import './calendar.mjs';
 import './usertimezone.mjs';
 import './usercalendar.mjs';
 
+// monkeypatching
+import './monkeypatch.mjs';
+
 Promise.resolve()
   .then(() => {
     return Demitasse.report(Pretty.reporter);

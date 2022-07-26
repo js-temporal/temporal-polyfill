@@ -1,5 +1,4 @@
 import * as ES from './ecmascript';
-import { MakeIntrinsicClass } from './intrinsicclass';
 
 import {
   ISO_YEAR,
@@ -478,5 +477,3 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   }
   [Symbol.toStringTag]!: 'Temporal.PlainDateTime';
 }
-
-MakeIntrinsicClass(PlainDateTime, 'Temporal.PlainDateTime');

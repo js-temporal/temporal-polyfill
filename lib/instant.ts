@@ -1,6 +1,5 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { MakeIntrinsicClass } from './intrinsicclass';
 import { EPOCHNANOSECONDS, CreateSlots, GetSlot, SetSlot } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
@@ -202,5 +201,3 @@ export class Instant implements Temporal.Instant {
   }
   [Symbol.toStringTag]!: 'Temporal.Instant';
 }
-
-MakeIntrinsicClass(Instant, 'Temporal.Instant');

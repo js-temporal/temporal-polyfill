@@ -1,6 +1,5 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass, DefineIntrinsic } from './intrinsicclass';
 import {
   CALENDAR_ID,
   ISO_YEAR,
@@ -28,6 +27,7 @@ import type {
   CalendarReturn as Return,
   FieldRecord
 } from './internaltypes';
+import { Duration } from './duration';
 
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
@@ -240,7 +240,6 @@ export class Calendar implements Temporal.Calendar {
     let largestUnit = ES.GetTemporalUnit(options, 'largestUnit', 'date', 'auto');
     if (largestUnit === 'auto') largestUnit = 'day';
     const { years, months, weeks, days } = impl[GetSlot(this, CALENDAR_ID)].dateUntil(one, two, largestUnit);
-    const Duration = GetIntrinsic('%Temporal.Duration%');
     return new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   }
   year(dateParam: Params['year'][0]): Return['year'] {
@@ -339,9 +338,6 @@ export class Calendar implements Temporal.Calendar {
   }
   [Symbol.toStringTag]!: 'Temporal.Calendar';
 }
-
-MakeIntrinsicClass(Calendar, 'Temporal.Calendar');
-DefineIntrinsic('Temporal.Calendar.from', Calendar.from);
 
 /**
  * Implementation for the ISO 8601 calendar. This is the only calendar that's
