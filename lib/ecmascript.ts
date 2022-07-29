@@ -346,6 +346,14 @@ function ParseTemporalTimeZone(stringIdent: string) {
   return offset as string; // if !ianaName && !z then offset must be present
 }
 
+function MaybeFormatCalendarAnnotation(
+  calendar: Temporal.CalendarProtocol,
+  showCalendar: Temporal.ShowCalendarOption['calendarName']
+): string {
+  if (showCalendar === 'never') return '';
+  return FormatCalendarAnnotation(ToString(calendar), showCalendar);
+}
+
 function FormatCalendarAnnotation(id: string, showCalendar: Temporal.ShowCalendarOption['calendarName']) {
   if (showCalendar === 'never') return '';
   if (showCalendar === 'auto' && id === 'iso8601') return '';
@@ -2655,8 +2663,7 @@ export function TemporalDateToString(
   const year = ISOYearString(GetSlot(date, ISO_YEAR));
   const month = ISODateTimePartString(GetSlot(date, ISO_MONTH));
   const day = ISODateTimePartString(GetSlot(date, ISO_DAY));
-  const calendarID = ToString(GetSlot(date, CALENDAR));
-  const calendar = FormatCalendarAnnotation(calendarID, showCalendar);
+  const calendar = MaybeFormatCalendarAnnotation(GetSlot(date, CALENDAR), showCalendar);
   return `${year}-${month}-${day}${calendar}`;
 }
 
@@ -2700,8 +2707,7 @@ export function TemporalDateTimeToString(
   const hourString = ISODateTimePartString(hour);
   const minuteString = ISODateTimePartString(minute);
   const secondsString = FormatSecondsStringPart(second, millisecond, microsecond, nanosecond, precision);
-  const calendarID = ToString(GetSlot(dateTime, CALENDAR));
-  const calendar = FormatCalendarAnnotation(calendarID, showCalendar);
+  const calendar = MaybeFormatCalendarAnnotation(GetSlot(dateTime, CALENDAR), showCalendar);
   return `${yearString}-${monthString}-${dayString}T${hourString}:${minuteString}${secondsString}${calendar}`;
 }
 
@@ -2780,8 +2786,7 @@ export function TemporalZonedDateTimeToString(
     result += FormatISOTimeZoneOffsetString(offsetNs);
   }
   if (showTimeZone !== 'never') result += `[${tz}]`;
-  const calendarID = ToString(GetSlot(zdt, CALENDAR));
-  result += FormatCalendarAnnotation(calendarID, showCalendar);
+  result += MaybeFormatCalendarAnnotation(GetSlot(zdt, CALENDAR), showCalendar);
   return result;
 }
 
