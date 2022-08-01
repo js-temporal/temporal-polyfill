@@ -967,22 +967,38 @@ export function ToSecondsStringPrecision(options: Temporal.ToStringPrecisionOpti
 export const REQUIRED = Symbol('~required~');
 
 interface TemporalUnitOptionsBag {
-  smallestUnit?: Temporal.PluralUnit<Temporal.DateTimeUnit> | Temporal.DateTimeUnit | 'auto';
+  smallestUnit?: Temporal.PluralUnit<Temporal.DateTimeUnit> | Temporal.DateTimeUnit;
   largestUnit?: Temporal.PluralUnit<Temporal.DateTimeUnit> | Temporal.DateTimeUnit | 'auto';
-  unit?: Temporal.PluralUnit<Temporal.DateTimeUnit> | Temporal.DateTimeUnit | 'auto';
+  unit?: Temporal.PluralUnit<Temporal.DateTimeUnit> | Temporal.DateTimeUnit;
 }
-type UnitOptionsBagKeys = keyof TemporalUnitOptionsBag;
 type UnitTypeMapping = {
   date: Temporal.DateUnit;
   time: Temporal.TimeUnit;
   datetime: Temporal.DateTimeUnit;
 };
+// This type specifies the allowed defaults for each unit key type.
+type AllowedGetTemporalUnitDefaultValues = {
+  smallestUnit: undefined;
+  largestUnit: 'auto' | undefined;
+  unit: undefined;
+};
 
 export function GetTemporalUnit<
+  U extends keyof TemporalUnitOptionsBag,
   T extends keyof UnitTypeMapping,
-  D extends typeof REQUIRED | UnitTypeMapping[T] | 'auto' | undefined,
+  D extends typeof REQUIRED | UnitTypeMapping[T] | AllowedGetTemporalUnitDefaultValues[U],
   R extends Exclude<D, typeof REQUIRED> | UnitTypeMapping[T]
->(options: TemporalUnitOptionsBag, key: UnitOptionsBagKeys, unitGroup: T, requiredOrDefault: D): R;
+>(options: TemporalUnitOptionsBag, key: U, unitGroup: T, requiredOrDefault: D): R;
+export function GetTemporalUnit<
+  U extends keyof TemporalUnitOptionsBag,
+  T extends keyof UnitTypeMapping,
+  D extends typeof REQUIRED | UnitTypeMapping[T] | AllowedGetTemporalUnitDefaultValues[U],
+  E extends 'auto' | Temporal.DateTimeUnit,
+  R extends UnitTypeMapping[T] | Exclude<D, typeof REQUIRED> | E
+>(options: TemporalUnitOptionsBag, key: U, unitGroup: T, requiredOrDefault: D, extraValues: ReadonlyArray<E>): R;
+// This signature of the function is NOT used in type-checking, so restricting
+// the default value via generic binding like the other overloads isn't
+// necessary.
 export function GetTemporalUnit<
   T extends keyof UnitTypeMapping,
   D extends typeof REQUIRED | UnitTypeMapping[T] | 'auto' | undefined,
@@ -990,19 +1006,7 @@ export function GetTemporalUnit<
   R extends UnitTypeMapping[T] | Exclude<D, typeof REQUIRED> | E
 >(
   options: TemporalUnitOptionsBag,
-  key: UnitOptionsBagKeys,
-  unitGroup: T,
-  requiredOrDefault: D,
-  extraValues: ReadonlyArray<E>
-): R;
-export function GetTemporalUnit<
-  T extends keyof UnitTypeMapping,
-  D extends typeof REQUIRED | UnitTypeMapping[T] | 'auto' | undefined,
-  E extends 'auto' | Temporal.DateTimeUnit,
-  R extends UnitTypeMapping[T] | Exclude<D, typeof REQUIRED> | E
->(
-  options: TemporalUnitOptionsBag,
-  key: UnitOptionsBagKeys,
+  key: keyof typeof options,
   unitGroup: T,
   requiredOrDefault: D,
   extraValues: ReadonlyArray<E> | never[] = []
