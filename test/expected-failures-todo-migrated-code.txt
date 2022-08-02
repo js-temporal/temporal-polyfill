@@ -774,8 +774,6 @@ built-ins/Temporal/ZonedDateTime/prototype/round/roundingmode-halfCeil.js
 built-ins/Temporal/ZonedDateTime/prototype/round/roundingmode-halfEven.js
 built-ins/Temporal/ZonedDateTime/prototype/round/roundingmode-halfFloor.js
 built-ins/Temporal/ZonedDateTime/prototype/round/roundingmode-halfTrunc.js
-built-ins/Temporal/ZonedDateTime/prototype/round/smallest-unit-day-daylength-too-large.js
-built-ins/Temporal/ZonedDateTime/prototype/round/smallest-unit-day-daylength-zero-or-negative.js
 built-ins/Temporal/ZonedDateTime/prototype/round/timezone-getoffsetnanosecondsfor-out-of-range.js
 built-ins/Temporal/ZonedDateTime/prototype/second/timezone-getoffsetnanosecondsfor-out-of-range.js
 built-ins/Temporal/ZonedDateTime/prototype/since/argument-calendar-fields-undefined.js
