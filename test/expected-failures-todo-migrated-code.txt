@@ -13,7 +13,6 @@ built-ins/Temporal/Calendar/prototype/dateAdd/argument-string-time-zone-annotati
 built-ins/Temporal/Calendar/prototype/dateAdd/argument-string-unknown-annotation.js
 built-ins/Temporal/Calendar/prototype/dateAdd/argument-zoneddatetime-timezone-getoffsetnanosecondsfor-out-of-range.js
 built-ins/Temporal/Calendar/prototype/dateAdd/order-of-operations.js
-built-ins/Temporal/Calendar/prototype/dateFromFields/order-of-operations.js
 built-ins/Temporal/Calendar/prototype/dateUntil/argument-calendar-fields-undefined.js
 built-ins/Temporal/Calendar/prototype/dateUntil/argument-propertybag-calendar-instance-does-not-get-calendar-property.js
 built-ins/Temporal/Calendar/prototype/dateUntil/argument-propertybag-calendar-wrong-type.js
@@ -98,7 +97,6 @@ built-ins/Temporal/Calendar/prototype/monthCode/argument-string-date-with-utc-of
 built-ins/Temporal/Calendar/prototype/monthCode/argument-string-time-zone-annotation.js
 built-ins/Temporal/Calendar/prototype/monthCode/argument-string-unknown-annotation.js
 built-ins/Temporal/Calendar/prototype/monthCode/argument-zoneddatetime-timezone-getoffsetnanosecondsfor-out-of-range.js
-built-ins/Temporal/Calendar/prototype/monthDayFromFields/order-of-operations.js
 built-ins/Temporal/Calendar/prototype/monthsInYear/argument-calendar-fields-undefined.js
 built-ins/Temporal/Calendar/prototype/monthsInYear/argument-propertybag-calendar-case-insensitive.js
 built-ins/Temporal/Calendar/prototype/monthsInYear/argument-propertybag-calendar-instance-does-not-get-calendar-property.js
@@ -123,7 +121,6 @@ built-ins/Temporal/Calendar/prototype/year/argument-string-date-with-utc-offset.
 built-ins/Temporal/Calendar/prototype/year/argument-string-time-zone-annotation.js
 built-ins/Temporal/Calendar/prototype/year/argument-string-unknown-annotation.js
 built-ins/Temporal/Calendar/prototype/year/argument-zoneddatetime-timezone-getoffsetnanosecondsfor-out-of-range.js
-built-ins/Temporal/Calendar/prototype/yearMonthFromFields/order-of-operations.js
 built-ins/Temporal/Calendar/prototype/yearOfWeek/argument-calendar-datefromfields-called-with-null-prototype-fields.js
 built-ins/Temporal/Calendar/prototype/yearOfWeek/argument-calendar-fields-undefined.js
 built-ins/Temporal/Calendar/prototype/yearOfWeek/argument-leap-second.js
@@ -870,7 +867,6 @@ built-ins/Temporal/ZonedDateTime/prototype/yearOfWeek/validate-calendar-value.js
 built-ins/Temporal/ZonedDateTime/timezone-instance-does-not-get-timeZone-property.js
 intl402/Temporal/Calendar/calendar-case-insensitive.js
 intl402/Temporal/Calendar/from/calendar-case-insensitive.js
-intl402/Temporal/Calendar/prototype/dateFromFields/order-of-operations.js
 intl402/Temporal/Calendar/prototype/era/argument-calendar-fields-undefined.js
 intl402/Temporal/Calendar/prototype/era/argument-propertybag-calendar-case-insensitive.js
 intl402/Temporal/Calendar/prototype/era/argument-propertybag-calendar-instance-does-not-get-calendar-property.js
@@ -887,8 +883,6 @@ intl402/Temporal/Calendar/prototype/eraYear/argument-string-date-with-utc-offset
 intl402/Temporal/Calendar/prototype/eraYear/argument-string-time-zone-annotation.js
 intl402/Temporal/Calendar/prototype/eraYear/argument-string-unknown-annotation.js
 intl402/Temporal/Calendar/prototype/eraYear/argument-zoneddatetime-timezone-getoffsetnanosecondsfor-out-of-range.js
-intl402/Temporal/Calendar/prototype/monthDayFromFields/order-of-operations.js
-intl402/Temporal/Calendar/prototype/yearMonthFromFields/order-of-operations.js
 intl402/Temporal/Calendar/prototype/yearOfWeek/infinity-throws-rangeerror.js
 intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boundaries.js
 intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
