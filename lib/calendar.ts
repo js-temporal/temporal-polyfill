@@ -353,24 +353,24 @@ DefineIntrinsic('Temporal.Calendar.from', Calendar.from);
  */
 impl['iso8601'] = {
   dateFromFields(fieldsParam, options, calendar) {
-    const overflow = ES.ToTemporalOverflow(options);
     let fields = ES.PrepareTemporalFields(fieldsParam, ['day', 'month', 'monthCode', 'year'], ['year', 'day']);
+    const overflow = ES.ToTemporalOverflow(options);
     fields = resolveNonLunisolarMonth(fields);
     let { year, month, day } = fields;
     ({ year, month, day } = ES.RegulateISODate(year, month, day, overflow));
     return ES.CreateTemporalDate(year, month, day, calendar);
   },
   yearMonthFromFields(fieldsParam, options, calendar) {
-    const overflow = ES.ToTemporalOverflow(options);
     let fields = ES.PrepareTemporalFields(fieldsParam, ['month', 'monthCode', 'year'], ['year']);
+    const overflow = ES.ToTemporalOverflow(options);
     fields = resolveNonLunisolarMonth(fields);
     let { year, month } = fields;
     ({ year, month } = ES.RegulateISOYearMonth(year, month, overflow));
     return ES.CreateTemporalYearMonth(year, month, calendar, /* referenceISODay = */ 1);
   },
   monthDayFromFields(fieldsParam, options, calendar) {
-    const overflow = ES.ToTemporalOverflow(options);
     let fields = ES.PrepareTemporalFields(fieldsParam, ['day', 'month', 'monthCode', 'year'], ['day']);
+    const overflow = ES.ToTemporalOverflow(options);
     if (fields.month !== undefined && fields.year === undefined && fields.monthCode === undefined) {
       throw new TypeError('either year or monthCode required with month');
     }
@@ -2287,11 +2287,11 @@ class NonIsoCalendar implements CalendarImpl {
     options: NonNullable<Params['dateFromFields'][1]>,
     calendar: Temporal.Calendar
   ): Temporal.PlainDate {
-    const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as readonly AnyTemporalKey[];
     ArrayPrototypeSort.call(fieldNames);
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
+    const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.calendarToIsoDate(fields, overflow, cache);
     const result = ES.CreateTemporalDate(year, month, day, calendar);
     cache.setObject(result);
@@ -2302,11 +2302,11 @@ class NonIsoCalendar implements CalendarImpl {
     options: NonNullable<Params['yearMonthFromFields'][1]>,
     calendar: Temporal.Calendar
   ): Temporal.PlainYearMonth {
-    const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     const fieldNames = this.fields(['month', 'monthCode', 'year']) as readonly AnyTemporalKey[];
     ArrayPrototypeSort.call(fieldNames);
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
+    const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.calendarToIsoDate({ ...fields, day: 1 }, overflow, cache);
     const result = ES.CreateTemporalYearMonth(year, month, calendar, /* referenceISODay = */ day);
     cache.setObject(result);
@@ -2317,13 +2317,13 @@ class NonIsoCalendar implements CalendarImpl {
     options: NonNullable<Params['monthDayFromFields'][1]>,
     calendar: Temporal.Calendar
   ): Temporal.PlainMonthDay {
-    const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     // For lunisolar calendars, either `monthCode` or `year` must be provided
     // because `month` is ambiguous without a year or a code.
     const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as readonly AnyTemporalKey[];
     ArrayPrototypeSort.call(fieldNames);
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
+    const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.monthDayFromFields(fields, overflow, cache);
     // `year` is a reference year where this month/day exists in this calendar
     const result = ES.CreateTemporalMonthDay(month, day, calendar, /* referenceISOYear = */ year);
