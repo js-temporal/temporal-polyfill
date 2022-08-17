@@ -3,8 +3,6 @@
 # polyfill, see expected-failures-transpiled.txt and
 # expected-failures-optimized.txt respectively.
 
-# https://github.com/tc39/test262/pull/3316
-intl402/Temporal/TimeZone/from/argument-invalid.js
 # https://github.com/tc39/test262/pull/3548
 built-ins/Temporal/Duration/compare/argument-string-negative-fractional-units.js
 built-ins/Temporal/Duration/from/argument-string-negative-fractional-units.js
