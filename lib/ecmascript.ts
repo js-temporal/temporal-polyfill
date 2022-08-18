@@ -402,15 +402,7 @@ function ParseISODateTime(isoString: string) {
     }
     if (offset === '-00:00') offset = '+00:00';
   }
-  let ianaName = match[19];
-  if (ianaName) {
-    try {
-      // Canonicalize name if it is an IANA link name or is capitalized wrong
-      ianaName = GetCanonicalTimeZoneIdentifier(ianaName).toString();
-    } catch {
-      // Not an IANA name, may be a custom ID, pass through unchanged
-    }
-  }
+  const ianaName = match[19];
   const calendar = match[20];
   RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   return {
