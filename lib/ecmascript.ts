@@ -1116,40 +1116,39 @@ export function ToRelativeTemporalObject(options: {
     let ianaName, z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, ianaName, offset, z } =
       ParseISODateTime(ToString(relativeTo)));
-    if (ianaName) timeZone = ianaName;
-    if (z) {
-      offsetBehaviour = 'exact';
-    } else if (!offset) {
-      offsetBehaviour = 'wall';
+    if (ianaName) {
+      timeZone = ianaName;
+      if (z) {
+        offsetBehaviour = 'exact';
+      } else if (!offset) {
+        offsetBehaviour = 'wall';
+      }
+      matchMinutes = true;
     }
     if (!calendar) calendar = GetISO8601Calendar();
     calendar = ToTemporalCalendar(calendar);
-    matchMinutes = true;
   }
-  if (timeZone !== undefined) {
-    timeZone = ToTemporalTimeZone(timeZone);
-    let offsetNs = 0;
-    if (offsetBehaviour === 'option') offsetNs = ParseTimeZoneOffsetString(ToString(offset));
-    const epochNanoseconds = InterpretISODateTimeOffset(
-      year,
-      month,
-      day,
-      hour,
-      minute,
-      second,
-      millisecond,
-      microsecond,
-      nanosecond,
-      offsetBehaviour,
-      offsetNs,
-      timeZone,
-      'compatible',
-      'reject',
-      matchMinutes
-    );
-    return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
-  }
-  return CreateTemporalDate(year, month, day, calendar);
+  if (timeZone === undefined) return CreateTemporalDate(year, month, day, calendar);
+  timeZone = ToTemporalTimeZone(timeZone);
+  const offsetNs = offsetBehaviour === 'option' ? ParseTimeZoneOffsetString(ToString(offset)) : 0;
+  const epochNanoseconds = InterpretISODateTimeOffset(
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond,
+    microsecond,
+    nanosecond,
+    offsetBehaviour,
+    offsetNs,
+    timeZone,
+    'compatible',
+    'reject',
+    matchMinutes
+  );
+  return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
 }
 
 export function DefaultTemporalLargestUnit(
