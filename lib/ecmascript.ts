@@ -1134,6 +1134,10 @@ export function ToRelativeTemporalObject(options: {
         offsetBehaviour = 'wall';
       }
       matchMinutes = true;
+    } else if (z) {
+      throw new RangeError(
+        'Z designator not supported for PlainDate relativeTo; either remove the Z or add a bracketed time zone'
+      );
     }
     if (!calendar) calendar = GetISO8601Calendar();
     calendar = ToTemporalCalendar(calendar);
