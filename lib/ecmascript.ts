@@ -11,7 +11,6 @@ const NumberIsNaN = Number.isNaN;
 const NumberIsFinite = Number.isFinite;
 const NumberCtor = Number;
 const StringCtor = String;
-const StringPrototypeSlice = String.prototype.slice;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
 const ObjectAssign = Object.assign;
 const ObjectCreate = Object.create;
@@ -447,7 +446,15 @@ function ParseISODateTime(isoString: string) {
     if (offset === '-00:00') offset = '+00:00';
   }
   const ianaName = match[19];
-  const calendar = match[20];
+  const annotations = match[20];
+  let calendar;
+  for (const [, critical, key, value] of annotations.matchAll(PARSE.annotation)) {
+    if (key === 'u-ca') {
+      if (calendar === undefined) calendar = value;
+    } else if (critical === '!') {
+      throw new RangeError(`Unrecognized annotation: !${key}=${value}`);
+    }
+  }
   RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   return {
     year,
@@ -494,7 +501,7 @@ export function ParseTemporalDateString(isoString: string) {
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalTimeString(isoString: string) {
   const match = PARSE.time.exec(isoString);
-  let hour, minute, second, millisecond, microsecond, nanosecond, calendar;
+  let hour, minute, second, millisecond, microsecond, nanosecond, annotations, calendar;
   if (match) {
     hour = ToIntegerOrInfinity(match[1]);
     minute = ToIntegerOrInfinity(match[2] || match[5]);
@@ -504,7 +511,14 @@ export function ParseTemporalTimeString(isoString: string) {
     millisecond = ToIntegerOrInfinity(fraction.slice(0, 3));
     microsecond = ToIntegerOrInfinity(fraction.slice(3, 6));
     nanosecond = ToIntegerOrInfinity(fraction.slice(6, 9));
-    calendar = match[15];
+    annotations = match[15];
+    for (const [, critical, key, value] of annotations.matchAll(PARSE.annotation)) {
+      if (key === 'u-ca') {
+        if (calendar === undefined) calendar = value;
+      } else if (critical === '!') {
+        throw new RangeError(`Unrecognized annotation: !${key}=${value}`);
+      }
+    }
     if (match[8]) throw new RangeError('Z designator not supported for PlainTime');
   } else {
     let z, hasTime;
@@ -518,18 +532,15 @@ export function ParseTemporalTimeString(isoString: string) {
     return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
   }
   // Reject strings that are ambiguous with PlainMonthDay or PlainYearMonth.
-  // The calendar suffix is `[u-ca=${calendar}]`, i.e. calendar plus 7 characters,
-  // and must be stripped so presence of a calendar doesn't result in interpretation
-  // of otherwise ambiguous input as a time.
-  const isoStringWithoutCalendar = calendar
-    ? StringPrototypeSlice.call(isoString, 0, isoString.length - calendar.length - 7)
-    : isoString;
+  // The annotations must be stripped so presence of a calendar doesn't result
+  // in interpretation of otherwise ambiguous input as a time.
+  const isoStringWithoutAnnotations = annotations ? isoString.slice(0, -annotations.length) : isoString;
   try {
-    const { month, day } = ParseTemporalMonthDayString(isoStringWithoutCalendar);
+    const { month, day } = ParseTemporalMonthDayString(isoStringWithoutAnnotations);
     RejectISODate(1972, month, day);
   } catch {
     try {
-      const { year, month } = ParseTemporalYearMonthString(isoStringWithoutCalendar);
+      const { year, month } = ParseTemporalYearMonthString(isoStringWithoutAnnotations);
       RejectISODate(year, month, 1);
     } catch {
       return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
@@ -1639,7 +1650,7 @@ export function ToTemporalYearMonth(
   ToTemporalOverflow(options); // validate and ignore
   let { year, month, referenceISODay, calendar: maybeStringCalendar } = ParseTemporalYearMonthString(ToString(item));
   // TODO: replace with ternary?
-  let calendar: Temporal.CalendarProtocol | string = maybeStringCalendar;
+  let calendar: Temporal.CalendarProtocol | string | undefined = maybeStringCalendar;
   if (calendar === undefined) calendar = GetISO8601Calendar();
   calendar = ToTemporalCalendar(calendar);
 
@@ -1743,7 +1754,7 @@ export function ToTemporalZonedDateTime(
     nanosecond: number,
     timeZone,
     offset: string | undefined,
-    calendar: string | Temporal.CalendarProtocol;
+    calendar: string | Temporal.CalendarProtocol | undefined;
   let matchMinute = false;
   let offsetBehaviour: OffsetBehaviour = 'option';
   if (IsObject(item)) {
