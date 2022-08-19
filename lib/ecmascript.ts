@@ -343,8 +343,8 @@ export function RejectObjectWithCalendarOrTimeZone(item: AnyTemporalLikeType) {
   }
 }
 function ParseTemporalTimeZone(stringIdent: string) {
-  let { ianaName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
-  if (ianaName) return ianaName;
+  const { ianaName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
+  if (ianaName) return GetCanonicalTimeZoneIdentifier(ianaName);
   if (z) return 'UTC';
   return offset as string; // if !ianaName && !z then offset must be present
 }
@@ -533,12 +533,8 @@ export function ParseTemporalTimeZoneString(stringIdent: string): Partial<{
   offset: string | undefined;
   z: boolean | undefined;
 }> {
-  try {
-    let canonicalIdent = GetCanonicalTimeZoneIdentifier(stringIdent);
-    if (canonicalIdent) return { ianaName: canonicalIdent.toString() };
-  } catch {
-    // fall through
-  }
+  const bareID = new RegExp(`^${PARSE.timeZoneID.source}$`, 'i');
+  if (bareID.test(stringIdent)) return { ianaName: stringIdent };
   try {
     // Try parsing ISO string instead
     const result = ParseISODateTime(stringIdent);
