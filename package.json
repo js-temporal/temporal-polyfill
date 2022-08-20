@@ -13,6 +13,11 @@
           "types": "./index.d.ts",
           "default": "./dist/index.esm.js"
         },
+        "require": {
+          "types": "./index.d.ts",
+          "default": "./dist/index.cjs"
+        },
+        "types": "./index.d.ts",
         "default": "./dist/index.cjs"
       },
       "./dist/index.cjs"
