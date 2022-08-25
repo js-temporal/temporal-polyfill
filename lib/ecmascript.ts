@@ -894,7 +894,7 @@ export function ToShowCalendarOption(options: Temporal.ShowCalendarOption) {
 }
 
 export function ToShowTimeZoneNameOption(options: Temporal.ZonedDateTimeToStringOptions) {
-  return GetOption(options, 'timeZoneName', ['auto', 'never'], 'auto');
+  return GetOption(options, 'timeZoneName', ['auto', 'never', 'critical'], 'auto');
 }
 
 export function ToShowOffsetOption(options: Temporal.ZonedDateTimeToStringOptions) {
@@ -2807,7 +2807,10 @@ export function TemporalZonedDateTimeToString(
     const offsetNs = GetOffsetNanosecondsFor(tz, instant);
     result += FormatISOTimeZoneOffsetString(offsetNs);
   }
-  if (showTimeZone !== 'never') result += `[${tz}]`;
+  if (showTimeZone !== 'never') {
+    const flag = showTimeZone === 'critical' ? '!' : '';
+    result += `[${flag}${tz}]`;
+  }
   result += MaybeFormatCalendarAnnotation(GetSlot(zdt, CALENDAR), showCalendar);
   return result;
 }
