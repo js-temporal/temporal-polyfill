@@ -408,7 +408,6 @@ built-ins/Temporal/ZonedDateTime/prototype/toPlainMonthDay/calendar-fields-undef
 built-ins/Temporal/ZonedDateTime/prototype/toPlainYearMonth/calendar-fields-undefined.js
 built-ins/Temporal/ZonedDateTime/prototype/toString/fractionalseconddigits-non-integer.js
 built-ins/Temporal/ZonedDateTime/prototype/toString/order-of-operations.js
-built-ins/Temporal/ZonedDateTime/prototype/toString/timezonename-critical.js
 built-ins/Temporal/ZonedDateTime/prototype/until/argument-calendar-fields-undefined.js
 built-ins/Temporal/ZonedDateTime/prototype/until/argument-propertybag-calendar-case-insensitive.js
 built-ins/Temporal/ZonedDateTime/prototype/until/argument-propertybag-calendar-instance-does-not-get-calendar-property.js
