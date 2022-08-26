@@ -3471,6 +3471,12 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
       daysBigInt = JSBI.add(daysBigInt, JSBI.BigInt(sign));
     }
   } while (isOverflow);
+  if (!JSBI.equal(daysBigInt, ZERO) && MathSign(JSBI.toNumber(daysBigInt)) != sign) {
+    throw new RangeError('Time zone or calendar converted nanoseconds into a number of days with the opposite sign');
+  }
+  if (!JSBI.equal(nanoseconds, ZERO) && MathSign(JSBI.toNumber(nanoseconds)) != sign) {
+    throw new RangeError('Time zone or calendar ended up with a remainder of nanoseconds with the opposite sign');
+  }
   return { days: JSBI.toNumber(daysBigInt), nanoseconds, dayLengthNs: MathAbs(dayLengthNs) };
 }
 

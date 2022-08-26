@@ -370,17 +370,11 @@ intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boun
 intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
 intl402/Temporal/ZonedDateTime/prototype/withCalendar/calendar-case-insensitive.js
 built-ins/Temporal/Duration/prototype/add/nanoseconds-to-days-loop-indefinitely-2.js
-built-ins/Temporal/Duration/prototype/add/relativeto-zoneddatetime-nanoseconds-to-days-range-errors.js
-built-ins/Temporal/Duration/prototype/round/relativeto-zoneddatetime-nanoseconds-to-days-range-errors.js
 built-ins/Temporal/Duration/prototype/subtract/nanoseconds-to-days-loop-indefinitely-2.js
-built-ins/Temporal/Duration/prototype/subtract/relativeto-zoneddatetime-nanoseconds-to-days-range-errors.js
 built-ins/Temporal/Duration/prototype/total/nanoseconds-to-days-loop-indefinitely-2.js
-built-ins/Temporal/Duration/prototype/total/relativeto-zoneddatetime-nanoseconds-to-days-range-errors.js
 built-ins/Temporal/PlainDate/argument-convert.js
 built-ins/Temporal/ZonedDateTime/prototype/since/nanoseconds-to-days-loop-indefinitely-2.js
-built-ins/Temporal/ZonedDateTime/prototype/since/nanoseconds-to-days-range-errors.js
 built-ins/Temporal/ZonedDateTime/prototype/until/nanoseconds-to-days-loop-indefinitely-2.js
-built-ins/Temporal/ZonedDateTime/prototype/until/nanoseconds-to-days-range-errors.js
 built-ins/Temporal/Calendar/prototype/dateUntil/argument-propertybag-calendar-case-insensitive.js
 built-ins/Temporal/Calendar/prototype/yearOfWeek/argument-propertybag-calendar-case-insensitive.js
 built-ins/Temporal/Duration/prototype/round/roundingincrement-out-of-range.js
