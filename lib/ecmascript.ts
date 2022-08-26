@@ -237,6 +237,15 @@ function divmod(x: JSBI, y: JSBI): { quotient: JSBI; remainder: JSBI } {
   return { quotient, remainder };
 }
 
+function isNegativeJSBI(value: JSBI): boolean {
+  return JSBI.lessThan(value, ZERO);
+}
+
+function signJSBI(value: JSBI): 1 | 0 | -1 {
+  if (isZero(value)) return 0;
+  if (isNegativeJSBI(value)) return -1;
+  return 1;
+}
 function abs(x: JSBI): JSBI {
   if (JSBI.lessThan(x, ZERO)) return JSBI.multiply(x, NEGATIVE_ONE);
   return x;
@@ -3461,7 +3470,7 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
     const oneDayFartherNs = AddZonedDateTime(relativeInstant, timeZone, calendar, 0, 0, 0, sign, 0, 0, 0, 0, 0, 0);
     const relativeNs = GetSlot(relativeInstant, EPOCHNANOSECONDS);
     dayLengthNs = JSBI.toNumber(JSBI.subtract(oneDayFartherNs, relativeNs));
-    isOverflow = JSBI.greaterThan(
+    isOverflow = JSBI.greaterThanOrEqual(
       JSBI.multiply(JSBI.subtract(nanoseconds, JSBI.BigInt(dayLengthNs)), JSBI.BigInt(sign)),
       ZERO
     );
@@ -3471,11 +3480,14 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
       daysBigInt = JSBI.add(daysBigInt, JSBI.BigInt(sign));
     }
   } while (isOverflow);
-  if (!JSBI.equal(daysBigInt, ZERO) && MathSign(JSBI.toNumber(daysBigInt)) != sign) {
+  if (!isZero(daysBigInt) && signJSBI(daysBigInt) !== sign) {
     throw new RangeError('Time zone or calendar converted nanoseconds into a number of days with the opposite sign');
   }
-  if (!JSBI.equal(nanoseconds, ZERO) && MathSign(JSBI.toNumber(nanoseconds)) != sign) {
+  if (!isZero(nanoseconds) && signJSBI(nanoseconds) !== sign) {
     throw new RangeError('Time zone or calendar ended up with a remainder of nanoseconds with the opposite sign');
+  }
+  if (JSBI.greaterThanOrEqual(abs(nanoseconds), JSBI.BigInt(MathAbs(dayLengthNs)))) {
+    throw new RangeError('Time zone or calendar ended up with a remainder of nanoseconds longer than the day length');
   }
   return { days: JSBI.toNumber(daysBigInt), nanoseconds, dayLengthNs: MathAbs(dayLengthNs) };
 }
