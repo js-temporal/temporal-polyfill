@@ -94,7 +94,6 @@ built-ins/Temporal/Duration/prototype/add/order-of-operations.js
 built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-calendar-fields-undefined.js
 built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-timezone-wrong-type.js
-built-ins/Temporal/Duration/prototype/round/nanoseconds-to-days-loop-indefinitely-2.js
 built-ins/Temporal/Duration/prototype/round/order-of-operations.js
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-calendar-fields-undefined.js
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-calendar-wrong-type.js
@@ -369,12 +368,7 @@ intl402/Temporal/Calendar/prototype/yearOfWeek/infinity-throws-rangeerror.js
 intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boundaries.js
 intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
 intl402/Temporal/ZonedDateTime/prototype/withCalendar/calendar-case-insensitive.js
-built-ins/Temporal/Duration/prototype/add/nanoseconds-to-days-loop-indefinitely-2.js
-built-ins/Temporal/Duration/prototype/subtract/nanoseconds-to-days-loop-indefinitely-2.js
-built-ins/Temporal/Duration/prototype/total/nanoseconds-to-days-loop-indefinitely-2.js
 built-ins/Temporal/PlainDate/argument-convert.js
-built-ins/Temporal/ZonedDateTime/prototype/since/nanoseconds-to-days-loop-indefinitely-2.js
-built-ins/Temporal/ZonedDateTime/prototype/until/nanoseconds-to-days-loop-indefinitely-2.js
 built-ins/Temporal/Calendar/prototype/dateUntil/argument-propertybag-calendar-case-insensitive.js
 built-ins/Temporal/Calendar/prototype/yearOfWeek/argument-propertybag-calendar-case-insensitive.js
 built-ins/Temporal/Duration/prototype/round/roundingincrement-out-of-range.js
