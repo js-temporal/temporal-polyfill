@@ -54,7 +54,8 @@ export class TimeZone implements Temporal.TimeZone {
     if (ES.TestTimeZoneOffsetString(id)) {
       return ES.ParseTimeZoneOffsetString(id);
     }
-    return ES.GetIANATimeZoneOffsetNanoseconds(GetSlot(instant, EPOCHNANOSECONDS), id);
+
+    return ES.GetNamedTimeZoneOffsetNanoseconds(id, GetSlot(instant, EPOCHNANOSECONDS));
   }
   getOffsetStringFor(instantParam: Params['getOffsetStringFor'][0]): Return['getOffsetStringFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
