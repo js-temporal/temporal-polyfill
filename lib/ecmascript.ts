@@ -2822,7 +2822,7 @@ export function GetCanonicalTimeZoneIdentifier(timeZoneIdentifier: string): stri
   return formatter.resolvedOptions().timeZone;
 }
 
-export function GetIANATimeZoneOffsetNanoseconds(epochNanoseconds: JSBI, id: string) {
+export function GetNamedTimeZoneOffsetNanoseconds(id: string, epochNanoseconds: JSBI) {
   const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = GetIANATimeZoneDateTimeParts(
     epochNanoseconds,
     id
@@ -2956,19 +2956,19 @@ export function GetIANATimeZoneNextTransition(epochNanoseconds: JSBI, id: string
   // The first transition (in any timezone) recorded in the TZDB was in 1847, so
   // start there if an earlier date is supplied.
   let leftNanos = maxJSBI(BEFORE_FIRST_OFFSET_TRANSITION, epochNanoseconds);
-  const leftOffsetNs = GetIANATimeZoneOffsetNanoseconds(leftNanos, id);
+  const leftOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, leftNanos);
   let rightNanos = leftNanos;
   let rightOffsetNs = leftOffsetNs;
   while (leftOffsetNs === rightOffsetNs && JSBI.lessThan(JSBI.BigInt(leftNanos), uppercap)) {
     rightNanos = JSBI.add(leftNanos, TWO_WEEKS_NANOS);
-    rightOffsetNs = GetIANATimeZoneOffsetNanoseconds(rightNanos, id);
+    rightOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, rightNanos);
     if (leftOffsetNs === rightOffsetNs) {
       leftNanos = rightNanos;
     }
   }
   if (leftOffsetNs === rightOffsetNs) return null;
   const result = bisect(
-    (epochNs: JSBI) => GetIANATimeZoneOffsetNanoseconds(epochNs, id),
+    (epochNs: JSBI) => GetNamedTimeZoneOffsetNanoseconds(id, epochNs),
     leftNanos,
     rightNanos,
     leftOffsetNs,
@@ -2997,12 +2997,12 @@ export function GetIANATimeZonePreviousTransition(epochNanoseconds: JSBI, id: st
   const isFarFuture = JSBI.greaterThan(epochNanoseconds, afterLatestRule);
   const lowercap = isFarFuture ? JSBI.subtract(epochNanoseconds, ABOUT_ONE_YEAR_NANOS) : BEFORE_FIRST_OFFSET_TRANSITION;
   let rightNanos = JSBI.subtract(epochNanoseconds, ONE);
-  const rightOffsetNs = GetIANATimeZoneOffsetNanoseconds(rightNanos, id);
+  const rightOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, rightNanos);
   let leftNanos = rightNanos;
   let leftOffsetNs = rightOffsetNs;
   while (rightOffsetNs === leftOffsetNs && JSBI.greaterThan(rightNanos, lowercap)) {
     leftNanos = JSBI.subtract(rightNanos, TWO_WEEKS_NANOS);
-    leftOffsetNs = GetIANATimeZoneOffsetNanoseconds(leftNanos, id);
+    leftOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, leftNanos);
     if (rightOffsetNs === leftOffsetNs) {
       rightNanos = leftNanos;
     }
@@ -3022,7 +3022,7 @@ export function GetIANATimeZonePreviousTransition(epochNanoseconds: JSBI, id: st
     return null;
   }
   const result = bisect(
-    (epochNs: JSBI) => GetIANATimeZoneOffsetNanoseconds(epochNs, id),
+    (epochNs: JSBI) => GetNamedTimeZoneOffsetNanoseconds(id, epochNs),
     leftNanos,
     rightNanos,
     leftOffsetNs,
@@ -3096,8 +3096,8 @@ export function GetNamedTimeZoneEpochNanoseconds(
   if (JSBI.lessThan(nsEarlier, NS_MIN)) nsEarlier = ns;
   let nsLater = JSBI.add(ns, DAY_NANOS);
   if (JSBI.greaterThan(nsLater, NS_MAX)) nsLater = ns;
-  const earliest = GetIANATimeZoneOffsetNanoseconds(nsEarlier, id);
-  const latest = GetIANATimeZoneOffsetNanoseconds(nsLater, id);
+  const earliest = GetNamedTimeZoneOffsetNanoseconds(id, nsEarlier);
+  const latest = GetNamedTimeZoneOffsetNanoseconds(id, nsLater);
   const found = earliest === latest ? [earliest] : [earliest, latest];
   return found
     .map((offsetNanoseconds) => {
