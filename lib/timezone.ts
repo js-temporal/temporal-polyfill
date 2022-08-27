@@ -86,7 +86,7 @@ export class TimeZone implements Temporal.TimeZone {
     const id = GetSlot(this, TIMEZONE_ID);
 
     if (ES.TestTimeZoneOffsetString(id)) {
-      const epochNs = ES.GetEpochFromISOParts(
+      const epochNs = ES.GetUTCEpochNanoseconds(
         GetSlot(dateTime, ISO_YEAR),
         GetSlot(dateTime, ISO_MONTH),
         GetSlot(dateTime, ISO_DAY),

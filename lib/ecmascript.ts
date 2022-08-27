@@ -667,7 +667,7 @@ export function ParseTemporalInstant(isoString: string) {
     nanosecond - offsetNs
   ));
 
-  const epochNs = GetEpochFromISOParts(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
+  const epochNs = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   if (epochNs === null) throw new RangeError('DateTime outside of supported range');
   return epochNs;
 }
@@ -1681,7 +1681,17 @@ export function InterpretISODateTimeOffset(
   // for this timezone and date/time.
   if (offsetBehaviour === 'exact' || offsetOpt === 'use') {
     // Calculate the instant for the input's date/time and offset
-    const epochNs = GetEpochFromISOParts(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
+    const epochNs = GetUTCEpochNanoseconds(
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      second,
+      millisecond,
+      microsecond,
+      nanosecond
+    );
     if (epochNs === null) throw new RangeError('ZonedDateTime outside of supported range');
     return JSBI.subtract(epochNs, JSBI.BigInt(offsetNs));
   }
@@ -2392,7 +2402,7 @@ function DisambiguatePossibleInstants(
   const millisecond = GetSlot(dateTime, ISO_MILLISECOND);
   const microsecond = GetSlot(dateTime, ISO_MICROSECOND);
   const nanosecond = GetSlot(dateTime, ISO_NANOSECOND);
-  const utcns = GetEpochFromISOParts(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
+  const utcns = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   if (utcns === null) throw new RangeError('DateTime outside of supported range');
   const dayBefore = new Instant(JSBI.subtract(utcns, DAY_NANOS));
   const dayAfter = new Instant(JSBI.add(utcns, DAY_NANOS));
@@ -2817,7 +2827,7 @@ export function GetIANATimeZoneOffsetNanoseconds(epochNanoseconds: JSBI, id: str
     epochNanoseconds,
     id
   );
-  const utc = GetEpochFromISOParts(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
+  const utc = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   if (utc === null) throw new RangeError('Date outside of supported range');
   return JSBI.toNumber(JSBI.subtract(utc, epochNanoseconds));
 }
@@ -2857,7 +2867,7 @@ function FormatISOTimeZoneOffsetString(offsetNanosecondsParam: number): string {
   const minuteString = ISODateTimePartString(minutes);
   return `${sign}${hourString}:${minuteString}`;
 }
-export function GetEpochFromISOParts(
+export function GetUTCEpochNanoseconds(
   year: number,
   month: number,
   day: number,
@@ -3080,7 +3090,7 @@ export function GetIANATimeZoneEpochValue(
   microsecond: number,
   nanosecond: number
 ) {
-  const ns = GetEpochFromISOParts(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
+  const ns = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   if (ns === null) throw new RangeError('DateTime outside of supported range');
   let nsEarlier = JSBI.subtract(ns, DAY_NANOS);
   if (JSBI.lessThan(nsEarlier, NS_MIN)) nsEarlier = ns;
@@ -3936,10 +3946,10 @@ function RejectDateTimeRange(
   if (
     (year === YEAR_MIN &&
       null ==
-        GetEpochFromISOParts(year, month, day + 1, hour, minute, second, millisecond, microsecond, nanosecond - 1)) ||
+        GetUTCEpochNanoseconds(year, month, day + 1, hour, minute, second, millisecond, microsecond, nanosecond - 1)) ||
     (year === YEAR_MAX &&
       null ==
-        GetEpochFromISOParts(year, month, day - 1, hour, minute, second, millisecond, microsecond, nanosecond + 1))
+        GetUTCEpochNanoseconds(year, month, day - 1, hour, minute, second, millisecond, microsecond, nanosecond + 1))
   ) {
     throw new RangeError('DateTime outside of supported range');
   }
