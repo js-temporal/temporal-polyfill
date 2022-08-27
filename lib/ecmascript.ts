@@ -3078,7 +3078,7 @@ export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
   return parseFromEnUsFormat(datetime);
 }
 
-export function GetIANATimeZoneEpochValue(
+export function GetNamedTimeZoneEpochNanoseconds(
   id: string,
   year: number,
   month: number,

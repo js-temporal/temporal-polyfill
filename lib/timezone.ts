@@ -102,7 +102,7 @@ export class TimeZone implements Temporal.TimeZone {
       return [new Instant(JSBI.subtract(epochNs, JSBI.BigInt(offsetNs)))];
     }
 
-    const possibleEpochNs = ES.GetIANATimeZoneEpochValue(
+    const possibleEpochNs = ES.GetNamedTimeZoneEpochNanoseconds(
       id,
       GetSlot(dateTime, ISO_YEAR),
       GetSlot(dateTime, ISO_MONTH),
