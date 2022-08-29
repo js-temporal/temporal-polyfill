@@ -2210,6 +2210,7 @@ export function CalendarInLeapYear(
 export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0]) {
   let calendarLike = calendarLikeParam;
   if (IsObject(calendarLike)) {
+    if (IsTemporalCalendar(calendarLike)) return calendarLike;
     if (HasSlot(calendarLike, CALENDAR)) return GetSlot(calendarLike, CALENDAR);
     if (!('calendar' in calendarLike)) return calendarLike;
     calendarLike = (calendarLike as { calendar: Temporal.CalendarProtocol | string }).calendar;
