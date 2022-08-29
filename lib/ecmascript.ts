@@ -2291,6 +2291,7 @@ export function CalendarMonthDayFromFields(
 export function ToTemporalTimeZone(temporalTimeZoneLikeParam: TimeZoneParams['from'][0]) {
   let temporalTimeZoneLike = temporalTimeZoneLikeParam;
   if (IsObject(temporalTimeZoneLike)) {
+    if (IsTemporalTimeZone(temporalTimeZoneLike)) return temporalTimeZoneLike;
     if (IsTemporalZonedDateTime(temporalTimeZoneLike)) return GetSlot(temporalTimeZoneLike, TIME_ZONE);
     if (!('timeZone' in temporalTimeZoneLike)) return temporalTimeZoneLike;
     temporalTimeZoneLike = (temporalTimeZoneLike as { timeZone: Temporal.TimeZoneProtocol | string }).timeZone;
