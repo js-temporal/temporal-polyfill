@@ -132,7 +132,7 @@ export class Calendar implements Temporal.Calendar {
     const id = ES.ToString(idParam);
     if (!ES.IsBuiltinCalendar(id)) throw new RangeError(`invalid calendar identifier ${id}`);
     CreateSlots(this);
-    SetSlot(this, CALENDAR_ID, id);
+    SetSlot(this, CALENDAR_ID, ES.ASCIILowercase(id));
 
     if (DEBUG) {
       Object.defineProperty(this, '_repr_', {

@@ -6205,7 +6205,14 @@ function GetNumberOption<P extends StringlyTypedKeys<T>, T extends Partial<Recor
 }
 
 export function IsBuiltinCalendar(id: string): id is BuiltinCalendarId {
-  return ArrayIncludes.call(BUILTIN_CALENDAR_IDS, id);
+  return BUILTIN_CALENDAR_IDS.includes(ASCIILowercase(id));
+}
+
+export function ASCIILowercase<T extends string>(str: T): T {
+  return str.replace(/[A-Z]/g, (l) => {
+    const code = l.charCodeAt(0);
+    return String.fromCharCode(code + 0x20);
+  }) as T;
 }
 
 const OFFSET = new RegExp(`^${PARSE.offset.source}$`);
