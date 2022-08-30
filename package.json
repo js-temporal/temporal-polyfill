@@ -13,6 +13,10 @@
           "types": "./index.d.ts",
           "default": "./dist/index.esm.js"
         },
+        "require": {
+          "types": "./index.d.cts",
+          "default": "./dist/index.cjs"
+        },
         "default": "./dist/index.cjs"
       },
       "./dist/index.cjs"
@@ -25,7 +29,7 @@
     "testValidStrings": "npm run build && node --experimental-modules --experimental-specifier-resolution=node --no-warnings --icu-data-dir ./node_modules/full-icu/ --loader ./test/resolve.source.mjs test/validStrings.mjs",
     "build": "rm -rf dist/* tsc-out/* && tsc && rollup -c rollup.config.js",
     "prepare": "npm run build",
-    "prepublishOnly": "npm run build",
+    "prepublishOnly": "node copy-types.mjs && npm run build",
     "update": "npx npm-check-updates -u -x @pipobscure/demitasse && npm install",
     "playground": "TEMPORAL_PLAYGROUND=1 npm run build && node --experimental-modules --no-warnings --icu-data-dir node_modules/full-icu -r ./dist/playground.cjs",
     "lint": "eslint . --ext ts,js,mjs,.d.ts --max-warnings 0 --cache \"$@\" && npm run prettier",
@@ -69,6 +73,7 @@
   "license": "ISC",
   "files": [
     "index.d.ts",
+    "index.d.cts",
     "dist",
     "lib",
     "CHANGELOG.md"
