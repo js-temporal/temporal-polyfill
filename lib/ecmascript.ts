@@ -2823,10 +2823,8 @@ export function GetCanonicalTimeZoneIdentifier(timeZoneIdentifier: string): stri
 }
 
 export function GetNamedTimeZoneOffsetNanoseconds(id: string, epochNanoseconds: JSBI) {
-  const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = GetIANATimeZoneDateTimeParts(
-    epochNanoseconds,
-    id
-  );
+  const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
+    GetNamedTimeZoneDateTimeParts(id, epochNanoseconds);
   const utc = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   if (utc === null) throw new RangeError('Date outside of supported range');
   return JSBI.toNumber(JSBI.subtract(utc, epochNanoseconds));
@@ -2916,7 +2914,7 @@ function GetISOPartsFromEpoch(epochNanoseconds: JSBI) {
 }
 
 // ts-prune-ignore-next TODO: remove this after tests are converted to TS
-export function GetIANATimeZoneDateTimeParts(epochNanoseconds: JSBI, id: string) {
+export function GetNamedTimeZoneDateTimeParts(id: string, epochNanoseconds: JSBI) {
   const { epochMilliseconds, millisecond, microsecond, nanosecond } = GetISOPartsFromEpoch(epochNanoseconds);
   const { year, month, day, hour, minute, second } = GetFormatterParts(id, epochMilliseconds);
   return BalanceISODateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
@@ -3102,7 +3100,7 @@ export function GetNamedTimeZoneEpochNanoseconds(
   return found
     .map((offsetNanoseconds) => {
       const epochNanoseconds = JSBI.subtract(ns, JSBI.BigInt(offsetNanoseconds));
-      const parts = GetIANATimeZoneDateTimeParts(epochNanoseconds, id);
+      const parts = GetNamedTimeZoneDateTimeParts(id, epochNanoseconds);
       if (
         year !== parts.year ||
         month !== parts.month ||
