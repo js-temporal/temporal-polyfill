@@ -2936,7 +2936,7 @@ function afterLatestPossibleTzdbRuleChange() {
   return JSBI.add(SystemUTCEpochNanoSeconds(), ABOUT_TEN_YEARS_NANOS);
 }
 
-export function GetIANATimeZoneNextTransition(epochNanoseconds: JSBI, id: string): JSBI | null {
+export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSBI): JSBI | null {
   // Decide how far in the future after `epochNanoseconds` we'll look for an
   // offset change. There are two cases:
   // 1. If it's a past date (or a date in the near future) then it's possible

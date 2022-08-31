@@ -129,7 +129,7 @@ export class TimeZone implements Temporal.TimeZone {
 
     let epochNanoseconds: JSBI | null = GetSlot(startingPoint, EPOCHNANOSECONDS);
     const Instant = GetIntrinsic('%Temporal.Instant%');
-    epochNanoseconds = ES.GetIANATimeZoneNextTransition(epochNanoseconds, id);
+    epochNanoseconds = ES.GetNamedTimeZoneNextTransition(id, epochNanoseconds);
     return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
   }
   getPreviousTransition(startingPointParam: Params['getPreviousTransition'][0]): Return['getPreviousTransition'] {
