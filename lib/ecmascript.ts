@@ -2796,7 +2796,7 @@ export function TemporalZonedDateTimeToString(
   return result;
 }
 
-export function TestTimeZoneOffsetString(string: string) {
+export function IsTimeZoneOffsetString(string: string) {
   return OFFSET.test(StringCtor(string));
 }
 
@@ -2814,7 +2814,7 @@ export function ParseTimeZoneOffsetString(string: string): number {
 }
 
 export function GetCanonicalTimeZoneIdentifier(timeZoneIdentifier: string): string {
-  if (TestTimeZoneOffsetString(timeZoneIdentifier)) {
+  if (IsTimeZoneOffsetString(timeZoneIdentifier)) {
     const offsetNs = ParseTimeZoneOffsetString(timeZoneIdentifier);
     return FormatTimeZoneOffsetString(offsetNs);
   }
