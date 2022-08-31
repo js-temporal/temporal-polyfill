@@ -2977,7 +2977,7 @@ export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSB
   return result;
 }
 
-export function GetIANATimeZonePreviousTransition(epochNanoseconds: JSBI, id: string): JSBI | null {
+export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds: JSBI): JSBI | null {
   // If a time zone uses DST (at the time of `epochNanoseconds`), then we only
   // have to look back one year to find a transition. But if it doesn't use DST,
   // then we need to look all the way back to 1847 (the earliest rule in the
@@ -3017,7 +3017,7 @@ export function GetIANATimeZonePreviousTransition(epochNanoseconds: JSBI, id: st
       // won't consider the new time to be "far future" because the system clock
       // has advanced in the meantime.
       const newTimeToCheck = JSBI.subtract(afterLatestRule, DAY_NANOS);
-      return GetIANATimeZonePreviousTransition(newTimeToCheck, id);
+      return GetNamedTimeZonePreviousTransition(id, newTimeToCheck);
     }
     return null;
   }
