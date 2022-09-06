@@ -404,6 +404,10 @@ describe('Built-in calendars (not standardized yet)', () => {
       const date = Temporal.PlainDate.from({ era: 'bce', eraYear: 2, month: 12, day: 31, calendar: 'gregory' });
       equal(`${date}`, '-000001-12-31[u-ca=gregory]');
     });
+    it('does not infinite loop', () => {
+      const nowZoned = Temporal.Now.zonedDateTime('gregory');
+      equal(Temporal.Duration.from('PT0S').total({ unit: 'years', relativeTo: nowZoned }), 0);
+    });
   });
 });
 
