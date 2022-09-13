@@ -4127,21 +4127,35 @@ function DifferenceInstant(
   ns1: JSBI,
   ns2: JSBI,
   increment: number,
-  unit: keyof typeof nsPerTimeUnit,
+  smallestUnit: keyof typeof nsPerTimeUnit,
+  largestUnit: keyof typeof nsPerTimeUnit,
   roundingMode: Temporal.RoundingMode
 ) {
   const diff = JSBI.subtract(ns2, ns1);
 
-  const remainder = JSBI.remainder(diff, JSBI.BigInt(86400e9));
-  const wholeDays = JSBI.subtract(diff, remainder);
-  const roundedRemainder = RoundNumberToIncrement(remainder, nsPerTimeUnit[unit] * increment, roundingMode);
-  const roundedDiff = JSBI.add(wholeDays, roundedRemainder);
+  let hours = 0;
+  let minutes = 0;
+  let nanoseconds = JSBI.toNumber(JSBI.remainder(diff, THOUSAND));
+  let microseconds = JSBI.toNumber(JSBI.remainder(JSBI.divide(diff, THOUSAND), THOUSAND));
+  let milliseconds = JSBI.toNumber(JSBI.remainder(JSBI.divide(diff, MILLION), THOUSAND));
+  let seconds = JSBI.toNumber(JSBI.divide(diff, BILLION));
 
-  const nanoseconds = JSBI.toNumber(JSBI.remainder(roundedDiff, THOUSAND));
-  const microseconds = JSBI.toNumber(JSBI.remainder(JSBI.divide(roundedDiff, THOUSAND), THOUSAND));
-  const milliseconds = JSBI.toNumber(JSBI.remainder(JSBI.divide(roundedDiff, MILLION), THOUSAND));
-  const seconds = JSBI.toNumber(JSBI.divide(roundedDiff, BILLION));
-  return { seconds, milliseconds, microseconds, nanoseconds };
+  ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    seconds,
+    milliseconds,
+    microseconds,
+    nanoseconds,
+    increment,
+    smallestUnit,
+    roundingMode
+  ));
+  return BalanceDuration(0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, largestUnit);
 }
 
 function DifferenceISODateTime(
@@ -4335,24 +4349,14 @@ export function DifferenceTemporalInstant(
   const roundingIncrement = ToTemporalRoundingIncrement(options, MAX_DIFFERENCE_INCREMENTS[smallestUnit], false);
   const onens = GetSlot(first, EPOCHNANOSECONDS);
   const twons = GetSlot(second, EPOCHNANOSECONDS);
-  let { seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
+  let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
     onens,
     twons,
     roundingIncrement,
     smallestUnit,
+    largestUnit,
     roundingMode
   );
-  let hours, minutes;
-  ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
-    0,
-    0,
-    0,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds,
-    largestUnit
-  ));
   const Duration = GetIntrinsic('%Temporal.Duration%');
   return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
 }
@@ -4695,7 +4699,7 @@ export function DifferenceTemporalZonedDateTime(
     months = 0;
     weeks = 0;
     days = 0;
-    ({ seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
+    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
       ns1,
       ns2,
       roundingIncrement,
@@ -4703,17 +4707,8 @@ export function DifferenceTemporalZonedDateTime(
       // This is probably safe as the typing for ToSmallestTemporalUnit isn't
       // very good.
       smallestUnit as any,
+      largestUnit,
       roundingMode
-    ));
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
-      0,
-      0,
-      0,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      largestUnit
     ));
   } else {
     const timeZone = GetSlot(zonedDateTime, TIME_ZONE);
@@ -4952,22 +4947,13 @@ function AddDuration(
       months = 0;
       weeks = 0;
       days = 0;
-      ({ seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
+      ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
         GetSlot(relativeTo, EPOCHNANOSECONDS),
         endNs,
         1,
         'nanosecond',
+        largestUnit,
         'halfExpand'
-      ));
-      ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
-        0,
-        0,
-        0,
-        seconds,
-        milliseconds,
-        microseconds,
-        nanoseconds,
-        largestUnit
       ));
     } else {
       ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
