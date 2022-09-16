@@ -2310,7 +2310,7 @@ export function GetOffsetNanosecondsFor(
   if (typeof offsetNs !== 'number') {
     throw new TypeError('bad return from getOffsetNanosecondsFor');
   }
-  if (!IsInteger(offsetNs) || MathAbs(offsetNs) > 86400e9) {
+  if (!IsInteger(offsetNs) || MathAbs(offsetNs) >= 86400e9) {
     throw new RangeError('out-of-range return from getOffsetNanosecondsFor');
   }
   return offsetNs;
