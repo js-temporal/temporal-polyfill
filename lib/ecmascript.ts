@@ -461,6 +461,7 @@ export function ParseTemporalTimeString(isoString: string) {
     microsecond = ToInteger(fraction.slice(3, 6));
     nanosecond = ToInteger(fraction.slice(6, 9));
     calendar = match[15];
+    if (match[8]) throw new RangeError('Z designator not supported for PlainTime');
   } else {
     let z, hasTime;
     ({ hasTime, hour, minute, second, millisecond, microsecond, nanosecond, calendar, z } =
