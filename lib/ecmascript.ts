@@ -4627,12 +4627,12 @@ export function DifferenceTemporalPlainYearMonth(
   const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
   const otherFields = PrepareTemporalFields(other, fieldNames, []);
   otherFields.day = 1;
-  const thisFields = PrepareTemporalFields(yearMonth, fieldNames, []);
-  thisFields.day = 1;
   // The calls to PrepareTemporalFields don't mark day as a required property,
   // and TS doesn't automatically narrow the type of the object because of the
   // assignments above, so we must "cast" the inputs.
   const otherDate = CalendarDateFromFields(calendar, otherFields as typeof otherFields & { day: number });
+  const thisFields = PrepareTemporalFields(yearMonth, fieldNames, []);
+  thisFields.day = 1;
   const thisDate = CalendarDateFromFields(calendar, thisFields as typeof thisFields & { day: number });
 
   const untilOptions = MergeLargestUnitOption(options, largestUnit);
