@@ -1770,12 +1770,12 @@ export function ToTemporalZonedDateTime(
     ] as const);
     const fieldNamesWithTzAndOffset = ArrayPush(fieldNames, 'timeZone', 'offset');
     const fields = PrepareTemporalFields(item, fieldNamesWithTzAndOffset, ['timeZone']);
+    timeZone = ToTemporalTimeZone(fields.timeZone);
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = InterpretTemporalDateTimeFields(
       calendar,
       fields,
       options
     ));
-    timeZone = ToTemporalTimeZone(fields.timeZone);
     offset = fields.offset;
     if (offset === undefined) {
       offsetBehaviour = 'wall';
