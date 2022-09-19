@@ -5480,9 +5480,10 @@ function DaysUntil(
 function MoveRelativeDate(
   calendar: Temporal.CalendarProtocol,
   relativeToParam: NonNullable<ReturnType<typeof ToRelativeTemporalObject>>,
-  duration: Temporal.Duration
+  duration: Temporal.Duration,
+  dateAdd = calendar.dateAdd
 ) {
-  const later = CalendarDateAdd(calendar, relativeToParam, duration, undefined);
+  const later = CalendarDateAdd(calendar, relativeToParam, duration, undefined, dateAdd);
   const days = DaysUntil(relativeToParam, later);
   return { relativeTo: later, days };
 }
@@ -5736,7 +5737,7 @@ export function RoundDuration(
       const daysPassed = DaysUntil(oldRelativeTo, relativeTo);
       days -= daysPassed;
       const oneYear = new TemporalDuration(days < 0 ? -1 : 1);
-      let { days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear);
+      let { days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear, dateAdd);
 
       // Note that `nanoseconds` below (here and in similar code for months,
       // weeks, and days further below) isn't actually nanoseconds for the
@@ -5784,11 +5785,11 @@ export function RoundDuration(
       const sign = MathSign(days);
       const oneMonth = new TemporalDuration(0, days < 0 ? -1 : 1);
       let oneMonthDays: number;
-      ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
+      ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
       while (MathAbs(days) >= MathAbs(oneMonthDays)) {
         months += sign;
         days -= oneMonthDays;
-        ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
+        ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
       }
       oneMonthDays = MathAbs(oneMonthDays);
       // dayLengthNs is never undefined if unit is `day` or larger.
