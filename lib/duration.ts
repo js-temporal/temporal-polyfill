@@ -334,8 +334,8 @@ export class Duration implements Temporal.Duration {
       typeof optionsParam === 'string'
         ? (ES.CreateOnePropObject('unit', optionsParam) as Exclude<typeof optionsParam, string>)
         : ES.GetOptionsObject(optionsParam);
-    const unit = ES.GetTemporalUnit(options, 'unit', 'datetime', ES.REQUIRED);
     const relativeTo = ES.ToRelativeTemporalObject(options);
+    const unit = ES.GetTemporalUnit(options, 'unit', 'datetime', ES.REQUIRED);
 
     // Convert larger units down to days
     ({ years, months, weeks, days } = ES.UnbalanceDurationRelative(years, months, weeks, days, unit, relativeTo));
