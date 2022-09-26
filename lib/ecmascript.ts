@@ -5488,7 +5488,7 @@ function MoveRelativeDate(
   calendar: Temporal.CalendarProtocol,
   relativeToParam: NonNullable<ReturnType<typeof ToRelativeTemporalObject>>,
   duration: Temporal.Duration,
-  dateAdd = calendar.dateAdd
+  dateAdd: Temporal.CalendarProtocol['dateAdd']
 ) {
   const later = CalendarDateAdd(calendar, relativeToParam, duration, undefined, dateAdd);
   const days = DaysUntil(relativeToParam, later);
