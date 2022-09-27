@@ -3301,12 +3301,12 @@ function BalanceTime(
 
 export function TotalDurationNanoseconds(
   daysParam: number,
-  hoursParam: number,
-  minutesParam: number,
-  secondsParam: number,
-  millisecondsParam: number,
-  microsecondsParam: number,
-  nanosecondsParam: number,
+  hoursParam: number | JSBI,
+  minutesParam: number | JSBI,
+  secondsParam: number | JSBI,
+  millisecondsParam: number | JSBI,
+  microsecondsParam: number | JSBI,
+  nanosecondsParam: number | JSBI,
   offsetShift: number
 ) {
   const days: JSBI = JSBI.BigInt(daysParam);
@@ -3407,12 +3407,12 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
 
 export function BalanceDuration(
   daysParam: number,
-  hoursParam: number,
-  minutesParam: number,
-  secondsParam: number,
-  millisecondsParam: number,
-  microsecondsParam: number,
-  nanosecondsParam: number,
+  hoursParam: number | JSBI,
+  minutesParam: number | JSBI,
+  secondsParam: number | JSBI,
+  millisecondsParam: number | JSBI,
+  microsecondsParam: number | JSBI,
+  nanosecondsParam: number | JSBI,
   largestUnit: Temporal.DateTimeUnit,
   relativeTo: ReturnType<typeof ToRelativeTemporalObject> = undefined
 ) {
@@ -3436,12 +3436,12 @@ export function BalanceDuration(
 
 export function BalancePossiblyInfiniteDuration(
   daysParam: number,
-  hoursParam: number,
-  minutesParam: number,
-  secondsParam: number,
-  millisecondsParam: number,
-  microsecondsParam: number,
-  nanosecondsParam: number,
+  hoursParam: number | JSBI,
+  minutesParam: number | JSBI,
+  secondsParam: number | JSBI,
+  millisecondsParam: number | JSBI,
+  microsecondsParam: number | JSBI,
+  nanosecondsParam: number | JSBI,
   largestUnit: Temporal.DateTimeUnit,
   relativeTo: ReturnType<typeof ToRelativeTemporalObject> = undefined
 ) {
@@ -4865,12 +4865,12 @@ function AddDuration(
     years = months = weeks = 0;
     ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
       d1 + d2,
-      h1 + h2,
-      min1 + min2,
-      s1 + s2,
-      ms1 + ms2,
-      µs1 + µs2,
-      ns1 + ns2,
+      JSBI.add(JSBI.BigInt(h1), JSBI.BigInt(h2)),
+      JSBI.add(JSBI.BigInt(min1), JSBI.BigInt(min2)),
+      JSBI.add(JSBI.BigInt(s1), JSBI.BigInt(s2)),
+      JSBI.add(JSBI.BigInt(ms1), JSBI.BigInt(ms2)),
+      JSBI.add(JSBI.BigInt(µs1), JSBI.BigInt(µs2)),
+      JSBI.add(JSBI.BigInt(ns1), JSBI.BigInt(ns2)),
       largestUnit
     ));
   } else if (IsTemporalDate(relativeTo)) {
@@ -4890,12 +4890,12 @@ function AddDuration(
     // Signs of date part and time part may not agree; balance them together
     ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
       days,
-      h1 + h2,
-      min1 + min2,
-      s1 + s2,
-      ms1 + ms2,
-      µs1 + µs2,
-      ns1 + ns2,
+      JSBI.add(JSBI.BigInt(h1), JSBI.BigInt(h2)),
+      JSBI.add(JSBI.BigInt(min1), JSBI.BigInt(min2)),
+      JSBI.add(JSBI.BigInt(s1), JSBI.BigInt(s2)),
+      JSBI.add(JSBI.BigInt(ms1), JSBI.BigInt(ms2)),
+      JSBI.add(JSBI.BigInt(µs1), JSBI.BigInt(µs2)),
+      JSBI.add(JSBI.BigInt(ns1), JSBI.BigInt(ns2)),
       largestUnit
     ));
   } else {
@@ -4964,7 +4964,15 @@ function AddDuration(
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-function AddInstant(epochNanoseconds: JSBI, h: number, min: number, s: number, ms: number, µs: number, ns: number) {
+function AddInstant(
+  epochNanoseconds: JSBI,
+  h: number | JSBI,
+  min: number | JSBI,
+  s: number | JSBI,
+  ms: number | JSBI,
+  µs: number | JSBI,
+  ns: number | JSBI
+) {
   let sum = ZERO;
   sum = JSBI.add(sum, JSBI.BigInt(ns));
   sum = JSBI.add(sum, JSBI.multiply(JSBI.BigInt(µs), THOUSAND));
@@ -5046,12 +5054,12 @@ export function AddZonedDateTime(
   months: number,
   weeks: number,
   days: number,
-  h: number,
-  min: number,
-  s: number,
-  ms: number,
-  µs: number,
-  ns: number,
+  h: number | JSBI,
+  min: number | JSBI,
+  s: number | JSBI,
+  ms: number | JSBI,
+  µs: number | JSBI,
+  ns: number | JSBI,
   options?: Temporal.ArithmeticOptions
 ) {
   // If only time is to be added, then use Instant math. It's not OK to fall
