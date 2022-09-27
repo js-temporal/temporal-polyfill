@@ -148,10 +148,7 @@ built-ins/Temporal/Calendar/prototype/yearOfWeek/year-zero.js
 built-ins/Temporal/Duration/compare/order-of-operations.js
 built-ins/Temporal/Duration/compare/relativeto-propertybag-timezone-instance-does-not-get-timeZone-property.js
 built-ins/Temporal/Duration/compare/relativeto-propertybag-timezone-wrong-type.js
-built-ins/Temporal/Duration/prototype/add/nanoseconds-is-number-max-safe-integer.js
-built-ins/Temporal/Duration/prototype/add/nanoseconds-is-number-max-value-2.js
 built-ins/Temporal/Duration/prototype/add/order-of-operations.js
-built-ins/Temporal/Duration/prototype/add/precision-exact-mathematical-values.js
 built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-calendar-fields-undefined.js
 built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-timezone-instance-does-not-get-timeZone-property.js
@@ -166,10 +163,7 @@ built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-calendar-wron
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-timezone-instance-does-not-get-timeZone-property.js
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-timezone-wrong-type.js
 built-ins/Temporal/Duration/prototype/round/relativeto-string-datetime.js
-built-ins/Temporal/Duration/prototype/subtract/nanoseconds-is-number-max-safe-integer.js
-built-ins/Temporal/Duration/prototype/subtract/nanoseconds-is-number-max-value-2.js
 built-ins/Temporal/Duration/prototype/subtract/order-of-operations.js
-built-ins/Temporal/Duration/prototype/subtract/precision-exact-mathematical-values.js
 built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-calendar-fields-undefined.js
 built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-timezone-instance-does-not-get-timeZone-property.js
