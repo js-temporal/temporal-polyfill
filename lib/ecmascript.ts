@@ -145,6 +145,10 @@ function assertExists<A>(arg: A): asserts arg is NonNullable<A> {
   }
 }
 
+function isZero(value: JSBI): boolean {
+  return JSBI.equal(value, ZERO);
+}
+
 function IsInteger(value: unknown): value is number {
   if (typeof value !== 'number' || !NumberIsFinite(value)) return false;
   const abs = MathAbs(value);
@@ -3591,13 +3595,20 @@ export function UnbalanceDurationRelative(
   daysParam: number,
   largestUnit: Temporal.DateTimeUnit,
   relativeToParam: ReturnType<typeof ToRelativeTemporalObject>
-) {
-  let years = yearsParam;
-  let months = monthsParam;
-  let weeks = weeksParam;
-  let days = daysParam;
+): {
+  years: number;
+  months: number;
+  weeks: number;
+  days: number;
+} {
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
-  const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
+  const sign = DurationSign(yearsParam, monthsParam, weeksParam, daysParam, 0, 0, 0, 0, 0, 0);
+  const signBI = JSBI.BigInt(sign);
+
+  let years = JSBI.BigInt(yearsParam);
+  let months = JSBI.BigInt(monthsParam);
+  let weeks = JSBI.BigInt(weeksParam);
+  let days = JSBI.BigInt(daysParam);
 
   let calendar;
   let relativeTo: Temporal.PlainDate | undefined;
@@ -3621,76 +3632,80 @@ export function UnbalanceDurationRelative(
         // balance years down to months
         const dateAdd = calendar.dateAdd;
         const dateUntil = calendar.dateUntil;
-        while (MathAbs(years) > 0) {
+        while (!isZero(abs(years))) {
           const newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, undefined, dateAdd);
           const untilOptions = ObjectCreate(null);
           untilOptions.largestUnit = 'month';
           const untilResult = CalendarDateUntil(calendar, relativeTo, newRelativeTo, untilOptions, dateUntil);
-          const oneYearMonths = GetSlot(untilResult, MONTHS);
+          const oneYearMonths = JSBI.BigInt(GetSlot(untilResult, MONTHS));
           relativeTo = newRelativeTo;
-          months += oneYearMonths;
-          years -= sign;
+          months = JSBI.add(months, oneYearMonths);
+          years = JSBI.subtract(years, signBI);
         }
       }
       break;
-    case 'week':
+    case 'week': {
       if (!calendar) throw new RangeError('a starting point is required for weeks balancing');
       assertExists(relativeTo);
       const dateAdd = calendar.dateAdd;
       // balance years down to days
-      while (MathAbs(years) > 0) {
+      // balance years down to days
+      while (!isZero(abs(years))) {
         let oneYearDays;
         ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear, dateAdd));
-        days += oneYearDays;
-        years -= sign;
+        days = JSBI.add(days, JSBI.BigInt(oneYearDays));
+        years = JSBI.subtract(years, signBI);
       }
 
       // balance months down to days
-      while (MathAbs(months) > 0) {
+      while (!isZero(abs(months))) {
         let oneMonthDays;
         ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
-        days += oneMonthDays;
-        months -= sign;
+        days = JSBI.add(days, JSBI.BigInt(oneMonthDays));
+        months = JSBI.subtract(months, signBI);
       }
       break;
+    }
     default: {
       // balance years down to days
-      if (years == 0 && months == 0 && weeks == 0) break;
+      if (isZero(years) && isZero(months) && isZero(weeks)) break;
       if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
       const dateAdd = calendar.dateAdd;
-      while (MathAbs(years) > 0) {
-        if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
+      while (!isZero(abs(years))) {
         assertExists(relativeTo);
         let oneYearDays;
         ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear, dateAdd));
-        days += oneYearDays;
-        years -= sign;
+        days = JSBI.add(days, JSBI.BigInt(oneYearDays));
+        years = JSBI.subtract(years, signBI);
       }
 
       // balance months down to days
-      while (MathAbs(months) > 0) {
-        if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
+      while (!isZero(abs(months))) {
         assertExists(relativeTo);
         let oneMonthDays;
         ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
-        days += oneMonthDays;
-        months -= sign;
+        days = JSBI.add(days, JSBI.BigInt(oneMonthDays));
+        months = JSBI.subtract(months, signBI);
       }
 
       // balance weeks down to days
-      while (MathAbs(weeks) > 0) {
-        if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
+      while (!isZero(abs(weeks))) {
         assertExists(relativeTo);
         let oneWeekDays;
         ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek, dateAdd));
-        days += oneWeekDays;
-        weeks -= sign;
+        days = JSBI.add(days, JSBI.BigInt(oneWeekDays));
+        weeks = JSBI.subtract(weeks, signBI);
       }
       break;
     }
   }
 
-  return { years, months, weeks, days };
+  return {
+    years: JSBI.toNumber(years),
+    months: JSBI.toNumber(months),
+    weeks: JSBI.toNumber(weeks),
+    days: JSBI.toNumber(days)
+  };
 }
 
 export function BalanceDurationRelative(
@@ -3700,14 +3715,21 @@ export function BalanceDurationRelative(
   daysParam: number,
   largestUnit: Temporal.DateTimeUnit,
   relativeToParam: ReturnType<typeof ToRelativeTemporalObject>
-) {
-  let years = yearsParam;
-  let months = monthsParam;
-  let weeks = weeksParam;
-  let days = daysParam;
+): {
+  years: number;
+  months: number;
+  weeks: number;
+  days: number;
+} {
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
-  const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
-  if (sign === 0) return { years, months, weeks, days };
+  const sign = DurationSign(yearsParam, monthsParam, weeksParam, daysParam, 0, 0, 0, 0, 0, 0);
+  if (sign === 0) return { years: yearsParam, months: monthsParam, weeks: weeksParam, days: daysParam };
+  const signBI = JSBI.BigInt(sign);
+
+  let years = JSBI.BigInt(yearsParam);
+  let months = JSBI.BigInt(monthsParam);
+  let weeks = JSBI.BigInt(weeksParam);
+  let days = JSBI.BigInt(daysParam);
 
   let calendar;
   let relativeTo: Temporal.PlainDate | undefined;
@@ -3728,9 +3750,9 @@ export function BalanceDurationRelative(
       // balance days up to years
       let newRelativeTo, oneYearDays;
       ({ relativeTo: newRelativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear, dateAdd));
-      while (MathAbs(days) >= MathAbs(oneYearDays)) {
-        days -= oneYearDays;
-        years += sign;
+      while (JSBI.greaterThanOrEqual(abs(days), JSBI.BigInt(MathAbs(oneYearDays)))) {
+        days = JSBI.subtract(days, JSBI.BigInt(oneYearDays));
+        years = JSBI.add(years, signBI);
         relativeTo = newRelativeTo;
         ({ relativeTo: newRelativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear, dateAdd));
       }
@@ -3738,9 +3760,9 @@ export function BalanceDurationRelative(
       // balance days up to months
       let oneMonthDays;
       ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
-      while (MathAbs(days) >= MathAbs(oneMonthDays)) {
-        days -= oneMonthDays;
-        months += sign;
+      while (JSBI.greaterThanOrEqual(abs(days), JSBI.BigInt(MathAbs(oneMonthDays)))) {
+        days = JSBI.subtract(days, JSBI.BigInt(oneMonthDays));
+        months = JSBI.add(months, signBI);
         relativeTo = newRelativeTo;
         ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
       }
@@ -3752,9 +3774,9 @@ export function BalanceDurationRelative(
       untilOptions.largestUnit = 'month';
       let untilResult = CalendarDateUntil(calendar, relativeTo, newRelativeTo, untilOptions, dateUntil);
       let oneYearMonths = GetSlot(untilResult, MONTHS);
-      while (MathAbs(months) >= MathAbs(oneYearMonths)) {
-        months -= oneYearMonths;
-        years += sign;
+      while (JSBI.greaterThanOrEqual(abs(months), JSBI.BigInt(MathAbs(oneYearMonths)))) {
+        months = JSBI.subtract(months, JSBI.BigInt(oneYearMonths));
+        years = JSBI.add(years, signBI);
         relativeTo = newRelativeTo;
         newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, undefined, dateAdd);
         const untilOptions = ObjectCreate(null);
@@ -3771,9 +3793,9 @@ export function BalanceDurationRelative(
       // balance days up to months
       let newRelativeTo, oneMonthDays;
       ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
-      while (MathAbs(days) >= MathAbs(oneMonthDays)) {
-        days -= oneMonthDays;
-        months += sign;
+      while (JSBI.greaterThanOrEqual(abs(days), JSBI.BigInt(MathAbs(oneMonthDays)))) {
+        days = JSBI.subtract(days, JSBI.BigInt(oneMonthDays));
+        months = JSBI.add(months, signBI);
         relativeTo = newRelativeTo;
         ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
       }
@@ -3786,9 +3808,9 @@ export function BalanceDurationRelative(
       // balance days up to weeks
       let newRelativeTo, oneWeekDays;
       ({ relativeTo: newRelativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek, dateAdd));
-      while (MathAbs(days) >= MathAbs(oneWeekDays)) {
-        days -= oneWeekDays;
-        weeks += sign;
+      while (JSBI.greaterThanOrEqual(abs(days), JSBI.BigInt(MathAbs(oneWeekDays)))) {
+        days = JSBI.subtract(days, JSBI.BigInt(oneWeekDays));
+        weeks = JSBI.add(weeks, signBI);
         relativeTo = newRelativeTo;
         ({ relativeTo: newRelativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek, dateAdd));
       }
@@ -3799,7 +3821,12 @@ export function BalanceDurationRelative(
       break;
   }
 
-  return { years, months, weeks, days };
+  return {
+    years: JSBI.toNumber(years),
+    months: JSBI.toNumber(months),
+    weeks: JSBI.toNumber(weeks),
+    days: JSBI.toNumber(days)
+  };
 }
 
 export function CalculateOffsetShift(
