@@ -146,8 +146,6 @@ built-ins/Temporal/Calendar/prototype/yearOfWeek/not-a-constructor.js
 built-ins/Temporal/Calendar/prototype/yearOfWeek/prop-desc.js
 built-ins/Temporal/Calendar/prototype/yearOfWeek/year-zero.js
 built-ins/Temporal/Duration/compare/order-of-operations.js
-built-ins/Temporal/Duration/compare/precision-exact-mathematical-values-1.js
-built-ins/Temporal/Duration/compare/precision-exact-mathematical-values-2.js
 built-ins/Temporal/Duration/compare/relativeto-propertybag-timezone-instance-does-not-get-timeZone-property.js
 built-ins/Temporal/Duration/compare/relativeto-propertybag-timezone-wrong-type.js
 built-ins/Temporal/Duration/from/argument-string-fractional-precision.js
@@ -165,11 +163,6 @@ built-ins/Temporal/Duration/prototype/round/nanoseconds-to-days-loop-indefinitel
 built-ins/Temporal/Duration/prototype/round/nanoseconds-to-days-precision-exact-mathematical-values-1.js
 built-ins/Temporal/Duration/prototype/round/nanoseconds-to-days-precision-exact-mathematical-values-2.js
 built-ins/Temporal/Duration/prototype/round/order-of-operations.js
-built-ins/Temporal/Duration/prototype/round/precision-exact-in-balance-duration-relative-months.js
-built-ins/Temporal/Duration/prototype/round/precision-exact-in-balance-duration-relative-weeks.js
-built-ins/Temporal/Duration/prototype/round/precision-exact-in-balance-duration-relative-years-days.js
-built-ins/Temporal/Duration/prototype/round/precision-exact-in-balance-duration-relative-years-months.js
-built-ins/Temporal/Duration/prototype/round/precision-exact-in-balance-duration-relative-years-with-calendar.js
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-calendar-fields-undefined.js
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-timezone-instance-does-not-get-timeZone-property.js
