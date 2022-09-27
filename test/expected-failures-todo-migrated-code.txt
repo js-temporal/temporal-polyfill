@@ -148,8 +148,6 @@ built-ins/Temporal/Calendar/prototype/yearOfWeek/year-zero.js
 built-ins/Temporal/Duration/compare/order-of-operations.js
 built-ins/Temporal/Duration/compare/relativeto-propertybag-timezone-instance-does-not-get-timeZone-property.js
 built-ins/Temporal/Duration/compare/relativeto-propertybag-timezone-wrong-type.js
-built-ins/Temporal/Duration/from/argument-string-fractional-precision.js
-built-ins/Temporal/Duration/from/argument-string-fractional-with-zero-subparts.js
 built-ins/Temporal/Duration/prototype/add/nanoseconds-is-number-max-safe-integer.js
 built-ins/Temporal/Duration/prototype/add/nanoseconds-is-number-max-value-2.js
 built-ins/Temporal/Duration/prototype/add/order-of-operations.js

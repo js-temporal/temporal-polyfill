@@ -590,27 +590,42 @@ export function ParseTemporalDurationString(isoString: string) {
   const weeks = ToInteger(match[4]) * sign;
   const days = ToInteger(match[5]) * sign;
   const hours = ToInteger(match[6]) * sign;
-  let fHours: number | string = match[7];
-  let minutes = ToInteger(match[8]) * sign;
-  let fMinutes: number | string = match[9];
-  let seconds = ToInteger(match[10]) * sign;
-  const fSeconds = match[11] + '000000000';
-  let milliseconds = ToInteger(fSeconds.slice(0, 3)) * sign;
-  let microseconds = ToInteger(fSeconds.slice(3, 6)) * sign;
-  let nanoseconds = ToInteger(fSeconds.slice(6, 9)) * sign;
+  const fHours = match[7];
+  const minutesStr = match[8];
+  const fMinutes = match[9];
+  const secondsStr = match[10];
+  const fSeconds = match[11];
+  let minutes = 0;
+  let seconds = 0;
+  // fractional hours, minutes, or seconds, expressed in whole nanoseconds:
+  let excessNanoseconds = 0;
 
-  fHours = fHours ? (sign * ToInteger(fHours)) / 10 ** fHours.length : 0;
-  fMinutes = fMinutes ? (sign * ToInteger(fMinutes)) / 10 ** fMinutes.length : 0;
+  if (fHours !== undefined) {
+    if (minutesStr ?? fMinutes ?? secondsStr ?? fSeconds ?? false) {
+      throw new RangeError('only the smallest unit can be fractional');
+    }
+    excessNanoseconds = ToInteger((fHours + '000000000').slice(0, 9)) * 3600 * sign;
+  } else {
+    minutes = ToInteger(minutesStr) * sign;
+    if (fMinutes !== undefined) {
+      if (secondsStr ?? fSeconds ?? false) {
+        throw new RangeError('only the smallest unit can be fractional');
+      }
+      excessNanoseconds = ToInteger((fMinutes + '000000000').slice(0, 9)) * 60 * sign;
+    } else {
+      seconds = ToInteger(secondsStr) * sign;
+      if (fSeconds !== undefined) {
+        excessNanoseconds = ToInteger((fSeconds + '000000000').slice(0, 9)) * sign;
+      }
+    }
+  }
 
-  ({ minutes, seconds, milliseconds, microseconds, nanoseconds } = DurationHandleFractions(
-    fHours,
-    minutes,
-    fMinutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds
-  ));
+  const nanoseconds = excessNanoseconds % 1000;
+  const microseconds = MathTrunc(excessNanoseconds / 1000) % 1000;
+  const milliseconds = MathTrunc(excessNanoseconds / 1e6) % 1000;
+  seconds += MathTrunc(excessNanoseconds / 1e9) % 60;
+  minutes += MathTrunc(excessNanoseconds / 6e10);
+
   RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
@@ -713,61 +728,6 @@ export function RegulateISOYearMonth(
       break;
   }
   return { year, month };
-}
-
-function DurationHandleFractions(
-  fHoursParam: number,
-  minutesParam: number,
-  fMinutesParam: number,
-  secondsParam: number,
-  millisecondsParam: number,
-  microsecondsParam: number,
-  nanosecondsParam: number
-) {
-  let fHours = fHoursParam;
-  let minutes = minutesParam;
-  let fMinutes = fMinutesParam;
-  let seconds = secondsParam;
-  let milliseconds = millisecondsParam;
-  let microseconds = microsecondsParam;
-  let nanoseconds = nanosecondsParam;
-
-  if (fHours !== 0) {
-    [minutes, fMinutes, seconds, milliseconds, microseconds, nanoseconds].forEach((val) => {
-      if (val !== 0) throw new RangeError('only the smallest unit can be fractional');
-    });
-    const mins = fHours * 60;
-    minutes = MathTrunc(mins);
-    fMinutes = mins % 1;
-  }
-
-  if (fMinutes !== 0) {
-    [seconds, milliseconds, microseconds, nanoseconds].forEach((val) => {
-      if (val !== 0) throw new RangeError('only the smallest unit can be fractional');
-    });
-    const secs = fMinutes * 60;
-    seconds = MathTrunc(secs);
-    const fSeconds = secs % 1;
-
-    if (fSeconds !== 0) {
-      const mils = fSeconds * 1000;
-      milliseconds = MathTrunc(mils);
-      const fMilliseconds = mils % 1;
-
-      if (fMilliseconds !== 0) {
-        const mics = fMilliseconds * 1000;
-        microseconds = MathTrunc(mics);
-        const fMicroseconds = mics % 1;
-
-        if (fMicroseconds !== 0) {
-          const nans = fMicroseconds * 1000;
-          nanoseconds = MathTrunc(nans);
-        }
-      }
-    }
-  }
-
-  return { minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
 function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
