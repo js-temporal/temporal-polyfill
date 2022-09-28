@@ -422,9 +422,6 @@ built-ins/Temporal/PlainTime/from/argument-string-date-with-utc-offset.js
 built-ins/Temporal/PlainTime/from/argument-string-time-designator-required-for-disambiguation.js
 built-ins/Temporal/PlainTime/from/argument-string-time-zone-annotation.js
 built-ins/Temporal/PlainTime/from/argument-string-unknown-annotation.js
-built-ins/Temporal/PlainTime/prototype/add/precision-exact-mathematical-values-1.js
-built-ins/Temporal/PlainTime/prototype/add/precision-exact-mathematical-values-2.js
-built-ins/Temporal/PlainTime/prototype/add/precision-exact-mathematical-values-3.js
 built-ins/Temporal/PlainTime/prototype/equals/argument-string-calendar-annotation.js
 built-ins/Temporal/PlainTime/prototype/equals/argument-string-date-with-utc-offset.js
 built-ins/Temporal/PlainTime/prototype/equals/argument-string-time-designator-required-for-disambiguation.js
@@ -436,9 +433,6 @@ built-ins/Temporal/PlainTime/prototype/since/argument-string-time-designator-req
 built-ins/Temporal/PlainTime/prototype/since/argument-string-time-zone-annotation.js
 built-ins/Temporal/PlainTime/prototype/since/argument-string-unknown-annotation.js
 built-ins/Temporal/PlainTime/prototype/since/order-of-operations.js
-built-ins/Temporal/PlainTime/prototype/subtract/precision-exact-mathematical-values-1.js
-built-ins/Temporal/PlainTime/prototype/subtract/precision-exact-mathematical-values-2.js
-built-ins/Temporal/PlainTime/prototype/subtract/precision-exact-mathematical-values-3.js
 built-ins/Temporal/PlainTime/prototype/toPlainDateTime/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainTime/prototype/toPlainDateTime/argument-propertybag-calendar-case-insensitive.js
 built-ins/Temporal/PlainTime/prototype/toPlainDateTime/argument-propertybag-calendar-instance-does-not-get-calendar-property.js

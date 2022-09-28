@@ -17,7 +17,6 @@ const ObjectAssign = Object.assign;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
 const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
-const ObjectIs = Object.is;
 const ReflectApply = Reflect.apply;
 
 import { DEBUG } from './debug';
@@ -83,6 +82,7 @@ import {
 export const ZERO = JSBI.BigInt(0);
 const ONE = JSBI.BigInt(1);
 const SIXTY = JSBI.BigInt(60);
+const TWENTY_FOUR = JSBI.BigInt(24);
 export const THOUSAND = JSBI.BigInt(1e3);
 export const MILLION = JSBI.BigInt(1e6);
 export const BILLION = JSBI.BigInt(1e9);
@@ -121,7 +121,7 @@ const BUILTIN_CALENDAR_IDS = [
 ];
 
 /*
- * uncheckedAssertNarrowedType forces TypeScript to change the type of the argment to the one given in
+ * uncheckedAssertNarrowedType forces TypeScript to change the type of the argument to the one given in
  * the type parameter. This should only be used to help TS understand when variables change types,
  * but TS can't or won't infer this automatically. They should be used sparingly, because
  * if used incorrectly can lead to difficult-to-diagnose problems.
@@ -3261,42 +3261,40 @@ function BalanceTime(
   microsecondParam: number,
   nanosecondParam: number
 ) {
-  let hour = hourParam;
-  let minute = minuteParam;
-  let second = secondParam;
-  let millisecond = millisecondParam;
-  let microsecond = microsecondParam;
-  let nanosecond = nanosecondParam;
-  if (
-    !NumberIsFinite(hour) ||
-    !NumberIsFinite(minute) ||
-    !NumberIsFinite(second) ||
-    !NumberIsFinite(millisecond) ||
-    !NumberIsFinite(microsecond) ||
-    !NumberIsFinite(nanosecond)
-  ) {
-    throw new RangeError('infinity is out of range');
-  }
+  let hour = JSBI.BigInt(hourParam);
+  let minute = JSBI.BigInt(minuteParam);
+  let second = JSBI.BigInt(secondParam);
+  let millisecond = JSBI.BigInt(millisecondParam);
+  let microsecond = JSBI.BigInt(microsecondParam);
+  let nanosecond = JSBI.BigInt(nanosecondParam);
+  let quotient;
 
-  microsecond += MathFloor(nanosecond / 1000);
-  nanosecond = NonNegativeModulo(nanosecond, 1000);
+  ({ quotient, remainder: nanosecond } = NonNegativeBigIntDivmod(nanosecond, THOUSAND));
+  microsecond = JSBI.add(microsecond, quotient);
 
-  millisecond += MathFloor(microsecond / 1000);
-  microsecond = NonNegativeModulo(microsecond, 1000);
+  ({ quotient, remainder: microsecond } = NonNegativeBigIntDivmod(microsecond, THOUSAND));
+  millisecond = JSBI.add(millisecond, quotient);
 
-  second += MathFloor(millisecond / 1000);
-  millisecond = NonNegativeModulo(millisecond, 1000);
+  ({ quotient, remainder: millisecond } = NonNegativeBigIntDivmod(millisecond, THOUSAND));
+  second = JSBI.add(second, quotient);
 
-  minute += MathFloor(second / 60);
-  second = NonNegativeModulo(second, 60);
+  ({ quotient, remainder: second } = NonNegativeBigIntDivmod(second, SIXTY));
+  minute = JSBI.add(minute, quotient);
 
-  hour += MathFloor(minute / 60);
-  minute = NonNegativeModulo(minute, 60);
+  ({ quotient, remainder: minute } = NonNegativeBigIntDivmod(minute, SIXTY));
+  hour = JSBI.add(hour, quotient);
 
-  const deltaDays = MathFloor(hour / 24);
-  hour = NonNegativeModulo(hour, 24);
+  ({ quotient, remainder: hour } = NonNegativeBigIntDivmod(hour, TWENTY_FOUR));
 
-  return { deltaDays, hour, minute, second, millisecond, microsecond, nanosecond };
+  return {
+    deltaDays: JSBI.toNumber(quotient),
+    hour: JSBI.toNumber(hour),
+    minute: JSBI.toNumber(minute),
+    second: JSBI.toNumber(second),
+    millisecond: JSBI.toNumber(millisecond),
+    microsecond: JSBI.toNumber(microsecond),
+    nanosecond: JSBI.toNumber(nanosecond)
+  };
 }
 
 export function TotalDurationNanoseconds(
@@ -5369,9 +5367,7 @@ export function RoundInstant(
   unit: keyof typeof nsPerTimeUnit,
   roundingMode: Temporal.RoundingMode
 ) {
-  // Note: NonNegativeModulo, but with BigInt
-  let remainder = JSBI.remainder(epochNs, JSBI.BigInt(86400e9));
-  if (JSBI.lessThan(remainder, ZERO)) remainder = JSBI.add(remainder, JSBI.BigInt(86400e9));
+  let { remainder } = NonNegativeBigIntDivmod(epochNs, DAY_NANOS);
   const wholeDays = JSBI.subtract(epochNs, remainder);
   const roundedRemainder = RoundNumberToIncrement(remainder, nsPerTimeUnit[unit] * increment, roundingMode);
   return JSBI.add(wholeDays, roundedRemainder);
@@ -5959,11 +5955,13 @@ export function CompareISODate(y1: number, m1: number, d1: number, y2: number, m
   return 0;
 }
 
-function NonNegativeModulo(x: number, y: number) {
-  let result = x % y;
-  if (ObjectIs(result, -0)) return 0;
-  if (result < 0) result += y;
-  return result;
+function NonNegativeBigIntDivmod(x: JSBI, y: JSBI) {
+  let { quotient, remainder } = divmod(x, y);
+  if (JSBI.lessThan(remainder, ZERO)) {
+    quotient = JSBI.subtract(quotient, ONE);
+    remainder = JSBI.add(remainder, y);
+  }
+  return { quotient, remainder };
 }
 
 // Defaults to native bigint, or something "native bigint-like".
