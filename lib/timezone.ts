@@ -44,7 +44,7 @@ export class TimeZone implements Temporal.TimeZone {
   }
   get id(): Return['id'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    return ES.ToString(this);
+    return GetSlot(this, TIMEZONE_ID);
   }
   getOffsetNanosecondsFor(instantParam: Params['getOffsetNanosecondsFor'][0]): Return['getOffsetNanosecondsFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
@@ -149,7 +149,7 @@ export class TimeZone implements Temporal.TimeZone {
   }
   toString(): string {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    return ES.ToString(GetSlot(this, TIMEZONE_ID));
+    return GetSlot(this, TIMEZONE_ID);
   }
   toJSON(): Return['toJSON'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');

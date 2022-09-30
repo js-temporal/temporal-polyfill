@@ -145,7 +145,7 @@ export class Calendar implements Temporal.Calendar {
   }
   get id(): Return['id'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
-    return ES.ToString(this);
+    return GetSlot(this, CALENDAR_ID);
   }
   dateFromFields(
     fields: Params['dateFromFields'][0],
