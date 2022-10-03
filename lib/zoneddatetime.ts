@@ -21,7 +21,7 @@ import { DateTimeFormat } from './intl';
 import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { BILLION, MILLION, THOUSAND, ZERO } from './ecmascript';
+import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS } from './ecmascript';
 
 export class ZonedDateTime implements Temporal.ZonedDateTime {
   constructor(
@@ -142,7 +142,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const timeZone = GetSlot(this, TIME_ZONE);
     const todayNs = GetSlot(ES.BuiltinTimeZoneGetInstantFor(timeZone, today, 'compatible'), EPOCHNANOSECONDS);
     const tomorrowNs = GetSlot(ES.BuiltinTimeZoneGetInstantFor(timeZone, tomorrow, 'compatible'), EPOCHNANOSECONDS);
-    return JSBI.toNumber(JSBI.subtract(tomorrowNs, todayNs)) / 3.6e12;
+    const diffNs = JSBI.subtract(tomorrowNs, todayNs);
+    return ES.BigIntDivideToNumber(diffNs, HOUR_NANOS);
   }
   get daysInWeek(): Return['daysInWeek'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');

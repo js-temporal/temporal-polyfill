@@ -87,8 +87,9 @@ export const THOUSAND = JSBI.BigInt(1e3);
 export const MILLION = JSBI.BigInt(1e6);
 export const BILLION = JSBI.BigInt(1e9);
 const NEGATIVE_ONE = JSBI.BigInt(-1);
-const DAY_SECONDS = 86400;
-const DAY_NANOS = JSBI.multiply(JSBI.BigInt(DAY_SECONDS), BILLION);
+const HOUR_SECONDS = 3600;
+export const HOUR_NANOS = JSBI.multiply(JSBI.BigInt(HOUR_SECONDS), BILLION);
+const DAY_NANOS = JSBI.multiply(HOUR_NANOS, TWENTY_FOUR);
 const NS_MIN = JSBI.multiply(JSBI.BigInt(-86400), JSBI.BigInt(1e17));
 const NS_MAX = JSBI.multiply(JSBI.BigInt(86400), JSBI.BigInt(1e17));
 const YEAR_MIN = -271821;
@@ -5772,7 +5773,7 @@ export function RoundDuration(
         JSBI.toNumber(JSBI.multiply(divisor, JSBI.BigInt(increment))),
         roundingMode
       );
-      total = JSBI.toNumber(nanoseconds) / JSBI.toNumber(divisor);
+      total = BigIntDivideToNumber(nanoseconds, divisor);
       years = JSBI.toNumber(JSBI.divide(rounded, divisor));
       nanoseconds = ZERO;
       months = weeks = days = 0;
@@ -5818,7 +5819,7 @@ export function RoundDuration(
         JSBI.toNumber(JSBI.multiply(divisor, JSBI.BigInt(increment))),
         roundingMode
       );
-      total = JSBI.toNumber(nanoseconds) / JSBI.toNumber(divisor);
+      total = BigIntDivideToNumber(nanoseconds, divisor);
       months = JSBI.toNumber(JSBI.divide(rounded, divisor));
       nanoseconds = ZERO;
       weeks = days = 0;
@@ -5853,7 +5854,7 @@ export function RoundDuration(
         JSBI.toNumber(JSBI.multiply(divisor, JSBI.BigInt(increment))),
         roundingMode
       );
-      total = JSBI.toNumber(nanoseconds) / JSBI.toNumber(divisor);
+      total = BigIntDivideToNumber(nanoseconds, divisor);
       weeks = JSBI.toNumber(JSBI.divide(rounded, divisor));
       nanoseconds = ZERO;
       days = 0;
@@ -5869,7 +5870,7 @@ export function RoundDuration(
         JSBI.toNumber(JSBI.multiply(divisor, JSBI.BigInt(increment))),
         roundingMode
       );
-      total = JSBI.toNumber(nanoseconds) / JSBI.toNumber(divisor);
+      total = BigIntDivideToNumber(nanoseconds, divisor);
       days = JSBI.toNumber(JSBI.divide(rounded, divisor));
       nanoseconds = ZERO;
       break;
@@ -5882,7 +5883,7 @@ export function RoundDuration(
       allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(milliseconds), MILLION));
       allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(microseconds), THOUSAND));
       allNanoseconds = JSBI.add(allNanoseconds, nanoseconds);
-      total = JSBI.toNumber(allNanoseconds) / divisor;
+      total = BigIntDivideToNumber(allNanoseconds, JSBI.BigInt(divisor));
       const rounded = RoundNumberToIncrement(allNanoseconds, divisor * increment, roundingMode);
       hours = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(divisor)));
       nanoseconds = ZERO;
@@ -5896,7 +5897,7 @@ export function RoundDuration(
       allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(milliseconds), MILLION));
       allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(microseconds), THOUSAND));
       allNanoseconds = JSBI.add(allNanoseconds, nanoseconds);
-      total = JSBI.toNumber(allNanoseconds) / divisor;
+      total = BigIntDivideToNumber(allNanoseconds, JSBI.BigInt(divisor));
       const rounded = RoundNumberToIncrement(allNanoseconds, divisor * increment, roundingMode);
       minutes = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(divisor)));
       nanoseconds = ZERO;
@@ -5909,7 +5910,7 @@ export function RoundDuration(
       allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(milliseconds), MILLION));
       allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(microseconds), THOUSAND));
       allNanoseconds = JSBI.add(allNanoseconds, nanoseconds);
-      total = JSBI.toNumber(allNanoseconds) / divisor;
+      total = BigIntDivideToNumber(allNanoseconds, JSBI.BigInt(divisor));
       const rounded = RoundNumberToIncrement(allNanoseconds, divisor * increment, roundingMode);
       seconds = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(divisor)));
       nanoseconds = ZERO;
@@ -5921,7 +5922,7 @@ export function RoundDuration(
       let allNanoseconds = JSBI.multiply(JSBI.BigInt(milliseconds), MILLION);
       allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(microseconds), THOUSAND));
       allNanoseconds = JSBI.add(allNanoseconds, nanoseconds);
-      total = JSBI.toNumber(allNanoseconds) / divisor;
+      total = BigIntDivideToNumber(allNanoseconds, JSBI.BigInt(divisor));
       const rounded = RoundNumberToIncrement(allNanoseconds, divisor * increment, roundingMode);
       milliseconds = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(divisor)));
       nanoseconds = ZERO;
@@ -5932,7 +5933,7 @@ export function RoundDuration(
       const divisor = 1e3;
       let allNanoseconds = JSBI.multiply(JSBI.BigInt(microseconds), THOUSAND);
       allNanoseconds = JSBI.add(allNanoseconds, nanoseconds);
-      total = JSBI.toNumber(allNanoseconds) / divisor;
+      total = BigIntDivideToNumber(allNanoseconds, JSBI.BigInt(divisor));
       const rounded = RoundNumberToIncrement(allNanoseconds, divisor * increment, roundingMode);
       microseconds = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(divisor)));
       nanoseconds = ZERO;
@@ -5977,6 +5978,13 @@ function NonNegativeBigIntDivmod(x: JSBI, y: JSBI) {
     remainder = JSBI.add(remainder, y);
   }
   return { quotient, remainder };
+}
+
+/** Divide two JSBIs, and return the result as a Number, including the remainder. */
+export function BigIntDivideToNumber(dividend: JSBI, divisor: JSBI) {
+  const { quotient, remainder } = divmod(dividend, divisor);
+  const result = JSBI.toNumber(quotient) + JSBI.toNumber(remainder) / JSBI.toNumber(divisor);
+  return result;
 }
 
 // Defaults to native bigint, or something "native bigint-like".

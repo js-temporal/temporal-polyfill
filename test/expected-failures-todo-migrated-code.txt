@@ -170,8 +170,6 @@ built-ins/Temporal/Duration/prototype/subtract/relativeto-string-datetime.js
 built-ins/Temporal/Duration/prototype/toString/fractionalseconddigits-non-integer.js
 built-ins/Temporal/Duration/prototype/toString/order-of-operations.js
 built-ins/Temporal/Duration/prototype/total/order-of-operations.js
-built-ins/Temporal/Duration/prototype/total/precision-exact-mathematical-values-1.js
-built-ins/Temporal/Duration/prototype/total/precision-exact-mathematical-values-2.js
 built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-calendar-fields-undefined.js
 built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-timezone-instance-does-not-get-timeZone-property.js
@@ -589,7 +587,6 @@ built-ins/Temporal/ZonedDateTime/prototype/equals/argument-string-date-with-utc-
 built-ins/Temporal/ZonedDateTime/prototype/equals/argument-string-time-zone-annotation.js
 built-ins/Temporal/ZonedDateTime/prototype/equals/argument-string-unknown-annotation.js
 built-ins/Temporal/ZonedDateTime/prototype/equals/order-of-operations.js
-built-ins/Temporal/ZonedDateTime/prototype/hoursInDay/precision-exact-mathematical-values.js
 built-ins/Temporal/ZonedDateTime/prototype/inLeapYear/validate-calendar-value.js
 built-ins/Temporal/ZonedDateTime/prototype/monthsInYear/validate-calendar-value.js
 built-ins/Temporal/ZonedDateTime/prototype/since/argument-calendar-fields-undefined.js
