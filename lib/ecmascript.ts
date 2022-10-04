@@ -2122,56 +2122,56 @@ export function CalendarDayOfWeek(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['dayOfWeek'][0]
 ) {
-  return calendar.dayOfWeek(dateLike);
+  return ToPositiveInteger(calendar.dayOfWeek(dateLike));
 }
 
 export function CalendarDayOfYear(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['dayOfYear'][0]
 ) {
-  return calendar.dayOfYear(dateLike);
+  return ToPositiveInteger(calendar.dayOfYear(dateLike));
 }
 
 export function CalendarWeekOfYear(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['weekOfYear'][0]
 ) {
-  return calendar.weekOfYear(dateLike);
+  return ToPositiveInteger(calendar.weekOfYear(dateLike));
 }
 
 export function CalendarDaysInWeek(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['daysInWeek'][0]
 ) {
-  return calendar.daysInWeek(dateLike);
+  return ToPositiveInteger(calendar.daysInWeek(dateLike));
 }
 
 export function CalendarDaysInMonth(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['daysInMonth'][0]
 ) {
-  return calendar.daysInMonth(dateLike);
+  return ToPositiveInteger(calendar.daysInMonth(dateLike));
 }
 
 export function CalendarDaysInYear(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['daysInYear'][0]
 ) {
-  return calendar.daysInYear(dateLike);
+  return ToPositiveInteger(calendar.daysInYear(dateLike));
 }
 
 export function CalendarMonthsInYear(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['monthsInYear'][0]
 ) {
-  return calendar.monthsInYear(dateLike);
+  return ToPositiveInteger(calendar.monthsInYear(dateLike));
 }
 
 export function CalendarInLeapYear(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['inLeapYear'][0]
 ) {
-  return calendar.inLeapYear(dateLike);
+  return !!calendar.inLeapYear(dateLike);
 }
 
 export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0]) {
