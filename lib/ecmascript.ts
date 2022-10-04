@@ -150,12 +150,6 @@ function isZero(value: JSBI): boolean {
   return JSBI.equal(value, ZERO);
 }
 
-function IsInteger(value: unknown): value is number {
-  if (typeof value !== 'number' || !NumberIsFinite(value)) return false;
-  const abs = MathAbs(value);
-  return MathFloor(abs) === abs;
-}
-
 // For unknown values, this narrows the result to a Record. But for union types
 // like `Temporal.DurationLike | string`, it'll strip the primitive types while
 // leaving the object type(s) unchanged.
@@ -167,16 +161,35 @@ export function IsObject(value: unknown): value is Record<string | number | symb
 }
 
 export function ToNumber(value: unknown): number {
+  // ES 2022's es-abstract made minor changes to ToNumber, but polyfilling these
+  // changes adds zero benefit to Temporal and brings in a lot of extra code. So
+  // we'll leave ToNumber as-is.
+  // See https://github.com/ljharb/es-abstract/blob/main/2022/ToNumber.js
   if (typeof value === 'bigint') throw new TypeError('Cannot convert BigInt to number');
   return NumberCtor(value);
 }
 
-function ToInteger(value: unknown): number {
-  const num = ToNumber(value);
-  if (NumberIsNaN(num)) return 0;
-  const integer = MathTrunc(num);
-  if (num === 0) return 0;
-  return integer;
+function ToIntegerOrInfinity(value: unknown) {
+  const number = ToNumber(value);
+  if (NumberIsNaN(number) || number === 0) {
+    return 0;
+  }
+  if (!NumberIsFinite(number)) {
+    return number;
+  }
+  const integer = MathFloor(MathAbs(number));
+  if (integer === 0) {
+    return 0;
+  }
+  return MathSign(number) * integer;
+}
+
+function IsIntegralNumber(argument: unknown) {
+  if (typeof argument !== 'number' || NumberIsNaN(argument) || !NumberIsFinite(argument)) {
+    return false;
+  }
+  const absValue = MathAbs(argument);
+  return MathFloor(absValue) === absValue;
 }
 
 export function ToString(value: unknown): string {
@@ -187,7 +200,7 @@ export function ToString(value: unknown): string {
 }
 
 export function ToIntegerThrowOnInfinity(value: unknown): number {
-  const integer = ToInteger(value);
+  const integer = ToIntegerOrInfinity(value);
   if (!NumberIsFinite(integer)) {
     throw new RangeError('infinity is out of range');
   }
@@ -195,7 +208,7 @@ export function ToIntegerThrowOnInfinity(value: unknown): number {
 }
 
 function ToPositiveInteger(valueParam: unknown, property?: string): number {
-  const value = ToInteger(valueParam);
+  const value = ToIntegerOrInfinity(valueParam);
   if (!NumberIsFinite(value)) {
     throw new RangeError('infinity is out of range');
   }
@@ -214,11 +227,12 @@ export function ToIntegerWithoutRounding(valueParam: unknown): number {
   if (!NumberIsFinite(value)) {
     throw new RangeError('infinity is out of range');
   }
-  if (!IsInteger(value)) {
+  if (!IsIntegralNumber(value)) {
     throw new RangeError(`unsupported fractional value ${value}`);
   }
-  return ToInteger(value); // ℝ(value) in spec text; converts -0 to 0
+  return ToIntegerOrInfinity(value); // ℝ(value) in spec text; converts -0 to 0
 }
+
 function divmod(x: JSBI, y: JSBI): { quotient: JSBI; remainder: JSBI } {
   const quotient = JSBI.divide(x, y);
   const remainder = JSBI.remainder(x, y);
@@ -261,7 +275,7 @@ const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
   ['microseconds', ToIntegerWithoutRounding],
   ['nanoseconds', ToIntegerWithoutRounding],
   ['era', ToString],
-  ['eraYear', ToInteger],
+  ['eraYear', ToIntegerOrInfinity],
   ['offset', ToString]
 ]);
 
@@ -400,18 +414,18 @@ function ParseISODateTime(isoString: string) {
   let yearString = match[1];
   if (yearString[0] === '\u2212') yearString = `-${yearString.slice(1)}`;
   if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
-  const year = ToInteger(yearString);
-  const month = ToInteger(match[2] || match[4]);
-  const day = ToInteger(match[3] || match[5]);
-  const hour = ToInteger(match[6]);
+  const year = ToIntegerOrInfinity(yearString);
+  const month = ToIntegerOrInfinity(match[2] || match[4]);
+  const day = ToIntegerOrInfinity(match[3] || match[5]);
+  const hour = ToIntegerOrInfinity(match[6]);
   const hasTime = match[6] !== undefined;
-  const minute = ToInteger(match[7] || match[10]);
-  let second = ToInteger(match[8] || match[11]);
+  const minute = ToIntegerOrInfinity(match[7] || match[10]);
+  let second = ToIntegerOrInfinity(match[8] || match[11]);
   if (second === 60) second = 59;
   const fraction = (match[9] || match[12]) + '000000000';
-  const millisecond = ToInteger(fraction.slice(0, 3));
-  const microsecond = ToInteger(fraction.slice(3, 6));
-  const nanosecond = ToInteger(fraction.slice(6, 9));
+  const millisecond = ToIntegerOrInfinity(fraction.slice(0, 3));
+  const microsecond = ToIntegerOrInfinity(fraction.slice(3, 6));
+  const nanosecond = ToIntegerOrInfinity(fraction.slice(6, 9));
   let offset;
   let z = false;
   if (match[13]) {
@@ -482,14 +496,14 @@ export function ParseTemporalTimeString(isoString: string) {
   const match = PARSE.time.exec(isoString);
   let hour, minute, second, millisecond, microsecond, nanosecond, calendar;
   if (match) {
-    hour = ToInteger(match[1]);
-    minute = ToInteger(match[2] || match[5]);
-    second = ToInteger(match[3] || match[6]);
+    hour = ToIntegerOrInfinity(match[1]);
+    minute = ToIntegerOrInfinity(match[2] || match[5]);
+    second = ToIntegerOrInfinity(match[3] || match[6]);
     if (second === 60) second = 59;
     const fraction = (match[4] || match[7]) + '000000000';
-    millisecond = ToInteger(fraction.slice(0, 3));
-    microsecond = ToInteger(fraction.slice(3, 6));
-    nanosecond = ToInteger(fraction.slice(6, 9));
+    millisecond = ToIntegerOrInfinity(fraction.slice(0, 3));
+    microsecond = ToIntegerOrInfinity(fraction.slice(3, 6));
+    nanosecond = ToIntegerOrInfinity(fraction.slice(6, 9));
     calendar = match[15];
     if (match[8]) throw new RangeError('Z designator not supported for PlainTime');
   } else {
@@ -532,8 +546,8 @@ export function ParseTemporalYearMonthString(isoString: string) {
     let yearString = match[1];
     if (yearString[0] === '\u2212') yearString = `-${yearString.slice(1)}`;
     if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
-    year = ToInteger(yearString);
-    month = ToInteger(match[2]);
+    year = ToIntegerOrInfinity(yearString);
+    month = ToIntegerOrInfinity(match[2]);
     calendar = match[3];
   } else {
     let z;
@@ -548,8 +562,8 @@ export function ParseTemporalMonthDayString(isoString: string) {
   const match = PARSE.monthday.exec(isoString);
   let month, day, calendar, referenceISOYear;
   if (match) {
-    month = ToInteger(match[1]);
-    day = ToInteger(match[2]);
+    month = ToIntegerOrInfinity(match[1]);
+    day = ToIntegerOrInfinity(match[2]);
   } else {
     let z;
     ({ month, day, calendar, year: referenceISOYear, z } = ParseISODateTime(isoString));
@@ -586,11 +600,11 @@ export function ParseTemporalDurationString(isoString: string) {
     throw new RangeError(`invalid duration: ${isoString}`);
   }
   const sign = match[1] === '-' || match[1] === '\u2212' ? -1 : 1;
-  const years = ToInteger(match[2]) * sign;
-  const months = ToInteger(match[3]) * sign;
-  const weeks = ToInteger(match[4]) * sign;
-  const days = ToInteger(match[5]) * sign;
-  const hours = ToInteger(match[6]) * sign;
+  const years = ToIntegerOrInfinity(match[2]) * sign;
+  const months = ToIntegerOrInfinity(match[3]) * sign;
+  const weeks = ToIntegerOrInfinity(match[4]) * sign;
+  const days = ToIntegerOrInfinity(match[5]) * sign;
+  const hours = ToIntegerOrInfinity(match[6]) * sign;
   const fHours = match[7];
   const minutesStr = match[8];
   const fMinutes = match[9];
@@ -605,18 +619,18 @@ export function ParseTemporalDurationString(isoString: string) {
     if (minutesStr ?? fMinutes ?? secondsStr ?? fSeconds ?? false) {
       throw new RangeError('only the smallest unit can be fractional');
     }
-    excessNanoseconds = ToInteger((fHours + '000000000').slice(0, 9)) * 3600 * sign;
+    excessNanoseconds = ToIntegerOrInfinity((fHours + '000000000').slice(0, 9)) * 3600 * sign;
   } else {
-    minutes = ToInteger(minutesStr) * sign;
+    minutes = ToIntegerOrInfinity(minutesStr) * sign;
     if (fMinutes !== undefined) {
       if (secondsStr ?? fSeconds ?? false) {
         throw new RangeError('only the smallest unit can be fractional');
       }
-      excessNanoseconds = ToInteger((fMinutes + '000000000').slice(0, 9)) * 60 * sign;
+      excessNanoseconds = ToIntegerOrInfinity((fMinutes + '000000000').slice(0, 9)) * 60 * sign;
     } else {
-      seconds = ToInteger(secondsStr) * sign;
+      seconds = ToIntegerOrInfinity(secondsStr) * sign;
       if (fSeconds !== undefined) {
-        excessNanoseconds = ToInteger((fSeconds + '000000000').slice(0, 9)) * sign;
+        excessNanoseconds = ToIntegerOrInfinity((fSeconds + '000000000').slice(0, 9)) * sign;
       }
     }
   }
@@ -2304,7 +2318,7 @@ export function GetOffsetNanosecondsFor(
   if (typeof offsetNs !== 'number') {
     throw new TypeError('bad return from getOffsetNanosecondsFor');
   }
-  if (!IsInteger(offsetNs) || MathAbs(offsetNs) >= 86400e9) {
+  if (!IsIntegralNumber(offsetNs) || MathAbs(offsetNs) >= 86400e9) {
     throw new RangeError('out-of-range return from getOffsetNanosecondsFor');
   }
   return offsetNs;
