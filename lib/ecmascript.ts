@@ -2077,9 +2077,6 @@ export function CalendarYear(calendar: Temporal.CalendarProtocol, dateLike: Cale
 
 export function CalendarMonth(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['month'][0]) {
   const result = calendar.month(dateLike);
-  if (result === undefined) {
-    throw new RangeError('calendar month result must be a positive integer');
-  }
   return ToPositiveInteger(result);
 }
 
@@ -2096,9 +2093,6 @@ export function CalendarMonthCode(
 
 export function CalendarDay(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['day'][0]) {
   const result = calendar.day(dateLike);
-  if (result === undefined) {
-    throw new RangeError('calendar day result must be a positive integer');
-  }
   return ToPositiveInteger(result);
 }
 
@@ -5280,7 +5274,7 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
   const fields = PrepareTemporalFields(yearMonth, fieldNames, []);
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
-  fields.day = sign < 0 ? ToPositiveInteger(CalendarDaysInMonth(calendar, yearMonth)) : 1;
+  fields.day = sign < 0 ? CalendarDaysInMonth(calendar, yearMonth) : 1;
   // PrepareTemporalFields returns a type where 'day' is potentially undefined,
   // and TS doesn't narrow the type as a result of the assignment above, so we
   // cast the fields input to the new type.
