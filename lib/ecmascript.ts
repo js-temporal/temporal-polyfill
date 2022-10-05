@@ -2024,9 +2024,8 @@ export function GetISO8601Calendar() {
 // against the type that the calendar is a property of?
 export function CalendarFields<F extends Iterable<string>>(calendar: Temporal.CalendarProtocol, fieldNamesParam: F) {
   let fieldNames = fieldNamesParam;
-  if (calendar.fields) {
-    fieldNames = calendar.fields(fieldNames) as F;
-  }
+  if (calendar.fields === undefined) return fieldNames;
+  fieldNames = calendar.fields(fieldNames) as F;
   const result: string[] = [];
   for (const name of fieldNames) {
     if (typeof name !== 'string') throw new TypeError('bad return from calendar.fields()');
