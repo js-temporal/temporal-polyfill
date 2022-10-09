@@ -150,9 +150,9 @@ interface SlotsToTypes {
 
 type SlotKey = keyof SlotsToTypes;
 
-const globalSlots = new WeakMap();
+const globalSlots = new WeakMap<Slots[keyof Slots]['usedBy'], Record<keyof Slots, Slots[keyof Slots]['value']>>();
 
-function _GetSlots(container: Slots[SlotKey]['usedBy']) {
+function _GetSlots(container: Slots[keyof Slots]['usedBy']) {
   return globalSlots.get(container);
 }
 
@@ -161,9 +161,9 @@ const GetSlotsSymbol = Symbol.for('@@Temporal__GetSlots');
 // expose GetSlots to avoid dual package hazards
 (globalThis as any)[GetSlotsSymbol] ||= _GetSlots;
 
-const GetSlots = (globalThis as any)[GetSlotsSymbol];
+const GetSlots = (globalThis as any)[GetSlotsSymbol] as typeof _GetSlots;
 
-function _CreateSlots(container: Slots[SlotKey]['usedBy']): void {
+function _CreateSlots(container: Slots[keyof Slots]['usedBy']): void {
   globalSlots.set(container, Object.create(null));
 }
 
@@ -172,7 +172,7 @@ const CreateSlotsSymbol = Symbol.for('@@Temporal__CreateSlots');
 // expose CreateSlots to avoid dual package hazards
 (globalThis as any)[CreateSlotsSymbol] ||= _CreateSlots;
 
-export const CreateSlots = (globalThis as any)[CreateSlotsSymbol];
+export const CreateSlots = (globalThis as any)[CreateSlotsSymbol] as typeof _CreateSlots;
 
 // TODO: is there a better way than 9 overloads to make HasSlot into a type
 // guard that takes a variable number of parameters?
@@ -294,7 +294,7 @@ export function GetSlot<KeyT extends keyof Slots>(
   container: Slots[typeof id]['usedBy'],
   id: KeyT
 ): Slots[KeyT]['value'] {
-  const value = GetSlots(container)[id];
+  const value = GetSlots(container)?.[id];
   if (value === undefined) throw new TypeError(`Missing internal slot ${id}`);
   return value;
 }
@@ -303,11 +303,15 @@ export function SetSlot<KeyT extends SlotKey>(
   id: KeyT,
   value: Slots[KeyT]['value']
 ): void {
-  const slot = GetSlots(container);
+  const slots = GetSlots(container);
 
-  if (id in slot) {
+  if (slots === undefined) {
+    throw new TypeError('Missing slots for the given container');
+  }
+
+  if (id in slots) {
     throw new TypeError(`${id} already has set`);
   }
 
-  slot[id] = value;
+  slots[id] = value;
 }
