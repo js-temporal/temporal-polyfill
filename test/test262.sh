@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Note that this script is only expected to be run via `npm run test262`, not by
 # being manually executed.
 set -e
