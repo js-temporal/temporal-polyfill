@@ -3613,6 +3613,7 @@ export function UnbalanceDurationRelative(
 } {
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   const sign = DurationSign(yearsParam, monthsParam, weeksParam, daysParam, 0, 0, 0, 0, 0, 0);
+  if (sign === 0) return { years: yearsParam, months: monthsParam, weeks: weeksParam, days: daysParam };
   const signBI = JSBI.BigInt(sign);
 
   let years = JSBI.BigInt(yearsParam);
