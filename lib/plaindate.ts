@@ -219,17 +219,15 @@ export class PlainDate implements Temporal.PlainDate {
     type TimeZoneAndPlainTimeProps = Exclude<typeof item, Temporal.TimeZoneProtocol | string>;
     let timeZone: Temporal.TimeZoneProtocol, temporalTime: TimeZoneAndPlainTimeProps['plainTime'];
     if (ES.IsObject(item)) {
-      const timeZoneLike = item.timeZone;
-      if (timeZoneLike === undefined) {
-        // The cast below is needed because it's possible here for
-        // `timeZoneLike` here to be `{ plainTime: Temporal.PlainTimeLike }`,
-        // not a TimeZoneProtocol.
-        // TODO: should we check for that shape to improve on the (bad) error
-        // message that the caller will get from ToTemporalTimeZone?
-        timeZone = ES.ToTemporalTimeZone(item);
+      if (ES.IsTemporalTimeZone(item)) {
+        timeZone = item;
       } else {
-        timeZone = ES.ToTemporalTimeZone(timeZoneLike);
-        temporalTime = item.plainTime;
+        if (item.timeZone === undefined) {
+          timeZone = ES.ToTemporalTimeZone(item);
+        } else {
+          timeZone = ES.ToTemporalTimeZone(item.timeZone);
+          temporalTime = item.plainTime;
+        }
       }
     } else {
       timeZone = ES.ToTemporalTimeZone(item);

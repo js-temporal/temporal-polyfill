@@ -163,7 +163,6 @@ built-ins/Temporal/PlainDate/prototype/toPlainDateTime/argument-string-time-desi
 built-ins/Temporal/PlainDate/prototype/toPlainMonthDay/calendar-fields-undefined.js
 built-ins/Temporal/PlainDate/prototype/toPlainYearMonth/calendar-fields-undefined.js
 built-ins/Temporal/PlainDate/prototype/toZonedDateTime/argument-string-time-designator-required-for-disambiguation.js
-built-ins/Temporal/PlainDate/prototype/toZonedDateTime/timezone-instance-does-not-get-timeZone-property.js
 built-ins/Temporal/PlainDate/prototype/toZonedDateTime/timezone-wrong-type.js
 built-ins/Temporal/PlainDate/prototype/until/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainDate/prototype/until/argument-propertybag-calendar-case-insensitive.js
