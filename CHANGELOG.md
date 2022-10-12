@@ -1,32 +1,34 @@
 # 0.4.3
 
 Bug fixes:
- - Fix an off-by-one error when dates in the Hebrew calenar were created using
-   `monthCode`, the year was a leap year, and the month was after the leap
-   month ([f3d0ca9f])
- - Fix addition of months and years for lunisolar calendars ([4f8b04c1])
- - Fix the ISO8601 representation of years between 1 BCE and 999 BCE ([b251dc0e]).
- - Fix a bug causing time to appear to go backwards for a small number of
-   milliseconds ([bb59ca97])
- - Always validate ISO8601 time components as well as date components
-   ([34662a05])
- - Fix comparison of dates that might have a differing number of hours in their
-   respective days ([a4c60241])
- - Include calendar reference information when `calendarName='always'` is passed
-   to various Temporal toString method's options bags ([54fcc4f3])
- - Fix a nonconformant use of the `relativeTo` property bag ([9992f9b1])
- - Fix ZonedDateTime.prototype.withPlainTime(null) to throw a TypeError, instead
-   of treating it as midnight ([ec2b0546])
- - Fix parsing of some valid Instant strings when they would be out of range
-   before considering the UTC offset ([d9de9e74])
- - Bail out early in non-ISO calendar implementations to avoid an infinte loop
-   when calculating the duration between two identical dates. ([6f3c42c9])
- - Fix type resolution when using TypeScript Node16 and transpiling to CJS ([9bab0eb5], see
-   also the [relevant TypeScript issue](https://github.com/microsoft/TypeScript/issues/49160))
+
+- Fix an off-by-one error when dates in the Hebrew calenar were created using
+  `monthCode`, the year was a leap year, and the month was after the leap
+  month ([f3d0ca9f])
+- Fix addition of months and years for lunisolar calendars ([4f8b04c1])
+- Fix the ISO8601 representation of years between 1 BCE and 999 BCE ([b251dc0e]).
+- Fix a bug causing time to appear to go backwards for a small number of
+  milliseconds ([bb59ca97])
+- Always validate ISO8601 time components as well as date components
+  ([34662a05])
+- Fix comparison of dates that might have a differing number of hours in their
+  respective days ([a4c60241])
+- Include calendar reference information when `calendarName='always'` is passed
+  to various Temporal toString method's options bags ([54fcc4f3])
+- Fix a nonconformant use of the `relativeTo` property bag ([9992f9b1])
+- Fix ZonedDateTime.prototype.withPlainTime(null) to throw a TypeError, instead
+  of treating it as midnight ([ec2b0546])
+- Fix parsing of some valid Instant strings when they would be out of range
+  before considering the UTC offset ([d9de9e74])
+- Bail out early in non-ISO calendar implementations to avoid an infinte loop
+  when calculating the duration between two identical dates. ([6f3c42c9])
+- Fix type resolution when using TypeScript Node16 and transpiling to CJS ([9bab0eb5], see
+  also the [relevant TypeScript issue](https://github.com/microsoft/TypeScript/issues/49160))
 
 Non-breaking changes:
- -  Consistently call observable operations with undefined options arguments,
-    instead of empty objects ([297b8f38])
+
+- Consistently call observable operations with undefined options arguments,
+  instead of empty objects ([297b8f38])
 
 # 0.4.2
 
