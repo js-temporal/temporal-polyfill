@@ -1,3 +1,33 @@
+# 0.4.3
+
+Bug fixes:
+ - Fix an off-by-one error when dates in the Hebrew calenar were created using
+   `monthCode`, the year was a leap year, and the month was after the leap
+   month ([f3d0ca9f])
+ - Fix addition of months and years for lunisolar calendars ([4f8b04c1])
+ - Fix the ISO8601 representation of years between 1 BCE and 999 BCE ([b251dc0e]).
+ - Fix a bug causing time to appear to go backwards for a small number of
+   milliseconds ([bb59ca97])
+ - Always validate ISO8601 time components as well as date components
+   ([34662a05])
+ - Fix comparison of dates that might have a differing number of hours in their
+   respective days ([a4c60241])
+ - Include calendar reference information when `calendarName='always'` is passed
+   to various Temporal toString method's options bags ([54fcc4f3])
+ - Fix a nonconformant use of the `relativeTo` property bag ([9992f9b1])
+ - Fix ZonedDateTime.prototype.withPlainTime(null) to throw a TypeError, instead
+   of treating it as midnight ([ec2b0546])
+ - Fix parsing of some valid Instant strings when they would be out of range
+   before considering the UTC offset ([d9de9e74])
+ - Bail out early in non-ISO calendar implementations to avoid an infinte loop
+   when calculating the duration between two identical dates. ([6f3c42c9])
+ - Fix type resolution when using TypeScript Node16 and transpiling to CJS ([9bab0eb5], see
+   also the [relevant TypeScript issue](https://github.com/microsoft/TypeScript/issues/49160))
+
+Non-breaking changes:
+ -  Consistently call observable operations with undefined options arguments,
+    instead of empty objects ([297b8f38])
+
 # 0.4.2
 
 This version is a patch version enabling TypeScript Node16 support for this
@@ -100,6 +130,19 @@ Other:
 - The polyfill's source was ported to TypeScript ([12e4d529], [ac78fd9d], [53f32e0f], [06b806c9], [66fdc765], [50b1c34b], [4724b017], [947a8a5e], [fdbf7e01], [fa60af6a], [da753f2f], [f4db8b0b], [4a38420d])
 - Document the release process for this polyfill ([c55818b6])
 
+[f3d0ca9f]: https://github.com/js-temporal/temporal-polyfill/commit/f3d0ca9f2f32beb071a7d25c9732bd38784b3e6d
+[4f8b04c1]: https://github.com/js-temporal/temporal-polyfill/commit/4f8b04c1caba0360a527cbe8c8d95e2a8642ab6e
+[b251dc0e]: https://github.com/js-temporal/temporal-polyfill/commit/b251dc0ef48cd7b2edee2f6541ce0cfb6d019e08
+[bb59ca97]: https://github.com/js-temporal/temporal-polyfill/commit/bb59ca970b1c0cb70bdafd2896814076c11edd07
+[34662a05]: https://github.com/js-temporal/temporal-polyfill/commit/34662a05cfe50e17a02356cbc55ff0ca2365e888
+[a4c60241]: https://github.com/js-temporal/temporal-polyfill/commit/a4c602410bb5b711683918cd414568e19c594499
+[54fcc4f3]: https://github.com/js-temporal/temporal-polyfill/commit/54fcc4f34b6ce87d15d3df9359bb538766c562ef
+[9992f9b1]: https://github.com/js-temporal/temporal-polyfill/commit/9992f9b1137ff52cc427bc0c96504dca387d267b
+[ec2b0546]: https://github.com/js-temporal/temporal-polyfill/commit/ec2b0546dd68718c6645713512753570eccf0ba6
+[d9de9e74]: https://github.com/js-temporal/temporal-polyfill/commit/d9de9e74d0cba630b3480b31964362f82c435992
+[6f3c42c9]: https://github.com/js-temporal/temporal-polyfill/commit/6f3c42c90460fa0917e228b5724d7b462c052fd8
+[9bab0eb5]: https://github.com/js-temporal/temporal-polyfill/commit/9bab0eb586a8db13081a51e81fd0f6f2518d041a
+[297b8f38]: https://github.com/js-temporal/temporal-polyfill/commit/297b8f385e5a146ad9c97ce3a9865a654999a713
 [304c86dd]: https://github.com/js-temporal/temporal-polyfill/commit/304c86dd61e7107095ed42149e85d919e3a6cac8
 [b733c213]: https://github.com/js-temporal/temporal-polyfill/commit/b733c213cba462f79eb9ee3a084661ea5344d9ea
 [670cda6b]: https://github.com/js-temporal/temporal-polyfill/commit/670cda6bd269db66c8ce97eb73f941b20abb92ec
