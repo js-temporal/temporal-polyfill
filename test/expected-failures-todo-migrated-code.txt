@@ -120,7 +120,6 @@ built-ins/Temporal/Instant/prototype/toString/timezone-wrong-type.js
 built-ins/Temporal/Instant/prototype/toZonedDateTime/calendar-case-insensitive.js
 built-ins/Temporal/Instant/prototype/toZonedDateTime/calendar-wrong-type.js
 built-ins/Temporal/Instant/prototype/toZonedDateTime/timezone-wrong-type.js
-built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/timezone-instance-does-not-get-timeZone-property.js
 built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/timezone-wrong-type.js
 built-ins/Temporal/Instant/prototype/until/argument-string-date-with-utc-offset.js
 built-ins/Temporal/Instant/prototype/until/order-of-operations.js
