@@ -2,7 +2,7 @@
 
 Bug fixes:
 
-- Fix an off-by-one error when dates in the Hebrew calenar were created using
+- Fix an off-by-one error when dates in the Hebrew calendar were created using
   `monthCode`, the year was a leap year, and the month was after the leap
   month ([f3d0ca9f])
 - Fix addition of months and years for lunisolar calendars ([4f8b04c1])
