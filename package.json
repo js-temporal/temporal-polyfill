@@ -20,9 +20,17 @@
         "default": "./dist/index.cjs"
       },
       "./dist/index.cjs"
-    ]
+    ],
+    "./bigint": "./dist/bigint/index.esm.js"
   },
   "types": "./index.d.ts",
+  "typesVersions": {
+    "*": {
+      "bigint": [
+        "./index.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "test": "npm run build && node --no-warnings --experimental-modules --experimental-specifier-resolution=node --icu-data-dir node_modules/full-icu --loader ./test/resolve.source.mjs ./test/all.mjs",
     "test262": "TEST262=1 npm run build && ./test/test262.sh",
@@ -95,6 +103,7 @@
     "@rollup/plugin-typescript": "^8.3.0",
     "@typescript-eslint/eslint-plugin": "^5.7.0",
     "@typescript-eslint/parser": "^5.7.0",
+    "babel-plugin-transform-jsbi-to-bigint": "^1.4.0",
     "eslint": "^8.4.1",
     "eslint-config-prettier": "^8.3.0",
     "eslint-plugin-prettier": "^4.0.0",
