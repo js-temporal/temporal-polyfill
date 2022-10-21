@@ -80,6 +80,10 @@ export class PlainDate implements Temporal.PlainDate {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     return ES.CalendarWeekOfYear(GetSlot(this, CALENDAR), this);
   }
+  get yearOfWeek(): Return['weekOfYear'] {
+    if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
+    return ES.CalendarYearOfWeek(GetSlot(this, CALENDAR), this);
+  }
   get daysInWeek(): Return['daysInWeek'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     return ES.CalendarDaysInWeek(GetSlot(this, CALENDAR), this);
