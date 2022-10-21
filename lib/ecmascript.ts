@@ -2195,6 +2195,17 @@ export function CalendarWeekOfYear(
   return ToPositiveIntegerWithTruncation(calendar.weekOfYear(dateLike));
 }
 
+export function CalendarYearOfWeek(
+  calendar: Temporal.CalendarProtocol,
+  dateLike: CalendarProtocolParams['yearOfWeek'][0]
+) {
+  const result = ToPositiveIntegerWithTruncation(calendar.yearOfWeek(dateLike));
+  if (result === undefined) {
+    throw new RangeError('calendar yearOfWeek result must be an integer');
+  }
+  return ToIntegerWithTruncation(result);
+}
+
 export function CalendarDaysInWeek(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['daysInWeek'][0]
@@ -3222,18 +3233,18 @@ export function WeekOfYear(year: number, month: number, day: number) {
 
   if (week < 1) {
     if (doj === 5 || (doj === 6 && LeapYear(year - 1))) {
-      return 53;
+      return { week: 53, year: year - 1 };
     } else {
-      return 52;
+      return { week: 52, year: year - 1 };
     }
   }
   if (week === 53) {
     if ((LeapYear(year) ? 366 : 365) - doy < 4 - dow) {
-      return 1;
+      return { week: 1, year: year + 1 };
     }
   }
 
-  return week;
+  return { week, year };
 }
 
 export function DurationSign(

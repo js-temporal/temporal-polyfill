@@ -88,6 +88,8 @@ built-ins/Temporal/Calendar/prototype/toString/builtin.js
 built-ins/Temporal/Calendar/prototype/toString/not-a-constructor.js
 built-ins/Temporal/Calendar/prototype/weekOfYear/builtin.js
 built-ins/Temporal/Calendar/prototype/weekOfYear/not-a-constructor.js
+built-ins/Temporal/Calendar/prototype/yearOfWeek/builtin.js
+built-ins/Temporal/Calendar/prototype/yearOfWeek/not-a-constructor.js
 built-ins/Temporal/Calendar/prototype/year/builtin.js
 built-ins/Temporal/Calendar/prototype/year/not-a-constructor.js
 built-ins/Temporal/Calendar/prototype/yearMonthFromFields/builtin.js

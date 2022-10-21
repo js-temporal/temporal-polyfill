@@ -640,6 +640,7 @@ export namespace Temporal {
     dayOfWeek(date: Temporal.PlainDate | Temporal.PlainDateTime | PlainDateLike | string): number;
     dayOfYear(date: Temporal.PlainDate | Temporal.PlainDateTime | PlainDateLike | string): number;
     weekOfYear(date: Temporal.PlainDate | Temporal.PlainDateTime | PlainDateLike | string): number;
+    yearOfWeek(date: Temporal.PlainDate | Temporal.PlainDateTime | PlainDateLike | string): number;
     daysInWeek(date: Temporal.PlainDate | Temporal.PlainDateTime | PlainDateLike | string): number;
     daysInMonth(
       date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth | PlainDateLike | string
@@ -720,6 +721,7 @@ export namespace Temporal {
     dayOfWeek(date: Temporal.PlainDate | Temporal.PlainDateTime | PlainDateLike | string): number;
     dayOfYear(date: Temporal.PlainDate | Temporal.PlainDateTime | PlainDateLike | string): number;
     weekOfYear(date: Temporal.PlainDate | Temporal.PlainDateTime | PlainDateLike | string): number;
+    yearOfWeek(date: Temporal.PlainDate | Temporal.PlainDateTime | PlainDateLike | string): number;
     daysInWeek(date: Temporal.PlainDate | Temporal.PlainDateTime | PlainDateLike | string): number;
     daysInMonth(
       date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth | PlainDateLike | string
@@ -805,6 +807,7 @@ export namespace Temporal {
     readonly dayOfWeek: number;
     readonly dayOfYear: number;
     readonly weekOfYear: number;
+    readonly yearOfWeek: number;
     readonly daysInWeek: number;
     readonly daysInYear: number;
     readonly daysInMonth: number;
@@ -919,6 +922,7 @@ export namespace Temporal {
     readonly dayOfWeek: number;
     readonly dayOfYear: number;
     readonly weekOfYear: number;
+    readonly yearOfWeek: number;
     readonly daysInWeek: number;
     readonly daysInYear: number;
     readonly daysInMonth: number;
@@ -1266,6 +1270,7 @@ export namespace Temporal {
     readonly dayOfWeek: number;
     readonly dayOfYear: number;
     readonly weekOfYear: number;
+    readonly yearOfWeek: number;
     readonly hoursInDay: number;
     readonly daysInWeek: number;
     readonly daysInMonth: number;
