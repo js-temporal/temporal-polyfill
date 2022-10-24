@@ -546,7 +546,7 @@ export function ParseTemporalTimeString(isoString: string) {
     millisecond = ToIntegerOrInfinity(fraction.slice(0, 3));
     microsecond = ToIntegerOrInfinity(fraction.slice(3, 6));
     nanosecond = ToIntegerOrInfinity(fraction.slice(6, 9));
-    annotations = match[15];
+    annotations = match[14];
     for (const [, critical, key, value] of annotations.matchAll(PARSE.annotation)) {
       if (key === 'u-ca') {
         if (calendar === undefined) calendar = value;
@@ -566,16 +566,12 @@ export function ParseTemporalTimeString(isoString: string) {
   if (/[tT ][0-9][0-9]/.test(isoString)) {
     return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
   }
-  // Reject strings that are ambiguous with PlainMonthDay or PlainYearMonth.
-  // The annotations must be stripped so presence of a calendar doesn't result
-  // in interpretation of otherwise ambiguous input as a time.
-  const isoStringWithoutAnnotations = annotations ? isoString.slice(0, -annotations.length) : isoString;
   try {
-    const { month, day } = ParseTemporalMonthDayString(isoStringWithoutAnnotations);
+    const { month, day } = ParseTemporalMonthDayString(isoString);
     RejectISODate(1972, month, day);
   } catch {
     try {
-      const { year, month } = ParseTemporalYearMonthString(isoStringWithoutAnnotations);
+      const { year, month } = ParseTemporalYearMonthString(isoString);
       RejectISODate(year, month, 1);
     } catch {
       return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
@@ -594,7 +590,17 @@ export function ParseTemporalYearMonthString(isoString: string) {
     if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
     year = ToIntegerOrInfinity(yearString);
     month = ToIntegerOrInfinity(match[2]);
-    calendar = match[3];
+    const annotations = match[3];
+    for (const [, critical, key, value] of annotations.matchAll(PARSE.annotation)) {
+      if (key === 'u-ca') {
+        if (calendar === undefined) calendar = value;
+      } else if (critical === '!') {
+        throw new RangeError(`Unrecognized annotation: !${key}=${value}`);
+      }
+    }
+    if (calendar !== undefined && calendar !== 'iso8601') {
+      throw new RangeError('YYYY-MM format is only valid with iso8601 calendar');
+    }
   } else {
     let z;
     ({ year, month, calendar, day: referenceISODay, z } = ParseISODateTime(isoString));
@@ -610,6 +616,17 @@ export function ParseTemporalMonthDayString(isoString: string) {
   if (match) {
     month = ToIntegerOrInfinity(match[1]);
     day = ToIntegerOrInfinity(match[2]);
+    const annotations = match[3];
+    for (const [, critical, key, value] of annotations.matchAll(PARSE.annotation)) {
+      if (key === 'u-ca') {
+        if (calendar === undefined) calendar = value;
+      } else if (critical === '!') {
+        throw new RangeError(`Unrecognized annotation: !${key}=${value}`);
+      }
+    }
+    if (calendar !== undefined && calendar !== 'iso8601') {
+      throw new RangeError('MM-DD format is only valid with iso8601 calendar');
+    }
   } else {
     let z;
     ({ month, day, calendar, year: referenceISOYear, z } = ParseISODateTime(isoString));
@@ -2240,7 +2257,11 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
   try {
     ({ calendar } = ParseISODateTime(identifier));
   } catch {
-    throw new RangeError(`Invalid calendar: ${identifier}`);
+    try {
+      ({ calendar } = ParseTemporalYearMonthString(identifier));
+    } catch {
+      ({ calendar } = ParseTemporalMonthDayString(identifier));
+    }
   }
   if (!calendar) calendar = 'iso8601';
   return new TemporalCalendar(calendar);
