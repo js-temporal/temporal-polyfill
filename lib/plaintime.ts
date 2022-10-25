@@ -72,12 +72,12 @@ export class PlainTime implements Temporal.PlainTime {
     isoMicrosecondParam = 0,
     isoNanosecondParam = 0
   ) {
-    const isoHour = ES.ToIntegerThrowOnInfinity(isoHourParam);
-    const isoMinute = ES.ToIntegerThrowOnInfinity(isoMinuteParam);
-    const isoSecond = ES.ToIntegerThrowOnInfinity(isoSecondParam);
-    const isoMillisecond = ES.ToIntegerThrowOnInfinity(isoMillisecondParam);
-    const isoMicrosecond = ES.ToIntegerThrowOnInfinity(isoMicrosecondParam);
-    const isoNanosecond = ES.ToIntegerThrowOnInfinity(isoNanosecondParam);
+    const isoHour = ES.ToIntegerWithTruncation(isoHourParam);
+    const isoMinute = ES.ToIntegerWithTruncation(isoMinuteParam);
+    const isoSecond = ES.ToIntegerWithTruncation(isoSecondParam);
+    const isoMillisecond = ES.ToIntegerWithTruncation(isoMillisecondParam);
+    const isoMicrosecond = ES.ToIntegerWithTruncation(isoMicrosecondParam);
+    const isoNanosecond = ES.ToIntegerWithTruncation(isoNanosecondParam);
 
     ES.RejectTime(isoHour, isoMinute, isoSecond, isoMillisecond, isoMicrosecond, isoNanosecond);
     CreateSlots(this);

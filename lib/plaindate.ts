@@ -25,13 +25,13 @@ export class PlainDate implements Temporal.PlainDate {
     isoDayParam: Params['constructor'][2],
     calendarParam: Params['constructor'][3] = ES.GetISO8601Calendar()
   ) {
-    const isoYear = ES.ToIntegerThrowOnInfinity(isoYearParam);
-    const isoMonth = ES.ToIntegerThrowOnInfinity(isoMonthParam);
-    const isoDay = ES.ToIntegerThrowOnInfinity(isoDayParam);
+    const isoYear = ES.ToIntegerWithTruncation(isoYearParam);
+    const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);
+    const isoDay = ES.ToIntegerWithTruncation(isoDayParam);
     const calendar = ES.ToTemporalCalendar(calendarParam);
 
     // Note: if the arguments are not passed,
-    //       ToIntegerThrowOnInfinity(undefined) will have returned 0, which will
+    //       ToIntegerWithTruncation(undefined) will have returned 0, which will
     //       be rejected by RejectISODate in CreateTemporalDateSlots. This check
     //       exists only to improve the error message.
     if (arguments.length < 3) {

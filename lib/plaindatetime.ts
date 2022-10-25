@@ -32,19 +32,19 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     nanosecondParam: Params['constructor'][8] = 0,
     calendarParam: Params['constructor'][9] = ES.GetISO8601Calendar()
   ) {
-    const isoYear = ES.ToIntegerThrowOnInfinity(isoYearParam);
-    const isoMonth = ES.ToIntegerThrowOnInfinity(isoMonthParam);
-    const isoDay = ES.ToIntegerThrowOnInfinity(isoDayParam);
-    const hour = ES.ToIntegerThrowOnInfinity(hourParam);
-    const minute = ES.ToIntegerThrowOnInfinity(minuteParam);
-    const second = ES.ToIntegerThrowOnInfinity(secondParam);
-    const millisecond = ES.ToIntegerThrowOnInfinity(millisecondParam);
-    const microsecond = ES.ToIntegerThrowOnInfinity(microsecondParam);
-    const nanosecond = ES.ToIntegerThrowOnInfinity(nanosecondParam);
+    const isoYear = ES.ToIntegerWithTruncation(isoYearParam);
+    const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);
+    const isoDay = ES.ToIntegerWithTruncation(isoDayParam);
+    const hour = ES.ToIntegerWithTruncation(hourParam);
+    const minute = ES.ToIntegerWithTruncation(minuteParam);
+    const second = ES.ToIntegerWithTruncation(secondParam);
+    const millisecond = ES.ToIntegerWithTruncation(millisecondParam);
+    const microsecond = ES.ToIntegerWithTruncation(microsecondParam);
+    const nanosecond = ES.ToIntegerWithTruncation(nanosecondParam);
     const calendar = ES.ToTemporalCalendar(calendarParam);
 
     // Note: if the arguments are not passed,
-    //       ToIntegerThrowOnInfinity(undefined) will have returned 0, which will
+    //       ToIntegerWithTruncation(undefined) will have returned 0, which will
     //       be rejected by RejectDateTime in CreateTemporalDateTimeSlots. This
     //       check exists only to improve the error message.
     if (arguments.length < 3) {

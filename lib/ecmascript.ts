@@ -197,11 +197,14 @@ export function ToString(value: unknown): string {
   return StringCtor(value);
 }
 
-export function ToIntegerThrowOnInfinity(value: unknown): number {
-  const integer = ToIntegerOrInfinity(value);
-  if (!NumberIsFinite(integer)) {
+export function ToIntegerWithTruncation(value: unknown): number {
+  const number = ToNumber(value);
+  if (NumberIsNaN(number) || number === 0) return 0;
+  if (!NumberIsFinite(number)) {
     throw new RangeError('infinity is out of range');
   }
+  const integer = MathTrunc(number);
+  if (integer === 0) return 0; // ℝ(value) in spec text; converts -0 to 0
   return integer;
 }
 
@@ -261,16 +264,16 @@ export function ArrayPush<NewValue>(
 
 type BuiltinCastFunction = (v: unknown) => string | number;
 const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
-  ['year', ToIntegerThrowOnInfinity],
+  ['year', ToIntegerWithTruncation],
   ['month', ToPositiveInteger],
   ['monthCode', ToString],
   ['day', ToPositiveInteger],
-  ['hour', ToIntegerThrowOnInfinity],
-  ['minute', ToIntegerThrowOnInfinity],
-  ['second', ToIntegerThrowOnInfinity],
-  ['millisecond', ToIntegerThrowOnInfinity],
-  ['microsecond', ToIntegerThrowOnInfinity],
-  ['nanosecond', ToIntegerThrowOnInfinity],
+  ['hour', ToIntegerWithTruncation],
+  ['minute', ToIntegerWithTruncation],
+  ['second', ToIntegerWithTruncation],
+  ['millisecond', ToIntegerWithTruncation],
+  ['microsecond', ToIntegerWithTruncation],
+  ['nanosecond', ToIntegerWithTruncation],
   ['years', ToIntegerWithoutRounding],
   ['months', ToIntegerWithoutRounding],
   ['weeks', ToIntegerWithoutRounding],
@@ -2139,7 +2142,7 @@ export function CalendarYear(calendar: Temporal.CalendarProtocol, dateLike: Cale
   if (result === undefined) {
     throw new RangeError('calendar year result must be an integer');
   }
-  return ToIntegerThrowOnInfinity(result);
+  return ToIntegerWithTruncation(result);
 }
 
 export function CalendarMonth(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['month'][0]) {
@@ -2174,7 +2177,7 @@ export function CalendarEra(calendar: Temporal.CalendarProtocol, dateLike: Calen
 export function CalendarEraYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['eraYear'][0]) {
   let result = calendar.eraYear(dateLike);
   if (result !== undefined) {
-    result = ToIntegerThrowOnInfinity(result);
+    result = ToIntegerWithTruncation(result);
   }
   return result;
 }

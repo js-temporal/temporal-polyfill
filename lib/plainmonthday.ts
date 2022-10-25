@@ -14,13 +14,13 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     calendarParam: Temporal.CalendarProtocol | string = ES.GetISO8601Calendar(),
     referenceISOYearParam = 1972
   ) {
-    const isoMonth = ES.ToIntegerThrowOnInfinity(isoMonthParam);
-    const isoDay = ES.ToIntegerThrowOnInfinity(isoDayParam);
+    const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);
+    const isoDay = ES.ToIntegerWithTruncation(isoDayParam);
     const calendar = ES.ToTemporalCalendar(calendarParam);
-    const referenceISOYear = ES.ToIntegerThrowOnInfinity(referenceISOYearParam);
+    const referenceISOYear = ES.ToIntegerWithTruncation(referenceISOYearParam);
 
     // Note: if the arguments are not passed,
-    //       ToIntegerThrowOnInfinity(undefined) will have returned 0, which will
+    //       ToIntegerWithTruncation(undefined) will have returned 0, which will
     //       be rejected by RejectISODate in CreateTemporalMonthDaySlots. This
     //       check exists only to improve the error message.
     if (arguments.length < 2) {

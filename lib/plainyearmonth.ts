@@ -14,13 +14,13 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     calendarParam: Params['constructor'][2] = ES.GetISO8601Calendar(),
     referenceISODayParam: Params['constructor'][3] = 1
   ) {
-    const isoYear = ES.ToIntegerThrowOnInfinity(isoYearParam);
-    const isoMonth = ES.ToIntegerThrowOnInfinity(isoMonthParam);
+    const isoYear = ES.ToIntegerWithTruncation(isoYearParam);
+    const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);
     const calendar = ES.ToTemporalCalendar(calendarParam);
-    const referenceISODay = ES.ToIntegerThrowOnInfinity(referenceISODayParam);
+    const referenceISODay = ES.ToIntegerWithTruncation(referenceISODayParam);
 
     // Note: if the arguments are not passed,
-    //       ToIntegerThrowOnInfinity(undefined) will have returned 0, which will
+    //       ToIntegerWithTruncation(undefined) will have returned 0, which will
     //       be rejected by RejectISODate in CreateTemporalYearMonthSlots. This
     //       check exists only to improve the error message.
     if (arguments.length < 2) {
