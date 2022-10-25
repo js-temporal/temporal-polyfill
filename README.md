@@ -7,7 +7,7 @@ The goal is to be ready for production use when the Temporal proposal reaches St
 We're eagerly welcoming to contributors who want to help build and maintain this polyfill.
 PRs are always welcome!
 
-Note that this polyfill is not affiliated with TC39. Links to other polyfills can be found [here](https://github.com/tc39/proposal-temporal/tree/main/#polyfill).
+Note that this polyfill is not affiliated with TC39. Links to other polyfills can be found [here](https://github.com/tc39/proposal-temporal/tree/main/#polyfills).
 
 This polyfill is compatible with Node.js 14 or later.
 
