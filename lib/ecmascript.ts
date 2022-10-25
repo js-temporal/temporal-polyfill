@@ -208,18 +208,15 @@ export function ToIntegerWithTruncation(value: unknown): number {
   return integer;
 }
 
-function ToPositiveInteger(valueParam: unknown, property?: string): number {
-  const value = ToIntegerOrInfinity(valueParam);
-  if (!NumberIsFinite(value)) {
-    throw new RangeError('infinity is out of range');
-  }
-  if (value < 1) {
+function ToPositiveIntegerWithTruncation(valueParam: unknown, property?: string): number {
+  const integer = ToIntegerWithTruncation(valueParam);
+  if (integer <= 0) {
     if (property !== undefined) {
       throw new RangeError(`property '${property}' cannot be a a number less than one`);
     }
     throw new RangeError('Cannot convert a number less than one to a positive integer');
   }
-  return value;
+  return integer;
 }
 
 export function ToIntegerWithoutRounding(valueParam: unknown): number {
@@ -265,9 +262,9 @@ export function ArrayPush<NewValue>(
 type BuiltinCastFunction = (v: unknown) => string | number;
 const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
   ['year', ToIntegerWithTruncation],
-  ['month', ToPositiveInteger],
+  ['month', ToPositiveIntegerWithTruncation],
   ['monthCode', ToString],
-  ['day', ToPositiveInteger],
+  ['day', ToPositiveIntegerWithTruncation],
   ['hour', ToIntegerWithTruncation],
   ['minute', ToIntegerWithTruncation],
   ['second', ToIntegerWithTruncation],
@@ -2147,7 +2144,7 @@ export function CalendarYear(calendar: Temporal.CalendarProtocol, dateLike: Cale
 
 export function CalendarMonth(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['month'][0]) {
   const result = calendar.month(dateLike);
-  return ToPositiveInteger(result);
+  return ToPositiveIntegerWithTruncation(result);
 }
 
 export function CalendarMonthCode(
@@ -2163,7 +2160,7 @@ export function CalendarMonthCode(
 
 export function CalendarDay(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['day'][0]) {
   const result = calendar.day(dateLike);
-  return ToPositiveInteger(result);
+  return ToPositiveIntegerWithTruncation(result);
 }
 
 export function CalendarEra(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
@@ -2186,49 +2183,49 @@ export function CalendarDayOfWeek(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['dayOfWeek'][0]
 ) {
-  return ToPositiveInteger(calendar.dayOfWeek(dateLike));
+  return ToPositiveIntegerWithTruncation(calendar.dayOfWeek(dateLike));
 }
 
 export function CalendarDayOfYear(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['dayOfYear'][0]
 ) {
-  return ToPositiveInteger(calendar.dayOfYear(dateLike));
+  return ToPositiveIntegerWithTruncation(calendar.dayOfYear(dateLike));
 }
 
 export function CalendarWeekOfYear(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['weekOfYear'][0]
 ) {
-  return ToPositiveInteger(calendar.weekOfYear(dateLike));
+  return ToPositiveIntegerWithTruncation(calendar.weekOfYear(dateLike));
 }
 
 export function CalendarDaysInWeek(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['daysInWeek'][0]
 ) {
-  return ToPositiveInteger(calendar.daysInWeek(dateLike));
+  return ToPositiveIntegerWithTruncation(calendar.daysInWeek(dateLike));
 }
 
 export function CalendarDaysInMonth(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['daysInMonth'][0]
 ) {
-  return ToPositiveInteger(calendar.daysInMonth(dateLike));
+  return ToPositiveIntegerWithTruncation(calendar.daysInMonth(dateLike));
 }
 
 export function CalendarDaysInYear(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['daysInYear'][0]
 ) {
-  return ToPositiveInteger(calendar.daysInYear(dateLike));
+  return ToPositiveIntegerWithTruncation(calendar.daysInYear(dateLike));
 }
 
 export function CalendarMonthsInYear(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['monthsInYear'][0]
 ) {
-  return ToPositiveInteger(calendar.monthsInYear(dateLike));
+  return ToPositiveIntegerWithTruncation(calendar.monthsInYear(dateLike));
 }
 
 export function CalendarInLeapYear(
