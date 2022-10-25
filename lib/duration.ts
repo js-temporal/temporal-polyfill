@@ -33,16 +33,16 @@ export class Duration implements Temporal.Duration {
     microsecondsParam: Params['constructor'][8] = 0,
     nanosecondsParam: Params['constructor'][9] = 0
   ) {
-    const years = ES.ToIntegerWithoutRounding(yearsParam);
-    const months = ES.ToIntegerWithoutRounding(monthsParam);
-    const weeks = ES.ToIntegerWithoutRounding(weeksParam);
-    const days = ES.ToIntegerWithoutRounding(daysParam);
-    const hours = ES.ToIntegerWithoutRounding(hoursParam);
-    const minutes = ES.ToIntegerWithoutRounding(minutesParam);
-    const seconds = ES.ToIntegerWithoutRounding(secondsParam);
-    const milliseconds = ES.ToIntegerWithoutRounding(millisecondsParam);
-    const microseconds = ES.ToIntegerWithoutRounding(microsecondsParam);
-    const nanoseconds = ES.ToIntegerWithoutRounding(nanosecondsParam);
+    const years = ES.ToIntegerIfIntegral(yearsParam);
+    const months = ES.ToIntegerIfIntegral(monthsParam);
+    const weeks = ES.ToIntegerIfIntegral(weeksParam);
+    const days = ES.ToIntegerIfIntegral(daysParam);
+    const hours = ES.ToIntegerIfIntegral(hoursParam);
+    const minutes = ES.ToIntegerIfIntegral(minutesParam);
+    const seconds = ES.ToIntegerIfIntegral(secondsParam);
+    const milliseconds = ES.ToIntegerIfIntegral(millisecondsParam);
+    const microseconds = ES.ToIntegerIfIntegral(microsecondsParam);
+    const nanoseconds = ES.ToIntegerIfIntegral(nanosecondsParam);
 
     ES.RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
 
