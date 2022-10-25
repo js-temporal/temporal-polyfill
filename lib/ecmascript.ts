@@ -219,16 +219,13 @@ function ToPositiveIntegerWithTruncation(valueParam: unknown, property?: string)
   return integer;
 }
 
-export function ToIntegerWithoutRounding(valueParam: unknown): number {
-  const value = ToNumber(valueParam);
-  if (NumberIsNaN(value)) return 0;
-  if (!NumberIsFinite(value)) {
-    throw new RangeError('infinity is out of range');
-  }
-  if (!IsIntegralNumber(value)) {
-    throw new RangeError(`unsupported fractional value ${value}`);
-  }
-  return ToIntegerOrInfinity(value); // ℝ(value) in spec text; converts -0 to 0
+export function ToIntegerIfIntegral(valueParam: unknown): number {
+  const number = ToNumber(valueParam);
+  if (NumberIsNaN(number) || number === 0) return 0;
+  if (!NumberIsFinite(number)) throw new RangeError('infinity is out of range');
+  if (!IsIntegralNumber(number)) throw new RangeError(`unsupported fractional value ${valueParam}`);
+  if (number === 0) return 0; // ℝ(value) in spec text; converts -0 to 0
+  return number;
 }
 
 function divmod(x: JSBI, y: JSBI): { quotient: JSBI; remainder: JSBI } {
@@ -271,16 +268,16 @@ const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
   ['millisecond', ToIntegerWithTruncation],
   ['microsecond', ToIntegerWithTruncation],
   ['nanosecond', ToIntegerWithTruncation],
-  ['years', ToIntegerWithoutRounding],
-  ['months', ToIntegerWithoutRounding],
-  ['weeks', ToIntegerWithoutRounding],
-  ['days', ToIntegerWithoutRounding],
-  ['hours', ToIntegerWithoutRounding],
-  ['minutes', ToIntegerWithoutRounding],
-  ['seconds', ToIntegerWithoutRounding],
-  ['milliseconds', ToIntegerWithoutRounding],
-  ['microseconds', ToIntegerWithoutRounding],
-  ['nanoseconds', ToIntegerWithoutRounding],
+  ['years', ToIntegerIfIntegral],
+  ['months', ToIntegerIfIntegral],
+  ['weeks', ToIntegerIfIntegral],
+  ['days', ToIntegerIfIntegral],
+  ['hours', ToIntegerIfIntegral],
+  ['minutes', ToIntegerIfIntegral],
+  ['seconds', ToIntegerIfIntegral],
+  ['milliseconds', ToIntegerIfIntegral],
+  ['microseconds', ToIntegerIfIntegral],
+  ['nanoseconds', ToIntegerIfIntegral],
   ['era', ToString],
   ['eraYear', ToIntegerOrInfinity],
   ['offset', ToString]
@@ -857,7 +854,7 @@ function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.Duration
     const value = temporalDurationLike[property];
     if (value !== undefined) {
       any = true;
-      result[property] = ToIntegerWithoutRounding(value);
+      result[property] = ToIntegerIfIntegral(value);
     }
   }
   if (!any) {
