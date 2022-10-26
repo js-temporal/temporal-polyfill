@@ -646,11 +646,11 @@ export function ParseTemporalDurationString(isoString: string) {
     throw new RangeError(`invalid duration: ${isoString}`);
   }
   const sign = match[1] === '-' || match[1] === '\u2212' ? -1 : 1;
-  const years = ToIntegerOrInfinity(match[2]) * sign;
-  const months = ToIntegerOrInfinity(match[3]) * sign;
-  const weeks = ToIntegerOrInfinity(match[4]) * sign;
-  const days = ToIntegerOrInfinity(match[5]) * sign;
-  const hours = ToIntegerOrInfinity(match[6]) * sign;
+  const years = ToIntegerWithTruncation(match[2]) * sign;
+  const months = ToIntegerWithTruncation(match[3]) * sign;
+  const weeks = ToIntegerWithTruncation(match[4]) * sign;
+  const days = ToIntegerWithTruncation(match[5]) * sign;
+  const hours = ToIntegerWithTruncation(match[6]) * sign;
   const fHours = match[7];
   const minutesStr = match[8];
   const fMinutes = match[9];
