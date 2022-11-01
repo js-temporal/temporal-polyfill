@@ -31,7 +31,6 @@ import type {
 
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
-const ArrayPrototypeSort = Array.prototype.sort;
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
 const ArraySort = Array.prototype.sort;
 const MathAbs = Math.abs;
@@ -2298,7 +2297,6 @@ class NonIsoCalendar implements CalendarImpl {
   ): Temporal.PlainDate {
     const cache = new OneObjectCache();
     const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as AnyTemporalKey[];
-    ArrayPrototypeSort.call(fieldNames);
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.calendarToIsoDate(fields, overflow, cache);
@@ -2313,7 +2311,6 @@ class NonIsoCalendar implements CalendarImpl {
   ): Temporal.PlainYearMonth {
     const cache = new OneObjectCache();
     const fieldNames = this.fields(['month', 'monthCode', 'year']) as AnyTemporalKey[];
-    ArrayPrototypeSort.call(fieldNames);
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.calendarToIsoDate({ ...fields, day: 1 }, overflow, cache);
@@ -2330,7 +2327,6 @@ class NonIsoCalendar implements CalendarImpl {
     // For lunisolar calendars, either `monthCode` or `year` must be provided
     // because `month` is ambiguous without a year or a code.
     const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as AnyTemporalKey[];
-    ArrayPrototypeSort.call(fieldNames);
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.monthDayFromFields(fields, overflow, cache);
