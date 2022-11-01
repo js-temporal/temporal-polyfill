@@ -2297,7 +2297,7 @@ class NonIsoCalendar implements CalendarImpl {
     calendar: Temporal.Calendar
   ): Temporal.PlainDate {
     const cache = new OneObjectCache();
-    const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as readonly AnyTemporalKey[];
+    const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as AnyTemporalKey[];
     ArrayPrototypeSort.call(fieldNames);
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const overflow = ES.ToTemporalOverflow(options);
@@ -2312,7 +2312,7 @@ class NonIsoCalendar implements CalendarImpl {
     calendar: Temporal.Calendar
   ): Temporal.PlainYearMonth {
     const cache = new OneObjectCache();
-    const fieldNames = this.fields(['month', 'monthCode', 'year']) as readonly AnyTemporalKey[];
+    const fieldNames = this.fields(['month', 'monthCode', 'year']) as AnyTemporalKey[];
     ArrayPrototypeSort.call(fieldNames);
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const overflow = ES.ToTemporalOverflow(options);
@@ -2329,7 +2329,7 @@ class NonIsoCalendar implements CalendarImpl {
     const cache = new OneObjectCache();
     // For lunisolar calendars, either `monthCode` or `year` must be provided
     // because `month` is ambiguous without a year or a code.
-    const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as readonly AnyTemporalKey[];
+    const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as AnyTemporalKey[];
     ArrayPrototypeSort.call(fieldNames);
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const overflow = ES.ToTemporalOverflow(options);

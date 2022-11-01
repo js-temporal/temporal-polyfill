@@ -21,7 +21,7 @@ import { DateTimeFormat } from './intl';
 import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS } from './ecmascript';
+import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS, uncheckedAssertWritableArray } from './ecmascript';
 
 export class ZonedDateTime implements Temporal.ZonedDateTime {
   constructor(
@@ -198,6 +198,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       'year'
     ] as const);
     const fieldNamesWithOffset = ES.ArrayPush(fieldNames, 'offset');
+    uncheckedAssertWritableArray(fieldNamesWithOffset);
     const props = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNamesWithOffset, 'partial');
 
     const options = ES.GetOptionsObject(optionsParam);
@@ -206,6 +207,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
 
     const timeZone = GetSlot(this, TIME_ZONE);
     const fieldNamesWithTimeZoneAndOffset = ES.ArrayPush(fieldNamesWithOffset, 'timeZone');
+    uncheckedAssertWritableArray(fieldNamesWithTimeZoneAndOffset);
     let fields = ES.PrepareTemporalFields(this, fieldNamesWithTimeZoneAndOffset, ['timeZone', 'offset']);
     fields = ES.CalendarMergeFields(calendar, fields, props);
     fields = ES.PrepareTemporalFields(fields, fieldNamesWithTimeZoneAndOffset, ['timeZone', 'offset']);
