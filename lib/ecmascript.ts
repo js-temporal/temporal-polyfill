@@ -1801,17 +1801,17 @@ export function ToTemporalZonedDateTime(
     const fieldNamesWithTzAndOffset = ArrayPush(fieldNames, 'timeZone', 'offset');
     const fields = PrepareTemporalFields(item, fieldNamesWithTzAndOffset, ['timeZone']);
     timeZone = ToTemporalTimeZone(fields.timeZone);
-    ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = InterpretTemporalDateTimeFields(
-      calendar,
-      fields,
-      options
-    ));
     offset = fields.offset;
     if (offset === undefined) {
       offsetBehaviour = 'wall';
     } else {
       offset = ToString(offset);
     }
+    ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = InterpretTemporalDateTimeFields(
+      calendar,
+      fields,
+      options
+    ));
   } else {
     ToTemporalOverflow(options); // validate and ignore
     let ianaName, z;
