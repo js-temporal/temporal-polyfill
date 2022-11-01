@@ -52,7 +52,6 @@ built-ins/Temporal/Now/zonedDateTime/timezone-wrong-type.js
 built-ins/Temporal/Now/zonedDateTimeISO/timezone-wrong-type.js
 built-ins/Temporal/PlainDate/compare/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainDate/from/argument-calendar-fields-undefined.js
-built-ins/Temporal/PlainDate/from/calendar-fields-custom.js
 built-ins/Temporal/PlainDate/from/order-of-operations.js
 built-ins/Temporal/PlainDate/prototype/dayOfWeek/validate-calendar-value.js
 built-ins/Temporal/PlainDate/prototype/dayOfYear/validate-calendar-value.js
@@ -128,7 +127,6 @@ built-ins/Temporal/PlainYearMonth/prototype/since/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/prototype/subtract/calendar-fields-undefined.js
 built-ins/Temporal/PlainYearMonth/prototype/subtract/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/prototype/toPlainDate/calendar-fields-undefined.js
-built-ins/Temporal/PlainYearMonth/prototype/toPlainDate/copies-merge-fields-object.js
 built-ins/Temporal/PlainYearMonth/prototype/until/calendar-fields-undefined.js
 built-ins/Temporal/PlainYearMonth/prototype/until/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/prototype/with/calendar-fields-undefined.js

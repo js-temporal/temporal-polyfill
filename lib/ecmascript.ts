@@ -119,18 +119,31 @@ const BUILTIN_CALENDAR_IDS = [
   'gregory'
 ];
 
-/*
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function */
+
+/**
  * uncheckedAssertNarrowedType forces TypeScript to change the type of the argument to the one given in
  * the type parameter. This should only be used to help TS understand when variables change types,
  * but TS can't or won't infer this automatically. They should be used sparingly, because
  * if used incorrectly can lead to difficult-to-diagnose problems.
- */
-/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function */
+ * */
 export function uncheckedAssertNarrowedType<T = unknown>(
   arg: unknown,
   justification: string
 ): asserts arg is T extends typeof arg ? T : never {}
+
+/**
+ * Casts a ReadonlyArray to a writable Array. This is typically needed in the
+ * case where an array of string literals is declared `as const` so that the
+ * elements get literal types instead of just `string`. But `as const` arrays
+ * are also readonly, which is bad in cases where you want to subsequently
+ * mutate the array, e.g. to sort it. This utility function will allow mutation
+ * of these `as const` arrays.
+ * */
+export function uncheckedAssertWritableArray<T>(arg: ReadonlyArray<T>): asserts arg is T[] {}
+
 /* eslint-enable */
+
 /**
  * In debug builds, this function verifies that the given argument "exists" (is not
  * null or undefined). This function becomes a no-op in the final bundles distributed via NPM.
@@ -1324,12 +1337,13 @@ export function PrepareTemporalFields<
   RequiredFields extends ReadonlyArray<FieldKeys> | FieldCompleteness
 >(
   bag: Partial<Record<FieldKeys, unknown>>,
-  fields: ReadonlyArray<FieldKeys>,
+  fields: Array<FieldKeys>,
   requiredFields: RequiredFields,
   { emptySourceErrorMessage }: FieldPrepareOptions = { emptySourceErrorMessage: 'no supported properties found' }
 ): PrepareTemporalFieldsReturn<FieldKeys, RequiredFields, Owner<FieldKeys>> {
   const result: Partial<Record<AnyTemporalKey, unknown>> = ObjectCreate(null);
   let any = false;
+  fields.sort();
   for (const property of fields) {
     let value = bag[property];
     if (value !== undefined) {
@@ -1381,8 +1395,9 @@ export function ToTemporalTimeRecord(
   bag: Partial<Record<keyof TimeRecord, string | number | undefined>>,
   completeness: FieldCompleteness = 'complete'
 ): Partial<TimeRecord> {
-  // NOTE: Field order here is important.
+  // NOTE: Field order is sorted to make the sort in PrepareTemporalFields more efficient.
   const fields = ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second'] as const;
+  uncheckedAssertWritableArray(fields);
   const partial = PrepareTemporalFields(bag, fields, 'partial', { emptySourceErrorMessage: 'invalid time-like' });
   const result: Partial<TimeRecord> = {};
   for (const field of fields) {
@@ -1791,6 +1806,7 @@ export function ToTemporalZonedDateTime(
       'year'
     ] as const);
     const fieldNamesWithTzAndOffset = ArrayPush(fieldNames, 'timeZone', 'offset');
+    uncheckedAssertWritableArray(fieldNamesWithTzAndOffset);
     const fields = PrepareTemporalFields(item, fieldNamesWithTzAndOffset, ['timeZone']);
     timeZone = ToTemporalTimeZone(fields.timeZone);
     offset = fields.offset;
@@ -2063,16 +2079,18 @@ export function GetISO8601Calendar() {
 
 // TODO: should (can?) we make this generic so the field names are checked
 // against the type that the calendar is a property of?
-export function CalendarFields<F extends Iterable<string>>(calendar: Temporal.CalendarProtocol, fieldNamesParam: F) {
-  let fieldNames = fieldNamesParam;
-  if (calendar.fields === undefined) return fieldNames;
-  fieldNames = calendar.fields(fieldNames) as F;
+export function CalendarFields<K extends AnyTemporalKey>(
+  calendar: Temporal.CalendarProtocol,
+  fieldNamesParam: ReadonlyArray<K>
+) {
+  if (calendar.fields === undefined) return [...fieldNamesParam]; // TODO: This copy will be removed in a later commit
+  const fieldNames = calendar.fields(fieldNamesParam);
   const result: string[] = [];
   for (const name of fieldNames) {
     if (typeof name !== 'string') throw new TypeError('bad return from calendar.fields()');
     ArrayPrototypePush.call(result, name);
   }
-  return result as unknown as F;
+  return result as K[];
 }
 
 export function CalendarMergeFields<Base extends Record<string, unknown>, ToAdd extends Record<string, unknown>>(
