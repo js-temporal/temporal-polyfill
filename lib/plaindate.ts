@@ -250,7 +250,7 @@ export class PlainDate implements Temporal.PlainDate {
       nanosecond = 0;
     if (temporalTime !== undefined) {
       temporalTime = ES.ToTemporalTime(temporalTime);
-      ES.uncheckedAssertNarrowedType<Temporal.ZonedDateTime>(
+      ES.uncheckedAssertNarrowedType<Temporal.PlainTime>(
         temporalTime,
         'ToTemporalTime above always returns a PlainTime'
       );

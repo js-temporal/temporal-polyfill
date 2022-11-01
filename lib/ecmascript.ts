@@ -144,6 +144,9 @@ export function uncheckedAssertWritableArray<T>(arg: ReadonlyArray<T>): asserts 
 
 /* eslint-enable */
 
+type ArrayElement<ArrayType> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
+type ArrayWithNewKeys<T, Keys> = Array<ArrayElement<T> | Keys>;
+
 /**
  * In debug builds, this function verifies that the given argument "exists" (is not
  * null or undefined). This function becomes a no-op in the final bundles distributed via NPM.
@@ -1159,6 +1162,8 @@ export function ToRelativeTemporalObject(options: {
       'second',
       'year'
     ] as const);
+    type FieldNamesWithTimeZoneAndOffset = ArrayWithNewKeys<typeof fieldNames, 'timeZone' | 'offset'>;
+    (fieldNames as FieldNamesWithTimeZoneAndOffset).push('timeZone', 'offset');
     const fields = PrepareTemporalFields(relativeTo, fieldNames, []);
     const dateOptions = ObjectCreate(null) as Temporal.AssignmentOptions;
     dateOptions.overflow = 'constrain';
@@ -1167,12 +1172,9 @@ export function ToRelativeTemporalObject(options: {
       fields,
       dateOptions
     ));
-    // The `offset` and `timeZone` properties only exist on ZonedDateTime (or
-    // ZonedDateTimeLike-property bags). The assertions below are used to avoid
-    // TS errors while not diverging runtime code from proposal-temporal.
-    offset = (relativeTo as Temporal.ZonedDateTimeLike).offset;
+    offset = fields.offset;
     if (offset === undefined) offsetBehaviour = 'wall';
-    timeZone = (relativeTo as Temporal.ZonedDateTimeLike).timeZone;
+    timeZone = fields.timeZone;
   } else {
     let ianaName, z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, ianaName, offset, z } =
@@ -1195,7 +1197,9 @@ export function ToRelativeTemporalObject(options: {
   }
   if (timeZone === undefined) return CreateTemporalDate(year, month, day, calendar);
   timeZone = ToTemporalTimeZone(timeZone);
-  const offsetNs = offsetBehaviour === 'option' ? ParseTimeZoneOffsetString(ToString(offset)) : 0;
+  // If offset is missing here, then offsetBehavior will never be be 'option'.
+  assertExists(offset);
+  const offsetNs = offsetBehaviour === 'option' ? ParseTimeZoneOffsetString(offset) : 0;
   const epochNanoseconds = InterpretISODateTimeOffset(
     year,
     month,
