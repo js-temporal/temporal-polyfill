@@ -927,7 +927,7 @@ export function ToShowCalendarOption(options: Temporal.ShowCalendarOption) {
   return GetOption(options, 'calendarName', ['auto', 'always', 'never', 'critical'], 'auto');
 }
 
-export function ToShowTimeZoneNameOption(options: Temporal.ZonedDateTimeToStringOptions) {
+export function ToTimeZoneNameOption(options: Temporal.ZonedDateTimeToStringOptions) {
   return GetOption(options, 'timeZoneName', ['auto', 'never', 'critical'], 'auto');
 }
 
@@ -2800,7 +2800,7 @@ export function TemporalZonedDateTimeToString(
   zdt: Temporal.ZonedDateTime,
   precision: ReturnType<typeof ToSecondsStringPrecision>['precision'],
   showCalendar: ReturnType<typeof ToShowCalendarOption> = 'auto',
-  showTimeZone: ReturnType<typeof ToShowTimeZoneNameOption> = 'auto',
+  showTimeZone: ReturnType<typeof ToTimeZoneNameOption> = 'auto',
   showOffset: ReturnType<typeof ToShowOffsetOption> = 'auto',
   options: ToStringOptions | undefined = undefined
 ) {
