@@ -923,7 +923,7 @@ export function ToTemporalOffset(
   return GetOption(options, 'offset', ['prefer', 'use', 'ignore', 'reject'], fallback);
 }
 
-export function ToShowCalendarOption(options: Temporal.ShowCalendarOption) {
+export function ToCalendarNameOption(options: Temporal.ShowCalendarOption) {
   return GetOption(options, 'calendarName', ['auto', 'always', 'never', 'critical'], 'auto');
 }
 
@@ -2719,7 +2719,7 @@ export function TemporalDateToString(
 export function TemporalDateTimeToString(
   dateTime: Temporal.PlainDateTime,
   precision: ReturnType<typeof ToSecondsStringPrecision>['precision'],
-  showCalendar: ReturnType<typeof ToShowCalendarOption> = 'auto',
+  showCalendar: ReturnType<typeof ToCalendarNameOption> = 'auto',
   options: ToStringOptions | undefined = undefined
 ) {
   let year = GetSlot(dateTime, ISO_YEAR);
@@ -2799,7 +2799,7 @@ export function TemporalYearMonthToString(
 export function TemporalZonedDateTimeToString(
   zdt: Temporal.ZonedDateTime,
   precision: ReturnType<typeof ToSecondsStringPrecision>['precision'],
-  showCalendar: ReturnType<typeof ToShowCalendarOption> = 'auto',
+  showCalendar: ReturnType<typeof ToCalendarNameOption> = 'auto',
   showTimeZone: ReturnType<typeof ToTimeZoneNameOption> = 'auto',
   showOffset: ReturnType<typeof ToShowOffsetOption> = 'auto',
   options: ToStringOptions | undefined = undefined
