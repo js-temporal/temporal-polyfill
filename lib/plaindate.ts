@@ -166,7 +166,7 @@ export class PlainDate implements Temporal.PlainDate {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
-    const showCalendar = ES.ToShowCalendarOption(options);
+    const showCalendar = ES.ToCalendarNameOption(options);
     return ES.TemporalDateToString(this, showCalendar);
   }
   toJSON(): Return['toJSON'] {
