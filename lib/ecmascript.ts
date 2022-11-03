@@ -4600,9 +4600,9 @@ export function DifferenceTemporalPlainTime(
   const sign = operation === 'since' ? -1 : 1;
   const other = ToTemporalTime(otherParam);
   const options = GetOptionsObject(optionsParam);
+  const smallestUnit = GetTemporalUnit(options, 'smallestUnit', 'time', 'nanosecond');
   let largestUnit = GetTemporalUnit(options, 'largestUnit', 'time', 'auto');
   if (largestUnit === 'auto') largestUnit = 'hour';
-  const smallestUnit = GetTemporalUnit(options, 'smallestUnit', 'time', 'nanosecond');
   if (LargerOfTwoTemporalUnits(largestUnit, smallestUnit) !== largestUnit) {
     throw new RangeError(`largestUnit ${largestUnit} cannot be smaller than smallestUnit ${smallestUnit}`);
   }
