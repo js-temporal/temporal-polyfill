@@ -180,12 +180,6 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     }
     ES.RejectObjectWithCalendarOrTimeZone(temporalZonedDateTimeLike);
 
-    // TODO: Reorder according to spec.
-    const options = ES.GetOptionsObject(optionsParam);
-    const disambiguation = ES.ToTemporalDisambiguation(options);
-    const offset = ES.ToTemporalOffset(options, 'prefer');
-
-    const timeZone = GetSlot(this, TIME_ZONE);
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, [
       'day',
@@ -199,12 +193,18 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       'second',
       'year'
     ] as const);
-    const fieldsWithOffset = ES.ArrayPush(fieldNames, 'offset');
-    const props = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldsWithOffset, 'partial');
-    const fieldsWithTimeZoneAndOffset = ES.ArrayPush(fieldsWithOffset, 'timeZone');
-    let fields = ES.PrepareTemporalFields(this, fieldsWithTimeZoneAndOffset, ['timeZone', 'offset']);
+    const fieldNamesWithOffset = ES.ArrayPush(fieldNames, 'offset');
+    const props = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNamesWithOffset, 'partial');
+
+    const options = ES.GetOptionsObject(optionsParam);
+    const disambiguation = ES.ToTemporalDisambiguation(options);
+    const offset = ES.ToTemporalOffset(options, 'prefer');
+
+    const timeZone = GetSlot(this, TIME_ZONE);
+    const fieldNamesWithTimeZoneAndOffset = ES.ArrayPush(fieldNamesWithOffset, 'timeZone');
+    let fields = ES.PrepareTemporalFields(this, fieldNamesWithTimeZoneAndOffset, ['timeZone', 'offset']);
     fields = ES.CalendarMergeFields(calendar, fields, props);
-    fields = ES.PrepareTemporalFields(fields, fieldsWithTimeZoneAndOffset, ['timeZone', 'offset']);
+    fields = ES.PrepareTemporalFields(fields, fieldNamesWithTimeZoneAndOffset, ['timeZone', 'offset']);
     let { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
       ES.InterpretTemporalDateTimeFields(calendar, fields, options);
     const offsetNs = ES.ParseTimeZoneOffsetString(fields.offset);
