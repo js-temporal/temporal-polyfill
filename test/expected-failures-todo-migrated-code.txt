@@ -1,12 +1,10 @@
 # Failures in this file will be fixed after migrating the latest polyfill changes
 # from proposal-temporal.
 
-built-ins/Temporal/Calendar/from/calendar-wrong-type.js
 built-ins/Temporal/Calendar/prototype/dateAdd/argument-calendar-fields-undefined.js
 built-ins/Temporal/Calendar/prototype/dateAdd/argument-string-date-with-utc-offset.js
 built-ins/Temporal/Calendar/prototype/dateAdd/order-of-operations.js
 built-ins/Temporal/Calendar/prototype/dateUntil/argument-calendar-fields-undefined.js
-built-ins/Temporal/Calendar/prototype/dateUntil/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Calendar/prototype/dateUntil/argument-string-date-with-utc-offset.js
 built-ins/Temporal/Calendar/prototype/dateUntil/order-of-operations.js
 built-ins/Temporal/Calendar/prototype/day/argument-calendar-fields-undefined.js
@@ -21,7 +19,6 @@ built-ins/Temporal/Calendar/prototype/daysInWeek/argument-calendar-fields-undefi
 built-ins/Temporal/Calendar/prototype/daysInWeek/argument-string-date-with-utc-offset.js
 built-ins/Temporal/Calendar/prototype/daysInYear/argument-calendar-fields-undefined.js
 built-ins/Temporal/Calendar/prototype/daysInYear/argument-string-date-with-utc-offset.js
-built-ins/Temporal/Calendar/prototype/id/custom-calendar.js
 built-ins/Temporal/Calendar/prototype/inLeapYear/argument-calendar-fields-undefined.js
 built-ins/Temporal/Calendar/prototype/inLeapYear/argument-string-date-with-utc-offset.js
 built-ins/Temporal/Calendar/prototype/mergeFields/non-string-properties.js
@@ -78,21 +75,17 @@ built-ins/Temporal/Duration/compare/order-of-operations.js
 built-ins/Temporal/Duration/compare/relativeto-propertybag-timezone-wrong-type.js
 built-ins/Temporal/Duration/prototype/add/order-of-operations.js
 built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-calendar-fields-undefined.js
-built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-timezone-wrong-type.js
 built-ins/Temporal/Duration/prototype/round/order-of-operations.js
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-calendar-fields-undefined.js
-built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-timezone-wrong-type.js
 built-ins/Temporal/Duration/prototype/subtract/order-of-operations.js
 built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-calendar-fields-undefined.js
-built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-timezone-wrong-type.js
 built-ins/Temporal/Duration/prototype/toString/fractionalseconddigits-non-integer.js
 built-ins/Temporal/Duration/prototype/toString/order-of-operations.js
 built-ins/Temporal/Duration/prototype/total/order-of-operations.js
 built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-calendar-fields-undefined.js
-built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-timezone-wrong-type.js
 built-ins/Temporal/Instant/compare/argument-string-date-with-utc-offset.js
 built-ins/Temporal/Instant/from/argument-string-date-with-utc-offset.js
@@ -102,23 +95,18 @@ built-ins/Temporal/Instant/prototype/since/order-of-operations.js
 built-ins/Temporal/Instant/prototype/toString/fractionalseconddigits-non-integer.js
 built-ins/Temporal/Instant/prototype/toString/order-of-operations.js
 built-ins/Temporal/Instant/prototype/toString/timezone-wrong-type.js
-built-ins/Temporal/Instant/prototype/toZonedDateTime/calendar-wrong-type.js
 built-ins/Temporal/Instant/prototype/toZonedDateTime/timezone-wrong-type.js
 built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/timezone-wrong-type.js
 built-ins/Temporal/Instant/prototype/until/argument-string-date-with-utc-offset.js
 built-ins/Temporal/Instant/prototype/until/order-of-operations.js
-built-ins/Temporal/Now/plainDate/calendar-wrong-type.js
 built-ins/Temporal/Now/plainDate/timezone-wrong-type.js
 built-ins/Temporal/Now/plainDateISO/timezone-wrong-type.js
-built-ins/Temporal/Now/plainDateTime/calendar-wrong-type.js
 built-ins/Temporal/Now/plainDateTime/timezone-wrong-type.js
 built-ins/Temporal/Now/plainDateTimeISO/timezone-wrong-type.js
 built-ins/Temporal/Now/plainTimeISO/timezone-wrong-type.js
-built-ins/Temporal/Now/zonedDateTime/calendar-wrong-type.js
 built-ins/Temporal/Now/zonedDateTime/timezone-wrong-type.js
 built-ins/Temporal/Now/zonedDateTimeISO/timezone-wrong-type.js
 built-ins/Temporal/PlainDate/compare/argument-calendar-fields-undefined.js
-built-ins/Temporal/PlainDate/compare/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDate/compare/argument-string-date-with-utc-offset.js
 built-ins/Temporal/PlainDate/from/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainDate/from/argument-string-date-with-utc-offset.js
@@ -147,7 +135,6 @@ built-ins/Temporal/PlainDate/prototype/until/order-of-operations.js
 built-ins/Temporal/PlainDate/prototype/weekOfYear/validate-calendar-value.js
 built-ins/Temporal/PlainDate/prototype/with/calendar-fields-undefined.js
 built-ins/Temporal/PlainDate/prototype/with/order-of-operations.js
-built-ins/Temporal/PlainDate/prototype/withCalendar/calendar-wrong-type.js
 built-ins/Temporal/PlainDate/prototype/year/validate-calendar-value.js
 built-ins/Temporal/PlainDate/prototype/yearOfWeek/basic.js
 built-ins/Temporal/PlainDate/prototype/yearOfWeek/branding.js
@@ -155,7 +142,6 @@ built-ins/Temporal/PlainDate/prototype/yearOfWeek/custom.js
 built-ins/Temporal/PlainDate/prototype/yearOfWeek/prop-desc.js
 built-ins/Temporal/PlainDate/prototype/yearOfWeek/validate-calendar-value.js
 built-ins/Temporal/PlainDateTime/compare/argument-calendar-fields-undefined.js
-built-ins/Temporal/PlainDateTime/compare/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDateTime/compare/argument-string-date-with-utc-offset.js
 built-ins/Temporal/PlainDateTime/from/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainDateTime/from/argument-string-date-with-utc-offset.js
@@ -183,7 +169,6 @@ built-ins/Temporal/PlainDateTime/prototype/until/order-of-operations.js
 built-ins/Temporal/PlainDateTime/prototype/weekOfYear/validate-calendar-value.js
 built-ins/Temporal/PlainDateTime/prototype/with/calendar-fields-undefined.js
 built-ins/Temporal/PlainDateTime/prototype/with/order-of-operations.js
-built-ins/Temporal/PlainDateTime/prototype/withCalendar/calendar-wrong-type.js
 built-ins/Temporal/PlainDateTime/prototype/withPlainDate/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainDateTime/prototype/withPlainDate/argument-string-date-with-utc-offset.js
 built-ins/Temporal/PlainDateTime/prototype/withPlainTime/argument-string-time-designator-required-for-disambiguation.js
@@ -216,7 +201,6 @@ built-ins/Temporal/PlainTime/prototype/toZonedDateTime/timezone-wrong-type.js
 built-ins/Temporal/PlainTime/prototype/until/argument-string-time-designator-required-for-disambiguation.js
 built-ins/Temporal/PlainTime/prototype/until/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/compare/argument-calendar-fields-undefined.js
-built-ins/Temporal/PlainYearMonth/compare/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainYearMonth/compare/argument-string-date-with-utc-offset.js
 built-ins/Temporal/PlainYearMonth/from/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainYearMonth/from/argument-string-date-with-utc-offset.js
@@ -250,13 +234,10 @@ built-ins/Temporal/TimeZone/prototype/getNextTransition/argument-string-date-wit
 built-ins/Temporal/TimeZone/prototype/getOffsetNanosecondsFor/argument-string-date-with-utc-offset.js
 built-ins/Temporal/TimeZone/prototype/getOffsetStringFor/argument-string-date-with-utc-offset.js
 built-ins/Temporal/TimeZone/prototype/getPlainDateTimeFor/argument-string-date-with-utc-offset.js
-built-ins/Temporal/TimeZone/prototype/getPlainDateTimeFor/calendar-wrong-type.js
 built-ins/Temporal/TimeZone/prototype/getPossibleInstantsFor/argument-calendar-fields-undefined.js
 built-ins/Temporal/TimeZone/prototype/getPossibleInstantsFor/argument-string-date-with-utc-offset.js
 built-ins/Temporal/TimeZone/prototype/getPreviousTransition/argument-string-date-with-utc-offset.js
-built-ins/Temporal/TimeZone/prototype/id/custom-timezone.js
 built-ins/Temporal/ZonedDateTime/compare/argument-calendar-fields-undefined.js
-built-ins/Temporal/ZonedDateTime/compare/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/compare/argument-propertybag-timezone-wrong-type.js
 built-ins/Temporal/ZonedDateTime/compare/argument-string-date-with-utc-offset.js
 built-ins/Temporal/ZonedDateTime/compare/order-of-operations.js
@@ -291,7 +272,6 @@ built-ins/Temporal/ZonedDateTime/prototype/weekOfYear/validate-calendar-value.js
 built-ins/Temporal/ZonedDateTime/prototype/with/calendar-fields-undefined.js
 built-ins/Temporal/ZonedDateTime/prototype/with/copies-merge-fields-object.js
 built-ins/Temporal/ZonedDateTime/prototype/with/order-of-operations.js
-built-ins/Temporal/ZonedDateTime/prototype/withCalendar/calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/prototype/withPlainDate/argument-calendar-fields-undefined.js
 built-ins/Temporal/ZonedDateTime/prototype/withPlainDate/argument-string-date-with-utc-offset.js
 built-ins/Temporal/ZonedDateTime/prototype/withPlainTime/argument-string-time-designator-required-for-disambiguation.js

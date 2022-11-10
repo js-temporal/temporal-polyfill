@@ -2235,9 +2235,17 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
   if (IsObject(calendarLike)) {
     if (IsTemporalCalendar(calendarLike)) return calendarLike;
     if (HasSlot(calendarLike, CALENDAR)) return GetSlot(calendarLike, CALENDAR);
+    if (IsTemporalTimeZone(calendarLike)) {
+      throw new RangeError('Expected a calendar object but received a Temporal.TimeZone');
+    }
     if (!('calendar' in calendarLike)) return calendarLike;
     calendarLike = (calendarLike as { calendar: Temporal.CalendarProtocol | string }).calendar;
-    if (IsObject(calendarLike) && !('calendar' in calendarLike)) return calendarLike;
+    if (IsObject(calendarLike)) {
+      if (IsTemporalTimeZone(calendarLike)) {
+        throw new RangeError('Expected a calendar object as the calendar property but received a Temporal.TimeZone');
+      }
+      if (!('calendar' in calendarLike)) return calendarLike;
+    }
   }
   const identifier = ToString(calendarLike);
   const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
