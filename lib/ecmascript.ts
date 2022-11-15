@@ -1804,8 +1804,6 @@ export function ToTemporalZonedDateTime(
     offset = fields.offset;
     if (offset === undefined) {
       offsetBehaviour = 'wall';
-    } else {
-      offset = ToString(offset);
     }
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = InterpretTemporalDateTimeFields(
       calendar,
