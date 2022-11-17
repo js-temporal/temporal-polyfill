@@ -169,15 +169,15 @@ export class PlainTime implements Temporal.PlainTime {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return ES.DifferenceTemporalPlainTime('since', this, other, options);
   }
-  round(optionsParam: Params['round'][0]): Return['round'] {
+  round(roundToParam: Params['round'][0]): Return['round'] {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
-    if (optionsParam === undefined) throw new TypeError('options parameter is required');
-    const options =
-      typeof optionsParam === 'string'
-        ? (ES.CreateOnePropObject('smallestUnit', optionsParam) as Exclude<typeof optionsParam, string>)
-        : ES.GetOptionsObject(optionsParam);
-    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', ES.REQUIRED);
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
+    if (roundToParam === undefined) throw new TypeError('options parameter is required');
+    const roundTo =
+      typeof roundToParam === 'string'
+        ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
+        : ES.GetOptionsObject(roundToParam);
+    const smallestUnit = ES.GetTemporalUnit(roundTo, 'smallestUnit', 'time', ES.REQUIRED);
+    const roundingMode = ES.ToTemporalRoundingMode(roundTo, 'halfExpand');
     const MAX_INCREMENTS = {
       hour: 24,
       minute: 60,
@@ -186,7 +186,8 @@ export class PlainTime implements Temporal.PlainTime {
       microsecond: 1000,
       nanosecond: 1000
     };
-    const roundingIncrement = ES.ToTemporalRoundingIncrement(options, MAX_INCREMENTS[smallestUnit], false);
+    let roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
+    roundingIncrement = ES.ValidateTemporalRoundingIncrement(roundingIncrement, MAX_INCREMENTS[smallestUnit], false);
 
     let hour = GetSlot(this, ISO_HOUR);
     let minute = GetSlot(this, ISO_MINUTE);
