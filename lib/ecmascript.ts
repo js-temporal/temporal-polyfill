@@ -935,16 +935,23 @@ export function ToShowOffsetOption(options: Temporal.ZonedDateTimeToStringOption
   return GetOption(options, 'offset', ['auto', 'never'], 'auto');
 }
 
-export function ToTemporalRoundingIncrement(
-  options: { roundingIncrement?: number },
-  dividend: number | undefined,
-  inclusive?: boolean
-) {
-  let maximum = Infinity;
-  if (dividend !== undefined) maximum = dividend;
-  if (!inclusive && dividend !== undefined) maximum = dividend > 1 ? dividend - 1 : 1;
-  const increment = GetNumberOption(options, 'roundingIncrement', 1, maximum, 1);
-  if (dividend !== undefined && dividend % increment !== 0) {
+export function ToTemporalRoundingIncrement(options: { roundingIncrement?: number }) {
+  let increment = options.roundingIncrement;
+  if (increment === undefined) return 1;
+  increment = ToNumber(increment);
+  if (!NumberIsFinite(increment) || increment < 1) {
+    throw new RangeError(`roundingIncrement must be at least 1 and finite, not ${increment}`);
+  }
+  return increment;
+}
+export function ValidateTemporalRoundingIncrement(incrementParam: number, dividend: number, inclusive: boolean) {
+  let maximum = dividend;
+  if (!inclusive) maximum = dividend > 1 ? dividend - 1 : 1;
+  if (incrementParam > maximum) {
+    throw new RangeError(`roundingIncrement must be at least 1 and less than ${maximum}, not ${incrementParam}`);
+  }
+  const increment = MathFloor(incrementParam);
+  if (dividend % increment !== 0) {
     throw new RangeError(`Rounding increment must divide evenly into ${dividend}`);
   }
   return increment;
@@ -979,7 +986,10 @@ export function ToTemporalDateTimeRoundingIncrement(
     microsecond: 1000,
     nanosecond: 1000
   };
-  return ToTemporalRoundingIncrement(options, maximumIncrements[smallestUnit], false);
+  const increment = ToTemporalRoundingIncrement(options);
+  const maximum = maximumIncrements[smallestUnit];
+  if (maximum == undefined) return MathFloor(increment);
+  return ValidateTemporalRoundingIncrement(increment, maximum, false);
 }
 
 export function ToSecondsStringPrecision(options: Temporal.ToStringPrecisionOptions): {
@@ -4442,7 +4452,12 @@ export function DifferenceTemporalInstant(
     microsecond: 1000,
     nanosecond: 1000
   };
-  const roundingIncrement = ToTemporalRoundingIncrement(options, MAX_DIFFERENCE_INCREMENTS[smallestUnit], false);
+  let roundingIncrement = ToTemporalRoundingIncrement(options);
+  roundingIncrement = ValidateTemporalRoundingIncrement(
+    roundingIncrement,
+    MAX_DIFFERENCE_INCREMENTS[smallestUnit],
+    false
+  );
   const onens = GetSlot(first, EPOCHNANOSECONDS);
   const twons = GetSlot(second, EPOCHNANOSECONDS);
   let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
@@ -4483,7 +4498,7 @@ export function DifferenceTemporalPlainDate(
   }
   let roundingMode = ToTemporalRoundingMode(options, 'trunc');
   if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
-  const roundingIncrement = ToTemporalRoundingIncrement(options, undefined, false);
+  const roundingIncrement = MathFloor(ToTemporalRoundingIncrement(options));
 
   const untilOptions = ObjectCreate(null) as typeof options;
   CopyDataProperties(untilOptions, options, []);
@@ -4633,7 +4648,8 @@ export function DifferenceTemporalPlainTime(
     microsecond: 1000,
     nanosecond: 1000
   };
-  const roundingIncrement = ToTemporalRoundingIncrement(options, MAX_INCREMENTS[smallestUnit], false);
+  let roundingIncrement = ToTemporalRoundingIncrement(options);
+  roundingIncrement = ValidateTemporalRoundingIncrement(roundingIncrement, MAX_INCREMENTS[smallestUnit], false);
   let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceTime(
     GetSlot(plainTime, ISO_HOUR),
     GetSlot(plainTime, ISO_MINUTE),
@@ -4722,7 +4738,7 @@ export function DifferenceTemporalPlainYearMonth(
   }
   let roundingMode = ToTemporalRoundingMode(options, 'trunc');
   if (operation === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
-  const roundingIncrement = ToTemporalRoundingIncrement(options, undefined, false);
+  const roundingIncrement = MathFloor(ToTemporalRoundingIncrement(options));
 
   const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
   const otherFields = PrepareTemporalFields(other, fieldNames, []);
@@ -6200,22 +6216,6 @@ function GetOption<
     return value;
   }
   return fallback;
-}
-
-function GetNumberOption<P extends StringlyTypedKeys<T>, T extends Partial<Record<P, unknown>>>(
-  options: T,
-  property: P,
-  minimum: number,
-  maximum: number,
-  fallback: number
-): number {
-  let valueRaw = options[property];
-  if (valueRaw === undefined) return fallback;
-  const value = ToNumber(valueRaw);
-  if (NumberIsNaN(value) || value < minimum || value > maximum) {
-    throw new RangeError(`${String(property)} must be between ${minimum} and ${maximum}, not ${value}`);
-  }
-  return MathFloor(value);
 }
 
 export function IsBuiltinCalendar(id: string): id is BuiltinCalendarId {

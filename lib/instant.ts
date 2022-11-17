@@ -69,15 +69,15 @@ export class Instant implements Temporal.Instant {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     return ES.DifferenceTemporalInstant('since', this, other, options);
   }
-  round(optionsParam: Params['round'][0]): Return['round'] {
+  round(roundToParam: Params['round'][0]): Return['round'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    if (optionsParam === undefined) throw new TypeError('options parameter is required');
-    const options =
-      typeof optionsParam === 'string'
-        ? (ES.CreateOnePropObject('smallestUnit', optionsParam) as Exclude<typeof optionsParam, string>)
-        : ES.GetOptionsObject(optionsParam);
-    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', ES.REQUIRED);
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
+    if (roundToParam === undefined) throw new TypeError('options parameter is required');
+    const roundTo =
+      typeof roundToParam === 'string'
+        ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
+        : ES.GetOptionsObject(roundToParam);
+    const smallestUnit = ES.GetTemporalUnit(roundTo, 'smallestUnit', 'time', ES.REQUIRED);
+    const roundingMode = ES.ToTemporalRoundingMode(roundTo, 'halfExpand');
     const maximumIncrements = {
       hour: 24,
       minute: 1440,
@@ -86,7 +86,8 @@ export class Instant implements Temporal.Instant {
       microsecond: 86400e6,
       nanosecond: 86400e9
     };
-    const roundingIncrement = ES.ToTemporalRoundingIncrement(options, maximumIncrements[smallestUnit], true);
+    let roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
+    roundingIncrement = ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximumIncrements[smallestUnit], true);
     const ns = GetSlot(this, EPOCHNANOSECONDS);
     const roundedNs = ES.RoundInstant(ns, roundingIncrement, smallestUnit, roundingMode);
     return new Instant(roundedNs);
