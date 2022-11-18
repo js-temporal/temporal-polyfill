@@ -186,8 +186,8 @@ export class PlainTime implements Temporal.PlainTime {
       microsecond: 1000,
       nanosecond: 1000
     };
-    let roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
-    roundingIncrement = ES.ValidateTemporalRoundingIncrement(roundingIncrement, MAX_INCREMENTS[smallestUnit], false);
+    const roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
+    ES.ValidateTemporalRoundingIncrement(roundingIncrement, MAX_INCREMENTS[smallestUnit], false);
 
     let hour = GetSlot(this, ISO_HOUR);
     let minute = GetSlot(this, ISO_MINUTE);

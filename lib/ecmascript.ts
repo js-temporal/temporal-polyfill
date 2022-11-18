@@ -975,19 +975,17 @@ export function ToTemporalRoundingIncrement(options: { roundingIncrement?: numbe
   if (!NumberIsFinite(increment) || increment < 1) {
     throw new RangeError(`roundingIncrement must be at least 1 and finite, not ${increment}`);
   }
-  return increment;
+  return MathTrunc(increment);
 }
-export function ValidateTemporalRoundingIncrement(incrementParam: number, dividend: number, inclusive: boolean) {
+export function ValidateTemporalRoundingIncrement(increment: number, dividend: number, inclusive: boolean) {
   let maximum = dividend;
   if (!inclusive) maximum = dividend > 1 ? dividend - 1 : 1;
-  if (incrementParam > maximum) {
-    throw new RangeError(`roundingIncrement must be at least 1 and less than ${maximum}, not ${incrementParam}`);
+  if (increment > maximum) {
+    throw new RangeError(`roundingIncrement must be at least 1 and less than ${maximum}, not ${increment}`);
   }
-  const increment = MathFloor(incrementParam);
   if (dividend % increment !== 0) {
     throw new RangeError(`Rounding increment must divide evenly into ${dividend}`);
   }
-  return increment;
 }
 
 export function ToFractionalSecondDigits(
@@ -4472,13 +4470,10 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
     microsecond: 1000,
     nanosecond: 1000
   };
-  let roundingIncrement = ToTemporalRoundingIncrement(options);
+  const roundingIncrement = ToTemporalRoundingIncrement(options);
   const maximum = MAX_DIFFERENCE_INCREMENTS[smallestUnit];
-  if (maximum === undefined) {
-    roundingIncrement = MathFloor(roundingIncrement);
-  } else {
-    roundingIncrement = ValidateTemporalRoundingIncrement(roundingIncrement, maximum, false);
-  }
+  if (maximum !== undefined) ValidateTemporalRoundingIncrement(roundingIncrement, maximum, false);
+
   return { largestUnit: largestUnit as T, roundingIncrement, roundingMode, smallestUnit: smallestUnit as T };
 }
 
