@@ -957,41 +957,6 @@ export function ValidateTemporalRoundingIncrement(incrementParam: number, divide
   return increment;
 }
 
-type TemporalDateTimeRoundingMaximumIncrements = {
-  year?: number;
-  month?: number;
-  week?: number;
-  day?: number;
-  hour?: number;
-  minute: number;
-  second: number;
-  millisecond: number;
-  microsecond: number;
-  nanosecond: number;
-};
-
-export function ToTemporalDateTimeRoundingIncrement(
-  options: { roundingIncrement?: number },
-  smallestUnit: keyof TemporalDateTimeRoundingMaximumIncrements
-) {
-  const maximumIncrements: TemporalDateTimeRoundingMaximumIncrements = {
-    year: undefined,
-    month: undefined,
-    week: undefined,
-    day: undefined,
-    hour: 24,
-    minute: 60,
-    second: 60,
-    millisecond: 1000,
-    microsecond: 1000,
-    nanosecond: 1000
-  };
-  const increment = ToTemporalRoundingIncrement(options);
-  const maximum = maximumIncrements[smallestUnit];
-  if (maximum == undefined) return MathFloor(increment);
-  return ValidateTemporalRoundingIncrement(increment, maximum, false);
-}
-
 export function ToSecondsStringPrecision(options: Temporal.ToStringPrecisionOptions): {
   precision: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 'auto' | 'minute';
   unit: UnitSmallerThanOrEqualTo<'minute'>;

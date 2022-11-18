@@ -20,6 +20,8 @@ import type { Temporal } from '..';
 import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
 import JSBI from 'jsbi';
 
+const MathFloor = Math.floor;
+
 export class Duration implements Temporal.Duration {
   constructor(
     yearsParam: Params['constructor'][0] = 0,
@@ -202,9 +204,9 @@ export class Duration implements Temporal.Duration {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return ES.AddDurationToOrSubtractDurationFromDuration('subtract', this, other, options);
   }
-  round(optionsParam: Params['round'][0]): Return['round'] {
+  round(roundToParam: Params['round'][0]): Return['round'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    if (optionsParam === undefined) throw new TypeError('options parameter is required');
+    if (roundToParam === undefined) throw new TypeError('options parameter is required');
     let years = GetSlot(this, YEARS);
     let months = GetSlot(this, MONTHS);
     let weeks = GetSlot(this, WEEKS);
@@ -228,18 +230,18 @@ export class Duration implements Temporal.Duration {
       microseconds,
       nanoseconds
     );
-    const options =
-      typeof optionsParam === 'string'
-        ? (ES.CreateOnePropObject('smallestUnit', optionsParam) as Exclude<typeof optionsParam, string>)
-        : ES.GetOptionsObject(optionsParam);
-    let smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'datetime', undefined);
+    const roundTo =
+      typeof roundToParam === 'string'
+        ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
+        : ES.GetOptionsObject(roundToParam);
+    let smallestUnit = ES.GetTemporalUnit(roundTo, 'smallestUnit', 'datetime', undefined);
     let smallestUnitPresent = true;
     if (!smallestUnit) {
       smallestUnitPresent = false;
       smallestUnit = 'nanosecond';
     }
     defaultLargestUnit = ES.LargerOfTwoTemporalUnits(defaultLargestUnit, smallestUnit);
-    let largestUnit = ES.GetTemporalUnit(options, 'largestUnit', 'datetime', undefined, ['auto']);
+    let largestUnit = ES.GetTemporalUnit(roundTo, 'largestUnit', 'datetime', undefined, ['auto']);
     let largestUnitPresent = true;
     if (!largestUnit) {
       largestUnitPresent = false;
@@ -252,9 +254,25 @@ export class Duration implements Temporal.Duration {
     if (ES.LargerOfTwoTemporalUnits(largestUnit, smallestUnit) !== largestUnit) {
       throw new RangeError(`largestUnit ${largestUnit} cannot be smaller than smallestUnit ${smallestUnit}`);
     }
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'halfExpand');
-    const roundingIncrement = ES.ToTemporalDateTimeRoundingIncrement(options, smallestUnit);
-    let relativeTo = ES.ToRelativeTemporalObject(options);
+    const roundingMode = ES.ToTemporalRoundingMode(roundTo, 'halfExpand');
+
+    const maximumIncrements = {
+      hour: 24,
+      minute: 60,
+      second: 60,
+      millisecond: 1000,
+      microsecond: 1000,
+      nanosecond: 1000
+    } as { [k in Temporal.DateTimeUnit]?: number };
+    let roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
+    const maximum = maximumIncrements[smallestUnit];
+    if (maximum == undefined) {
+      roundingIncrement = MathFloor(roundingIncrement);
+    } else {
+      roundingIncrement = ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximum, false);
+    }
+
+    let relativeTo = ES.ToRelativeTemporalObject(roundTo);
 
     ({ years, months, weeks, days } = ES.UnbalanceDurationRelative(
       years,
