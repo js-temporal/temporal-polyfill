@@ -201,16 +201,17 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     uncheckedAssertWritableArray(fieldNamesWithOffset);
     const props = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNamesWithOffset, 'partial');
 
-    const options = ES.GetOptionsObject(optionsParam);
-    const disambiguation = ES.ToTemporalDisambiguation(options);
-    const offset = ES.ToTemporalOffset(options, 'prefer');
-
     const timeZone = GetSlot(this, TIME_ZONE);
     const fieldNamesWithTimeZoneAndOffset = ES.ArrayPush(fieldNamesWithOffset, 'timeZone');
     uncheckedAssertWritableArray(fieldNamesWithTimeZoneAndOffset);
     let fields = ES.PrepareTemporalFields(this, fieldNamesWithTimeZoneAndOffset, ['timeZone', 'offset']);
     fields = ES.CalendarMergeFields(calendar, fields, props);
     fields = ES.PrepareTemporalFields(fields, fieldNamesWithTimeZoneAndOffset, ['timeZone', 'offset']);
+
+    const options = ES.GetOptionsObject(optionsParam);
+    const disambiguation = ES.ToTemporalDisambiguation(options);
+    const offset = ES.ToTemporalOffset(options, 'prefer');
+
     let { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
       ES.InterpretTemporalDateTimeFields(calendar, fields, options);
     const offsetNs = ES.ParseTimeZoneOffsetString(fields.offset);
@@ -340,8 +341,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
         : ES.GetOptionsObject(roundToParam);
-    const smallestUnit = ES.GetTemporalUnit(roundTo, 'smallestUnit', 'time', ES.REQUIRED, ['day']);
+    const roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
     const roundingMode = ES.ToTemporalRoundingMode(roundTo, 'halfExpand');
+    const smallestUnit = ES.GetTemporalUnit(roundTo, 'smallestUnit', 'time', ES.REQUIRED, ['day']);
     const maximumIncrements = {
       day: 1,
       hour: 24,
@@ -351,7 +353,6 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       microsecond: 1000,
       nanosecond: 1000
     };
-    const roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
     ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximumIncrements[smallestUnit], false);
 
     // first, round the underlying DateTime fields
@@ -432,14 +433,14 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
+    const showCalendar = ES.ToCalendarNameOption(options);
     const digits = ES.ToFractionalSecondDigits(options);
+    const showOffset = ES.ToShowOffsetOption(options);
+    const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
     const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
-    const { precision, unit, increment } = ES.ToSecondsStringPrecision(smallestUnit, digits);
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
-    const showCalendar = ES.ToCalendarNameOption(options);
     const showTimeZone = ES.ToTimeZoneNameOption(options);
-    const showOffset = ES.ToShowOffsetOption(options);
+    const { precision, unit, increment } = ES.ToSecondsStringPrecision(smallestUnit, digits);
     return ES.TemporalZonedDateTimeToString(this, precision, showCalendar, showTimeZone, showOffset, {
       unit,
       increment,
@@ -534,9 +535,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
     if (ES.IsTemporalZonedDateTime(item)) {
-      ES.ToTemporalOverflow(options); // validate and ignore
-      ES.ToTemporalDisambiguation(options);
+      ES.ToTemporalDisambiguation(options); // validate and ignore
       ES.ToTemporalOffset(options, 'reject');
+      ES.ToTemporalOverflow(options);
       return ES.CreateTemporalZonedDateTime(
         GetSlot(item, EPOCHNANOSECONDS),
         GetSlot(item, TIME_ZONE),
