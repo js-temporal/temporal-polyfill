@@ -401,8 +401,16 @@ export class Duration implements Temporal.Duration {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
-    const { precision, unit, increment } = ES.ToSecondsStringPrecision(options);
-    if (precision === 'minute') throw new RangeError('smallestUnit must not be "minute"');
+    const digits = ES.ToFractionalSecondDigits(options);
+    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', undefined);
+    if (smallestUnit === 'hour' || smallestUnit === 'minute') {
+      throw new RangeError('smallestUnit must be a time unit other than "hours" or "minutes"');
+    }
+    const { precision, unit, increment } = ES.ToSecondsStringPrecision(smallestUnit, digits);
+    ES.uncheckedAssertNarrowedType<Exclude<typeof precision, 'minute'>>(
+      precision,
+      'Precision cannot be "minute" because of RangeError above'
+    );
     const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
     return ES.TemporalDurationToString(this, precision, { unit, increment, roundingMode });
   }

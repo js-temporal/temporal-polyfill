@@ -373,7 +373,10 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
-    const { precision, unit, increment } = ES.ToSecondsStringPrecision(options);
+    const digits = ES.ToFractionalSecondDigits(options);
+    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', undefined);
+    if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
+    const { precision, unit, increment } = ES.ToSecondsStringPrecision(smallestUnit, digits);
     const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
     const showCalendar = ES.ToCalendarNameOption(options);
     return ES.TemporalDateTimeToString(this, precision, showCalendar, { unit, increment, roundingMode });
