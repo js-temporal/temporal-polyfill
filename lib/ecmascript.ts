@@ -1790,6 +1790,8 @@ export function ToTemporalZonedDateTime(
     timeZone,
     offset: string | undefined,
     calendar: string | Temporal.CalendarProtocol | undefined;
+  let disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>;
+  let offsetOpt: NonNullable<Temporal.OffsetDisambiguationOptions['offset']>;
   let matchMinute = false;
   let offsetBehaviour: OffsetBehaviour = 'option';
   if (IsObject(item)) {
@@ -1815,13 +1817,14 @@ export function ToTemporalZonedDateTime(
     if (offset === undefined) {
       offsetBehaviour = 'wall';
     }
+    disambiguation = ToTemporalDisambiguation(options);
+    offsetOpt = ToTemporalOffset(options, 'reject');
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = InterpretTemporalDateTimeFields(
       calendar,
       fields,
       options
     ));
   } else {
-    ToTemporalOverflow(options); // validate and ignore
     let ianaName, z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, ianaName, offset, z, calendar } =
       ParseTemporalZonedDateTimeString(ToString(item)));
@@ -1836,13 +1839,14 @@ export function ToTemporalZonedDateTime(
     if (!calendar) calendar = GetISO8601Calendar();
     calendar = ToTemporalCalendar(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
+    disambiguation = ToTemporalDisambiguation(options);
+    offsetOpt = ToTemporalOffset(options, 'reject');
+    ToTemporalOverflow(options); // validate and ignore
   }
   let offsetNs = 0;
   // The code above guarantees that if offsetBehaviour === 'option', then
   // `offset` is not undefined.
   if (offsetBehaviour === 'option') offsetNs = ParseTimeZoneOffsetString(offset as string);
-  const disambiguation = ToTemporalDisambiguation(options);
-  const offsetOpt = ToTemporalOffset(options, 'reject');
   const epochNanoseconds = InterpretISODateTimeOffset(
     year,
     month,
@@ -4447,21 +4451,26 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
     return allowed;
   }, [] as (Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit>)[]);
 
-  const smallestUnit = GetTemporalUnit(options, 'smallestUnit', group, fallbackSmallest);
-  if (disallowed.includes(smallestUnit)) {
-    throw new RangeError(`smallestUnit must be one of ${ALLOWED_UNITS.join(', ')}, not ${smallestUnit}`);
-  }
-  const defaultLargestUnit = LargerOfTwoTemporalUnits(smallestLargestDefaultUnit, smallestUnit);
   let largestUnit = GetTemporalUnit(options, 'largestUnit', group, 'auto');
   if (disallowed.includes(largestUnit)) {
     throw new RangeError(`largestUnit must be one of ${ALLOWED_UNITS.join(', ')}, not ${largestUnit}`);
   }
+
+  const roundingIncrement = ToTemporalRoundingIncrement(options);
+
+  let roundingMode = ToTemporalRoundingMode(options, 'trunc');
+  if (op === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
+
+  const smallestUnit = GetTemporalUnit(options, 'smallestUnit', group, fallbackSmallest);
+  if (disallowed.includes(smallestUnit)) {
+    throw new RangeError(`smallestUnit must be one of ${ALLOWED_UNITS.join(', ')}, not ${smallestUnit}`);
+  }
+
+  const defaultLargestUnit = LargerOfTwoTemporalUnits(smallestLargestDefaultUnit, smallestUnit);
   if (largestUnit === 'auto') largestUnit = defaultLargestUnit;
   if (LargerOfTwoTemporalUnits(largestUnit, smallestUnit) !== largestUnit) {
     throw new RangeError(`largestUnit ${largestUnit} cannot be smaller than smallestUnit ${smallestUnit}`);
   }
-  let roundingMode = ToTemporalRoundingMode(options, 'trunc');
-  if (op === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
   const MAX_DIFFERENCE_INCREMENTS: { [k in Temporal.DateTimeUnit]?: number } = {
     hour: 24,
     minute: 60,
@@ -4470,7 +4479,6 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
     microsecond: 1000,
     nanosecond: 1000
   };
-  const roundingIncrement = ToTemporalRoundingIncrement(options);
   const maximum = MAX_DIFFERENCE_INCREMENTS[smallestUnit];
   if (maximum !== undefined) ValidateTemporalRoundingIncrement(roundingIncrement, maximum, false);
 
