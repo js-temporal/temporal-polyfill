@@ -351,8 +351,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       microsecond: 1000,
       nanosecond: 1000
     };
-    let roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
-    roundingIncrement = ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximumIncrements[smallestUnit], false);
+    const roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
+    ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximumIncrements[smallestUnit], false);
 
     // first, round the underlying DateTime fields
     const dt = dateTime(this);

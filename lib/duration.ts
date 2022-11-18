@@ -20,8 +20,6 @@ import type { Temporal } from '..';
 import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
 import JSBI from 'jsbi';
 
-const MathFloor = Math.floor;
-
 export class Duration implements Temporal.Duration {
   constructor(
     yearsParam: Params['constructor'][0] = 0,
@@ -266,12 +264,7 @@ export class Duration implements Temporal.Duration {
     } as { [k in Temporal.DateTimeUnit]?: number };
     let roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
     const maximum = maximumIncrements[smallestUnit];
-    if (maximum == undefined) {
-      roundingIncrement = MathFloor(roundingIncrement);
-    } else {
-      roundingIncrement = ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximum, false);
-    }
-
+    if (maximum !== undefined) ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximum, false);
     let relativeTo = ES.ToRelativeTemporalObject(roundTo);
 
     ({ years, months, weeks, days } = ES.UnbalanceDurationRelative(
