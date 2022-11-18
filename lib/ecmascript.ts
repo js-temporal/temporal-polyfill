@@ -990,23 +990,32 @@ export function ValidateTemporalRoundingIncrement(incrementParam: number, divide
   return increment;
 }
 
-export function ToSecondsStringPrecision(options: Temporal.ToStringPrecisionOptions): {
-  precision: 0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9 | 'auto' | 'minute';
+export function ToFractionalSecondDigits(
+  normalizedOptions: Temporal.ToStringPrecisionOptions
+): Temporal.ToStringPrecisionOptions['fractionalSecondDigits'] {
+  const digitsValue = normalizedOptions.fractionalSecondDigits;
+  if (digitsValue === undefined) return 'auto';
+  if (typeof digitsValue !== 'number') {
+    if (ToString(digitsValue) !== 'auto') {
+      throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digitsValue}`);
+    }
+    return 'auto';
+  }
+  const digitCount = MathFloor(digitsValue);
+  if (!NumberIsFinite(digitCount) || digitCount < 0 || digitCount > 9) {
+    throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digitsValue}`);
+  }
+  return digitCount as Exclude<Temporal.ToStringPrecisionOptions['fractionalSecondDigits'], 'auto'>;
+}
+
+export function ToSecondsStringPrecision(
+  smallestUnit: Temporal.ToStringPrecisionOptions['smallestUnit'],
+  precision: Temporal.ToStringPrecisionOptions['fractionalSecondDigits']
+): {
+  precision: Temporal.ToStringPrecisionOptions['fractionalSecondDigits'] | 'minute';
   unit: UnitSmallerThanOrEqualTo<'minute'>;
   increment: number;
 } {
-  const smallestUnit = GetTemporalUnit(options, 'smallestUnit', 'time', undefined);
-  if (smallestUnit === 'hour') {
-    const ALLOWED_UNITS = SINGULAR_PLURAL_UNITS.reduce((allowed, [p, s, c]) => {
-      // Weirdly, local type inference seems to understand the types of s and p, but tsc still complains.
-      // Maybe this is fixed in later TS versions?
-      if (c === 'time' && s !== 'hour') {
-        allowed.push(s as Temporal.TimeUnit, p as Temporal.PluralUnit<Temporal.TimeUnit>);
-      }
-      return allowed;
-    }, [] as Array<Temporal.TimeUnit | Temporal.PluralUnit<Temporal.TimeUnit>>);
-    throw new RangeError(`smallestUnit must be one of ${ALLOWED_UNITS.join(', ')}, not ${smallestUnit}`);
-  }
   switch (smallestUnit) {
     case 'minute':
       return { precision: 'minute', unit: 'minute', increment: 1 };
@@ -1020,18 +1029,9 @@ export function ToSecondsStringPrecision(options: Temporal.ToStringPrecisionOpti
       return { precision: 9, unit: 'nanosecond', increment: 1 };
     default: // fall through if option not given
   }
-  let digits = options.fractionalSecondDigits;
-  if (digits === undefined) digits = 'auto';
-  if (typeof digits !== 'number') {
-    const stringDigits = ToString(digits);
-    if (stringDigits === 'auto') return { precision: 'auto', unit: 'nanosecond', increment: 1 };
-    throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${stringDigits}`);
-  }
-  const precision = MathTrunc(digits);
-  if (!NumberIsFinite(precision) || precision < 0 || precision > 9) {
-    throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digits}`);
-  }
   switch (precision) {
+    case 'auto':
+      return { precision, unit: 'nanosecond', increment: 1 };
     case 0:
       return { precision, unit: 'second', increment: 1 };
     case 1:
@@ -1047,7 +1047,7 @@ export function ToSecondsStringPrecision(options: Temporal.ToStringPrecisionOpti
     case 9:
       return { precision, unit: 'nanosecond', increment: 10 ** (9 - precision) };
     default:
-      throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digits}`);
+      throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${precision}`);
   }
 }
 

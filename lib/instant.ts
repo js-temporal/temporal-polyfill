@@ -104,8 +104,10 @@ export class Instant implements Temporal.Instant {
     const options = ES.GetOptionsObject(optionsParam);
     let timeZone = options.timeZone;
     if (timeZone !== undefined) timeZone = ES.ToTemporalTimeZone(timeZone);
-    // Although TS doesn't acknowledge it, below here `timeZone` is a Temporal.TimeZoneProtocol
-    const { precision, unit, increment } = ES.ToSecondsStringPrecision(options);
+    const digits = ES.ToFractionalSecondDigits(options);
+    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', undefined);
+    if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
+    const { precision, unit, increment } = ES.ToSecondsStringPrecision(smallestUnit, digits);
     const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
     const ns = GetSlot(this, EPOCHNANOSECONDS);
     const roundedNs = ES.RoundInstant(ns, increment, unit, roundingMode);
