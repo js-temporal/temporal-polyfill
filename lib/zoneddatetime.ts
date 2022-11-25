@@ -182,7 +182,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!ES.IsObject(temporalZonedDateTimeLike)) {
       throw new TypeError('invalid zoned-date-time-like');
     }
-    ES.RejectObjectWithCalendarOrTimeZone(temporalZonedDateTimeLike);
+    ES.RejectTemporalLikeObject(temporalZonedDateTimeLike);
     const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);

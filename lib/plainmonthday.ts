@@ -40,7 +40,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     if (!ES.IsObject(temporalMonthDayLike)) {
       throw new TypeError('invalid argument');
     }
-    ES.RejectObjectWithCalendarOrTimeZone(temporalMonthDayLike);
+    ES.RejectTemporalLikeObject(temporalMonthDayLike);
     const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);

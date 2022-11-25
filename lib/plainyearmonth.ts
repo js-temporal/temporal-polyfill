@@ -66,7 +66,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     if (!ES.IsObject(temporalYearMonthLike)) {
       throw new TypeError('invalid argument');
     }
-    ES.RejectObjectWithCalendarOrTimeZone(temporalYearMonthLike);
+    ES.RejectTemporalLikeObject(temporalYearMonthLike);
     const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);

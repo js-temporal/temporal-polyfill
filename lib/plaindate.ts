@@ -101,7 +101,7 @@ export class PlainDate implements Temporal.PlainDate {
     if (!ES.IsObject(temporalDateLike)) {
       throw new TypeError('invalid argument');
     }
-    ES.RejectObjectWithCalendarOrTimeZone(temporalDateLike);
+    ES.RejectTemporalLikeObject(temporalDateLike);
     const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);

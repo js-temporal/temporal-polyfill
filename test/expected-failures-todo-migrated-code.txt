@@ -182,7 +182,6 @@ built-ins/Temporal/PlainDate/prototype/since/calendar-mismatch.js
 built-ins/Temporal/PlainDate/prototype/since/order-of-operations.js
 built-ins/Temporal/PlainDate/prototype/subtract/builtin-calendar-no-observable-calls.js
 built-ins/Temporal/PlainDate/prototype/subtract/order-of-operations.js
-built-ins/Temporal/PlainDate/prototype/toPlainDateTime/argument-string-calendar-annotation.js
 built-ins/Temporal/PlainDate/prototype/toPlainDateTime/custom.js
 built-ins/Temporal/PlainDate/prototype/toPlainMonthDay/basic.js
 built-ins/Temporal/PlainDate/prototype/toPlainMonthDay/builtin-calendar-no-observable-calls.js
@@ -196,7 +195,6 @@ built-ins/Temporal/PlainDate/prototype/toString/calendarname-undefined.js
 built-ins/Temporal/PlainDate/prototype/toString/calendarname-wrong-type.js
 built-ins/Temporal/PlainDate/prototype/toString/options-undefined.js
 built-ins/Temporal/PlainDate/prototype/toString/order-of-operations.js
-built-ins/Temporal/PlainDate/prototype/toZonedDateTime/argument-string-calendar-annotation.js
 built-ins/Temporal/PlainDate/prototype/toZonedDateTime/calendar.js
 built-ins/Temporal/PlainDate/prototype/toZonedDateTime/timezone-case-insensitive.js
 built-ins/Temporal/PlainDate/prototype/toZonedDateTime/timezone-getpossibleinstantsfor.js
@@ -302,7 +300,6 @@ built-ins/Temporal/PlainDateTime/prototype/withPlainDate/argument-plaindate-cale
 built-ins/Temporal/PlainDateTime/prototype/withPlainDate/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDateTime/prototype/withPlainDate/argument-string-iso-calendar.js
 built-ins/Temporal/PlainDateTime/prototype/withPlainDate/calendar-temporal-object.js
-built-ins/Temporal/PlainDateTime/prototype/withPlainTime/argument-string-calendar-annotation.js
 built-ins/Temporal/PlainDateTime/prototype/year/builtin-calendar-no-observable-calls.js
 built-ins/Temporal/PlainDateTime/prototype/yearOfWeek/builtin-calendar-no-observable-calls.js
 built-ins/Temporal/PlainMonthDay/basic.js
@@ -345,12 +342,6 @@ built-ins/Temporal/PlainMonthDay/prototype/toString/order-of-operations.js
 built-ins/Temporal/PlainMonthDay/prototype/toString/year-format.js
 built-ins/Temporal/PlainMonthDay/prototype/with/builtin-calendar-no-observable-calls.js
 built-ins/Temporal/PlainMonthDay/prototype/with/order-of-operations.js
-built-ins/Temporal/PlainTime/from/argument-string-calendar-annotation.js
-built-ins/Temporal/PlainTime/from/order-of-operations.js
-built-ins/Temporal/PlainTime/prototype/equals/argument-string-calendar-annotation.js
-built-ins/Temporal/PlainTime/prototype/getISOFields/field-traversal-order.js
-built-ins/Temporal/PlainTime/prototype/since/argument-string-calendar-annotation.js
-built-ins/Temporal/PlainTime/prototype/since/order-of-operations.js
 built-ins/Temporal/PlainTime/prototype/toPlainDateTime/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainTime/prototype/toPlainDateTime/calendar-temporal-object.js
 built-ins/Temporal/PlainTime/prototype/toZonedDateTime/argument-propertybag-calendar-wrong-type.js
@@ -361,8 +352,6 @@ built-ins/Temporal/PlainTime/prototype/toZonedDateTime/timezone-string-datetime.
 built-ins/Temporal/PlainTime/prototype/toZonedDateTime/timezone-string-leap-second.js
 built-ins/Temporal/PlainTime/prototype/toZonedDateTime/timezone-string-multiple-offsets.js
 built-ins/Temporal/PlainTime/prototype/toZonedDateTime/timezone-string.js
-built-ins/Temporal/PlainTime/prototype/until/argument-string-calendar-annotation.js
-built-ins/Temporal/PlainTime/prototype/until/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/calendar-case-insensitive.js
 built-ins/Temporal/PlainYearMonth/calendar-number.js
 built-ins/Temporal/PlainYearMonth/calendar-string.js
@@ -557,7 +546,6 @@ built-ins/Temporal/ZonedDateTime/prototype/withCalendar/subclassing-ignored.js
 built-ins/Temporal/ZonedDateTime/prototype/withPlainDate/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/prototype/withPlainDate/builtin-timezone-no-observable-calls.js
 built-ins/Temporal/ZonedDateTime/prototype/withPlainDate/calendar-temporal-object.js
-built-ins/Temporal/ZonedDateTime/prototype/withPlainTime/argument-string-calendar-annotation.js
 built-ins/Temporal/ZonedDateTime/prototype/withPlainTime/builtin-timezone-no-observable-calls.js
 built-ins/Temporal/ZonedDateTime/prototype/withTimeZone/timezone-case-insensitive.js
 built-ins/Temporal/ZonedDateTime/prototype/withTimeZone/timezone-string-datetime.js
