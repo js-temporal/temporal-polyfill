@@ -432,9 +432,12 @@ export function IsTemporalMonthDay(item: unknown): item is Temporal.PlainMonthDa
 export function IsTemporalZonedDateTime(item: unknown): item is Temporal.ZonedDateTime {
   return HasSlot(item, EPOCHNANOSECONDS, TIME_ZONE, CALENDAR);
 }
-export function RejectObjectWithCalendarOrTimeZone(item: AnyTemporalLikeType) {
+export function RejectTemporalLikeObject(item: AnyTemporalLikeType) {
   if (HasSlot(item, CALENDAR) || HasSlot(item, TIME_ZONE)) {
     throw new TypeError('with() does not support a calendar or timeZone property');
+  }
+  if (IsTemporalTime(item)) {
+    throw new TypeError('with() does not accept Temporal.PlainTime, use withPlainTime() instead');
   }
   if ((item as { calendar: unknown }).calendar !== undefined) {
     throw new TypeError('with() does not support a calendar property');
@@ -560,7 +563,7 @@ export function ParseTemporalDateString(isoString: string) {
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalTimeString(isoString: string) {
   const match = PARSE.time.exec(isoString);
-  let hour, minute, second, millisecond, microsecond, nanosecond, annotations, calendar;
+  let hour, minute, second, millisecond, microsecond, nanosecond, annotations;
   if (match) {
     hour = ToIntegerOrInfinity(match[1]);
     minute = ToIntegerOrInfinity(match[2] || match[5]);
@@ -572,23 +575,20 @@ export function ParseTemporalTimeString(isoString: string) {
     nanosecond = ToIntegerOrInfinity(fraction.slice(6, 9));
     annotations = match[14];
     for (const [, critical, key, value] of annotations.matchAll(PARSE.annotation)) {
-      if (key === 'u-ca') {
-        if (calendar === undefined) calendar = value;
-      } else if (critical === '!') {
+      if (key !== 'u-ca' && critical === '!') {
         throw new RangeError(`Unrecognized annotation: !${key}=${value}`);
       }
     }
     if (match[8]) throw new RangeError('Z designator not supported for PlainTime');
   } else {
     let z, hasTime;
-    ({ hasTime, hour, minute, second, millisecond, microsecond, nanosecond, calendar, z } =
-      ParseISODateTime(isoString));
+    ({ hasTime, hour, minute, second, millisecond, microsecond, nanosecond, z } = ParseISODateTime(isoString));
     if (!hasTime) throw new RangeError(`time is missing in string: ${isoString}`);
     if (z) throw new RangeError('Z designator not supported for PlainTime');
   }
   // if it's a date-time string, OK
   if (/[tT ][0-9][0-9]/.test(isoString)) {
-    return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
+    return { hour, minute, second, millisecond, microsecond, nanosecond };
   }
   try {
     const { month, day } = ParseTemporalMonthDayString(isoString);
@@ -598,7 +598,7 @@ export function ParseTemporalTimeString(isoString: string) {
       const { year, month } = ParseTemporalYearMonthString(isoString);
       RejectISODate(year, month, 1);
     } catch {
-      return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
+      return { hour, minute, second, millisecond, microsecond, nanosecond };
     }
   }
   throw new RangeError(`invalid ISO 8601 time-only string ${isoString}; may need a T prefix`);
@@ -1621,7 +1621,7 @@ export function ToTemporalTime(
   overflow: NonNullable<PlainTimeParams['from'][1]>['overflow'] = 'constrain'
 ) {
   let item = itemParam;
-  let hour, minute, second, millisecond, microsecond, nanosecond, calendar;
+  let hour, minute, second, millisecond, microsecond, nanosecond;
   if (IsObject(item)) {
     if (IsTemporalTime(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
@@ -1638,10 +1638,6 @@ export function ToTemporalTime(
         GetSlot(item, ISO_NANOSECOND)
       );
     }
-    calendar = GetTemporalCalendarWithISODefault(item);
-    if (ToString(calendar) !== 'iso8601') {
-      throw new RangeError('PlainTime can only have iso8601 calendar');
-    }
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = ToTemporalTimeRecord(item));
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = RegulateTime(
       hour,
@@ -1653,13 +1649,8 @@ export function ToTemporalTime(
       overflow
     ));
   } else {
-    ({ hour, minute, second, millisecond, microsecond, nanosecond, calendar } = ParseTemporalTimeString(
-      ToString(item)
-    ));
+    ({ hour, minute, second, millisecond, microsecond, nanosecond } = ParseTemporalTimeString(ToString(item)));
     RejectTime(hour, minute, second, millisecond, microsecond, nanosecond);
-    if (calendar !== undefined && calendar !== 'iso8601') {
-      throw new RangeError('PlainTime can only have iso8601 calendar');
-    }
   }
   const TemporalPlainTime = GetIntrinsic('%Temporal.PlainTime%');
   return new TemporalPlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
@@ -2321,12 +2312,18 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
   if (IsObject(calendarLike)) {
     if (IsTemporalCalendar(calendarLike)) return calendarLike;
     if (HasSlot(calendarLike, CALENDAR)) return GetSlot(calendarLike, CALENDAR);
+    if (IsTemporalTime(calendarLike)) {
+      throw new RangeError('Expected a calendar object but received a Temporal.PlainTime');
+    }
     if (IsTemporalTimeZone(calendarLike)) {
       throw new RangeError('Expected a calendar object but received a Temporal.TimeZone');
     }
     if (!('calendar' in calendarLike)) return calendarLike;
     calendarLike = (calendarLike as { calendar: Temporal.CalendarProtocol | string }).calendar;
     if (IsObject(calendarLike)) {
+      if (IsTemporalTime(calendarLike)) {
+        throw new RangeError('Expected a calendar object as the calendar property but received a Temporal.PlainTime');
+      }
       if (IsTemporalTimeZone(calendarLike)) {
         throw new RangeError('Expected a calendar object as the calendar property but received a Temporal.TimeZone');
       }

@@ -2,8 +2,10 @@
 // tries to parse them
 
 // Run with:
-// node --experimental-modules --no-warnings --icu-data-dir \
-//    ./node_modules/full-icu/ test/validStrings.mjs
+/*
+node --experimental-modules --experimental-specifier-resolution=node --no-warnings \
+  --icu-data-dir ./node_modules/full-icu/ --loader ./test/resolve.source.mjs test/validStrings.mjs
+*/
 
 import assert from 'assert';
 import * as ES from '../lib/ecmascript';
@@ -207,8 +209,7 @@ const utcDesignator = withCode(character('Zz'), (data) => {
   data.z = 'Z';
 });
 const annotationCriticalFlag = character('!');
-const timeFractionalPart = between(1, 9, digit());
-const fraction = seq(decimalSeparator, timeFractionalPart);
+const fraction = seq(decimalSeparator, between(1, 9, digit()));
 
 const dateFourDigitYear = repeat(4, digit());
 
@@ -340,13 +341,14 @@ const annotatedMonthDay = withSyntaxConstraints(
   }
 );
 
-const durationFractionalPart = withCode(between(1, 9, digit()), (data, result) => {
+const durationFraction = withCode(fraction, (data, result) => {
+  result = result.slice(1);
   const fraction = result.padEnd(9, '0');
   data.milliseconds = +fraction.slice(0, 3) * data.factor;
   data.microseconds = +fraction.slice(3, 6) * data.factor;
   data.nanoseconds = +fraction.slice(6, 9) * data.factor;
 });
-const durationFraction = seq(decimalSeparator, durationFractionalPart);
+
 const digitsNotInfinite = withSyntaxConstraints(oneOrMore(digit()), (result) => {
   if (!Number.isFinite(+result)) throw new SyntaxError('try again on infinity');
 });
@@ -427,7 +429,7 @@ const comparisonItems = {
     'nanoseconds'
   ],
   MonthDay: ['month', 'day', 'calendar'],
-  Time: [...timeItems, 'calendar'],
+  Time: [...timeItems],
   TimeZone: ['offset', 'ianaName'],
   YearMonth: ['year', 'month', 'calendar'],
   ZonedDateTime: [...dateItems, ...timeItems, 'offset', 'ianaName', 'calendar']

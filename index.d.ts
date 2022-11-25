@@ -1003,24 +1003,14 @@ export namespace Temporal {
     readonly [Symbol.toStringTag]: 'Temporal.PlainMonthDay';
   }
 
-  // Temporal.PlainTime's `calendar` field is a Temporal.Calendar, not a
-  // Temporal.CalendarProtocol, because that type's calendar is not customizable
-  // by users. Temporal.ZonedDateTime and Temporal.PlainDateTime are also
-  // "time-like" but their `calendar` is a Temporal.CalendarProtocol. Therefore,
-  // those types are added below to ensure that their instances are accepted by
-  // methods that take a PlainTimeLike object.
-  export type PlainTimeLike =
-    | {
-        hour?: number;
-        minute?: number;
-        second?: number;
-        millisecond?: number;
-        microsecond?: number;
-        nanosecond?: number;
-        calendar?: Temporal.Calendar | 'iso8601';
-      }
-    | Temporal.ZonedDateTime
-    | Temporal.PlainDateTime;
+  export type PlainTimeLike = {
+    hour?: number;
+    minute?: number;
+    second?: number;
+    millisecond?: number;
+    microsecond?: number;
+    nanosecond?: number;
+  };
 
   type PlainTimeISOFields = {
     isoHour: number;
@@ -1029,7 +1019,6 @@ export namespace Temporal {
     isoMillisecond: number;
     isoMicrosecond: number;
     isoNanosecond: number;
-    calendar: Temporal.Calendar;
   };
 
   /**
@@ -1067,7 +1056,6 @@ export namespace Temporal {
     readonly millisecond: number;
     readonly microsecond: number;
     readonly nanosecond: number;
-    readonly calendar: Temporal.Calendar;
     equals(other: Temporal.PlainTime | PlainTimeLike | string): boolean;
     with(timeLike: Temporal.PlainTime | PlainTimeLike, options?: AssignmentOptions): Temporal.PlainTime;
     add(durationLike: Temporal.Duration | DurationLike | string, options?: ArithmeticOptions): Temporal.PlainTime;
