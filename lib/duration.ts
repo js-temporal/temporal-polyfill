@@ -402,7 +402,7 @@ export class Duration implements Temporal.Duration {
     if (smallestUnit === 'hour' || smallestUnit === 'minute') {
       throw new RangeError('smallestUnit must be a time unit other than "hours" or "minutes"');
     }
-    const { precision, unit, increment } = ES.ToSecondsStringPrecision(smallestUnit, digits);
+    const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     ES.uncheckedAssertNarrowedType<Exclude<typeof precision, 'minute'>>(
       precision,
       'Precision cannot be "minute" because of RangeError above'
