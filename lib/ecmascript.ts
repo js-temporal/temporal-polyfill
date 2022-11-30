@@ -1006,7 +1006,7 @@ export function ToFractionalSecondDigits(
   return digitCount as Exclude<Temporal.ToStringPrecisionOptions['fractionalSecondDigits'], 'auto'>;
 }
 
-export function ToSecondsStringPrecision(
+export function ToSecondsStringPrecisionRecord(
   smallestUnit: Temporal.ToStringPrecisionOptions['smallestUnit'],
   precision: Temporal.ToStringPrecisionOptions['fractionalSecondDigits']
 ): {
@@ -2614,7 +2614,7 @@ export function FormatSecondsStringPart(
   millisecond: number,
   microsecond: number,
   nanosecond: number,
-  precision: ReturnType<typeof ToSecondsStringPrecision>['precision']
+  precision: ReturnType<typeof ToSecondsStringPrecisionRecord>['precision']
 ) {
   if (precision === 'minute') return '';
 
@@ -2636,7 +2636,7 @@ export function FormatSecondsStringPart(
 export function TemporalInstantToString(
   instant: Temporal.Instant,
   timeZone: Temporal.TimeZoneProtocol | undefined,
-  precision: ReturnType<typeof ToSecondsStringPrecision>['precision']
+  precision: ReturnType<typeof ToSecondsStringPrecisionRecord>['precision']
 ) {
   let outputTimeZone = timeZone;
   if (outputTimeZone === undefined) {
@@ -2666,7 +2666,7 @@ export function TemporalInstantToString(
 }
 
 interface ToStringOptions {
-  unit: ReturnType<typeof ToSecondsStringPrecision>['unit'];
+  unit: ReturnType<typeof ToSecondsStringPrecisionRecord>['unit'];
   increment: number;
   roundingMode: ReturnType<typeof ToTemporalRoundingMode>;
 }
@@ -2755,7 +2755,7 @@ export function TemporalDateToString(
 
 export function TemporalDateTimeToString(
   dateTime: Temporal.PlainDateTime,
-  precision: ReturnType<typeof ToSecondsStringPrecision>['precision'],
+  precision: ReturnType<typeof ToSecondsStringPrecisionRecord>['precision'],
   showCalendar: ReturnType<typeof ToCalendarNameOption> = 'auto',
   options: ToStringOptions | undefined = undefined
 ) {
@@ -2835,7 +2835,7 @@ export function TemporalYearMonthToString(
 
 export function TemporalZonedDateTimeToString(
   zdt: Temporal.ZonedDateTime,
-  precision: ReturnType<typeof ToSecondsStringPrecision>['precision'],
+  precision: ReturnType<typeof ToSecondsStringPrecisionRecord>['precision'],
   showCalendar: ReturnType<typeof ToCalendarNameOption> = 'auto',
   showTimeZone: ReturnType<typeof ToTimeZoneNameOption> = 'auto',
   showOffset: ReturnType<typeof ToShowOffsetOption> = 'auto',

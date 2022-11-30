@@ -25,14 +25,14 @@ import type { PlainTimeParams as Params, PlainTimeReturn as Return } from './int
 const ObjectAssign = Object.assign;
 
 type TemporalTimeToStringOptions = {
-  unit: ReturnType<typeof ES.ToSecondsStringPrecision>['unit'];
-  increment: ReturnType<typeof ES.ToSecondsStringPrecision>['increment'];
+  unit: ReturnType<typeof ES.ToSecondsStringPrecisionRecord>['unit'];
+  increment: ReturnType<typeof ES.ToSecondsStringPrecisionRecord>['increment'];
   roundingMode: Temporal.RoundingMode;
 };
 
 function TemporalTimeToString(
   time: Temporal.PlainTime,
-  precision: ReturnType<typeof ES.ToSecondsStringPrecision>['precision'],
+  precision: ReturnType<typeof ES.ToSecondsStringPrecisionRecord>['precision'],
   options: TemporalTimeToStringOptions | undefined = undefined
 ) {
   let hour = GetSlot(time, ISO_HOUR);
@@ -227,7 +227,7 @@ export class PlainTime implements Temporal.PlainTime {
     const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
     const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
-    const { precision, unit, increment } = ES.ToSecondsStringPrecision(smallestUnit, digits);
+    const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     return TemporalTimeToString(this, precision, { unit, increment, roundingMode });
   }
   toJSON(): Return['toJSON'] {
