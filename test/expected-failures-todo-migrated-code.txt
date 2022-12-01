@@ -115,12 +115,6 @@ built-ins/Temporal/Now/plainDateTimeISO/timezone-string.js
 built-ins/Temporal/Now/plainTimeISO/timezone-string.js
 built-ins/Temporal/Now/plainTimeISO/timezone.js
 built-ins/Temporal/Now/plainTimeISO/toPlainTime-override.js
-built-ins/Temporal/Now/timeZoneId/extensible.js
-built-ins/Temporal/Now/timeZoneId/length.js
-built-ins/Temporal/Now/timeZoneId/name.js
-built-ins/Temporal/Now/timeZoneId/not-a-constructor.js
-built-ins/Temporal/Now/timeZoneId/prop-desc.js
-built-ins/Temporal/Now/timeZoneId/return-value.js
 built-ins/Temporal/Now/zonedDateTime/calendar-case-insensitive.js
 built-ins/Temporal/Now/zonedDateTime/calendar-function.js
 built-ins/Temporal/Now/zonedDateTime/calendar-number.js

@@ -6202,10 +6202,8 @@ export const SystemUTCEpochNanoSeconds: () => JSBI = (() => {
   };
 })();
 
-export function SystemTimeZone() {
-  const fmt = new IntlDateTimeFormat('en-us');
-  const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-  return new TemporalTimeZone(ParseTemporalTimeZone(fmt.resolvedOptions().timeZone));
+export function DefaultTimeZone() {
+  return new IntlDateTimeFormat().resolvedOptions().timeZone;
 }
 
 export function ComparisonResult(value: number) {

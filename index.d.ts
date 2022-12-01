@@ -1467,7 +1467,7 @@ export namespace Temporal {
      * named
      * {@link https://en.wikipedia.org/wiki/List_of_tz_database_time_zones|IANA time zone}.
      */
-    timeZone: () => Temporal.TimeZone;
+    timeZoneId: () => string;
 
     readonly [Symbol.toStringTag]: 'Temporal.Now';
   };
