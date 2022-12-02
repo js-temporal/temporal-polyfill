@@ -98,7 +98,7 @@ interface CalendarImpl {
 const impl = {} as {
   iso8601: CalendarImpl;
 } & {
-  [id in Exclude<BuiltinCalendarId, 'iso8601'>]: NonIsoImpl;
+  [id in Exclude<BuiltinCalendarId, 'iso8601'>]: CalendarImpl;
 };
 
 /**
@@ -472,17 +472,8 @@ impl['iso8601'] = {
 // ECMA-402.
 //
 // To ensure this separation, the implementation is split. A `CalendarImpl`
-// interface powers both ISO and non-ISO calendars. That interface is extended
-// (as `NonIsoImpl`) with a `helper` property that implements logic that varies
-// between each non-ISO calendar.
-
-/**
- * Interface for non-ISO calendar implementations. The `helper` is an abstract
- * base class that's extended for each non-ISO calendar, e.g. `HebrewHelper`.
- */
-interface NonIsoImpl extends CalendarImpl {
-  helper: HelperBase;
-}
+// interface defines the common operations between both ISO and non-ISO
+// calendars.
 
 /**
  * This type is passed through from Calendar#dateFromFields().
@@ -2281,11 +2272,13 @@ class DangiHelper extends ChineseBaseHelper {
  * This split allowed an easy separation between code that was similar between
  * ISO and non-ISO implementations vs. code that was very different.
  */
-const nonIsoImpl: NonIsoImpl = {
-  // `helper` is added when this object is spread into each calendar's
-  // implementation
-  helper: undefined as unknown as HelperBase,
-  dateFromFields(fieldsParam, options, calendar) {
+class NonIsoCalendar implements CalendarImpl {
+  constructor(private readonly helper: HelperBase) {}
+  dateFromFields(
+    fieldsParam: Params['dateFromFields'][0],
+    options: NonNullable<Params['dateFromFields'][1]>,
+    calendar: Temporal.Calendar
+  ): Temporal.PlainDate {
     const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     // Intentionally alphabetical
@@ -2298,8 +2291,12 @@ const nonIsoImpl: NonIsoImpl = {
     const result = ES.CreateTemporalDate(year, month, day, calendar);
     cache.setObject(result);
     return result;
-  },
-  yearMonthFromFields(fieldsParam, options, calendar) {
+  }
+  yearMonthFromFields(
+    fieldsParam: Params['yearMonthFromFields'][0],
+    options: NonNullable<Params['yearMonthFromFields'][1]>,
+    calendar: Temporal.Calendar
+  ): Temporal.PlainYearMonth {
     const overflow = ES.ToTemporalOverflow(options);
     const cache = new OneObjectCache();
     // Intentionally alphabetical
@@ -2308,12 +2305,12 @@ const nonIsoImpl: NonIsoImpl = {
     const result = ES.CreateTemporalYearMonth(year, month, calendar, /* referenceISODay = */ day);
     cache.setObject(result);
     return result;
-  },
+  }
   monthDayFromFields(
     fieldsParam: Params['monthDayFromFields'][0],
     options: NonNullable<Params['monthDayFromFields'][1]>,
-    calendar: Temporal.CalendarProtocol
-  ) {
+    calendar: Temporal.Calendar
+  ): Temporal.PlainMonthDay {
     const overflow = ES.ToTemporalOverflow(options);
     // All built-in calendars require `day`, but some allow other fields to be
     // substituted for `month`. And for lunisolar calendars, either `monthCode`
@@ -2330,13 +2327,13 @@ const nonIsoImpl: NonIsoImpl = {
     const result = ES.CreateTemporalMonthDay(month, day, calendar, /* referenceISOYear = */ year);
     cache.setObject(result);
     return result;
-  },
-  fields(fieldsParam) {
+  }
+  fields(fieldsParam: string[]): string[] {
     let fields = fieldsParam;
     if (ArrayIncludes.call(fields, 'year')) fields = [...fields, 'era', 'eraYear'];
     return fields;
-  },
-  mergeFields(fields, additionalFields) {
+  }
+  mergeFields(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown> {
     const fieldsCopy = { ...fields };
     const additionalFieldsCopy = { ...additionalFields };
     // era and eraYear are intentionally unused
@@ -2360,7 +2357,7 @@ const nonIsoImpl: NonIsoImpl = {
       original.year = year;
     }
     return { ...original, ...additionalFieldsCopy };
-  },
+  }
   dateAdd(
     date: Temporal.PlainDate,
     years: number,
@@ -2369,7 +2366,7 @@ const nonIsoImpl: NonIsoImpl = {
     days: number,
     overflow: Overflow,
     calendar: Temporal.Calendar
-  ) {
+  ): Temporal.PlainDate {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     const added = this.helper.addCalendar(calendarDate, { years, months, weeks, days }, overflow, cache);
@@ -2380,7 +2377,7 @@ const nonIsoImpl: NonIsoImpl = {
     const newCache = new OneObjectCache(cache);
     newCache.setObject(newTemporalObject);
     return newTemporalObject;
-  },
+  }
   dateUntil(one: Temporal.PlainDate, two: Temporal.PlainDate, largestUnit: Temporal.DateUnit) {
     const cacheOne = OneObjectCache.getCacheForObject(one);
     const cacheTwo = OneObjectCache.getCacheForObject(two);
@@ -2388,56 +2385,56 @@ const nonIsoImpl: NonIsoImpl = {
     const calendarTwo = this.helper.temporalToCalendarDate(two, cacheTwo);
     const result = this.helper.untilCalendar(calendarOne, calendarTwo, largestUnit, cacheOne);
     return result;
-  },
-  year(date: Temporal.PlainDate) {
+  }
+  year(date: Temporal.PlainDate | Temporal.PlainYearMonth): number {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.year;
-  },
-  month(date: Temporal.PlainDate) {
+  }
+  month(date: Temporal.PlainDate | Temporal.PlainYearMonth | Temporal.PlainMonthDay): number {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.month;
-  },
-  day(date: Temporal.PlainDate) {
+  }
+  day(date: Temporal.PlainDate | Temporal.PlainMonthDay): number {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.day;
-  },
-  era(date: Temporal.PlainDate) {
+  }
+  era(date: Temporal.PlainDate | Temporal.PlainYearMonth): string | undefined {
     if (!this.helper.hasEra) return undefined;
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.era;
-  },
-  eraYear(date: Temporal.PlainDate) {
+  }
+  eraYear(date: Temporal.PlainDate | Temporal.PlainYearMonth): number | undefined {
     if (!this.helper.hasEra) return undefined;
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.eraYear;
-  },
-  monthCode(date: Temporal.PlainDate) {
+  }
+  monthCode(date: Temporal.PlainDate | Temporal.PlainYearMonth | Temporal.PlainMonthDay): string {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     return calendarDate.monthCode;
-  },
-  dayOfWeek(date: Temporal.PlainDate) {
+  }
+  dayOfWeek(date: Temporal.PlainDate): number {
     return impl['iso8601'].dayOfWeek(date);
-  },
-  dayOfYear(date: Temporal.PlainDate) {
+  }
+  dayOfYear(date: Temporal.PlainDate): number {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.isoToCalendarDate(date, cache);
     const startOfYear = this.helper.startOfCalendarYear(calendarDate);
     const diffDays = this.helper.calendarDaysUntil(startOfYear, calendarDate, cache);
     return diffDays + 1;
-  },
-  weekOfYear(date: Temporal.PlainDate) {
+  }
+  weekOfYear(date: Temporal.PlainDate): number {
     return impl['iso8601'].weekOfYear(date);
-  },
-  daysInWeek(date: Temporal.PlainDate) {
+  }
+  daysInWeek(date: Temporal.PlainDate): number {
     return impl['iso8601'].daysInWeek(date);
-  },
-  daysInMonth(date) {
+  }
+  daysInMonth(date: Temporal.PlainDate | Temporal.PlainYearMonth): number {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
 
@@ -2453,8 +2450,8 @@ const nonIsoImpl: NonIsoImpl = {
     const startOfNextMonthCalendar = this.helper.addMonthsCalendar(startOfMonthCalendar, 1, 'constrain', cache);
     const result = this.helper.calendarDaysUntil(startOfMonthCalendar, startOfNextMonthCalendar, cache);
     return result;
-  },
-  daysInYear(dateParam) {
+  }
+  daysInYear(dateParam: Temporal.PlainDate | Temporal.PlainYearMonth): number {
     let date = dateParam;
     if (!HasSlot(date, ISO_YEAR)) date = ES.ToTemporalDate(date);
     const cache = OneObjectCache.getCacheForObject(date);
@@ -2463,14 +2460,14 @@ const nonIsoImpl: NonIsoImpl = {
     const startOfNextYearCalendar = this.helper.addCalendar(startOfYearCalendar, { years: 1 }, 'constrain', cache);
     const result = this.helper.calendarDaysUntil(startOfYearCalendar, startOfNextYearCalendar, cache);
     return result;
-  },
-  monthsInYear(date) {
+  }
+  monthsInYear(date: Temporal.PlainDate | Temporal.PlainYearMonth): number {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     const result = this.helper.monthsInYear(calendarDate, cache);
     return result;
-  },
-  inLeapYear(dateParam) {
+  }
+  inLeapYear(dateParam: Temporal.PlainDate | Temporal.PlainYearMonth): boolean {
     let date = dateParam;
     if (!HasSlot(date, ISO_YEAR)) date = ES.ToTemporalDate(date);
     const cache = OneObjectCache.getCacheForObject(date);
@@ -2478,7 +2475,7 @@ const nonIsoImpl: NonIsoImpl = {
     const result = this.helper.inLeapYear(calendarDate, cache);
     return result;
   }
-};
+}
 
 for (const Helper of [
   HebrewHelper,
@@ -2503,5 +2500,5 @@ for (const Helper of [
   const helper = new Helper();
   // Clone the singleton non-ISO implementation that's the same for all
   // calendars. The `helper` property contains per-calendar logic.
-  impl[helper.id] = { ...nonIsoImpl, helper };
+  impl[helper.id] = new NonIsoCalendar(helper);
 }
