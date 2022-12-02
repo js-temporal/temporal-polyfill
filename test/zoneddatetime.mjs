@@ -567,8 +567,8 @@ describe('ZonedDateTime', () => {
           equal(`${zdt1}`, '1971-01-01T12:00:00-00:45[Africa/Monrovia]');
           equal(zdt1.offset, '-00:44:30');
 
-          const zdt2 = ZonedDateTime.from('1921-01-01T12:00+00:19:32[Europe/Amsterdam]', { offset });
-          equal(`${zdt2}`, '1921-01-01T12:00:00+00:20[Europe/Amsterdam]');
+          const zdt2 = ZonedDateTime.from('1921-01-01T12:00+00:19:32[+00:19:32]', { offset });
+          equal(`${zdt2}`, '1921-01-01T12:00:00+00:20[+00:19:32]');
           equal(zdt2.offset, '+00:19:32');
         });
       });
@@ -577,8 +577,8 @@ describe('ZonedDateTime', () => {
         equal(`${zdt1}`, '1971-01-01T12:00:30-00:45[Africa/Monrovia]');
         equal(zdt1.offset, '-00:44:30');
 
-        const zdt2 = ZonedDateTime.from('1921-01-01T12:00+00:20[Europe/Amsterdam]', { offset: 'use' });
-        equal(`${zdt2}`, '1921-01-01T11:59:32+00:20[Europe/Amsterdam]');
+        const zdt2 = ZonedDateTime.from('1921-01-01T12:00+00:20[+00:19:32]', { offset: 'use' });
+        equal(`${zdt2}`, '1921-01-01T11:59:32+00:20[+00:19:32]');
         equal(zdt2.offset, '+00:19:32');
       });
       ['ignore', 'prefer', 'reject'].forEach((offset) => {
@@ -587,8 +587,8 @@ describe('ZonedDateTime', () => {
           equal(`${zdt1}`, '1971-01-01T12:00:00-00:45[Africa/Monrovia]');
           equal(zdt1.offset, '-00:44:30');
 
-          const zdt2 = ZonedDateTime.from('1921-01-01T12:00+00:20[Europe/Amsterdam]', { offset });
-          equal(`${zdt2}`, '1921-01-01T12:00:00+00:20[Europe/Amsterdam]');
+          const zdt2 = ZonedDateTime.from('1921-01-01T12:00+00:20[+00:19:32]', { offset });
+          equal(`${zdt2}`, '1921-01-01T12:00:00+00:20[+00:19:32]');
           equal(zdt2.offset, '+00:19:32');
         });
       });
