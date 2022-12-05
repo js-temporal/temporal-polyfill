@@ -91,15 +91,17 @@ interface CalendarImpl {
   mergeFields(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown>;
 }
 
-/**
- * Implementations for each calendar. Non-ISO calendars have an extra `helper`
- * property that provides additional per-calendar logic.
- */
-const impl = {} as {
-  iso8601: CalendarImpl;
-} & {
-  [id in Exclude<BuiltinCalendarId, 'iso8601'>]: CalendarImpl;
+type CalendarImplementations = {
+  [k in BuiltinCalendarId]: CalendarImpl;
 };
+
+/**
+ * Implementations for each calendar.
+ * Registration for each of these calendars happens throughout this file. The ISO and non-ISO calendars are registered
+ * separately - look for 'iso8601' for the ISO calendar registration, and all non-ISO calendar registrations happens
+ * at the bottom of the file.
+ */
+const impl: CalendarImplementations = {} as unknown as CalendarImplementations;
 
 /**
  * Thin wrapper around the implementation of each built-in calendar. This
@@ -2498,7 +2500,7 @@ for (const Helper of [
   IslamicCcHelper
 ]) {
   const helper = new Helper();
-  // Clone the singleton non-ISO implementation that's the same for all
-  // calendars. The `helper` property contains per-calendar logic.
+  // Construct a new NonIsoCalendar instance with the given Helper implementation that contains
+  // per-calendar logic.
   impl[helper.id] = new NonIsoCalendar(helper);
 }
