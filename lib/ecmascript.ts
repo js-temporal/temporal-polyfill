@@ -3517,10 +3517,13 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
     throw new RangeError('Time zone or calendar converted nanoseconds into a number of days with the opposite sign');
   }
   if (!isZero(nanoseconds) && signJSBI(nanoseconds) !== sign) {
+    if (isNegativeJSBI(nanoseconds) && sign === 1) {
+      throw new Error('assert not reached');
+    }
     throw new RangeError('Time zone or calendar ended up with a remainder of nanoseconds with the opposite sign');
   }
-  if (JSBI.greaterThanOrEqual(abs(nanoseconds), JSBI.BigInt(MathAbs(dayLengthNs)))) {
-    throw new RangeError('Time zone or calendar ended up with a remainder of nanoseconds longer than the day length');
+  if (JSBI.greaterThanOrEqual(abs(nanoseconds), abs(JSBI.BigInt(dayLengthNs)))) {
+    throw new Error('assert not reached');
   }
   return { days: JSBI.toNumber(daysBigInt), nanoseconds, dayLengthNs: MathAbs(dayLengthNs) };
 }
