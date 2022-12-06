@@ -543,7 +543,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (JSBI.greaterThan(JSBI.BigInt(ns1), JSBI.BigInt(ns2))) return 1;
     return 0;
   }
-  [Symbol.toStringTag]!: 'Temporal.ZonedDateTime';
+  [Symbol.toStringTag]: 'Temporal.ZonedDateTime';
 }
 
 MakeIntrinsicClass(ZonedDateTime, 'Temporal.ZonedDateTime');

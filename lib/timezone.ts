@@ -157,7 +157,7 @@ export class TimeZone implements Temporal.TimeZone {
   static from(item: Params['from'][0]): Return['from'] {
     return ES.ToTemporalTimeZone(item);
   }
-  [Symbol.toStringTag]!: 'Temporal.TimeZone';
+  [Symbol.toStringTag]: 'Temporal.TimeZone';
 }
 
 MakeIntrinsicClass(TimeZone, 'Temporal.TimeZone');

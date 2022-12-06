@@ -334,7 +334,7 @@ export class Calendar implements Temporal.Calendar {
   static from(item: Params['from'][0]): Return['from'] {
     return ES.ToTemporalCalendar(item);
   }
-  [Symbol.toStringTag]!: 'Temporal.Calendar';
+  [Symbol.toStringTag]: 'Temporal.Calendar';
 }
 
 MakeIntrinsicClass(Calendar, 'Temporal.Calendar');

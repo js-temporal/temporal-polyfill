@@ -476,7 +476,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     }
     return 0;
   }
-  [Symbol.toStringTag]!: 'Temporal.PlainDateTime';
+  [Symbol.toStringTag]: 'Temporal.PlainDateTime';
 }
 
 MakeIntrinsicClass(PlainDateTime, 'Temporal.PlainDateTime');

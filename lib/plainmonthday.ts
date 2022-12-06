@@ -134,7 +134,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     }
     return ES.ToTemporalMonthDay(item, options);
   }
-  [Symbol.toStringTag]!: 'Temporal.PlainMonthDay';
+  [Symbol.toStringTag]: 'Temporal.PlainMonthDay';
 }
 
 MakeIntrinsicClass(PlainMonthDay, 'Temporal.PlainMonthDay');
