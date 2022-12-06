@@ -75,6 +75,7 @@
     "index.d.ts",
     "index.d.cts",
     "dist",
+    "lib",
     "CHANGELOG.md"
   ],
   "dependencies": {
