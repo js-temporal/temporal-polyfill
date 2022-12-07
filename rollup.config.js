@@ -3,6 +3,7 @@ import { nodeResolve } from '@rollup/plugin-node-resolve';
 import babel from '@rollup/plugin-babel';
 import replace from '@rollup/plugin-replace';
 import { terser } from 'rollup-plugin-terser';
+import sourcemaps from 'rollup-plugin-sourcemaps';
 import { env } from 'process';
 import pkg from './package.json';
 
@@ -22,9 +23,13 @@ function withPlugins(
   const basePlugins = [
     replace({ exclude: 'node_modules/**', 'globalThis.__debug__': options.debugBuild, preventAssignment: true }),
     commonjs(),
-    nodeResolve({ preferBuiltins: false })
+    nodeResolve({ preferBuiltins: false }),
+    sourcemaps()
   ];
   if (options.babelConfig) {
+    if (!options.babelConfig.inputSourceMap) {
+      options.babelConfig.inputSourceMap = true;
+    }
     basePlugins.push(babel(options.babelConfig));
   }
   if (options.optimize) {
