@@ -3,7 +3,7 @@ on:
     inputs:
       node-version-for-testing:
         required: false
-        default: 17.x # Should be the same as the verison used for builds below.
+        default: 17.x
         type: string
       build-cmd:
         required: false
@@ -12,7 +12,6 @@ on:
       test-cmd:
         required: true
         type: string
-
 jobs:
   reusable_workflow_job:
     runs-on: ubuntu-latest
@@ -30,4 +29,3 @@ jobs:
           node-version: ${{ inputs.node-version-for-testing }}
       - run: npm ci --no-optional
       - run: ${{ test-cmd }}
-
