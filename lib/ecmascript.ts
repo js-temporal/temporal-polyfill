@@ -4519,14 +4519,12 @@ type DifferenceOperation = 'since' | 'until';
 
 function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
   op: DifferenceOperation,
-  optionsParam: Temporal.DifferenceOptions<T> | undefined,
+  options: Temporal.DifferenceOptions<T>,
   group: 'datetime' | 'date' | 'time',
   disallowed: (Temporal.DateTimeUnit | 'auto')[],
   fallbackSmallest: T,
   smallestLargestDefaultUnit: T
 ) {
-  const options = GetOptionsObject(optionsParam);
-
   const ALLOWED_UNITS = SINGULAR_PLURAL_UNITS.reduce((allowed, unitInfo) => {
     const p = unitInfo[0];
     const s = unitInfo[1];
@@ -4580,7 +4578,9 @@ export function DifferenceTemporalInstant(
   const sign = operation === 'since' ? -1 : 1;
   const other = ToTemporalInstant(otherParam);
 
-  const settings = GetDifferenceSettings(operation, options, 'time', [], 'nanosecond', 'second');
+  const resolvedOptions = ObjectCreate(null);
+  CopyDataProperties(resolvedOptions, GetOptionsObject(options), []);
+  const settings = GetDifferenceSettings(operation, resolvedOptions, 'time', [], 'nanosecond', 'second');
 
   const onens = GetSlot(instant, EPOCHNANOSECONDS);
   const twons = GetSlot(other, EPOCHNANOSECONDS);
@@ -4742,7 +4742,9 @@ export function DifferenceTemporalPlainTime(
   const sign = operation === 'since' ? -1 : 1;
   const other = ToTemporalTime(otherParam);
 
-  const settings = GetDifferenceSettings(operation, options, 'time', [], 'nanosecond', 'hour');
+  const resolvedOptions = ObjectCreate(null);
+  CopyDataProperties(resolvedOptions, GetOptionsObject(options), []);
+  const settings = GetDifferenceSettings(operation, resolvedOptions, 'time', [], 'nanosecond', 'hour');
 
   let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceTime(
     GetSlot(plainTime, ISO_HOUR),

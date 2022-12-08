@@ -27,11 +27,9 @@ built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-calendar-f
 built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-timezone-wrong-type.js
 built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-calendar-fields-undefined.js
 built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-timezone-wrong-type.js
-built-ins/Temporal/Instant/prototype/since/order-of-operations.js
 built-ins/Temporal/Instant/prototype/toString/timezone-wrong-type.js
 built-ins/Temporal/Instant/prototype/toZonedDateTime/timezone-wrong-type.js
 built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/timezone-wrong-type.js
-built-ins/Temporal/Instant/prototype/until/order-of-operations.js
 built-ins/Temporal/Now/plainDate/timezone-wrong-type.js
 built-ins/Temporal/Now/plainDateISO/timezone-wrong-type.js
 built-ins/Temporal/Now/plainDateTime/timezone-wrong-type.js
@@ -62,11 +60,9 @@ built-ins/Temporal/PlainMonthDay/from/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainMonthDay/prototype/equals/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainMonthDay/prototype/toPlainDate/calendar-fields-undefined.js
 built-ins/Temporal/PlainMonthDay/prototype/with/calendar-fields-undefined.js
-built-ins/Temporal/PlainTime/prototype/since/order-of-operations.js
 built-ins/Temporal/PlainTime/prototype/toPlainDateTime/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainTime/prototype/toZonedDateTime/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainTime/prototype/toZonedDateTime/timezone-wrong-type.js
-built-ins/Temporal/PlainTime/prototype/until/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/compare/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainYearMonth/from/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainYearMonth/prototype/add/calendar-fields-undefined.js
