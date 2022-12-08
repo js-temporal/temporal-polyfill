@@ -5,7 +5,13 @@ import replace from '@rollup/plugin-replace';
 import terser from '@rollup/plugin-terser';
 import sourcemaps from 'rollup-plugin-sourcemaps';
 import { env } from 'process';
-import pkg from './package.json' assert { type: 'json' };
+
+// Uncomment and replace the code below once all supported Node versions work with import assertions. See
+// pawelgrzybek.com/all-you-need-to-know-to-move-from-commonjs-to-ecmascript-modules-esm-in-node-js/#importing-json
+// import pkg from './package.json' assert { type: 'json' };
+import { createRequire } from 'module';
+const require = createRequire(import.meta.url);
+const pkg = require('./package.json');
 
 const isPlaygroundBuild = !!env.TEMPORAL_PLAYGROUND;
 const isTest262Build = !!env.TEST262;
