@@ -13,14 +13,12 @@ jobs:
           - 16.x
           - 14.x
     steps:
-      - uses: actions/checkout@v2
       - uses: ./.github/workflows/build_and_test.yml
         with:
           node-version-for-testing: ${{ matrix.version }}
           test-cmd: npm run test_nobuild
   test_validstrings:
     steps:
-      - uses: actions/checkout@v2
       - uses: ./.github/workflows/build_and_test.yml
         with:
           test-cmd: npm run testValidStrings_nobuild
