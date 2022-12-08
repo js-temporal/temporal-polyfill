@@ -13,13 +13,13 @@ jobs:
           - 16.x
           - 14.x
     uses: ./.github/workflows/build_and_test.yml
-      with:
-        node-version-for-testing: ${{ matrix.version }}
-        test-cmd: npm run test_nobuild
+    with:
+      node-version-for-testing: ${{ matrix.version }}
+      test-cmd: npm run test_nobuild
   test_validstrings:
     uses: ./.github/workflows/build_and_test.yml
-      with:
-        test-cmd: npm run testValidStrings_nobuild
+    with:
+      test-cmd: npm run testValidStrings_nobuild
   # test-test262:
   #   runs-on: ubuntu-latest
   #   steps:
