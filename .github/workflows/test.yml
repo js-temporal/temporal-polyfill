@@ -6,7 +6,6 @@ on:
       - main
 jobs:
   test_demitasse_matrix:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
         version:
@@ -15,72 +14,70 @@ jobs:
           - 14.x
     steps:
       - uses: actions/checkout@v2
-      - uses: ./.github/workflows/test_base.yml
+      - uses: ./.github/workflows/build_and_test.yml
         with:
           node-version-for-testing: ${{ matrix.version }}
           test-cmd: npm run test_nobuild
   test_validstrings:
-    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - uses: ./.github/workflows/test_base.yml
+      - uses: ./.github/workflows/build_and_test.yml
         with:
-          node-version-for-testing: 17.x
           test-cmd: npm run testValidStrings_nobuild
-  test-test262:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: use node.js v17.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 17.x
-      - run: npm ci
-      - run: npm run test262
-        env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-  test-test262-opt:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: use node.js v17.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 17.x
-      - run: npm ci
-      - run: npm run test262
-        env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          NODE_ENV: production
-  test-test262-es5:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          submodules: true
-      - name: use node.js v17.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 17.x
-      - run: npm ci
-      - run: npm run test262
-        env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          NODE_ENV: production
-          TRANSPILE: "1"
-  test-validstrings:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: use node.js v16.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 16.x
-      - run: npm ci
-      - run: |
-          npm ci
-          npm run testValidStrings
+  # test-test262:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: true
+  #     - name: use node.js v17.x
+  #       uses: actions/setup-node@v1
+  #       with:
+  #         node-version: 17.x
+  #     - run: npm ci
+  #     - run: npm run test262
+  #       env:
+  #         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+  # test-test262-opt:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: true
+  #     - name: use node.js v17.x
+  #       uses: actions/setup-node@v1
+  #       with:
+  #         node-version: 17.x
+  #     - run: npm ci
+  #     - run: npm run test262
+  #       env:
+  #         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+  #         NODE_ENV: production
+  # test-test262-es5:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #       with:
+  #         submodules: true
+  #     - name: use node.js v17.x
+  #       uses: actions/setup-node@v1
+  #       with:
+  #         node-version: 17.x
+  #     - run: npm ci
+  #     - run: npm run test262
+  #       env:
+  #         HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+  #         NODE_ENV: production
+  #         TRANSPILE: "1"
+  # test-validstrings:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #     - uses: actions/checkout@v2
+  #     - name: use node.js v16.x
+  #       uses: actions/setup-node@v1
+  #       with:
+  #         node-version: 16.x
+  #     - run: npm ci
+  #     - run: |
+  #         npm ci
+  #         npm run testValidStrings
