@@ -1,0 +1,31 @@
+on:
+  workflow_call:
+    inputs:
+      node-version-for-testing:
+        required: false
+        default: 18.x
+        type: string
+      build-cmd:
+        required: false
+        default: npm run build
+        type: string
+      test-cmd:
+        required: true
+        type: string
+jobs:
+  reusable_workflow_job:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: use node.js v17.x for build
+        uses: actions/setup-node@v1
+        with:
+          node-version: 18.x
+      - run: npm ci --no-optional
+      - run: ${{ inputs.build-cmd }}
+      - name: use node.js for test execution
+        uses: actions/setup-node@v1
+        with:
+          node-version: ${{ inputs.node-version-for-testing }}
+      - run: npm ci --no-optional
+      - run: ${{ inputs.test-cmd }}
