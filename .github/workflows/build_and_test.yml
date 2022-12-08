@@ -28,4 +28,4 @@ jobs:
         with:
           node-version: ${{ inputs.node-version-for-testing }}
       - run: npm ci --no-optional
-      - run: ${{ test-cmd }}
+      - run: ${{ inputs.test-cmd }}
