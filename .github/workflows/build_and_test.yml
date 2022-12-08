@@ -20,7 +20,7 @@ jobs:
       - name: use node.js v17.x for build
         uses: actions/setup-node@v1
         with:
-          node-version: lts/*
+          node-version: lts
       - run: npm ci --no-optional
       - run: ${{ inputs.build-cmd }}
       - name: use node.js for test execution
