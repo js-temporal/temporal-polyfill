@@ -27,7 +27,7 @@
     "test": "npm run build && node --no-warnings --experimental-modules --experimental-specifier-resolution=node --icu-data-dir node_modules/full-icu --loader ./test/resolve.source.mjs ./test/all.mjs",
     "test262": "TEST262=1 npm run build && ./test/test262.sh",
     "testValidStrings": "npm run build && node --experimental-modules --experimental-specifier-resolution=node --no-warnings --icu-data-dir ./node_modules/full-icu/ --loader ./test/resolve.source.mjs test/validStrings.mjs",
-    "build": "rm -rf dist/* tsc-out/* && tsc && rollup -c rollup.config.js",
+    "build": "rm -rf dist/* tsc-out/* && tsc && rollup -c rollup.config.js --bundleConfigAsCjs",
     "prepare": "npm run build",
     "prepublishOnly": "node copy-types.mjs && npm run build",
     "update": "npx npm-check-updates -u -x @pipobscure/demitasse && npm install",
