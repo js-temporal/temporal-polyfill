@@ -6,6 +6,7 @@ on:
       - main
 jobs:
   test_demitasse_matrix:
+    runs-on: ubuntu-latest
     strategy:
       matrix:
         version:
@@ -19,6 +20,7 @@ jobs:
           node-version-for-testing: ${{ matrix.version }}
           test-cmd: npm run test_nobuild
   test_validstrings:
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
       - uses: ./.github/workflows/test_base.yml
