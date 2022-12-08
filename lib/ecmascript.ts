@@ -2024,10 +2024,10 @@ export function CalendarFields<F extends Iterable<string>>(calendar: Temporal.Ca
   return result as unknown as F;
 }
 
-export function CalendarMergeFields(
+export function CalendarMergeFields<Base extends Record<string, unknown>, ToAdd extends Record<string, unknown>>(
   calendar: Temporal.CalendarProtocol,
-  fields: Record<string, unknown>,
-  additionalFields: Record<string, unknown>
+  fields: Base,
+  additionalFields: ToAdd
 ) {
   const calMergeFields = calendar.mergeFields;
   if (!calMergeFields) {
@@ -2035,7 +2035,7 @@ export function CalendarMergeFields(
   }
   const result = Reflect.apply(calMergeFields, calendar, [fields, additionalFields]);
   if (!IsObject(result)) throw new TypeError('bad return from calendar.mergeFields()');
-  return result;
+  return result as Base & ToAdd;
 }
 
 export function CalendarDateAdd(
@@ -2609,17 +2609,17 @@ export function TemporalDurationToString(
     } = RoundDuration(0, 0, 0, 0, 0, 0, seconds, ms, µs, ns, increment, unit, roundingMode));
   }
 
-  const dateParts = [];
+  const dateParts: string[] = [];
   if (years) dateParts.push(`${formatNumber(MathAbs(years))}Y`);
   if (months) dateParts.push(`${formatNumber(MathAbs(months))}M`);
   if (weeks) dateParts.push(`${formatNumber(MathAbs(weeks))}W`);
   if (days) dateParts.push(`${formatNumber(MathAbs(days))}D`);
 
-  const timeParts = [];
+  const timeParts: string[] = [];
   if (hours) timeParts.push(`${formatNumber(MathAbs(hours))}H`);
   if (minutes) timeParts.push(`${formatNumber(MathAbs(minutes))}M`);
 
-  const secondParts = [];
+  const secondParts: string[] = [];
   let total = TotalDurationNanoseconds(0, 0, 0, seconds, ms, µs, ns, 0);
   let nsBigInt: JSBI, µsBigInt: JSBI, msBigInt: JSBI, secondsBigInt: JSBI;
   ({ quotient: total, remainder: nsBigInt } = divmod(total, THOUSAND));
@@ -3657,7 +3657,11 @@ export function BalanceDurationRelative(
         days -= oneYearDays;
         years += sign;
         relativeTo = newRelativeTo;
-        ({ relativeTo: newRelativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear));
+        ({ relativeTo: newRelativeTo, days: oneYearDays } = MoveRelativeDate(
+          calendar,
+          relativeTo as Temporal.PlainDate,
+          oneYear
+        ));
       }
 
       // balance days up to months
@@ -3671,7 +3675,11 @@ export function BalanceDurationRelative(
         days -= oneMonthDays;
         months += sign;
         relativeTo = newRelativeTo;
-        ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
+        ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(
+          calendar,
+          relativeTo as Temporal.PlainDate,
+          oneMonth
+        ));
       }
 
       // balance months up to years
@@ -3692,10 +3700,16 @@ export function BalanceDurationRelative(
         months -= oneYearMonths;
         years += sign;
         relativeTo = newRelativeTo;
-        newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, undefined, dateAdd);
+        newRelativeTo = CalendarDateAdd(calendar, relativeTo as Temporal.PlainDate, oneYear, undefined, dateAdd);
         const untilOptions = ObjectCreate(null);
         untilOptions.largestUnit = 'month';
-        untilResult = CalendarDateUntil(calendar, relativeTo, newRelativeTo, untilOptions, dateUntil);
+        untilResult = CalendarDateUntil(
+          calendar,
+          relativeTo as Temporal.PlainDate,
+          newRelativeTo,
+          untilOptions,
+          dateUntil
+        );
         oneYearMonths = GetSlot(untilResult, MONTHS);
       }
       break;
@@ -3713,7 +3727,11 @@ export function BalanceDurationRelative(
         days -= oneMonthDays;
         months += sign;
         relativeTo = newRelativeTo;
-        ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
+        ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(
+          calendar,
+          relativeTo as Temporal.PlainDate,
+          oneMonth
+        ));
       }
       break;
     }
@@ -3730,7 +3748,11 @@ export function BalanceDurationRelative(
         days -= oneWeekDays;
         weeks += sign;
         relativeTo = newRelativeTo;
-        ({ relativeTo: newRelativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek));
+        ({ relativeTo: newRelativeTo, days: oneWeekDays } = MoveRelativeDate(
+          calendar,
+          relativeTo as Temporal.PlainDate,
+          oneWeek
+        ));
       }
       break;
     }

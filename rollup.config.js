@@ -1,11 +1,11 @@
 import commonjs from '@rollup/plugin-commonjs';
-import { nodeResolve } from '@rollup/plugin-node-resolve';
+import nodeResolve from '@rollup/plugin-node-resolve';
 import babel from '@rollup/plugin-babel';
 import replace from '@rollup/plugin-replace';
-import { terser } from 'rollup-plugin-terser';
+import terser from '@rollup/plugin-terser';
 import sourcemaps from 'rollup-plugin-sourcemaps';
 import { env } from 'process';
-import pkg from './package.json';
+import pkg from './package.json' assert { type: 'json' };
 
 const isPlaygroundBuild = !!env.TEMPORAL_PLAYGROUND;
 const isTest262Build = !!env.TEST262;

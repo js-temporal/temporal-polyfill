@@ -78,36 +78,39 @@
     "lib",
     "CHANGELOG.md"
   ],
+  "overrides": {
+    "@rollup/pluginutils": "^5.0.2"
+  },
   "dependencies": {
-    "jsbi": "^4.1.0",
-    "tslib": "^2.3.1"
+    "jsbi": "^4.3.0",
+    "tslib": "^2.4.1"
   },
   "devDependencies": {
-    "@babel/core": "^7.16.5",
-    "@babel/preset-env": "^7.16.5",
+    "@babel/core": "^7.20.5",
+    "@babel/preset-env": "^7.20.2",
     "@pipobscure/demitasse": "^1.0.10",
     "@pipobscure/demitasse-pretty": "^1.0.10",
     "@pipobscure/demitasse-run": "^1.0.10",
-    "@rollup/plugin-babel": "^5.3.0",
-    "@rollup/plugin-commonjs": "^21.0.1",
-    "@rollup/plugin-node-resolve": "^13.1.1",
-    "@rollup/plugin-replace": "^3.0.0",
-    "@rollup/plugin-typescript": "^8.3.0",
-    "@typescript-eslint/eslint-plugin": "^5.7.0",
-    "@typescript-eslint/parser": "^5.7.0",
-    "eslint": "^8.4.1",
-    "eslint-config-prettier": "^8.3.0",
-    "eslint-plugin-prettier": "^4.0.0",
-    "full-icu": "^1.4.0",
-    "prettier": "^2.5.1",
-    "rollup": "^2.61.1",
-    "rollup-plugin-dts": "^4.0.1",
+    "@rollup/plugin-babel": "^6.0.3",
+    "@rollup/plugin-commonjs": "^23.0.4",
+    "@rollup/plugin-node-resolve": "^15.0.1",
+    "@rollup/plugin-replace": "^5.0.1",
+    "@rollup/plugin-terser": "^0.2.0",
+    "@rollup/plugin-typescript": "^10.0.1",
+    "@typescript-eslint/eslint-plugin": "^5.45.1",
+    "@typescript-eslint/parser": "^5.45.1",
+    "eslint": "^8.29.0",
+    "eslint-config-prettier": "^8.5.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "full-icu": "^1.5.0",
+    "prettier": "^2.8.1",
+    "rollup": "^3.6.0",
+    "rollup-plugin-dts": "^5.0.0",
     "rollup-plugin-sourcemaps": "^0.6.3",
-    "rollup-plugin-terser": "^7.0.2",
-    "test262-harness": "^9.0.0",
-    "timezones.json": "^1.5.3",
+    "test262-harness": "^10.0.0",
+    "timezones.json": "^1.6.1",
     "ts-prune": "^0.10.3",
-    "typescript": "^4.5.4"
+    "typescript": "^4.9.4"
   },
   "engines": {
     "node": ">=12"
