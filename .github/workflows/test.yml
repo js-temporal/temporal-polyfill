@@ -19,10 +19,10 @@ jobs:
           test-cmd: npm run test_nobuild
   test_validstrings:
     steps:
-      uses: .github/workflows/test_base.yml
-      with:
-        node-version-for-testing: 17.x
-        test-cmd: npm run testValidStrings_nobuild
+      - uses: .github/workflows/test_base.yml
+        with:
+          node-version-for-testing: 17.x
+          test-cmd: npm run testValidStrings_nobuild
   test-test262:
     runs-on: ubuntu-latest
     steps:
