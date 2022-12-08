@@ -3,7 +3,7 @@ on:
     inputs:
       node-version-for-testing:
         required: false
-        default: lts/hydrogen
+        default: 18.x
         type: string
       build-cmd:
         required: false
@@ -20,7 +20,7 @@ jobs:
       - name: use node.js v17.x for build
         uses: actions/setup-node@v1
         with:
-          node-version: lts/hydrogen
+          node-version: 18.x
       - run: npm ci --no-optional
       - run: ${{ inputs.build-cmd }}
       - name: use node.js for test execution
