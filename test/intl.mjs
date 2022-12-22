@@ -5,7 +5,39 @@ import Pretty from '@pipobscure/demitasse-pretty';
 const { reporter } = Pretty;
 
 import { strict as assert } from 'assert';
-const { deepEqual, equal, throws } = assert;
+const { deepEqual, equal: originalEqual, throws } = assert;
+
+// Tolerate implementation variance by expecting consistency without being prescriptive.
+// TODO: can we change tests to be less reliant on CLDR formats while still testing that
+// Temporal and Intl are behaving as expected?
+//
+// Intl implementations in Node 19 replace some spaces with non-breaking-space unicode characters
+const narrowNonBreakingSpace = '\u{202f}';
+const thinSpace = '\u{2009}';
+function normalizeSpaces(s) {
+  return s.replace(new RegExp(`[${narrowNonBreakingSpace}${thinSpace}]`, 'g'), ' ');
+}
+function equal(actual, expected, message) {
+  if (typeof actual === 'string') actual = normalizeSpaces(actual);
+  return originalEqual(actual, expected, message);
+}
+const usDayPeriodSpace =
+  new Intl.DateTimeFormat('en-US', { timeStyle: 'short' })
+    .formatToParts(0)
+    .find((part, i, parts) => part.type === 'literal' && parts[i + 1].type === 'dayPeriod')?.value || '';
+const usDateRangeSeparator = new Intl.DateTimeFormat('en-US', { dateStyle: 'short' })
+  .formatRangeToParts(1 * 86400 * 1000, 366 * 86400 * 1000)
+  .find((part) => part.type === 'literal' && part.source === 'shared').value;
+const deDateRangeSeparator = new Intl.DateTimeFormat('de-AT', { dateStyle: 'short' })
+  .formatRangeToParts(1 * 86400 * 1000, 366 * 86400 * 1000)
+  .find((part) => part.type === 'literal' && part.source === 'shared').value;
+// Workarounds for https://unicode-org.atlassian.net/browse/CLDR-16243
+const deMonthDayRangeSeparator = new Intl.DateTimeFormat('de-AT', { month: 'numeric', day: 'numeric' })
+  .formatRangeToParts(1 * 86400 * 1000, 90 * 86400 * 1000)
+  .find((part) => part.type === 'literal' && part.source === 'shared').value;
+const deMonthYearSeparator = new Intl.DateTimeFormat('de-AT', { year: 'numeric', month: 'numeric' })
+  .formatToParts(0)
+  .find((part) => part.type === 'literal').value;
 
 import { DateTimeFormat } from '../lib/intl';
 Intl.DateTimeFormat = DateTimeFormat;
@@ -60,12 +92,12 @@ describe('Intl', () => {
     });
     it("works when the object's calendar is the same as the locale's calendar", () => {
       const zdt = new Temporal.ZonedDateTime(0n, 'UTC', 'japanese');
-      const result = zdt.toLocaleString('en-US-u-ca-japanese');
+      const result = normalizeSpaces(zdt.toLocaleString('en-US-u-ca-japanese'));
       assert(result === '1/1/45, 12:00:00 AM UTC' || result === '1/1/45 S, 12:00:00 AM UTC');
     });
     it("adopts the locale's calendar when the object's calendar is ISO", () => {
       const zdt = Temporal.ZonedDateTime.from('1976-11-18T15:23:30+00:00[UTC]');
-      const result = zdt.toLocaleString('en-US-u-ca-japanese');
+      const result = normalizeSpaces(zdt.toLocaleString('en-US-u-ca-japanese'));
       assert(result === '11/18/51, 3:23:30 PM UTC' || result === '11/18/51 S, 3:23:30 PM UTC');
     });
     it('throws when the calendars are different and not ISO', () => {
@@ -99,12 +131,12 @@ describe('Intl', () => {
         second: 30,
         calendar: 'japanese'
       });
-      const result = dt.toLocaleString('en-US-u-ca-japanese');
+      const result = normalizeSpaces(dt.toLocaleString('en-US-u-ca-japanese'));
       assert(result === '11/18/51, 3:23:30 PM' || result === '11/18/51 S, 3:23:30 PM');
     });
     it("adopts the locale's calendar when the object's calendar is ISO", () => {
       const dt = Temporal.PlainDateTime.from('1976-11-18T15:23:30');
-      const result = dt.toLocaleString('en-US-u-ca-japanese');
+      const result = normalizeSpaces(dt.toLocaleString('en-US-u-ca-japanese'));
       assert(result === '11/18/51, 3:23:30 PM' || result === '11/18/51 S, 3:23:30 PM');
     });
     it('throws when the calendars are different and not ISO', () => {
@@ -150,12 +182,12 @@ describe('Intl', () => {
     });
     it("works when the object's calendar is the same as the locale's calendar", () => {
       const d = Temporal.PlainDate.from({ era: 'showa', eraYear: 51, month: 11, day: 18, calendar: 'japanese' });
-      const result = d.toLocaleString('en-US-u-ca-japanese');
+      const result = normalizeSpaces(d.toLocaleString('en-US-u-ca-japanese'));
       assert(result === '11/18/51' || result === '11/18/51 S');
     });
     it("adopts the locale's calendar when the object's calendar is ISO", () => {
       const d = Temporal.PlainDate.from('1976-11-18');
-      const result = d.toLocaleString('en-US-u-ca-japanese');
+      const result = normalizeSpaces(d.toLocaleString('en-US-u-ca-japanese'));
       assert(result === '11/18/51' || result === '11/18/51 S');
     });
     it('throws when the calendars are different and not ISO', () => {
@@ -169,7 +201,10 @@ describe('Intl', () => {
     it(`(${yearmonth.toString()}).toLocaleString('en-US', { timeZone: 'America/New_York' })`, () =>
       equal(`${yearmonth.toLocaleString('en', { timeZone: 'America/New_York' })}`, '11/1976'));
     it(`(${yearmonth.toString()}).toLocaleString('de-AT', { timeZone: 'Europe/Vienna' })`, () =>
-      equal(`${yearmonth.toLocaleString('de', { timeZone: 'Europe/Vienna', calendar })}`, '11.1976'));
+      equal(
+        `${yearmonth.toLocaleString('de', { timeZone: 'Europe/Vienna', calendar })}`,
+        `11${deMonthYearSeparator}1976`
+      ));
     it('should ignore units not in the data type', () => {
       equal(yearmonth.toLocaleString('en', { timeZoneName: 'long' }), '11/1976');
       equal(yearmonth.toLocaleString('en', { day: 'numeric' }), '11/1976');
@@ -180,7 +215,7 @@ describe('Intl', () => {
     });
     it("works when the object's calendar is the same as the locale's calendar", () => {
       const ym = Temporal.PlainYearMonth.from({ era: 'showa', eraYear: 51, month: 11, calendar: 'japanese' });
-      const result = ym.toLocaleString('en-US-u-ca-japanese');
+      const result = normalizeSpaces(ym.toLocaleString('en-US-u-ca-japanese'));
       assert(result === '11/51' || result === '11/51 S');
     });
     it('throws when the calendar is not equal to the locale calendar', () => {
@@ -1396,7 +1431,13 @@ describe('Intl', () => {
     const usCalendar = us.resolvedOptions().calendar;
     const atCalendar = at.resolvedOptions().calendar;
     const t1 = '1976-11-18T14:23:30+00:00[UTC]';
-    const t2 = '2020-02-20T15:44:56-05:00[America/New_York]';
+    const t2InstantString = '2020-02-20T15:44:56-05:00';
+    const t2 = `${t2InstantString}[America/New_York]`;
+    // Yet another ICU bug to work around in Node 19
+    const germanMonthNumericMonthInYearMonth = new Intl.DateTimeFormat('de-AT', {
+      year: 'numeric',
+      month: 'numeric'
+    }).formatToParts(new Date(t2InstantString))[0].value;
     const start = new Date('1922-12-30'); // ☭
     const end = new Date('1991-12-26');
 
@@ -1424,7 +1465,7 @@ describe('Intl', () => {
       it('should work for YearMonth', () => {
         const t = Temporal.PlainDate.from(t1);
         equal(us.format(t.withCalendar(usCalendar).toPlainYearMonth()), '11/1976');
-        equal(at.format(t.withCalendar(atCalendar).toPlainYearMonth()), '11.1976');
+        equal(at.format(t.withCalendar(atCalendar).toPlainYearMonth()), `11${deMonthYearSeparator}1976`);
       });
       it('should work for MonthDay', () => {
         const t = Temporal.PlainDate.from(t1);
@@ -1450,7 +1491,7 @@ describe('Intl', () => {
           { type: 'minute', value: '44' },
           { type: 'literal', value: ':' },
           { type: 'second', value: '56' },
-          { type: 'literal', value: ' ' },
+          { type: 'literal', value: usDayPeriodSpace },
           { type: 'dayPeriod', value: 'PM' }
         ]);
         deepEqual(at.formatToParts(Temporal.Instant.from(t2)), [
@@ -1480,7 +1521,7 @@ describe('Intl', () => {
           { type: 'minute', value: '44' },
           { type: 'literal', value: ':' },
           { type: 'second', value: '56' },
-          { type: 'literal', value: ' ' },
+          { type: 'literal', value: usDayPeriodSpace },
           { type: 'dayPeriod', value: 'PM' },
           { type: 'literal', value: ' ' },
           { type: 'timeZoneName', value: 'EST' }
@@ -1514,7 +1555,7 @@ describe('Intl', () => {
           { type: 'minute', value: '44' },
           { type: 'literal', value: ':' },
           { type: 'second', value: '56' },
-          { type: 'literal', value: ' ' },
+          { type: 'literal', value: usDayPeriodSpace },
           { type: 'dayPeriod', value: 'PM' }
         ]);
         deepEqual(at.formatToParts(Temporal.PlainDateTime.from(t2)), [
@@ -1538,7 +1579,7 @@ describe('Intl', () => {
           { type: 'minute', value: '44' },
           { type: 'literal', value: ':' },
           { type: 'second', value: '56' },
-          { type: 'literal', value: ' ' },
+          { type: 'literal', value: usDayPeriodSpace },
           { type: 'dayPeriod', value: 'PM' }
         ]);
         deepEqual(at.formatToParts(Temporal.PlainTime.from(t2)), [
@@ -1573,8 +1614,8 @@ describe('Intl', () => {
           { type: 'year', value: '2020' }
         ]);
         deepEqual(at.formatToParts(t.withCalendar(atCalendar).toPlainYearMonth()), [
-          { type: 'month', value: '2' },
-          { type: 'literal', value: '.' },
+          { type: 'month', value: germanMonthNumericMonthInYearMonth },
+          { type: 'literal', value: deMonthYearSeparator },
           { type: 'year', value: '2020' }
         ]);
       });
@@ -1659,7 +1700,7 @@ describe('Intl', () => {
             date1.withCalendar(atCalendar).toPlainYearMonth(),
             date2.withCalendar(atCalendar).toPlainYearMonth()
           ),
-          '11.1976 – 02.2020'
+          `11${deMonthYearSeparator}1976 – 02${deMonthYearSeparator}2020`
         );
       });
       it('should work for MonthDay', () => {
@@ -1715,9 +1756,9 @@ describe('Intl', () => {
           { type: 'minute', value: '23', source: 'startRange' },
           { type: 'literal', value: ':', source: 'startRange' },
           { type: 'second', value: '30', source: 'startRange' },
-          { type: 'literal', value: ' ', source: 'startRange' },
+          { type: 'literal', value: usDayPeriodSpace, source: 'startRange' },
           { type: 'dayPeriod', value: 'AM', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: usDateRangeSeparator, source: 'shared' },
           { type: 'month', value: '2', source: 'endRange' },
           { type: 'literal', value: '/', source: 'endRange' },
           { type: 'day', value: '20', source: 'endRange' },
@@ -1729,7 +1770,7 @@ describe('Intl', () => {
           { type: 'minute', value: '44', source: 'endRange' },
           { type: 'literal', value: ':', source: 'endRange' },
           { type: 'second', value: '56', source: 'endRange' },
-          { type: 'literal', value: ' ', source: 'endRange' },
+          { type: 'literal', value: usDayPeriodSpace, source: 'endRange' },
           { type: 'dayPeriod', value: 'PM', source: 'endRange' }
         ]);
         deepEqual(at.formatRangeToParts(Temporal.Instant.from(t1), Temporal.Instant.from(t2)), [
@@ -1744,7 +1785,7 @@ describe('Intl', () => {
           { type: 'minute', value: '23', source: 'startRange' },
           { type: 'literal', value: ':', source: 'startRange' },
           { type: 'second', value: '30', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: deDateRangeSeparator, source: 'shared' },
           { type: 'day', value: '20', source: 'endRange' },
           { type: 'literal', value: '.', source: 'endRange' },
           { type: 'month', value: '2', source: 'endRange' },
@@ -1773,11 +1814,11 @@ describe('Intl', () => {
           { type: 'minute', value: '23', source: 'startRange' },
           { type: 'literal', value: ':', source: 'startRange' },
           { type: 'second', value: '30', source: 'startRange' },
-          { type: 'literal', value: ' ', source: 'startRange' },
+          { type: 'literal', value: usDayPeriodSpace, source: 'startRange' },
           { type: 'dayPeriod', value: 'PM', source: 'startRange' },
           { type: 'literal', value: ' ', source: 'startRange' },
           { type: 'timeZoneName', value: 'UTC', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: usDateRangeSeparator, source: 'shared' },
           { type: 'month', value: '2', source: 'endRange' },
           { type: 'literal', value: '/', source: 'endRange' },
           { type: 'day', value: '20', source: 'endRange' },
@@ -1789,7 +1830,7 @@ describe('Intl', () => {
           { type: 'minute', value: '44', source: 'endRange' },
           { type: 'literal', value: ':', source: 'endRange' },
           { type: 'second', value: '56', source: 'endRange' },
-          { type: 'literal', value: ' ', source: 'endRange' },
+          { type: 'literal', value: usDayPeriodSpace, source: 'endRange' },
           { type: 'dayPeriod', value: 'PM', source: 'endRange' },
           { type: 'literal', value: ' ', source: 'endRange' },
           { type: 'timeZoneName', value: 'UTC', source: 'endRange' }
@@ -1808,7 +1849,7 @@ describe('Intl', () => {
           { type: 'second', value: '30', source: 'startRange' },
           { type: 'literal', value: ' ', source: 'startRange' },
           { type: 'timeZoneName', value: 'UTC', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: deDateRangeSeparator, source: 'shared' },
           { type: 'day', value: '20', source: 'endRange' },
           { type: 'literal', value: '.', source: 'endRange' },
           { type: 'month', value: '2', source: 'endRange' },
@@ -1837,9 +1878,9 @@ describe('Intl', () => {
           { type: 'minute', value: '23', source: 'startRange' },
           { type: 'literal', value: ':', source: 'startRange' },
           { type: 'second', value: '30', source: 'startRange' },
-          { type: 'literal', value: ' ', source: 'startRange' },
+          { type: 'literal', value: usDayPeriodSpace, source: 'startRange' },
           { type: 'dayPeriod', value: 'PM', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: usDateRangeSeparator, source: 'shared' },
           { type: 'month', value: '2', source: 'endRange' },
           { type: 'literal', value: '/', source: 'endRange' },
           { type: 'day', value: '20', source: 'endRange' },
@@ -1851,7 +1892,7 @@ describe('Intl', () => {
           { type: 'minute', value: '44', source: 'endRange' },
           { type: 'literal', value: ':', source: 'endRange' },
           { type: 'second', value: '56', source: 'endRange' },
-          { type: 'literal', value: ' ', source: 'endRange' },
+          { type: 'literal', value: usDayPeriodSpace, source: 'endRange' },
           { type: 'dayPeriod', value: 'PM', source: 'endRange' }
         ]);
         deepEqual(at.formatRangeToParts(Temporal.PlainDateTime.from(t1), Temporal.PlainDateTime.from(t2)), [
@@ -1866,7 +1907,7 @@ describe('Intl', () => {
           { type: 'minute', value: '23', source: 'startRange' },
           { type: 'literal', value: ':', source: 'startRange' },
           { type: 'second', value: '30', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: deDateRangeSeparator, source: 'shared' },
           { type: 'day', value: '20', source: 'endRange' },
           { type: 'literal', value: '.', source: 'endRange' },
           { type: 'month', value: '2', source: 'endRange' },
@@ -1887,15 +1928,15 @@ describe('Intl', () => {
           { type: 'minute', value: '23', source: 'startRange' },
           { type: 'literal', value: ':', source: 'startRange' },
           { type: 'second', value: '30', source: 'startRange' },
-          { type: 'literal', value: ' ', source: 'startRange' },
+          { type: 'literal', value: usDayPeriodSpace, source: 'startRange' },
           { type: 'dayPeriod', value: 'PM', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: usDateRangeSeparator, source: 'shared' },
           { type: 'hour', value: '3', source: 'endRange' },
           { type: 'literal', value: ':', source: 'endRange' },
           { type: 'minute', value: '44', source: 'endRange' },
           { type: 'literal', value: ':', source: 'endRange' },
           { type: 'second', value: '56', source: 'endRange' },
-          { type: 'literal', value: ' ', source: 'endRange' },
+          { type: 'literal', value: usDayPeriodSpace, source: 'endRange' },
           { type: 'dayPeriod', value: 'PM', source: 'endRange' }
         ]);
         deepEqual(at.formatRangeToParts(Temporal.PlainTime.from(t1), Temporal.PlainTime.from(t2)), [
@@ -1904,7 +1945,7 @@ describe('Intl', () => {
           { type: 'minute', value: '23', source: 'startRange' },
           { type: 'literal', value: ':', source: 'startRange' },
           { type: 'second', value: '30', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: deDateRangeSeparator, source: 'shared' },
           { type: 'hour', value: '15', source: 'endRange' },
           { type: 'literal', value: ':', source: 'endRange' },
           { type: 'minute', value: '44', source: 'endRange' },
@@ -1919,7 +1960,7 @@ describe('Intl', () => {
           { type: 'day', value: '18', source: 'startRange' },
           { type: 'literal', value: '/', source: 'startRange' },
           { type: 'year', value: '1976', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: usDateRangeSeparator, source: 'shared' },
           { type: 'month', value: '2', source: 'endRange' },
           { type: 'literal', value: '/', source: 'endRange' },
           { type: 'day', value: '20', source: 'endRange' },
@@ -1932,7 +1973,7 @@ describe('Intl', () => {
           { type: 'month', value: '11', source: 'startRange' },
           { type: 'literal', value: '.', source: 'startRange' },
           { type: 'year', value: '1976', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: deDateRangeSeparator, source: 'shared' },
           { type: 'day', value: '20', source: 'endRange' },
           { type: 'literal', value: '.', source: 'endRange' },
           { type: 'month', value: '02', source: 'endRange' },
@@ -1952,7 +1993,7 @@ describe('Intl', () => {
             { type: 'month', value: '11', source: 'startRange' },
             { type: 'literal', value: '/', source: 'startRange' },
             { type: 'year', value: '1976', source: 'startRange' },
-            { type: 'literal', value: ' – ', source: 'shared' },
+            { type: 'literal', value: usDateRangeSeparator, source: 'shared' },
             { type: 'month', value: '2', source: 'endRange' },
             { type: 'literal', value: '/', source: 'endRange' },
             { type: 'year', value: '2020', source: 'endRange' }
@@ -1965,11 +2006,11 @@ describe('Intl', () => {
           ),
           [
             { type: 'month', value: '11', source: 'startRange' },
-            { type: 'literal', value: '.', source: 'startRange' },
+            { type: 'literal', value: deMonthYearSeparator, source: 'startRange' },
             { type: 'year', value: '1976', source: 'startRange' },
-            { type: 'literal', value: ' – ', source: 'shared' },
+            { type: 'literal', value: deDateRangeSeparator, source: 'shared' },
             { type: 'month', value: '02', source: 'endRange' },
-            { type: 'literal', value: '.', source: 'endRange' },
+            { type: 'literal', value: deMonthYearSeparator, source: 'endRange' },
             { type: 'year', value: '2020', source: 'endRange' }
           ]
         );
@@ -1986,7 +2027,7 @@ describe('Intl', () => {
             { type: 'month', value: '2', source: 'startRange' },
             { type: 'literal', value: '/', source: 'startRange' },
             { type: 'day', value: '20', source: 'startRange' },
-            { type: 'literal', value: ' – ', source: 'shared' },
+            { type: 'literal', value: usDateRangeSeparator, source: 'shared' },
             { type: 'month', value: '11', source: 'endRange' },
             { type: 'literal', value: '/', source: 'endRange' },
             { type: 'day', value: '18', source: 'endRange' }
@@ -2001,7 +2042,7 @@ describe('Intl', () => {
             { type: 'day', value: '20', source: 'startRange' },
             { type: 'literal', value: '.', source: 'startRange' },
             { type: 'month', value: '02', source: 'startRange' },
-            { type: 'literal', value: '. – ', source: 'shared' },
+            { type: 'literal', value: deMonthDayRangeSeparator, source: 'shared' },
             { type: 'day', value: '18', source: 'endRange' },
             { type: 'literal', value: '.', source: 'endRange' },
             { type: 'month', value: '11', source: 'endRange' },
@@ -2016,7 +2057,7 @@ describe('Intl', () => {
           { type: 'day', value: '29', source: 'startRange' },
           { type: 'literal', value: '/', source: 'startRange' },
           { type: 'year', value: '1922', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: usDateRangeSeparator, source: 'shared' },
           { type: 'month', value: '12', source: 'endRange' },
           { type: 'literal', value: '/', source: 'endRange' },
           { type: 'day', value: '25', source: 'endRange' },
@@ -2029,7 +2070,7 @@ describe('Intl', () => {
           { type: 'month', value: '12', source: 'startRange' },
           { type: 'literal', value: '.', source: 'startRange' },
           { type: 'year', value: '1922', source: 'startRange' },
-          { type: 'literal', value: ' – ', source: 'shared' },
+          { type: 'literal', value: deDateRangeSeparator, source: 'shared' },
           { type: 'day', value: '26', source: 'endRange' },
           { type: 'literal', value: '.', source: 'endRange' },
           { type: 'month', value: '12', source: 'endRange' },

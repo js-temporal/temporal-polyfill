@@ -380,7 +380,7 @@ describe('ECMAScript', () => {
 
     function test(nanos, zone, expected) {
       // Internally, we represent BigInt as JSBI instances. JSBI instances are
-      // not interchangable with native BigInt, so we must convert them first.
+      // not interchangeable with native BigInt, so we must convert them first.
       // Normally, this would have been done upstream by another part of the
       // Temporal APIs, but since we are directly calling into the ES function
       // we must convert in the test instead.
