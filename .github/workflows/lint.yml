@@ -5,19 +5,19 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: use node.js v17.x
+      - name: use node.js v19.x
         uses: actions/setup-node@v1
         with:
-          node-version: 17.x
+          node-version: 19.x
       - run: npm ci --no-optional
       - run: npm run lint
   lint-unused-code: # look for unused functions and unused exports
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: use node.js v17.x
+      - name: use node.js v19.x
         uses: actions/setup-node@v1
         with:
-          node-version: 17.x
+          node-version: 19.x
       - run: npm ci --no-optional
       - run: npm run prune
