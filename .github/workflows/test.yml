@@ -5,89 +5,83 @@ on:
     branches:
       - main
 jobs:
-  test-node17:
+  test-demitasse:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [19.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: use node.js v17.x
-        uses: actions/setup-node@v1
+      - uses: actions/checkout@v3
+      - name: use node.js v${{ matrix.version }}
+        uses: actions/setup-node@v3
         with:
-          node-version: 17.x
+          node-version: ${{ matrix.version }}
       - run: npm ci --no-optional
       - run: npm test
-  test-node16:
+  test-test262-matrix:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [19.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
-      - name: use node.js v16.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 16.x
-      - run: npm ci --no-optional
-      - run: npm test
-  test-node14:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
-      - name: use node.js v14.x
-        uses: actions/setup-node@v1
-        with:
-          node-version: 14.x
-      - run: npm ci --no-optional
-      - run: npm test
-  test-test262:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
-      - name: use node.js v17.x
-        uses: actions/setup-node@v1
+      - name: use node.js v${{ matrix.version }}
+        uses: actions/setup-node@v3
         with:
-          node-version: 17.x
+          node-version: ${{ matrix.version }}
       - run: npm ci
       - run: npm run test262
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-  test-test262-opt:
+  test-test262-matrix-opt:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [19.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
-      - name: use node.js v17.x
-        uses: actions/setup-node@v1
+      - name: use node.js v${{ matrix.version }}
+        uses: actions/setup-node@v3
         with:
-          node-version: 17.x
+          node-version: ${{ matrix.version }}
       - run: npm ci
       - run: npm run test262
         env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           NODE_ENV: production
-  test-test262-es5:
+  test-test262-matrix-es5:
+    strategy:
+      fail-fast: false
+      matrix:
+        version: [19.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: true
-      - name: use node.js v17.x
-        uses: actions/setup-node@v1
+      - name: use node.js v${{ matrix.version }}
+        uses: actions/setup-node@v3
         with:
-          node-version: 17.x
+          node-version: ${{ matrix.version }}
       - run: npm ci
       - run: npm run test262
         env:
-          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
           NODE_ENV: production
           TRANSPILE: '1'
   test-validstrings:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      - name: use node.js v16.x
+      - name: use node.js v19.x
         uses: actions/setup-node@v1
         with:
-          node-version: 16.x
+          node-version: 19.x
       - run: npm ci
       - run: |
           npm ci

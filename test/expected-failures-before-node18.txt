@@ -1,0 +1,2 @@
+# Intl.supportedValuesOf("timeZone") is only available starting in Node 18
+intl402/Temporal/TimeZone/supported-values-of.js
