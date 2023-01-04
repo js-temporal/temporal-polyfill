@@ -33,16 +33,16 @@ export class Duration implements Temporal.Duration {
     microsecondsParam: Params['constructor'][8] = 0,
     nanosecondsParam: Params['constructor'][9] = 0
   ) {
-    const years = ES.ToIntegerIfIntegral(yearsParam);
-    const months = ES.ToIntegerIfIntegral(monthsParam);
-    const weeks = ES.ToIntegerIfIntegral(weeksParam);
-    const days = ES.ToIntegerIfIntegral(daysParam);
-    const hours = ES.ToIntegerIfIntegral(hoursParam);
-    const minutes = ES.ToIntegerIfIntegral(minutesParam);
-    const seconds = ES.ToIntegerIfIntegral(secondsParam);
-    const milliseconds = ES.ToIntegerIfIntegral(millisecondsParam);
-    const microseconds = ES.ToIntegerIfIntegral(microsecondsParam);
-    const nanoseconds = ES.ToIntegerIfIntegral(nanosecondsParam);
+    const years = yearsParam === undefined ? 0 : ES.ToIntegerIfIntegral(yearsParam);
+    const months = monthsParam === undefined ? 0 : ES.ToIntegerIfIntegral(monthsParam);
+    const weeks = weeksParam === undefined ? 0 : ES.ToIntegerIfIntegral(weeksParam);
+    const days = daysParam === undefined ? 0 : ES.ToIntegerIfIntegral(daysParam);
+    const hours = hoursParam === undefined ? 0 : ES.ToIntegerIfIntegral(hoursParam);
+    const minutes = minutesParam === undefined ? 0 : ES.ToIntegerIfIntegral(minutesParam);
+    const seconds = secondsParam === undefined ? 0 : ES.ToIntegerIfIntegral(secondsParam);
+    const milliseconds = millisecondsParam === undefined ? 0 : ES.ToIntegerIfIntegral(millisecondsParam);
+    const microseconds = microsecondsParam === undefined ? 0 : ES.ToIntegerIfIntegral(microsecondsParam);
+    const nanoseconds = nanosecondsParam === undefined ? 0 : ES.ToIntegerIfIntegral(nanosecondsParam);
 
     ES.RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
 
