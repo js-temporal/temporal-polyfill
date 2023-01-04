@@ -19,14 +19,6 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     const calendar = ES.ToTemporalCalendar(calendarParam);
     const referenceISOYear = ES.ToIntegerWithTruncation(referenceISOYearParam);
 
-    // Note: if the arguments are not passed,
-    //       ToIntegerWithTruncation(undefined) will have returned 0, which will
-    //       be rejected by RejectISODate in CreateTemporalMonthDaySlots. This
-    //       check exists only to improve the error message.
-    if (arguments.length < 2) {
-      throw new RangeError('missing argument: isoMonth and isoDay are required');
-    }
-
     ES.CreateTemporalMonthDaySlots(this, isoMonth, isoDay, calendar, referenceISOYear);
   }
 

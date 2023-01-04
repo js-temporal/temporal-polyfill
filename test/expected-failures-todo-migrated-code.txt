@@ -164,7 +164,6 @@ intl402/Temporal/Calendar/prototype/era/argument-calendar-fields-undefined.js
 intl402/Temporal/Calendar/prototype/eraYear/argument-calendar-fields-undefined.js
 intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boundaries.js
 intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
-built-ins/Temporal/PlainDate/argument-convert.js
 built-ins/Temporal/Duration/prototype/round/roundingincrement-out-of-range.js
 built-ins/Temporal/PlainDate/prototype/day/validate-calendar-value.js
 built-ins/Temporal/PlainDate/prototype/month/validate-calendar-value.js
