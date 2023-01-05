@@ -153,6 +153,34 @@ function isZero(value: JSBI): boolean {
   return JSBI.equal(value, ZERO);
 }
 
+function GetMethod<T extends { [s in M]?: (...args: any[]) => unknown }, M extends string & keyof T>(
+  obj: T,
+  methodName: M
+): T[M];
+function GetMethod<T extends { [s in M]?: undefined | ((...args: any[]) => unknown) }, M extends string & keyof T>(
+  obj: T,
+  methodName: M
+): T[M] | undefined {
+  const result = obj[methodName];
+  if (result === undefined) return undefined;
+  if (typeof result !== 'function') throw new TypeError(`'${methodName}' must be a function`);
+  return result;
+}
+
+function Call<T, A extends readonly any[], R>(
+  target: (this: T, ...args: A) => R,
+  thisArgument: T,
+  argumentsList: Readonly<A>
+): R {
+  const args = arguments.length > 2 ? argumentsList : [];
+  if (DEBUG) {
+    if (!Array.isArray(argumentsList)) {
+      throw new TypeError('Assertion failed: optional `argumentsList`, if provided, must be an array');
+    }
+  }
+  return ReflectApply(target, thisArgument, args);
+}
+
 // For unknown values, this narrows the result to a Record. But for union types
 // like `Temporal.DurationLike | string`, it'll strip the primitive types while
 // leaving the object type(s) unchanged.
@@ -2054,8 +2082,9 @@ export function CalendarFields<K extends AnyTemporalKey>(
   calendar: Temporal.CalendarProtocol,
   fieldNamesParam: ReadonlyArray<K>
 ) {
-  if (calendar.fields === undefined) return [...fieldNamesParam]; // TODO: This copy will be removed in a later commit
-  const fieldNames = calendar.fields(fieldNamesParam);
+  const fields = GetMethod(calendar, 'fields');
+  if (fields === undefined) return fieldNamesParam as K[];
+  const fieldNames = Call(fields, calendar, [fieldNamesParam]);
   const result: string[] = [];
   for (const name of fieldNames) {
     if (typeof name !== 'string') throw new TypeError('bad return from calendar.fields()');
@@ -2069,7 +2098,7 @@ export function CalendarMergeFields<Base extends Record<string, unknown>, ToAdd 
   fields: Base,
   additionalFields: ToAdd
 ) {
-  const calMergeFields = calendar.mergeFields;
+  const calMergeFields = GetMethod(calendar, 'mergeFields');
   if (!calMergeFields) {
     return { ...fields, ...additionalFields };
   }
@@ -2087,7 +2116,7 @@ export function CalendarDateAdd(
 ) {
   let dateAdd = dateAddParam;
   if (dateAdd === undefined) {
-    dateAdd = calendar.dateAdd;
+    dateAdd = GetMethod(calendar, 'dateAdd');
   }
   const result = ReflectApply(dateAdd, calendar, [date, duration, options]);
   if (!IsTemporalDate(result)) throw new TypeError('invalid result');
@@ -2103,7 +2132,7 @@ function CalendarDateUntil(
 ) {
   let dateUntil = dateUntilParam;
   if (dateUntil === undefined) {
-    dateUntil = calendar.dateUntil;
+    dateUntil = GetMethod(calendar, 'dateUntil');
   }
   const result = ReflectApply(dateUntil, calendar, [date, otherDate, options]);
   if (!IsTemporalDuration(result)) throw new TypeError('invalid result');
@@ -2111,109 +2140,183 @@ function CalendarDateUntil(
 }
 
 export function CalendarYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['year'][0]) {
-  const result = calendar.year(dateLike);
-  return ToIntegerWithTruncation(result);
+  const year = GetMethod(calendar, 'year');
+  let result = Call(year, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar year result must be an integer');
+  }
+  if (!IsIntegralNumber(result)) {
+    throw new RangeError('calendar year result must be an integer');
+  }
+  return result;
 }
 
 export function CalendarMonth(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['month'][0]) {
-  const result = calendar.month(dateLike);
-  return ToPositiveIntegerWithTruncation(result);
+  const month = GetMethod(calendar, 'month');
+  let result = Call(month, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar month result must be a positive integer');
+  }
+  if (!IsIntegralNumber(result) || result <= 0) {
+    throw new RangeError('calendar month result must be a positive integer');
+  }
+  return result;
 }
 
 export function CalendarMonthCode(
   calendar: Temporal.CalendarProtocol,
   dateLike: CalendarProtocolParams['monthCode'][0]
 ) {
-  const result = calendar.monthCode(dateLike);
-  if (result === undefined) {
-    throw new RangeError('calendar monthCode result must be a string');
+  const monthCode = GetMethod(calendar, 'monthCode');
+  let result = Call(monthCode, calendar, [dateLike]);
+  if (typeof result !== 'string') {
+    throw new TypeError('calendar monthCode result must be a string');
   }
-  return ToString(result);
+  return result;
 }
 
-export function CalendarDay(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['day'][0]) {
-  const result = calendar.day(dateLike);
-  return ToPositiveIntegerWithTruncation(result);
+export function CalendarDay(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const eraYear = GetMethod(calendar, 'day');
+  let result = Call(eraYear, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar day result must be a positive integer');
+  }
+  if (!IsIntegralNumber(result) || result <= 0) {
+    throw new RangeError('calendar day result must be a positive integer');
+  }
+  return result;
 }
 
 export function CalendarEra(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
-  let result = calendar.era(dateLike);
-  if (result !== undefined) {
-    result = ToString(result);
+  const era = GetMethod(calendar, 'era');
+  let result = Call(era, calendar, [dateLike]);
+  if (result === undefined) {
+    return result;
+  }
+  if (typeof result !== 'string') {
+    throw new TypeError('calendar era result must be a string');
   }
   return result;
 }
 
-export function CalendarEraYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['eraYear'][0]) {
-  let result = calendar.eraYear(dateLike);
-  if (result !== undefined) {
-    result = ToIntegerWithTruncation(result);
+export function CalendarEraYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const eraYear = GetMethod(calendar, 'eraYear');
+  let result = Call(eraYear, calendar, [dateLike]);
+  if (result === undefined) {
+    return result;
+  }
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar eraYear result must be an integer');
+  }
+  if (!IsIntegralNumber(result)) {
+    throw new RangeError('calendar eraYear result must be an integer');
   }
   return result;
 }
 
-export function CalendarDayOfWeek(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: CalendarProtocolParams['dayOfWeek'][0]
-) {
-  return ToPositiveIntegerWithTruncation(calendar.dayOfWeek(dateLike));
+export function CalendarDayOfWeek(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const dayOfWeek = GetMethod(calendar, 'dayOfWeek');
+  const result = Call(dayOfWeek, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar dayOfWeek result must be a positive integer');
+  }
+  if (!IsIntegralNumber(result) || result <= 0) {
+    throw new RangeError('calendar dayOfWeek result must be a positive integer');
+  }
+  return result;
 }
 
-export function CalendarDayOfYear(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: CalendarProtocolParams['dayOfYear'][0]
-) {
-  return ToPositiveIntegerWithTruncation(calendar.dayOfYear(dateLike));
+export function CalendarDayOfYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const dayOfYear = GetMethod(calendar, 'dayOfYear');
+  const result = Call(dayOfYear, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar dayOfYear result must be a positive integer');
+  }
+  if (!IsIntegralNumber(result) || result <= 0) {
+    throw new RangeError('calendar dayOfYear result must be a positive integer');
+  }
+  return result;
 }
 
-export function CalendarWeekOfYear(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: CalendarProtocolParams['weekOfYear'][0]
-) {
-  return ToPositiveIntegerWithTruncation(calendar.weekOfYear(dateLike));
+export function CalendarWeekOfYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const weekOfYear = GetMethod(calendar, 'weekOfYear');
+  const result = Call(weekOfYear, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar weekOfYear result must be a positive integer');
+  }
+  if (!IsIntegralNumber(result) || result <= 0) {
+    throw new RangeError('calendar weekOfYear result must be a positive integer');
+  }
+  return result;
 }
 
-export function CalendarYearOfWeek(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: CalendarProtocolParams['yearOfWeek'][0]
-) {
-  const result = ToPositiveIntegerWithTruncation(calendar.yearOfWeek(dateLike));
-  return ToIntegerWithTruncation(result);
+export function CalendarYearOfWeek(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const yearOfWeek = GetMethod(calendar, 'yearOfWeek');
+  const result = Call(yearOfWeek, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar yearOfWeek result must be an integer');
+  }
+  if (!IsIntegralNumber(result)) {
+    throw new RangeError('calendar yearOfWeek result must be an integer');
+  }
+  return result;
 }
 
-export function CalendarDaysInWeek(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: CalendarProtocolParams['daysInWeek'][0]
-) {
-  return ToPositiveIntegerWithTruncation(calendar.daysInWeek(dateLike));
+export function CalendarDaysInWeek(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const daysInWeek = GetMethod(calendar, 'daysInWeek');
+  const result = Call(daysInWeek, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar daysInWeek result must be a positive integer');
+  }
+  if (!IsIntegralNumber(result) || result <= 0) {
+    throw new RangeError('calendar daysInWeek result must be a positive integer');
+  }
+  return result;
 }
 
-export function CalendarDaysInMonth(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: CalendarProtocolParams['daysInMonth'][0]
-) {
-  return ToPositiveIntegerWithTruncation(calendar.daysInMonth(dateLike));
+export function CalendarDaysInMonth(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const daysInMonth = GetMethod(calendar, 'daysInMonth');
+  const result = Call(daysInMonth, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar daysInMonth result must be a positive integer');
+  }
+  if (!IsIntegralNumber(result) || result <= 0) {
+    throw new RangeError('calendar daysInMonth result must be a positive integer');
+  }
+  return result;
 }
 
-export function CalendarDaysInYear(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: CalendarProtocolParams['daysInYear'][0]
-) {
-  return ToPositiveIntegerWithTruncation(calendar.daysInYear(dateLike));
+export function CalendarDaysInYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const daysInYear = GetMethod(calendar, 'daysInYear');
+  const result = Call(daysInYear, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar daysInYear result must be a positive integer');
+  }
+  if (!IsIntegralNumber(result) || result <= 0) {
+    throw new RangeError('calendar daysInYear result must be a positive integer');
+  }
+  return result;
 }
 
-export function CalendarMonthsInYear(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: CalendarProtocolParams['monthsInYear'][0]
-) {
-  return ToPositiveIntegerWithTruncation(calendar.monthsInYear(dateLike));
+export function CalendarMonthsInYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const monthsInYear = GetMethod(calendar, 'monthsInYear');
+  const result = Call(monthsInYear, calendar, [dateLike]);
+  if (typeof result !== 'number') {
+    throw new TypeError('calendar monthsInYear result must be a positive integer');
+  }
+  if (!IsIntegralNumber(result) || result <= 0) {
+    throw new RangeError('calendar monthsInYear result must be a positive integer');
+  }
+  return result;
 }
 
-export function CalendarInLeapYear(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: CalendarProtocolParams['inLeapYear'][0]
-) {
-  return !!calendar.inLeapYear(dateLike);
+export function CalendarInLeapYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+  const inLeapYear = GetMethod(calendar, 'inLeapYear');
+  const result = Call(inLeapYear, calendar, [dateLike]);
+  if (typeof result !== 'boolean') {
+    throw new TypeError('calendar inLeapYear result must be a boolean');
+  }
+  return result;
 }
 
 export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0]) {
@@ -2301,7 +2404,8 @@ export function CalendarDateFromFields(
   fields: CalendarProtocolParams['dateFromFields'][0],
   options?: Partial<CalendarProtocolParams['dateFromFields'][1]>
 ) {
-  const result = calendar.dateFromFields(fields, options);
+  const dateFromFields = GetMethod(calendar, 'dateFromFields');
+  let result = Call(dateFromFields, calendar, [fields, options]);
   if (!IsTemporalDate(result)) throw new TypeError('invalid result');
   return result;
 }
@@ -2311,7 +2415,8 @@ export function CalendarYearMonthFromFields(
   fields: CalendarProtocolParams['yearMonthFromFields'][0],
   options?: CalendarProtocolParams['yearMonthFromFields'][1]
 ) {
-  const result = calendar.yearMonthFromFields(fields, options);
+  const yearMonthFromFields = GetMethod(calendar, 'yearMonthFromFields');
+  let result = Call(yearMonthFromFields, calendar, [fields, options]);
   if (!IsTemporalYearMonth(result)) throw new TypeError('invalid result');
   return result;
 }
@@ -2321,7 +2426,8 @@ export function CalendarMonthDayFromFields(
   fields: CalendarProtocolParams['monthDayFromFields'][0],
   options?: CalendarProtocolParams['monthDayFromFields'][1]
 ) {
-  const result = calendar.monthDayFromFields(fields, options);
+  const monthDayFromFields = GetMethod(calendar, 'monthDayFromFields');
+  let result = Call(monthDayFromFields, calendar, [fields, options]);
   if (!IsTemporalMonthDay(result)) throw new TypeError('invalid result');
   return result;
 }
@@ -2375,7 +2481,7 @@ export function GetOffsetNanosecondsFor(
   timeZone: Temporal.TimeZoneProtocol,
   instant: TimeZoneProtocolParams['getOffsetNanosecondsFor'][0]
 ) {
-  let getOffsetNanosecondsFor = timeZone.getOffsetNanosecondsFor;
+  const getOffsetNanosecondsFor = GetMethod(timeZone, 'getOffsetNanosecondsFor');
   if (typeof getOffsetNanosecondsFor !== 'function') {
     throw new TypeError('getOffsetNanosecondsFor not callable');
   }
@@ -2559,7 +2665,8 @@ function GetPossibleInstantsFor(
   timeZone: Temporal.TimeZoneProtocol,
   dateTime: TimeZoneProtocolParams['getPossibleInstantsFor'][0]
 ) {
-  const possibleInstants = timeZone.getPossibleInstantsFor(dateTime);
+  const getPossibleInstantsFor = GetMethod(timeZone, 'getPossibleInstantsFor');
+  const possibleInstants = Call(getPossibleInstantsFor, timeZone, [dateTime]);
   const result: Temporal.Instant[] = [];
   for (const instant of possibleInstants) {
     if (!IsTemporalInstant(instant)) {
@@ -3691,8 +3798,8 @@ export function UnbalanceDurationRelative(
         if (!calendar) throw new RangeError('a starting point is required for months balancing');
         assertExists(relativeTo);
         // balance years down to months
-        const dateAdd = calendar.dateAdd;
-        const dateUntil = calendar.dateUntil;
+        const dateAdd = GetMethod(calendar, 'dateAdd');
+        const dateUntil = GetMethod(calendar, 'dateUntil');
         while (!isZero(abs(years))) {
           const newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, undefined, dateAdd);
           const untilOptions = ObjectCreate(null) as Temporal.DifferenceOptions<typeof largestUnit>;
@@ -3708,7 +3815,7 @@ export function UnbalanceDurationRelative(
     case 'week': {
       if (!calendar) throw new RangeError('a starting point is required for weeks balancing');
       assertExists(relativeTo);
-      const dateAdd = calendar.dateAdd;
+      const dateAdd = GetMethod(calendar, 'dateAdd');
       // balance years down to days
       // balance years down to days
       while (!isZero(abs(years))) {
@@ -3731,7 +3838,7 @@ export function UnbalanceDurationRelative(
       // balance years down to days
       if (isZero(years) && isZero(months) && isZero(weeks)) break;
       if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
-      const dateAdd = calendar.dateAdd;
+      const dateAdd = GetMethod(calendar, 'dateAdd');
       while (!isZero(abs(years))) {
         assertExists(relativeTo);
         let oneYearDays;
@@ -3807,7 +3914,7 @@ export function BalanceDurationRelative(
     case 'year': {
       if (!calendar) throw new RangeError('a starting point is required for years balancing');
       assertExists(relativeTo);
-      const dateAdd = calendar.dateAdd;
+      const dateAdd = GetMethod(calendar, 'dateAdd');
       // balance days up to years
       let newRelativeTo, oneYearDays;
       ({ relativeTo: newRelativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear, dateAdd));
@@ -3830,7 +3937,7 @@ export function BalanceDurationRelative(
 
       // balance months up to years
       newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, undefined, dateAdd);
-      const dateUntil = calendar.dateUntil;
+      const dateUntil = GetMethod(calendar, 'dateUntil');
       const untilOptions = ObjectCreate(null) as Temporal.DifferenceOptions<'month'>;
       untilOptions.largestUnit = 'month';
       let untilResult = CalendarDateUntil(calendar, relativeTo, newRelativeTo, untilOptions, dateUntil);
@@ -3850,7 +3957,7 @@ export function BalanceDurationRelative(
     case 'month': {
       if (!calendar) throw new RangeError('a starting point is required for months balancing');
       assertExists(relativeTo);
-      const dateAdd = calendar.dateAdd;
+      const dateAdd = GetMethod(calendar, 'dateAdd');
       // balance days up to months
       let newRelativeTo, oneMonthDays;
       ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
@@ -3865,7 +3972,7 @@ export function BalanceDurationRelative(
     case 'week': {
       if (!calendar) throw new RangeError('a starting point is required for weeks balancing');
       assertExists(relativeTo);
-      const dateAdd = calendar.dateAdd;
+      const dateAdd = GetMethod(calendar, 'dateAdd');
       // balance days up to weeks
       let newRelativeTo, oneWeekDays;
       ({ relativeTo: newRelativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek, dateAdd));
@@ -4954,7 +5061,7 @@ function AddDuration(
 
     const dateDuration1 = new TemporalDuration(y1, mon1, w1, d1, 0, 0, 0, 0, 0, 0);
     const dateDuration2 = new TemporalDuration(y2, mon2, w2, d2, 0, 0, 0, 0, 0, 0);
-    const dateAdd = calendar.dateAdd;
+    const dateAdd = GetMethod(calendar, 'dateAdd');
     const intermediate = CalendarDateAdd(calendar, relativeTo, dateDuration1, undefined, dateAdd);
     const end = CalendarDateAdd(calendar, intermediate, dateDuration2, undefined, dateAdd);
 
@@ -5799,7 +5906,7 @@ export function RoundDuration(
       // convert months and weeks to days by calculating difference(
       // relativeTo + years, relativeTo + { years, months, weeks })
       const yearsDuration = new TemporalDuration(years);
-      const dateAdd = calendar.dateAdd;
+      const dateAdd = GetMethod(calendar, 'dateAdd');
       const yearsLater = CalendarDateAdd(calendar, relativeTo, yearsDuration, undefined, dateAdd);
       const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
       const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, undefined, dateAdd);
@@ -5849,7 +5956,7 @@ export function RoundDuration(
       // convert weeks to days by calculating difference(relativeTo +
       //   { years, months }, relativeTo + { years, months, weeks })
       const yearsMonths = new TemporalDuration(years, months);
-      const dateAdd = calendar.dateAdd;
+      const dateAdd = GetMethod(calendar, 'dateAdd');
       const yearsMonthsLater = CalendarDateAdd(calendar, relativeTo, yearsMonths, undefined, dateAdd);
       const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
       const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, undefined, dateAdd);
@@ -5886,7 +5993,7 @@ export function RoundDuration(
     case 'week': {
       if (!calendar) throw new RangeError('A starting point is required for weeks rounding');
       assertExists(relativeTo);
-      const dateAdd = calendar.dateAdd;
+      const dateAdd = GetMethod(calendar, 'dateAdd');
       // Weeks may be different lengths of days depending on the calendar,
       // convert days to weeks in a loop as described above under 'years'.
       const sign = MathSign(days);
