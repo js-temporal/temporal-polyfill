@@ -537,7 +537,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     const nanosecond = GetSlot(temporalObj, ISO_NANOSECOND);
     const datetime = new DateTime(1970, 1, 1, hour, minute, second, millisecond, microsecond, nanosecond, main[CAL_ID]);
     return {
-      instant: ES.BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
+      instant: ES.GetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
       formatter: getPropLazy(main, TIME)
     };
   }
@@ -554,7 +554,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     }
     const datetime = new DateTime(isoYear, isoMonth, referenceISODay, 12, 0, 0, 0, 0, 0, calendar);
     return {
-      instant: ES.BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
+      instant: ES.GetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
       formatter: getPropLazy(main, YM)
     };
   }
@@ -571,7 +571,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     }
     const datetime = new DateTime(referenceISOYear, isoMonth, isoDay, 12, 0, 0, 0, 0, 0, calendar);
     return {
-      instant: ES.BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
+      instant: ES.GetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
       formatter: getPropLazy(main, MD)
     };
   }
@@ -586,7 +586,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     }
     const datetime = new DateTime(isoYear, isoMonth, isoDay, 12, 0, 0, 0, 0, 0, main[CAL_ID]);
     return {
-      instant: ES.BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
+      instant: ES.GetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
       formatter: getPropLazy(main, DATE)
     };
   }
@@ -623,7 +623,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
       );
     }
     return {
-      instant: ES.BuiltinTimeZoneGetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
+      instant: ES.GetInstantFor(getResolvedTimeZoneLazy(main), datetime, 'compatible'),
       formatter: getPropLazy(main, DATETIME)
     };
   }

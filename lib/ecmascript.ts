@@ -1708,7 +1708,7 @@ export function InterpretISODateTimeOffset(
   if (offsetBehaviour === 'wall' || offsetOpt === 'ignore') {
     // Simple case: ISO string without a TZ offset (or caller wants to ignore
     // the offset), so just convert DateTime to Instant in the given time zone
-    const instant = BuiltinTimeZoneGetInstantFor(timeZone, dt, disambiguation);
+    const instant = GetInstantFor(timeZone, dt, disambiguation);
     return GetSlot(instant, EPOCHNANOSECONDS);
   }
 
@@ -2420,7 +2420,7 @@ export function GetPlainDateTimeFor(
   return CreateTemporalDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar);
 }
 
-export function BuiltinTimeZoneGetInstantFor(
+export function GetInstantFor(
   timeZone: Temporal.TimeZoneProtocol,
   dateTime: Temporal.PlainDateTime,
   disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>
@@ -5191,7 +5191,7 @@ export function AddZonedDateTime(
 
   // Note that 'compatible' is used below because this disambiguation behavior
   // is required by RFC 5545.
-  const instantIntermediate = BuiltinTimeZoneGetInstantFor(timeZone, dtIntermediate, 'compatible');
+  const instantIntermediate = GetInstantFor(timeZone, dtIntermediate, 'compatible');
   return AddInstant(GetSlot(instantIntermediate, EPOCHNANOSECONDS), h, min, s, ms, µs, ns);
 }
 
