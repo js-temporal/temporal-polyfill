@@ -60,7 +60,7 @@ export class TimeZone implements Temporal.TimeZone {
   getOffsetStringFor(instantParam: Params['getOffsetStringFor'][0]): Return['getOffsetStringFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const instant = ES.ToTemporalInstant(instantParam);
-    return ES.BuiltinTimeZoneGetOffsetStringFor(this, instant);
+    return ES.GetOffsetStringFor(this, instant);
   }
   getPlainDateTimeFor(
     instantParam: Params['getPlainDateTimeFor'][0],
