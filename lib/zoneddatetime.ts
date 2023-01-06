@@ -563,5 +563,5 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
 MakeIntrinsicClass(ZonedDateTime, 'Temporal.ZonedDateTime');
 
 function dateTime(zdt: Temporal.ZonedDateTime) {
-  return ES.BuiltinTimeZoneGetPlainDateTimeFor(GetSlot(zdt, TIME_ZONE), GetSlot(zdt, INSTANT), GetSlot(zdt, CALENDAR));
+  return ES.GetPlainDateTimeFor(GetSlot(zdt, TIME_ZONE), GetSlot(zdt, INSTANT), GetSlot(zdt, CALENDAR));
 }
