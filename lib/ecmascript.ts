@@ -1420,11 +1420,7 @@ export function ToTemporalDate(
     if (IsTemporalDate(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
       ToTemporalOverflow(options); // validate and ignore
-      item = BuiltinTimeZoneGetPlainDateTimeFor(
-        GetSlot(item, TIME_ZONE),
-        GetSlot(item, INSTANT),
-        GetSlot(item, CALENDAR)
-      );
+      item = GetPlainDateTimeFor(GetSlot(item, TIME_ZONE), GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
     }
     if (IsTemporalDateTime(item)) {
       ToTemporalOverflow(options); // validate and ignore
@@ -1485,11 +1481,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
     if (IsTemporalDateTime(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
       ToTemporalOverflow(options); // validate and ignore
-      return BuiltinTimeZoneGetPlainDateTimeFor(
-        GetSlot(item, TIME_ZONE),
-        GetSlot(item, INSTANT),
-        GetSlot(item, CALENDAR)
-      );
+      return GetPlainDateTimeFor(GetSlot(item, TIME_ZONE), GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
     }
     if (IsTemporalDate(item)) {
       ToTemporalOverflow(options); // validate and ignore
@@ -1624,11 +1616,7 @@ export function ToTemporalTime(
   if (IsObject(item)) {
     if (IsTemporalTime(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
-      item = BuiltinTimeZoneGetPlainDateTimeFor(
-        GetSlot(item, TIME_ZONE),
-        GetSlot(item, INSTANT),
-        GetSlot(item, CALENDAR)
-      );
+      item = GetPlainDateTimeFor(GetSlot(item, TIME_ZONE), GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
     }
     if (IsTemporalDateTime(item)) {
       const TemporalPlainTime = GetIntrinsic('%Temporal.PlainTime%');
@@ -2410,7 +2398,7 @@ export function GetOffsetStringFor(timeZone: Temporal.TimeZoneProtocol, instant:
   return FormatTimeZoneOffsetString(offsetNs);
 }
 
-export function BuiltinTimeZoneGetPlainDateTimeFor(
+export function GetPlainDateTimeFor(
   timeZone: Temporal.TimeZoneProtocol,
   instant: Temporal.Instant,
   calendar: Temporal.CalendarProtocol
@@ -2636,7 +2624,7 @@ export function TemporalInstantToString(
     outputTimeZone = new TemporalTimeZone('UTC');
   }
   const iso = GetISO8601Calendar();
-  const dateTime = BuiltinTimeZoneGetPlainDateTimeFor(outputTimeZone, instant, iso);
+  const dateTime = GetPlainDateTimeFor(outputTimeZone, instant, iso);
   const year = ISOYearString(GetSlot(dateTime, ISO_YEAR));
   const month = ISODateTimePartString(GetSlot(dateTime, ISO_MONTH));
   const day = ISODateTimePartString(GetSlot(dateTime, ISO_DAY));
@@ -2844,7 +2832,7 @@ export function TemporalZonedDateTimeToString(
 
   const tz = GetSlot(zdt, TIME_ZONE);
   const iso = GetISO8601Calendar();
-  const dateTime = BuiltinTimeZoneGetPlainDateTimeFor(tz, instant, iso);
+  const dateTime = GetPlainDateTimeFor(tz, instant, iso);
 
   const year = ISOYearString(GetSlot(dateTime, ISO_YEAR));
   const month = ISODateTimePartString(GetSlot(dateTime, ISO_MONTH));
@@ -3429,8 +3417,8 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
   const calendar = GetSlot(relativeTo, CALENDAR);
 
   // Find the difference in days only.
-  const dtStart = BuiltinTimeZoneGetPlainDateTimeFor(timeZone, start, calendar);
-  const dtEnd = BuiltinTimeZoneGetPlainDateTimeFor(timeZone, end, calendar);
+  const dtStart = GetPlainDateTimeFor(timeZone, start, calendar);
+  const dtEnd = GetPlainDateTimeFor(timeZone, end, calendar);
   let { days: daysNumber } = DifferenceISODateTime(
     GetSlot(dtStart, ISO_YEAR),
     GetSlot(dtStart, ISO_MONTH),
@@ -4379,8 +4367,8 @@ function DifferenceZonedDateTime(
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
   const start = new TemporalInstant(ns1);
   const end = new TemporalInstant(ns2);
-  const dtStart = BuiltinTimeZoneGetPlainDateTimeFor(timeZone, start, calendar);
-  const dtEnd = BuiltinTimeZoneGetPlainDateTimeFor(timeZone, end, calendar);
+  const dtStart = GetPlainDateTimeFor(timeZone, start, calendar);
+  const dtEnd = GetPlainDateTimeFor(timeZone, end, calendar);
   let { years, months, weeks, days } = DifferenceISODateTime(
     GetSlot(dtStart, ISO_YEAR),
     GetSlot(dtStart, ISO_MONTH),
@@ -5184,7 +5172,7 @@ export function AddZonedDateTime(
 
   // RFC 5545 requires the date portion to be added in calendar days and the
   // time portion to be added in exact time.
-  const dt = BuiltinTimeZoneGetPlainDateTimeFor(timeZone, instant, calendar);
+  const dt = GetPlainDateTimeFor(timeZone, instant, calendar);
   const datePart = CreateTemporalDate(GetSlot(dt, ISO_YEAR), GetSlot(dt, ISO_MONTH), GetSlot(dt, ISO_DAY), calendar);
   const dateDuration = new TemporalDuration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   const addedDate = CalendarDateAdd(calendar, datePart, dateDuration, options);
