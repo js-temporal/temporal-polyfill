@@ -2405,7 +2405,7 @@ export function GetOffsetNanosecondsFor(
   return offsetNs;
 }
 
-export function BuiltinTimeZoneGetOffsetStringFor(timeZone: Temporal.TimeZoneProtocol, instant: Temporal.Instant) {
+export function GetOffsetStringFor(timeZone: Temporal.TimeZoneProtocol, instant: Temporal.Instant) {
   const offsetNs = GetOffsetNanosecondsFor(timeZone, instant);
   return FormatTimeZoneOffsetString(offsetNs);
 }
