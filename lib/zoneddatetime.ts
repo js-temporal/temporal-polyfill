@@ -144,8 +144,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const tomorrowFields = ES.AddISODate(year, month, day, 0, 0, 0, 1, 'reject');
     const tomorrow = new DateTime(tomorrowFields.year, tomorrowFields.month, tomorrowFields.day, 0, 0, 0, 0, 0, 0);
     const timeZone = GetSlot(this, TIME_ZONE);
-    const todayNs = GetSlot(ES.BuiltinTimeZoneGetInstantFor(timeZone, today, 'compatible'), EPOCHNANOSECONDS);
-    const tomorrowNs = GetSlot(ES.BuiltinTimeZoneGetInstantFor(timeZone, tomorrow, 'compatible'), EPOCHNANOSECONDS);
+    const todayNs = GetSlot(ES.GetInstantFor(timeZone, today, 'compatible'), EPOCHNANOSECONDS);
+    const tomorrowNs = GetSlot(ES.GetInstantFor(timeZone, tomorrow, 'compatible'), EPOCHNANOSECONDS);
     const diffNs = JSBI.subtract(tomorrowNs, todayNs);
     return ES.BigIntDivideToNumber(diffNs, HOUR_NANOS);
   }
@@ -267,7 +267,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       nanosecond,
       calendar
     );
-    const instant = ES.BuiltinTimeZoneGetInstantFor(timeZone, dt, 'compatible');
+    const instant = ES.GetInstantFor(timeZone, dt, 'compatible');
     return ES.CreateTemporalZonedDateTime(GetSlot(instant, EPOCHNANOSECONDS), timeZone, calendar);
   }
   withPlainTime(temporalTimeParam: Params['withPlainTime'][0] = undefined): Return['withPlainTime'] {
@@ -302,7 +302,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       nanosecond,
       calendar
     );
-    const instant = ES.BuiltinTimeZoneGetInstantFor(timeZone, dt, 'compatible');
+    const instant = ES.GetInstantFor(timeZone, dt, 'compatible');
     return ES.CreateTemporalZonedDateTime(GetSlot(instant, EPOCHNANOSECONDS), timeZone, calendar);
   }
   withTimeZone(timeZoneParam: Params['withTimeZone'][0]): Return['withTimeZone'] {
@@ -373,7 +373,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const timeZone = GetSlot(this, TIME_ZONE);
     const calendar = GetSlot(this, CALENDAR);
     const dtStart = new DateTime(GetSlot(dt, ISO_YEAR), GetSlot(dt, ISO_MONTH), GetSlot(dt, ISO_DAY), 0, 0, 0, 0, 0, 0);
-    const instantStart = ES.BuiltinTimeZoneGetInstantFor(timeZone, dtStart, 'compatible');
+    const instantStart = ES.GetInstantFor(timeZone, dtStart, 'compatible');
     const endNs = ES.AddZonedDateTime(instantStart, timeZone, calendar, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0);
     const dayLengthNs = JSBI.subtract(endNs, JSBI.BigInt(GetSlot(instantStart, EPOCHNANOSECONDS)));
     if (JSBI.lessThanOrEqual(dayLengthNs, ZERO)) {
@@ -481,7 +481,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       calendar
     );
     const timeZone = GetSlot(this, TIME_ZONE);
-    const instant = ES.BuiltinTimeZoneGetInstantFor(timeZone, dtStart, 'compatible');
+    const instant = ES.GetInstantFor(timeZone, dtStart, 'compatible');
     return ES.CreateTemporalZonedDateTime(GetSlot(instant, EPOCHNANOSECONDS), timeZone, calendar);
   }
   toInstant(): Return['toInstant'] {

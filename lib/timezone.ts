@@ -79,7 +79,7 @@ export class TimeZone implements Temporal.TimeZone {
     const dateTime = ES.ToTemporalDateTime(dateTimeParam);
     const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
-    return ES.BuiltinTimeZoneGetInstantFor(this, dateTime, disambiguation);
+    return ES.GetInstantFor(this, dateTime, disambiguation);
   }
   getPossibleInstantsFor(dateTimeParam: Params['getPossibleInstantsFor'][0]): Return['getPossibleInstantsFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
