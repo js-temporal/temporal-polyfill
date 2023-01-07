@@ -2157,7 +2157,7 @@ export function CalendarMonth(calendar: Temporal.CalendarProtocol, dateLike: Cal
   if (typeof result !== 'number') {
     throw new TypeError('calendar month result must be a positive integer');
   }
-  if (!IsIntegralNumber(result) || result <= 0) {
+  if (!IsIntegralNumber(result) || result < 1) {
     throw new RangeError('calendar month result must be a positive integer');
   }
   return result;
@@ -2181,7 +2181,7 @@ export function CalendarDay(calendar: Temporal.CalendarProtocol, dateLike: Calen
   if (typeof result !== 'number') {
     throw new TypeError('calendar day result must be a positive integer');
   }
-  if (!IsIntegralNumber(result) || result <= 0) {
+  if (!IsIntegralNumber(result) || result < 1) {
     throw new RangeError('calendar day result must be a positive integer');
   }
   return result;
@@ -2220,7 +2220,7 @@ export function CalendarDayOfWeek(calendar: Temporal.CalendarProtocol, dateLike:
   if (typeof result !== 'number') {
     throw new TypeError('calendar dayOfWeek result must be a positive integer');
   }
-  if (!IsIntegralNumber(result) || result <= 0) {
+  if (!IsIntegralNumber(result) || result < 1) {
     throw new RangeError('calendar dayOfWeek result must be a positive integer');
   }
   return result;
@@ -2232,7 +2232,7 @@ export function CalendarDayOfYear(calendar: Temporal.CalendarProtocol, dateLike:
   if (typeof result !== 'number') {
     throw new TypeError('calendar dayOfYear result must be a positive integer');
   }
-  if (!IsIntegralNumber(result) || result <= 0) {
+  if (!IsIntegralNumber(result) || result < 1) {
     throw new RangeError('calendar dayOfYear result must be a positive integer');
   }
   return result;
@@ -2244,7 +2244,7 @@ export function CalendarWeekOfYear(calendar: Temporal.CalendarProtocol, dateLike
   if (typeof result !== 'number') {
     throw new TypeError('calendar weekOfYear result must be a positive integer');
   }
-  if (!IsIntegralNumber(result) || result <= 0) {
+  if (!IsIntegralNumber(result) || result < 1) {
     throw new RangeError('calendar weekOfYear result must be a positive integer');
   }
   return result;
@@ -2268,7 +2268,7 @@ export function CalendarDaysInWeek(calendar: Temporal.CalendarProtocol, dateLike
   if (typeof result !== 'number') {
     throw new TypeError('calendar daysInWeek result must be a positive integer');
   }
-  if (!IsIntegralNumber(result) || result <= 0) {
+  if (!IsIntegralNumber(result) || result < 1) {
     throw new RangeError('calendar daysInWeek result must be a positive integer');
   }
   return result;
@@ -2280,7 +2280,7 @@ export function CalendarDaysInMonth(calendar: Temporal.CalendarProtocol, dateLik
   if (typeof result !== 'number') {
     throw new TypeError('calendar daysInMonth result must be a positive integer');
   }
-  if (!IsIntegralNumber(result) || result <= 0) {
+  if (!IsIntegralNumber(result) || result < 1) {
     throw new RangeError('calendar daysInMonth result must be a positive integer');
   }
   return result;
@@ -2292,7 +2292,7 @@ export function CalendarDaysInYear(calendar: Temporal.CalendarProtocol, dateLike
   if (typeof result !== 'number') {
     throw new TypeError('calendar daysInYear result must be a positive integer');
   }
-  if (!IsIntegralNumber(result) || result <= 0) {
+  if (!IsIntegralNumber(result) || result < 1) {
     throw new RangeError('calendar daysInYear result must be a positive integer');
   }
   return result;
@@ -2304,7 +2304,7 @@ export function CalendarMonthsInYear(calendar: Temporal.CalendarProtocol, dateLi
   if (typeof result !== 'number') {
     throw new TypeError('calendar monthsInYear result must be a positive integer');
   }
-  if (!IsIntegralNumber(result) || result <= 0) {
+  if (!IsIntegralNumber(result) || result < 1) {
     throw new RangeError('calendar monthsInYear result must be a positive integer');
   }
   return result;
