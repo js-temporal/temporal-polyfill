@@ -1,7 +1,6 @@
-# Failures in this file are expected to fail for all forms of Test262 testing.
-# To record expected test failures for the transpiled or optimized builds of the
-# polyfill, see expected-failures-transpiled.txt and
-# expected-failures-optimized.txt respectively.
+# Failures in this file are expected to fail for all Test262 tests. To record
+# expected test failures for the transpiled or optimized builds of the polyfill,
+# see expected-failures-es5.txt and expected-failures-opt.txt respectively.
 
 # https://github.com/tc39/test262/pull/3548
 built-ins/Temporal/Duration/compare/argument-string-negative-fractional-units.js
