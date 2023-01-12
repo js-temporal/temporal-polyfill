@@ -6024,7 +6024,7 @@ export function RoundDuration(
     }
     case 'nanosecond': {
       total = JSBI.toNumber(nanoseconds);
-      nanoseconds = RoundNumberToIncrement(nanoseconds, increment, roundingMode);
+      nanoseconds = RoundNumberToIncrement(JSBI.BigInt(nanoseconds), increment, roundingMode);
       break;
     }
   }
