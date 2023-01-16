@@ -50,7 +50,6 @@ built-ins/Temporal/PlainDate/prototype/toZonedDateTime/timezone-wrong-type.js
 built-ins/Temporal/PlainDate/prototype/until/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainDate/prototype/until/order-of-operations.js
 built-ins/Temporal/PlainDate/prototype/with/calendar-fields-undefined.js
-built-ins/Temporal/PlainDate/prototype/with/order-of-operations.js
 built-ins/Temporal/PlainDateTime/compare/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainDateTime/from/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainDateTime/prototype/equals/argument-calendar-fields-undefined.js
@@ -62,13 +61,11 @@ built-ins/Temporal/PlainDateTime/prototype/toZonedDateTime/timezone-wrong-type.j
 built-ins/Temporal/PlainDateTime/prototype/until/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainDateTime/prototype/until/order-of-operations.js
 built-ins/Temporal/PlainDateTime/prototype/with/calendar-fields-undefined.js
-built-ins/Temporal/PlainDateTime/prototype/with/order-of-operations.js
 built-ins/Temporal/PlainDateTime/prototype/withPlainDate/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainMonthDay/from/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainMonthDay/prototype/equals/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainMonthDay/prototype/toPlainDate/calendar-fields-undefined.js
 built-ins/Temporal/PlainMonthDay/prototype/with/calendar-fields-undefined.js
-built-ins/Temporal/PlainMonthDay/prototype/with/order-of-operations.js
 built-ins/Temporal/PlainTime/prototype/since/order-of-operations.js
 built-ins/Temporal/PlainTime/prototype/toPlainDateTime/argument-calendar-fields-undefined.js
 built-ins/Temporal/PlainTime/prototype/toZonedDateTime/argument-calendar-fields-undefined.js
@@ -85,7 +82,6 @@ built-ins/Temporal/PlainYearMonth/prototype/toPlainDate/calendar-fields-undefine
 built-ins/Temporal/PlainYearMonth/prototype/until/calendar-fields-undefined.js
 built-ins/Temporal/PlainYearMonth/prototype/until/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/prototype/with/calendar-fields-undefined.js
-built-ins/Temporal/PlainYearMonth/prototype/with/order-of-operations.js
 built-ins/Temporal/TimeZone/from/timezone-wrong-type.js
 built-ins/Temporal/TimeZone/prototype/getInstantFor/argument-calendar-fields-undefined.js
 built-ins/Temporal/TimeZone/prototype/getPossibleInstantsFor/argument-calendar-fields-undefined.js
@@ -104,7 +100,6 @@ built-ins/Temporal/ZonedDateTime/prototype/until/argument-calendar-fields-undefi
 built-ins/Temporal/ZonedDateTime/prototype/until/argument-propertybag-timezone-wrong-type.js
 built-ins/Temporal/ZonedDateTime/prototype/until/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/with/calendar-fields-undefined.js
-built-ins/Temporal/ZonedDateTime/prototype/with/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/withPlainDate/argument-calendar-fields-undefined.js
 built-ins/Temporal/ZonedDateTime/prototype/withTimeZone/timezone-wrong-type.js
 intl402/Temporal/Calendar/prototype/era/argument-calendar-fields-undefined.js
@@ -114,7 +109,6 @@ intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-
 built-ins/Temporal/Duration/prototype/round/roundingincrement-out-of-range.js
 built-ins/Temporal/PlainDate/prototype/since/roundingincrement-out-of-range.js
 built-ins/Temporal/PlainDate/prototype/until/roundingincrement-out-of-range.js
-built-ins/Temporal/PlainTime/prototype/with/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/prototype/since/roundingincrement-out-of-range.js
 built-ins/Temporal/PlainYearMonth/prototype/until/roundingincrement-out-of-range.js
 intl402/Temporal/Calendar/prototype/mergeFields/gregorian-mutually-exclusive-fields.js

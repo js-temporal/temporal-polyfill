@@ -67,15 +67,14 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
       throw new TypeError('invalid argument');
     }
     ES.RejectObjectWithCalendarOrTimeZone(temporalYearMonthLike);
+    const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['month', 'monthCode', 'year'] as const);
-    const partialYearMonth = ES.PrepareTemporalFields(temporalYearMonthLike, fieldNames, 'partial');
     let fields = ES.PrepareTemporalFields(this, fieldNames, []);
+    const partialYearMonth = ES.PrepareTemporalFields(temporalYearMonthLike, fieldNames, 'partial');
     fields = ES.CalendarMergeFields(calendar, fields, partialYearMonth);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
-
-    const options = ES.GetOptionsObject(optionsParam);
 
     return ES.CalendarYearMonthFromFields(calendar, fields, options);
   }
