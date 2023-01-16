@@ -135,10 +135,10 @@ export class PlainTime implements Temporal.PlainTime {
       throw new TypeError('invalid argument');
     }
     ES.RejectObjectWithCalendarOrTimeZone(temporalTimeLike);
-
-    const partialTime = ES.ToTemporalTimeRecord(temporalTimeLike, 'partial');
     const options = ES.GetOptionsObject(optionsParam);
     const overflow = ES.ToTemporalOverflow(options);
+
+    const partialTime = ES.ToTemporalTimeRecord(temporalTimeLike, 'partial');
 
     const fields = ES.ToTemporalTimeRecord(this);
     let { hour, minute, second, millisecond, microsecond, nanosecond } = ObjectAssign(fields, partialTime);

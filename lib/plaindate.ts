@@ -102,15 +102,14 @@ export class PlainDate implements Temporal.PlainDate {
       throw new TypeError('invalid argument');
     }
     ES.RejectObjectWithCalendarOrTimeZone(temporalDateLike);
+    const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
-    const partialDate = ES.PrepareTemporalFields(temporalDateLike, fieldNames, 'partial');
     let fields = ES.PrepareTemporalFields(this, fieldNames, []);
+    const partialDate = ES.PrepareTemporalFields(temporalDateLike, fieldNames, 'partial');
     fields = ES.CalendarMergeFields(calendar, fields, partialDate);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
-
-    const options = ES.GetOptionsObject(optionsParam);
 
     return ES.CalendarDateFromFields(calendar, fields, options);
   }

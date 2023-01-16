@@ -183,6 +183,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       throw new TypeError('invalid zoned-date-time-like');
     }
     ES.RejectObjectWithCalendarOrTimeZone(temporalZonedDateTimeLike);
+    const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);
     let fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = ES.CalendarFields(calendar, [
@@ -198,12 +199,11 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       'year'
     ] as const);
     fieldNames.push('offset');
-    const partialZonedDateTime = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNames, 'partial');
     let fields = ES.PrepareTemporalFields(this, fieldNames, ['offset']);
+    const partialZonedDateTime = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNames, 'partial');
     fields = ES.CalendarMergeFields(calendar, fields, partialZonedDateTime);
     fields = ES.PrepareTemporalFields(fields, fieldNames, ['offset']);
 
-    const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
     const offset = ES.ToTemporalOffset(options, 'prefer');
 
