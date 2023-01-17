@@ -158,9 +158,6 @@ export class Duration implements Temporal.Duration {
       ],
       'partial'
     );
-    if (!props) {
-      throw new TypeError('invalid duration-like');
-    }
     const {
       years = GetSlot(this, YEARS),
       months = GetSlot(this, MONTHS),
