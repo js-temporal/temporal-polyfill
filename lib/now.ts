@@ -17,9 +17,8 @@ const plainDateTime: typeof Temporal.Now['plainDateTime'] = (
 };
 const plainDateTimeISO: typeof Temporal.Now['plainDateTimeISO'] = (temporalTimeZoneLike = ES.DefaultTimeZone()) => {
   const tZ = ES.ToTemporalTimeZone(temporalTimeZoneLike);
-  const calendar = ES.GetISO8601Calendar();
   const inst = instant();
-  return ES.GetPlainDateTimeFor(tZ, inst, calendar);
+  return ES.GetPlainDateTimeFor(tZ, inst, 'iso8601');
 };
 const zonedDateTime: typeof Temporal.Now['zonedDateTime'] = (
   calendarLike,
@@ -30,7 +29,7 @@ const zonedDateTime: typeof Temporal.Now['zonedDateTime'] = (
   return ES.CreateTemporalZonedDateTime(ES.SystemUTCEpochNanoSeconds(), tZ, calendar);
 };
 const zonedDateTimeISO: typeof Temporal.Now['zonedDateTimeISO'] = (temporalTimeZoneLike = ES.DefaultTimeZone()) => {
-  return zonedDateTime(ES.GetISO8601Calendar(), temporalTimeZoneLike);
+  return zonedDateTime('iso8601', temporalTimeZoneLike);
 };
 const plainDate: typeof Temporal.Now['plainDate'] = (calendarLike, temporalTimeZoneLike = ES.DefaultTimeZone()) => {
   return ES.TemporalDateTimeToDate(plainDateTime(calendarLike, temporalTimeZoneLike));

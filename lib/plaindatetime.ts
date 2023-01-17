@@ -30,7 +30,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     millisecondParam: Params['constructor'][6] = 0,
     microsecondParam: Params['constructor'][7] = 0,
     nanosecondParam: Params['constructor'][8] = 0,
-    calendarParam: Params['constructor'][9] = ES.GetISO8601Calendar()
+    calendarParam: Params['constructor'][9] = 'iso8601'
   ) {
     const isoYear = ES.ToIntegerWithTruncation(isoYearParam);
     const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);

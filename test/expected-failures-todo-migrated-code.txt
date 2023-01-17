@@ -20,7 +20,6 @@ intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-
 # are in critical functionality and AFAICT all of them are in codepaths that will
 # be heavily modified in upstream commits. If they're still failing after we catch
 # up with upstream, then we'll investigate and fix them. 
-built-ins/Temporal/Calendar/from/calendar-temporal-object.js
 built-ins/Temporal/Calendar/from/calendar-wrong-type.js
 built-ins/Temporal/Calendar/prototype/dateAdd/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Calendar/prototype/dateAdd/order-of-operations.js
@@ -71,7 +70,6 @@ built-ins/Temporal/Instant/prototype/toZonedDateTime/timezone-string-datetime.js
 built-ins/Temporal/Instant/prototype/toZonedDateTime/timezone-string-leap-second.js
 built-ins/Temporal/Instant/prototype/toZonedDateTime/timezone-string-multiple-offsets.js
 built-ins/Temporal/Instant/prototype/toZonedDateTime/timezone-string.js
-built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/calendar-is-builtin.js
 built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/timezone-case-insensitive.js
 built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/timezone-string-datetime.js
 built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/timezone-string-leap-second.js
@@ -80,7 +78,6 @@ built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/timezone-string.js
 built-ins/Temporal/Now/plainDate/calendar-wrong-type.js
 built-ins/Temporal/Now/plainDate/timezone-string.js
 built-ins/Temporal/Now/plainDate/toPlainDate-override.js
-built-ins/Temporal/Now/plainDateISO/return-value.js
 built-ins/Temporal/Now/plainDateISO/timezone-string.js
 built-ins/Temporal/Now/plainDateTime/calendar-function.js
 built-ins/Temporal/Now/plainDateTime/calendar-object.js
@@ -88,7 +85,6 @@ built-ins/Temporal/Now/plainDateTime/calendar-wrong-type.js
 built-ins/Temporal/Now/plainDateTime/timezone-object.js
 built-ins/Temporal/Now/plainDateTime/timezone-string.js
 built-ins/Temporal/Now/plainDateTime/timezone.js
-built-ins/Temporal/Now/plainDateTimeISO/return-value-calendar.js
 built-ins/Temporal/Now/plainDateTimeISO/timezone-object.js
 built-ins/Temporal/Now/plainDateTimeISO/timezone-string.js
 built-ins/Temporal/Now/plainTimeISO/timezone-string.js
@@ -112,7 +108,6 @@ built-ins/Temporal/Now/zonedDateTimeISO/timezone-string-datetime.js
 built-ins/Temporal/Now/zonedDateTimeISO/timezone-string-leap-second.js
 built-ins/Temporal/Now/zonedDateTimeISO/timezone-string-multiple-offsets.js
 built-ins/Temporal/Now/zonedDateTimeISO/timezone-string.js
-built-ins/Temporal/PlainDate/calendar-undefined.js
 built-ins/Temporal/PlainDate/calendar-wrong-type.js
 built-ins/Temporal/PlainDate/compare/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDate/from/argument-propertybag-calendar-wrong-type.js
@@ -121,7 +116,6 @@ built-ins/Temporal/PlainDate/prototype/add/order-of-operations.js
 built-ins/Temporal/PlainDate/prototype/equals/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDate/prototype/equals/calendar-call-different.js
 built-ins/Temporal/PlainDate/prototype/equals/calendar-call-same.js
-built-ins/Temporal/PlainDate/prototype/getISOFields/field-names.js
 built-ins/Temporal/PlainDate/prototype/since/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDate/prototype/since/calendar-mismatch.js
 built-ins/Temporal/PlainDate/prototype/since/order-of-operations.js
@@ -153,7 +147,6 @@ built-ins/Temporal/PlainDateTime/from/order-of-operations.js
 built-ins/Temporal/PlainDateTime/prototype/add/order-of-operations.js
 built-ins/Temporal/PlainDateTime/prototype/equals/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDateTime/prototype/equals/calendar-checked.js
-built-ins/Temporal/PlainDateTime/prototype/getISOFields/field-names.js
 built-ins/Temporal/PlainDateTime/prototype/since/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDateTime/prototype/since/order-of-operations.js
 built-ins/Temporal/PlainDateTime/prototype/subtract/order-of-operations.js
@@ -184,7 +177,6 @@ built-ins/Temporal/PlainMonthDay/from/argument-propertybag-calendar-wrong-type.j
 built-ins/Temporal/PlainMonthDay/from/order-of-operations.js
 built-ins/Temporal/PlainMonthDay/prototype/equals/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainMonthDay/prototype/equals/calendars.js
-built-ins/Temporal/PlainMonthDay/prototype/getISOFields/field-names.js
 built-ins/Temporal/PlainMonthDay/prototype/toJSON/calendarname.js
 built-ins/Temporal/PlainMonthDay/prototype/toJSON/year-format.js
 built-ins/Temporal/PlainMonthDay/prototype/toString/calendar-tostring.js
@@ -209,12 +201,10 @@ built-ins/Temporal/PlainTime/prototype/toZonedDateTime/timezone-string.js
 built-ins/Temporal/PlainYearMonth/calendar-wrong-type.js
 built-ins/Temporal/PlainYearMonth/compare/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainYearMonth/from/argument-propertybag-calendar-wrong-type.js
-built-ins/Temporal/PlainYearMonth/from/argument-string.js
 built-ins/Temporal/PlainYearMonth/from/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/prototype/add/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/prototype/equals/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainYearMonth/prototype/equals/compare-calendar.js
-built-ins/Temporal/PlainYearMonth/prototype/getISOFields/field-names.js
 built-ins/Temporal/PlainYearMonth/prototype/since/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainYearMonth/prototype/since/mixed-calendar-invalid.js
 built-ins/Temporal/PlainYearMonth/prototype/since/order-of-operations.js
@@ -238,7 +228,6 @@ built-ins/Temporal/TimeZone/prototype/getInstantFor/order-of-operations.js
 built-ins/Temporal/TimeZone/prototype/getPlainDateTimeFor/calendar-wrong-type.js
 built-ins/Temporal/TimeZone/prototype/getPossibleInstantsFor/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/TimeZone/prototype/toJSON/returns-identifier-slot.js
-built-ins/Temporal/ZonedDateTime/calendar-undefined.js
 built-ins/Temporal/ZonedDateTime/calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/compare/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/compare/argument-propertybag-timezone-string.js
@@ -370,3 +359,15 @@ intl402/DateTimeFormat/prototype/format/temporal-zoneddatetime-not-supported.js
 intl402/DateTimeFormat/prototype/formatRange/temporal-zoneddatetime-not-supported.js
 intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-zoneddatetime-not-supported.js
 intl402/DateTimeFormat/prototype/formatToParts/temporal-zoneddatetime-not-supported.js
+# The tests below will start working again in the next commit. They actually
+# broke in the previous porting commit, but I forgot to add them before. 
+built-ins/Temporal/PlainDate/prototype/since/calendar-datefromfields-called-with-options-undefined.js
+built-ins/Temporal/PlainDate/prototype/since/calendar-fields-iterable.js
+built-ins/Temporal/PlainDate/prototype/until/calendar-datefromfields-called-with-options-undefined.js
+built-ins/Temporal/PlainDate/prototype/until/calendar-fields-iterable.js
+built-ins/Temporal/PlainYearMonth/prototype/since/calendar-datefromfields-called-with-options-undefined.js
+built-ins/Temporal/PlainYearMonth/prototype/since/calendar-fields-iterable.js
+built-ins/Temporal/PlainYearMonth/prototype/since/calendar-yearmonthfromfields-called-with-options-undefined.js
+built-ins/Temporal/PlainYearMonth/prototype/until/calendar-datefromfields-called-with-options-undefined.js
+built-ins/Temporal/PlainYearMonth/prototype/until/calendar-fields-iterable.js
+built-ins/Temporal/PlainYearMonth/prototype/until/calendar-yearmonthfromfields-called-with-options-undefined.js

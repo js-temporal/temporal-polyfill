@@ -27,7 +27,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   constructor(
     epochNanosecondsParam: bigint | JSBI,
     timeZoneParam: Temporal.TimeZoneProtocol | string,
-    calendarParam: Temporal.CalendarProtocol | string = ES.GetISO8601Calendar()
+    calendarParam: Temporal.CalendarProtocol | string = 'iso8601'
   ) {
     // Note: if the argument is not passed, ToBigInt(undefined) will throw. This check exists only
     //       to improve the error message.
