@@ -178,9 +178,7 @@ built-ins/Temporal/PlainMonthDay/prototype/monthCode/validate-calendar-value.js
 built-ins/Temporal/PlainTime/prototype/with/order-of-operations.js
 built-ins/Temporal/PlainYearMonth/prototype/month/validate-calendar-value.js
 built-ins/Temporal/PlainYearMonth/prototype/monthCode/validate-calendar-value.js
-built-ins/Temporal/PlainYearMonth/prototype/since/roundingincrement-non-integer.js
 built-ins/Temporal/PlainYearMonth/prototype/since/roundingincrement-out-of-range.js
-built-ins/Temporal/PlainYearMonth/prototype/until/roundingincrement-non-integer.js
 built-ins/Temporal/PlainYearMonth/prototype/until/roundingincrement-out-of-range.js
 built-ins/Temporal/ZonedDateTime/prototype/day/validate-calendar-value.js
 built-ins/Temporal/ZonedDateTime/prototype/month/validate-calendar-value.js
