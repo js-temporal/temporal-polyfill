@@ -23,7 +23,7 @@ export class PlainDate implements Temporal.PlainDate {
     isoYearParam: Params['constructor'][0],
     isoMonthParam: Params['constructor'][1],
     isoDayParam: Params['constructor'][2],
-    calendarParam: Params['constructor'][3] = ES.GetISO8601Calendar()
+    calendarParam: Params['constructor'][3] = 'iso8601'
   ) {
     const isoYear = ES.ToIntegerWithTruncation(isoYearParam);
     const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);

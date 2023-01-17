@@ -1210,7 +1210,7 @@ export function ToRelativeTemporalObject(options: {
         'Z designator not supported for PlainDate relativeTo; either remove the Z or add a bracketed time zone'
       );
     }
-    if (!calendar) calendar = GetISO8601Calendar();
+    if (!calendar) calendar = 'iso8601';
     calendar = ToTemporalCalendar(calendar);
   }
   if (timeZone === undefined) return CreateTemporalDate(year, month, day, calendar);
@@ -1543,7 +1543,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
       ParseTemporalDateTimeString(ToString(item)));
     if (z) throw new RangeError('Z designator not supported for PlainDateTime');
     RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
-    if (calendar === undefined) calendar = GetISO8601Calendar();
+    if (calendar === undefined) calendar = 'iso8601';
     calendar = ToTemporalCalendar(calendar);
   }
   return CreateTemporalDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar);
@@ -1591,10 +1591,10 @@ export function ToTemporalMonthDay(
       calendar = GetSlot(item, CALENDAR);
       calendarAbsent = false;
     } else {
-      let maybeStringCalendar = item.calendar;
-      calendarAbsent = maybeStringCalendar === undefined;
-      if (maybeStringCalendar === undefined) maybeStringCalendar = GetISO8601Calendar();
-      calendar = ToTemporalCalendar(maybeStringCalendar);
+      let calendarFromItem = item.calendar;
+      calendarAbsent = calendarFromItem === undefined;
+      if (calendarFromItem === undefined) calendarFromItem = 'iso8601';
+      calendar = ToTemporalCalendar(calendarFromItem);
     }
     // HasSlot above adjusts the type of 'item' to include
     // TypesWithCalendarUnits, which causes type-inference failures below.
@@ -1611,9 +1611,8 @@ export function ToTemporalMonthDay(
   }
 
   ToTemporalOverflow(options); // validate and ignore
-  let { month, day, referenceISOYear, calendar: maybeStringCalendar } = ParseTemporalMonthDayString(ToString(item));
-  let calendar: Temporal.CalendarProtocol | string | undefined = maybeStringCalendar;
-  if (calendar === undefined) calendar = GetISO8601Calendar();
+  let { month, day, referenceISOYear, calendar } = ParseTemporalMonthDayString(ToString(item));
+  if (calendar === undefined) calendar = 'iso8601';
   calendar = ToTemporalCalendar(calendar);
 
   if (referenceISOYear === undefined) {
@@ -1677,10 +1676,8 @@ export function ToTemporalYearMonth(
   }
 
   ToTemporalOverflow(options); // validate and ignore
-  let { year, month, referenceISODay, calendar: maybeStringCalendar } = ParseTemporalYearMonthString(ToString(item));
-  // TODO: replace with ternary?
-  let calendar: Temporal.CalendarProtocol | string | undefined = maybeStringCalendar;
-  if (calendar === undefined) calendar = GetISO8601Calendar();
+  let { year, month, referenceISODay, calendar } = ParseTemporalYearMonthString(ToString(item));
+  if (calendar === undefined) calendar = 'iso8601';
   calendar = ToTemporalCalendar(calendar);
 
   if (referenceISODay === undefined) {
@@ -1829,7 +1826,7 @@ export function ToTemporalZonedDateTime(
     }
     const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
     timeZone = new TemporalTimeZone(ianaName);
-    if (!calendar) calendar = GetISO8601Calendar();
+    if (!calendar) calendar = 'iso8601';
     calendar = ToTemporalCalendar(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
     disambiguation = ToTemporalDisambiguation(options);
@@ -1891,7 +1888,7 @@ export function CreateTemporalDate(
   isoYear: number,
   isoMonth: number,
   isoDay: number,
-  calendar: CalendarSlot = GetISO8601Calendar()
+  calendar: CalendarSlot = 'iso8601'
 ) {
   const TemporalPlainDate = GetIntrinsic('%Temporal.PlainDate%');
   const result = ObjectCreate(TemporalPlainDate.prototype);
@@ -1947,7 +1944,7 @@ export function CreateTemporalDateTime(
   ms: number,
   µs: number,
   ns: number,
-  calendar: CalendarSlot = GetISO8601Calendar()
+  calendar: CalendarSlot = 'iso8601'
 ) {
   const TemporalPlainDateTime = GetIntrinsic('%Temporal.PlainDateTime%');
   const result = ObjectCreate(TemporalPlainDateTime.prototype);
@@ -1985,7 +1982,7 @@ export function CreateTemporalMonthDaySlots(
 export function CreateTemporalMonthDay(
   isoMonth: number,
   isoDay: number,
-  calendar: CalendarSlot = GetISO8601Calendar(),
+  calendar: CalendarSlot = 'iso8601',
   referenceISOYear = 1972
 ) {
   const TemporalPlainMonthDay = GetIntrinsic('%Temporal.PlainMonthDay%');
@@ -2024,7 +2021,7 @@ export function CreateTemporalYearMonthSlots(
 export function CreateTemporalYearMonth(
   isoYear: number,
   isoMonth: number,
-  calendar: CalendarSlot = GetISO8601Calendar(),
+  calendar: CalendarSlot = 'iso8601',
   referenceISODay = 1
 ) {
   const TemporalPlainYearMonth = GetIntrinsic('%Temporal.PlainYearMonth%');
@@ -2063,17 +2060,12 @@ export function CreateTemporalZonedDateTimeSlots(
 export function CreateTemporalZonedDateTime(
   epochNanoseconds: JSBI,
   timeZone: Temporal.TimeZoneProtocol,
-  calendar: CalendarSlot = GetISO8601Calendar()
+  calendar: CalendarSlot = 'iso8601'
 ) {
   const TemporalZonedDateTime = GetIntrinsic('%Temporal.ZonedDateTime%');
   const result = ObjectCreate(TemporalZonedDateTime.prototype);
   CreateTemporalZonedDateTimeSlots(result, epochNanoseconds, timeZone, calendar);
   return result;
-}
-
-export function GetISO8601Calendar() {
-  const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
-  return new TemporalCalendar('iso8601');
 }
 
 // TODO: should (can?) we make this generic so the field names are checked
@@ -2407,6 +2399,13 @@ export function CalendarInLeapYear(calendar: CalendarSlot, dateLike: CalendarPro
   return result;
 }
 
+export function ToTemporalCalendar(calendarLikeParam: string | { calendar: string }): string;
+export function ToTemporalCalendar(
+  calendarLikeParam: Temporal.CalendarProtocol | { calendar: Temporal.CalendarProtocol }
+): Temporal.CalendarProtocol;
+export function ToTemporalCalendar(
+  calendarLikeParam: string | Temporal.CalendarProtocol | { calendar: string | Temporal.CalendarProtocol }
+): string | Temporal.CalendarProtocol;
 export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0]) {
   let calendarLike = calendarLikeParam;
   if (IsObject(calendarLike)) {
@@ -2451,8 +2450,8 @@ function GetTemporalCalendarWithISODefault(
   item: Temporal.CalendarProtocol | { calendar?: Temporal.PlainDateLike['calendar'] }
 ): CalendarSlot {
   if (HasSlot(item, CALENDAR)) return GetSlot(item, CALENDAR);
-  const { calendar } = item as Exclude<typeof item, Temporal.CalendarProtocol>;
-  if (calendar === undefined) return GetISO8601Calendar();
+  const { calendar } = item;
+  if (calendar === undefined) return 'iso8601';
   return ToTemporalCalendar(calendar);
 }
 
@@ -2844,8 +2843,7 @@ export function TemporalInstantToString(
     const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
     outputTimeZone = new TemporalTimeZone('UTC');
   }
-  const iso = GetISO8601Calendar();
-  const dateTime = GetPlainDateTimeFor(outputTimeZone, instant, iso);
+  const dateTime = GetPlainDateTimeFor(outputTimeZone, instant, 'iso8601');
   const year = ISOYearString(GetSlot(dateTime, ISO_YEAR));
   const month = ISODateTimePartString(GetSlot(dateTime, ISO_MONTH));
   const day = ISODateTimePartString(GetSlot(dateTime, ISO_DAY));
@@ -3052,8 +3050,7 @@ export function TemporalZonedDateTimeToString(
   }
 
   const tz = GetSlot(zdt, TIME_ZONE);
-  const iso = GetISO8601Calendar();
-  const dateTime = GetPlainDateTimeFor(tz, instant, iso);
+  const dateTime = GetPlainDateTimeFor(tz, instant, 'iso8601');
 
   const year = ISOYearString(GetSlot(dateTime, ISO_YEAR));
   const month = ISODateTimePartString(GetSlot(dateTime, ISO_MONTH));
