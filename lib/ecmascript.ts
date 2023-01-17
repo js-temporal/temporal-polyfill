@@ -2265,6 +2265,19 @@ export function CalendarEquals(one: Temporal.CalendarProtocol, two: Temporal.Cal
   const cal2 = ToString(two);
   return cal1 === cal2;
 }
+// This operation is not in the spec, it implements the following:
+// "If ? CalendarEquals(one, two) is false, throw a RangeError exception."
+// This is so that we can build an informative error message without
+// re-getting the .id properties.
+
+export function CalendarEqualsOrThrow(one, two, errorMessageAction) {
+  if (one === two) return true;
+  const cal1 = ToString(one);
+  const cal2 = ToString(two);
+  if (cal1 !== cal2) {
+    throw new RangeError(`cannot ${errorMessageAction} of ${cal1} and ${cal2} calendars`);
+  }
+}
 
 export function ConsolidateCalendars(one: Temporal.CalendarProtocol, two: Temporal.CalendarProtocol) {
   if (one === two) return two;
@@ -4493,11 +4506,7 @@ export function DifferenceTemporalPlainDate(
   const other = ToTemporalDate(otherParam);
   const calendar = GetSlot(plainDate, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
-  const calendarId = ToString(calendar);
-  const otherCalendarId = ToString(otherCalendar);
-  if (calendarId !== otherCalendarId) {
-    throw new RangeError(`cannot compute difference between dates of ${calendarId} and ${otherCalendarId} calendars`);
-  }
+  CalendarEqualsOrThrow(calendar, otherCalendar, 'compute difference between dates');
 
   const settings = GetDifferenceSettings(operation, options, 'date', [], 'day', 'day');
 
@@ -4539,11 +4548,7 @@ export function DifferenceTemporalPlainDateTime(
   const other = ToTemporalDateTime(otherParam);
   const calendar = GetSlot(plainDateTime, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
-  const calendarId = ToString(calendar);
-  const otherCalendarId = ToString(otherCalendar);
-  if (calendarId !== otherCalendarId) {
-    throw new RangeError(`cannot compute difference between dates of ${calendarId} and ${otherCalendarId} calendars`);
-  }
+  CalendarEqualsOrThrow(calendar, otherCalendar, 'compute difference between dates');
 
   const settings = GetDifferenceSettings(operation, options, 'datetime', [], 'nanosecond', 'day');
 
@@ -4690,11 +4695,7 @@ export function DifferenceTemporalPlainYearMonth(
   const other = ToTemporalYearMonth(otherParam);
   const calendar = GetSlot(yearMonth, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
-  const calendarID = ToString(calendar);
-  const otherCalendarID = ToString(otherCalendar);
-  if (calendarID !== otherCalendarID) {
-    throw new RangeError(`cannot compute difference between months of ${calendarID} and ${otherCalendarID} calendars`);
-  }
+  CalendarEqualsOrThrow(calendar, otherCalendar, 'compute difference between months');
 
   const settings = GetDifferenceSettings(operation, options, 'date', ['week', 'day'], 'month', 'year');
 
@@ -4744,11 +4745,7 @@ export function DifferenceTemporalZonedDateTime(
   const other = ToTemporalZonedDateTime(otherParam);
   const calendar = GetSlot(zonedDateTime, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
-  const calendarId = ToString(calendar);
-  const otherCalendarId = ToString(otherCalendar);
-  if (calendarId !== otherCalendarId) {
-    throw new RangeError(`cannot compute difference between dates of ${calendarId} and ${otherCalendarId} calendars`);
-  }
+  CalendarEqualsOrThrow(calendar, otherCalendar, 'compute difference between dates');
 
   const settings = GetDifferenceSettings(operation, options, 'datetime', [], 'nanosecond', 'hour');
 
