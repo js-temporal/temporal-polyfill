@@ -39,7 +39,8 @@ import type {
   PrimitiveFieldsOf,
   BuiltinCalendarId,
   Keys,
-  AnyTemporalKey
+  AnyTemporalKey,
+  CalendarSlot
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
 import {
@@ -153,17 +154,25 @@ function isZero(value: JSBI): boolean {
   return JSBI.equal(value, ZERO);
 }
 
+type Stringless<T> = Exclude<T, string>;
+
 function GetMethod<T extends { [s in M]?: (...args: any[]) => unknown }, M extends string & keyof T>(
   obj: T,
   methodName: M
 ): T[M];
-function GetMethod<T extends { [s in M]?: undefined | ((...args: any[]) => unknown) }, M extends string & keyof T>(
-  obj: T,
-  methodName: M
-): T[M] | undefined {
+function GetMethod<
+  T extends string | { [s in M]?: (...args: any[]) => unknown },
+  M extends string & keyof Stringless<T>
+>(obj: T, methodName: M): Stringless<T>[M] | undefined;
+function GetMethod<
+  T extends string | { [s in M]?: undefined | ((...args: any[]) => unknown) },
+  M extends string & keyof T
+>(obj: T, methodName: M): T[M] | undefined {
   const result = obj[methodName];
   if (result === undefined) return undefined;
-  if (typeof result !== 'function') throw new TypeError(`'${methodName}' must be a function`);
+  if (DEBUG) {
+    if (typeof result !== 'function') throw new TypeError(`'${methodName}' must be a function`);
+  }
   return result;
 }
 
@@ -454,11 +463,11 @@ function ParseTemporalTimeZone(stringIdent: string) {
 }
 
 function MaybeFormatCalendarAnnotation(
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   showCalendar: Temporal.ShowCalendarOption['calendarName']
 ): string {
   if (showCalendar === 'never') return '';
-  return FormatCalendarAnnotation(ToString(calendar), showCalendar);
+  return FormatCalendarAnnotation(ToString(ToTemporalCalendarObject(calendar)), showCalendar);
 }
 
 function FormatCalendarAnnotation(id: string, showCalendar: Temporal.ShowCalendarOption['calendarName']) {
@@ -1453,7 +1462,7 @@ export function ToTemporalDate(
 }
 
 export function InterpretTemporalDateTimeFields(
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   fields: PrimitiveFieldsOf<Temporal.PlainDateTimeLike> & Parameters<typeof CalendarDateFromFields>[1],
   options?: Temporal.AssignmentOptions
 ) {
@@ -1577,7 +1586,7 @@ export function ToTemporalMonthDay(
   let item = itemParam;
   if (IsObject(item)) {
     if (IsTemporalMonthDay(item)) return item;
-    let calendar: Temporal.CalendarProtocol, calendarAbsent: boolean;
+    let calendar: CalendarSlot, calendarAbsent: boolean;
     if (HasSlot(item, CALENDAR)) {
       calendar = GetSlot(item, CALENDAR);
       calendarAbsent = false;
@@ -1590,7 +1599,6 @@ export function ToTemporalMonthDay(
     // HasSlot above adjusts the type of 'item' to include
     // TypesWithCalendarUnits, which causes type-inference failures below.
     // This is probably indicative of problems with HasSlot's typing.
-    item = item as Temporal.PlainMonthDayLike;
     const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
     const fields = PrepareTemporalFields(item, fieldNames, []);
     // Callers who omit the calendar are not writing calendar-independent
@@ -1857,7 +1865,7 @@ export function CreateTemporalDateSlots(
   isoYear: number,
   isoMonth: number,
   isoDay: number,
-  calendar: Temporal.CalendarProtocol
+  calendar: CalendarSlot
 ) {
   RejectISODate(isoYear, isoMonth, isoDay);
   RejectDateRange(isoYear, isoMonth, isoDay);
@@ -1883,7 +1891,7 @@ export function CreateTemporalDate(
   isoYear: number,
   isoMonth: number,
   isoDay: number,
-  calendar: Temporal.CalendarProtocol = GetISO8601Calendar()
+  calendar: CalendarSlot = GetISO8601Calendar()
 ) {
   const TemporalPlainDate = GetIntrinsic('%Temporal.PlainDate%');
   const result = ObjectCreate(TemporalPlainDate.prototype);
@@ -1902,7 +1910,7 @@ export function CreateTemporalDateTimeSlots(
   ms: number,
   µs: number,
   ns: number,
-  calendar: Temporal.CalendarProtocol
+  calendar: CalendarSlot
 ) {
   RejectDateTime(isoYear, isoMonth, isoDay, h, min, s, ms, µs, ns);
   RejectDateTimeRange(isoYear, isoMonth, isoDay, h, min, s, ms, µs, ns);
@@ -1939,7 +1947,7 @@ export function CreateTemporalDateTime(
   ms: number,
   µs: number,
   ns: number,
-  calendar: Temporal.CalendarProtocol = GetISO8601Calendar()
+  calendar: CalendarSlot = GetISO8601Calendar()
 ) {
   const TemporalPlainDateTime = GetIntrinsic('%Temporal.PlainDateTime%');
   const result = ObjectCreate(TemporalPlainDateTime.prototype);
@@ -1951,7 +1959,7 @@ export function CreateTemporalMonthDaySlots(
   result: Temporal.PlainMonthDay,
   isoMonth: number,
   isoDay: number,
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   referenceISOYear: number
 ) {
   RejectISODate(referenceISOYear, isoMonth, isoDay);
@@ -1977,7 +1985,7 @@ export function CreateTemporalMonthDaySlots(
 export function CreateTemporalMonthDay(
   isoMonth: number,
   isoDay: number,
-  calendar: Temporal.CalendarProtocol = GetISO8601Calendar(),
+  calendar: CalendarSlot = GetISO8601Calendar(),
   referenceISOYear = 1972
 ) {
   const TemporalPlainMonthDay = GetIntrinsic('%Temporal.PlainMonthDay%');
@@ -1990,7 +1998,7 @@ export function CreateTemporalYearMonthSlots(
   result: Temporal.PlainYearMonth,
   isoYear: number,
   isoMonth: number,
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   referenceISODay: number
 ) {
   RejectISODate(isoYear, isoMonth, referenceISODay);
@@ -2016,7 +2024,7 @@ export function CreateTemporalYearMonthSlots(
 export function CreateTemporalYearMonth(
   isoYear: number,
   isoMonth: number,
-  calendar: Temporal.CalendarProtocol = GetISO8601Calendar(),
+  calendar: CalendarSlot = GetISO8601Calendar(),
   referenceISODay = 1
 ) {
   const TemporalPlainYearMonth = GetIntrinsic('%Temporal.PlainYearMonth%');
@@ -2029,7 +2037,7 @@ export function CreateTemporalZonedDateTimeSlots(
   result: Temporal.ZonedDateTime,
   epochNanoseconds: JSBI,
   timeZone: Temporal.TimeZoneProtocol,
-  calendar: Temporal.CalendarProtocol
+  calendar: CalendarSlot
 ) {
   ValidateEpochNanoseconds(epochNanoseconds);
 
@@ -2055,7 +2063,7 @@ export function CreateTemporalZonedDateTimeSlots(
 export function CreateTemporalZonedDateTime(
   epochNanoseconds: JSBI,
   timeZone: Temporal.TimeZoneProtocol,
-  calendar: Temporal.CalendarProtocol = GetISO8601Calendar()
+  calendar: CalendarSlot = GetISO8601Calendar()
 ) {
   const TemporalZonedDateTime = GetIntrinsic('%Temporal.ZonedDateTime%');
   const result = ObjectCreate(TemporalZonedDateTime.prototype);
@@ -2070,10 +2078,12 @@ export function GetISO8601Calendar() {
 
 // TODO: should (can?) we make this generic so the field names are checked
 // against the type that the calendar is a property of?
-export function CalendarFields<K extends AnyTemporalKey>(
-  calendar: Temporal.CalendarProtocol,
-  fieldNamesParam: ReadonlyArray<K>
-) {
+export function CalendarFields<K extends AnyTemporalKey>(calendar: CalendarSlot, fieldNamesParam: ReadonlyArray<K>) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.fields%'), calendarObj, [fieldNamesParam]) as K[];
+  }
   const fields = GetMethod(calendar, 'fields');
   const fieldNames = Call(fields, calendar, [fieldNamesParam]);
   const result: K[] = [];
@@ -2085,10 +2095,18 @@ export function CalendarFields<K extends AnyTemporalKey>(
 }
 
 export function CalendarMergeFields<Base extends Record<string, unknown>, ToAdd extends Record<string, unknown>>(
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   fields: Base,
   additionalFields: ToAdd
 ) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.mergeFields%'), calendarObj, [
+      fields,
+      additionalFields
+    ]) as Base & ToAdd;
+  }
   const mergeFields = GetMethod(calendar, 'mergeFields');
   const result = Call(mergeFields, calendar, [fields, additionalFields]);
   if (!IsObject(result)) throw new TypeError('bad return from calendar.mergeFields()');
@@ -2096,13 +2114,18 @@ export function CalendarMergeFields<Base extends Record<string, unknown>, ToAdd 
 }
 
 export function CalendarDateAdd(
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   date: CalendarProtocolParams['dateAdd'][0],
   duration: CalendarProtocolParams['dateAdd'][1],
   options: CalendarProtocolParams['dateAdd'][2],
-  dateAddParam?: Temporal.CalendarProtocol['dateAdd']
+  dateAddParam?: Temporal.CalendarProtocol['dateAdd'] | undefined
 ) {
   let dateAdd = dateAddParam;
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.dateAdd%'), calendarObj, [date, duration, options]);
+  }
   if (dateAdd === undefined) {
     dateAdd = GetMethod(calendar, 'dateAdd');
   }
@@ -2112,13 +2135,18 @@ export function CalendarDateAdd(
 }
 
 function CalendarDateUntil(
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   date: CalendarProtocolParams['dateUntil'][0],
   otherDate: CalendarProtocolParams['dateUntil'][1],
   options: CalendarProtocolParams['dateUntil'][2],
-  dateUntilParam?: Temporal.CalendarProtocol['dateUntil']
+  dateUntilParam?: Temporal.CalendarProtocol['dateUntil'] | undefined
 ) {
   let dateUntil = dateUntilParam;
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.dateUntil%'), calendarObj, [date, otherDate, options]);
+  }
   if (dateUntil === undefined) {
     dateUntil = GetMethod(calendar, 'dateUntil');
   }
@@ -2127,7 +2155,12 @@ function CalendarDateUntil(
   return result;
 }
 
-export function CalendarYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['year'][0]) {
+export function CalendarYear(calendar: CalendarSlot, dateLike: CalendarProtocolParams['year'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.year%'), calendarObj, [dateLike]);
+  }
   const year = GetMethod(calendar, 'year');
   let result = Call(year, calendar, [dateLike]);
   if (typeof result !== 'number') {
@@ -2139,7 +2172,12 @@ export function CalendarYear(calendar: Temporal.CalendarProtocol, dateLike: Cale
   return result;
 }
 
-export function CalendarMonth(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['month'][0]) {
+export function CalendarMonth(calendar: CalendarSlot, dateLike: CalendarProtocolParams['month'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.month%'), calendarObj, [dateLike]);
+  }
   const month = GetMethod(calendar, 'month');
   let result = Call(month, calendar, [dateLike]);
   if (typeof result !== 'number') {
@@ -2151,10 +2189,12 @@ export function CalendarMonth(calendar: Temporal.CalendarProtocol, dateLike: Cal
   return result;
 }
 
-export function CalendarMonthCode(
-  calendar: Temporal.CalendarProtocol,
-  dateLike: CalendarProtocolParams['monthCode'][0]
-) {
+export function CalendarMonthCode(calendar: CalendarSlot, dateLike: CalendarProtocolParams['monthCode'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.monthCode%'), calendarObj, [dateLike]);
+  }
   const monthCode = GetMethod(calendar, 'monthCode');
   let result = Call(monthCode, calendar, [dateLike]);
   if (typeof result !== 'string') {
@@ -2163,9 +2203,14 @@ export function CalendarMonthCode(
   return result;
 }
 
-export function CalendarDay(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
-  const eraYear = GetMethod(calendar, 'day');
-  let result = Call(eraYear, calendar, [dateLike]);
+export function CalendarDay(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.day%'), calendarObj, [dateLike]);
+  }
+  const day = GetMethod(calendar, 'day');
+  const result = Call(day, calendar, [dateLike]);
   if (typeof result !== 'number') {
     throw new TypeError('calendar day result must be a positive integer');
   }
@@ -2175,7 +2220,12 @@ export function CalendarDay(calendar: Temporal.CalendarProtocol, dateLike: Calen
   return result;
 }
 
-export function CalendarEra(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarEra(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.era%'), calendarObj, [dateLike]);
+  }
   const era = GetMethod(calendar, 'era');
   let result = Call(era, calendar, [dateLike]);
   if (result === undefined) {
@@ -2187,7 +2237,12 @@ export function CalendarEra(calendar: Temporal.CalendarProtocol, dateLike: Calen
   return result;
 }
 
-export function CalendarEraYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarEraYear(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.eraYear%'), calendarObj, [dateLike]);
+  }
   const eraYear = GetMethod(calendar, 'eraYear');
   let result = Call(eraYear, calendar, [dateLike]);
   if (result === undefined) {
@@ -2202,7 +2257,12 @@ export function CalendarEraYear(calendar: Temporal.CalendarProtocol, dateLike: C
   return result;
 }
 
-export function CalendarDayOfWeek(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarDayOfWeek(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.dayOfWeek%'), calendarObj, [dateLike]);
+  }
   const dayOfWeek = GetMethod(calendar, 'dayOfWeek');
   const result = Call(dayOfWeek, calendar, [dateLike]);
   if (typeof result !== 'number') {
@@ -2214,7 +2274,12 @@ export function CalendarDayOfWeek(calendar: Temporal.CalendarProtocol, dateLike:
   return result;
 }
 
-export function CalendarDayOfYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarDayOfYear(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.dayOfYear%'), calendarObj, [dateLike]);
+  }
   const dayOfYear = GetMethod(calendar, 'dayOfYear');
   const result = Call(dayOfYear, calendar, [dateLike]);
   if (typeof result !== 'number') {
@@ -2226,7 +2291,12 @@ export function CalendarDayOfYear(calendar: Temporal.CalendarProtocol, dateLike:
   return result;
 }
 
-export function CalendarWeekOfYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarWeekOfYear(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.weekOfYear%'), calendarObj, [dateLike]);
+  }
   const weekOfYear = GetMethod(calendar, 'weekOfYear');
   const result = Call(weekOfYear, calendar, [dateLike]);
   if (typeof result !== 'number') {
@@ -2238,7 +2308,12 @@ export function CalendarWeekOfYear(calendar: Temporal.CalendarProtocol, dateLike
   return result;
 }
 
-export function CalendarYearOfWeek(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarYearOfWeek(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.yearOfWeek%'), calendarObj, [dateLike]);
+  }
   const yearOfWeek = GetMethod(calendar, 'yearOfWeek');
   const result = Call(yearOfWeek, calendar, [dateLike]);
   if (typeof result !== 'number') {
@@ -2250,7 +2325,12 @@ export function CalendarYearOfWeek(calendar: Temporal.CalendarProtocol, dateLike
   return result;
 }
 
-export function CalendarDaysInWeek(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarDaysInWeek(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.daysInWeek%'), calendarObj, [dateLike]);
+  }
   const daysInWeek = GetMethod(calendar, 'daysInWeek');
   const result = Call(daysInWeek, calendar, [dateLike]);
   if (typeof result !== 'number') {
@@ -2262,7 +2342,12 @@ export function CalendarDaysInWeek(calendar: Temporal.CalendarProtocol, dateLike
   return result;
 }
 
-export function CalendarDaysInMonth(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarDaysInMonth(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.daysInMonth%'), calendarObj, [dateLike]);
+  }
   const daysInMonth = GetMethod(calendar, 'daysInMonth');
   const result = Call(daysInMonth, calendar, [dateLike]);
   if (typeof result !== 'number') {
@@ -2274,7 +2359,12 @@ export function CalendarDaysInMonth(calendar: Temporal.CalendarProtocol, dateLik
   return result;
 }
 
-export function CalendarDaysInYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarDaysInYear(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.daysInYear%'), calendarObj, [dateLike]);
+  }
   const daysInYear = GetMethod(calendar, 'daysInYear');
   const result = Call(daysInYear, calendar, [dateLike]);
   if (typeof result !== 'number') {
@@ -2286,7 +2376,12 @@ export function CalendarDaysInYear(calendar: Temporal.CalendarProtocol, dateLike
   return result;
 }
 
-export function CalendarMonthsInYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarMonthsInYear(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.monthsInYear%'), calendarObj, [dateLike]);
+  }
   const monthsInYear = GetMethod(calendar, 'monthsInYear');
   const result = Call(monthsInYear, calendar, [dateLike]);
   if (typeof result !== 'number') {
@@ -2298,7 +2393,12 @@ export function CalendarMonthsInYear(calendar: Temporal.CalendarProtocol, dateLi
   return result;
 }
 
-export function CalendarInLeapYear(calendar: Temporal.CalendarProtocol, dateLike: CalendarProtocolParams['era'][0]) {
+export function CalendarInLeapYear(calendar: CalendarSlot, dateLike: CalendarProtocolParams['era'][0]) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.inLeapYear%'), calendarObj, [dateLike]);
+  }
   const inLeapYear = GetMethod(calendar, 'inLeapYear');
   const result = Call(inLeapYear, calendar, [dateLike]);
   if (typeof result !== 'boolean') {
@@ -2331,8 +2431,7 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
     }
   }
   const identifier = ToString(calendarLike);
-  const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
-  if (IsBuiltinCalendar(identifier)) return new TemporalCalendar(identifier);
+  if (IsBuiltinCalendar(identifier)) return ASCIILowercase(identifier);
   let calendar;
   try {
     ({ calendar } = ParseISODateTime(identifier));
@@ -2344,19 +2443,33 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
     }
   }
   if (!calendar) calendar = 'iso8601';
-  return new TemporalCalendar(calendar);
+  if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+  return ASCIILowercase(calendar);
 }
 
 function GetTemporalCalendarWithISODefault(
   item: Temporal.CalendarProtocol | { calendar?: Temporal.PlainDateLike['calendar'] }
-): Temporal.Calendar | Temporal.CalendarProtocol {
+): CalendarSlot {
   if (HasSlot(item, CALENDAR)) return GetSlot(item, CALENDAR);
   const { calendar } = item as Exclude<typeof item, Temporal.CalendarProtocol>;
   if (calendar === undefined) return GetISO8601Calendar();
   return ToTemporalCalendar(calendar);
 }
 
-export function CalendarEquals(one: Temporal.CalendarProtocol, two: Temporal.CalendarProtocol) {
+export function ToTemporalCalendarIdentifier(slotValue: CalendarSlot) {
+  if (typeof slotValue === 'string') return slotValue;
+  const result = slotValue.id;
+  if (typeof result !== 'string') throw new TypeError('calendar.id should be a string');
+  return result;
+}
+
+export function ToTemporalCalendarObject(slotValue: CalendarSlot) {
+  if (IsObject(slotValue)) return slotValue;
+  const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+  return new TemporalCalendar(slotValue);
+}
+
+export function CalendarEquals(one: CalendarSlot, two: CalendarSlot) {
   if (one === two) return true;
   const cal1 = ToString(one);
   const cal2 = ToString(two);
@@ -2367,11 +2480,7 @@ export function CalendarEquals(one: Temporal.CalendarProtocol, two: Temporal.Cal
 // "If ? CalendarEquals(one, two) is false, throw a RangeError exception."
 // This is so that we can build an informative error message without
 // re-getting the .id properties.
-function CalendarEqualsOrThrow(
-  one: Temporal.CalendarProtocol,
-  two: Temporal.CalendarProtocol,
-  errorMessageAction: string
-) {
+function CalendarEqualsOrThrow(one: CalendarSlot, two: CalendarSlot, errorMessageAction: string) {
   if (one === two) return;
   const cal1 = ToString(one);
   const cal2 = ToString(two);
@@ -2380,7 +2489,7 @@ function CalendarEqualsOrThrow(
   }
 }
 
-export function ConsolidateCalendars(one: Temporal.CalendarProtocol, two: Temporal.CalendarProtocol) {
+export function ConsolidateCalendars(one: CalendarSlot, two: CalendarSlot) {
   if (one === two) return two;
   const sOne = ToString(one);
   const sTwo = ToString(two);
@@ -2394,10 +2503,15 @@ export function ConsolidateCalendars(one: Temporal.CalendarProtocol, two: Tempor
 }
 
 export function CalendarDateFromFields(
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   fields: CalendarProtocolParams['dateFromFields'][0],
   options?: Partial<CalendarProtocolParams['dateFromFields'][1]>
 ) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.dateFromFields%'), calendarObj, [fields, options]);
+  }
   const dateFromFields = GetMethod(calendar, 'dateFromFields');
   let result = Call(dateFromFields, calendar, [fields, options]);
   if (!IsTemporalDate(result)) throw new TypeError('invalid result');
@@ -2405,10 +2519,15 @@ export function CalendarDateFromFields(
 }
 
 export function CalendarYearMonthFromFields(
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   fields: CalendarProtocolParams['yearMonthFromFields'][0],
   options?: CalendarProtocolParams['yearMonthFromFields'][1]
 ) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.yearMonthFromFields%'), calendarObj, [fields, options]);
+  }
   const yearMonthFromFields = GetMethod(calendar, 'yearMonthFromFields');
   let result = Call(yearMonthFromFields, calendar, [fields, options]);
   if (!IsTemporalYearMonth(result)) throw new TypeError('invalid result');
@@ -2416,10 +2535,15 @@ export function CalendarYearMonthFromFields(
 }
 
 export function CalendarMonthDayFromFields(
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   fields: CalendarProtocolParams['monthDayFromFields'][0],
   options?: CalendarProtocolParams['monthDayFromFields'][1]
 ) {
+  if (typeof calendar === 'string') {
+    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
+    const calendarObj = new TemporalCalendar(calendar);
+    return Call(GetIntrinsic('%Temporal.Calendar.prototype.monthDayFromFields%'), calendarObj, [fields, options]);
+  }
   const monthDayFromFields = GetMethod(calendar, 'monthDayFromFields');
   let result = Call(monthDayFromFields, calendar, [fields, options]);
   if (!IsTemporalMonthDay(result)) throw new TypeError('invalid result');
@@ -2497,7 +2621,7 @@ export function GetOffsetStringFor(timeZone: Temporal.TimeZoneProtocol, instant:
 export function GetPlainDateTimeFor(
   timeZone: Temporal.TimeZoneProtocol,
   instant: Temporal.Instant,
-  calendar: Temporal.CalendarProtocol
+  calendar: CalendarSlot
 ) {
   const ns = GetSlot(instant, EPOCHNANOSECONDS);
   const offsetNs = GetOffsetNanosecondsFor(timeZone, instant);
@@ -4371,7 +4495,7 @@ function DifferenceISODateTime(
   ms2: number,
   µs2: number,
   ns2: number,
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   largestUnit: Temporal.DateTimeUnit,
   options: Temporal.DifferenceOptions<Temporal.DateTimeUnit> | undefined
 ) {
@@ -4440,7 +4564,7 @@ function DifferenceZonedDateTime(
   ns1: JSBI,
   ns2: JSBI,
   timeZone: Temporal.TimeZoneProtocol,
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   largestUnit: Temporal.DateTimeUnit,
   options: Temporal.DifferenceOptions<Temporal.DateTimeUnit>
 ) {
@@ -5176,7 +5300,7 @@ function AddDateTime(
   millisecondParam: number,
   microsecondParam: number,
   nanosecondParam: number,
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   years: number,
   months: number,
   weeks: number,
@@ -5229,7 +5353,7 @@ function AddDateTime(
 export function AddZonedDateTime(
   instant: Temporal.Instant,
   timeZone: Temporal.TimeZoneProtocol,
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   years: number,
   months: number,
   weeks: number,
@@ -5663,10 +5787,10 @@ function DaysUntil(
 }
 
 function MoveRelativeDate(
-  calendar: Temporal.CalendarProtocol,
+  calendar: CalendarSlot,
   relativeToParam: NonNullable<ReturnType<typeof ToRelativeTemporalObject>>,
   duration: Temporal.Duration,
-  dateAdd: Temporal.CalendarProtocol['dateAdd']
+  dateAdd: Temporal.CalendarProtocol['dateAdd'] | undefined
 ) {
   const later = CalendarDateAdd(calendar, relativeToParam, duration, undefined, dateAdd);
   const days = DaysUntil(relativeToParam, later);

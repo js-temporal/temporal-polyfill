@@ -32,13 +32,19 @@ type TemporalIntrinsicPrototypeRegisteredKeys = {
   [key in keyof TemporalIntrinsicPrototypeRegistrations as `%${key}%`]: TemporalIntrinsicPrototypeRegistrations[key];
 };
 
-interface StandaloneIntrinsics {
+type CalendarPrototypeKeys = keyof Omit<Temporal.Calendar, typeof Symbol.toStringTag>;
+type TemporalCalendarIntrinsicRegistrations = {
+  [key in CalendarPrototypeKeys as `Temporal.Calendar.prototype.${key}`]: Temporal.Calendar[key];
+} & {
   'Temporal.Calendar.from': typeof Temporal.Calendar.from;
-}
-type RegisteredStandaloneIntrinsics = { [key in keyof StandaloneIntrinsics as `%${key}%`]: StandaloneIntrinsics[key] };
+};
+type TemporalCalendarIntrinsicRegisteredKeys = {
+  [key in keyof TemporalCalendarIntrinsicRegistrations as `%${key}%`]: TemporalCalendarIntrinsicRegistrations[key];
+};
+
 const INTRINSICS = {} as TemporalIntrinsicRegisteredKeys &
   TemporalIntrinsicPrototypeRegisteredKeys &
-  RegisteredStandaloneIntrinsics;
+  TemporalCalendarIntrinsicRegisteredKeys;
 
 type customFormatFunction<T> = (
   this: T,
@@ -119,7 +125,7 @@ export function MakeIntrinsicClass(
 type IntrinsicDefinitionKeys =
   | keyof TemporalIntrinsicRegistrations
   | keyof TemporalIntrinsicPrototypeRegistrations
-  | keyof StandaloneIntrinsics;
+  | keyof TemporalCalendarIntrinsicRegistrations;
 export function DefineIntrinsic<KeyT extends keyof TemporalIntrinsicRegistrations>(
   name: KeyT,
   value: TemporalIntrinsicRegistrations[KeyT]
@@ -128,9 +134,9 @@ export function DefineIntrinsic<KeyT extends keyof TemporalIntrinsicPrototypeReg
   name: KeyT,
   value: TemporalIntrinsicPrototypeRegistrations[KeyT]
 ): void;
-export function DefineIntrinsic<KeyT extends keyof StandaloneIntrinsics>(
+export function DefineIntrinsic<KeyT extends keyof TemporalCalendarIntrinsicRegistrations>(
   name: KeyT,
-  value: StandaloneIntrinsics[KeyT]
+  value: TemporalCalendarIntrinsicRegistrations[KeyT]
 ): void;
 export function DefineIntrinsic<KeyT>(name: KeyT, value: never): void;
 export function DefineIntrinsic<KeyT extends IntrinsicDefinitionKeys>(name: KeyT, value: unknown): void {

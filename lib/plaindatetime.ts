@@ -57,9 +57,9 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       calendar
     );
   }
-  get calendar(): Return['calendar'] {
+  get calendarId(): Return['calendarId'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
-    return GetSlot(this, CALENDAR);
+    return ES.ToTemporalCalendarIdentifier(GetSlot(this, CALENDAR));
   }
   get year(): Return['year'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
@@ -434,6 +434,10 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       isoSecond: GetSlot(this, ISO_SECOND),
       isoYear: GetSlot(this, ISO_YEAR)
     };
+  }
+  getCalendar(): Return['getCalendar'] {
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
+    return ES.ToTemporalCalendarObject(GetSlot(this, CALENDAR));
   }
 
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {

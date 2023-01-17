@@ -26,7 +26,8 @@ import type {
   BuiltinCalendarId,
   CalendarParams as Params,
   CalendarReturn as Return,
-  AnyTemporalKey
+  AnyTemporalKey,
+  CalendarSlot
 } from './internaltypes';
 
 const ArrayIncludes = Array.prototype.includes;
@@ -71,17 +72,17 @@ interface CalendarImpl {
   dateFromFields(
     fields: Params['dateFromFields'][0],
     options: NonNullable<Params['dateFromFields'][1]>,
-    calendar: Temporal.Calendar
+    calendar: string
   ): Temporal.PlainDate;
   yearMonthFromFields(
     fields: Params['yearMonthFromFields'][0],
     options: NonNullable<Params['yearMonthFromFields'][1]>,
-    calendar: Temporal.Calendar
+    calendar: string
   ): Temporal.PlainYearMonth;
   monthDayFromFields(
     fields: Params['monthDayFromFields'][0],
     options: NonNullable<Params['monthDayFromFields'][1]>,
-    calendar: Temporal.Calendar
+    calendar: string
   ): Temporal.PlainMonthDay;
   dateAdd(
     date: Temporal.PlainDate,
@@ -90,7 +91,7 @@ interface CalendarImpl {
     weeks: number,
     days: number,
     overflow: Overflow,
-    calendar: Temporal.Calendar
+    calendar: string
   ): Temporal.PlainDate;
   dateUntil(
     one: Temporal.PlainDate,
@@ -158,7 +159,8 @@ export class Calendar implements Temporal.Calendar {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(fields)) throw new TypeError('invalid fields');
     const options = ES.GetOptionsObject(optionsParam);
-    return impl[GetSlot(this, CALENDAR_ID)].dateFromFields(fields, options, this);
+    const id = GetSlot(this, CALENDAR_ID);
+    return impl[id].dateFromFields(fields, options, id);
   }
   yearMonthFromFields(
     fields: Params['yearMonthFromFields'][0],
@@ -167,7 +169,8 @@ export class Calendar implements Temporal.Calendar {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(fields)) throw new TypeError('invalid fields');
     const options = ES.GetOptionsObject(optionsParam);
-    return impl[GetSlot(this, CALENDAR_ID)].yearMonthFromFields(fields, options, this);
+    const id = GetSlot(this, CALENDAR_ID);
+    return impl[id].yearMonthFromFields(fields, options, id);
   }
   monthDayFromFields(
     fields: Params['monthDayFromFields'][0],
@@ -176,7 +179,8 @@ export class Calendar implements Temporal.Calendar {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(fields)) throw new TypeError('invalid fields');
     const options = ES.GetOptionsObject(optionsParam);
-    return impl[GetSlot(this, CALENDAR_ID)].monthDayFromFields(fields, options, this);
+    const id = GetSlot(this, CALENDAR_ID);
+    return impl[id].monthDayFromFields(fields, options, id);
   }
   fields(fields: Params['fields'][0]): Return['fields'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
@@ -245,14 +249,15 @@ export class Calendar implements Temporal.Calendar {
       GetSlot(duration, NANOSECONDS),
       'day'
     );
-    return impl[GetSlot(this, CALENDAR_ID)].dateAdd(
+    const id = GetSlot(this, CALENDAR_ID);
+    return impl[id].dateAdd(
       date,
       GetSlot(duration, YEARS),
       GetSlot(duration, MONTHS),
       GetSlot(duration, WEEKS),
       days,
       overflow,
-      this
+      id
     );
   }
   dateUntil(
@@ -367,13 +372,36 @@ export class Calendar implements Temporal.Calendar {
     return ES.ToString(this);
   }
   static from(item: Params['from'][0]): Return['from'] {
-    return ES.ToTemporalCalendar(item);
+    const calendarSlotValue = ES.ToTemporalCalendar(item);
+    return ES.ToTemporalCalendarObject(calendarSlotValue);
   }
   [Symbol.toStringTag]!: 'Temporal.Calendar';
 }
 
 MakeIntrinsicClass(Calendar, 'Temporal.Calendar');
 DefineIntrinsic('Temporal.Calendar.from', Calendar.from);
+DefineIntrinsic('Temporal.Calendar.prototype.dateAdd', Calendar.prototype.dateAdd);
+DefineIntrinsic('Temporal.Calendar.prototype.dateFromFields', Calendar.prototype.dateFromFields);
+DefineIntrinsic('Temporal.Calendar.prototype.dateUntil', Calendar.prototype.dateUntil);
+DefineIntrinsic('Temporal.Calendar.prototype.day', Calendar.prototype.day);
+DefineIntrinsic('Temporal.Calendar.prototype.dayOfWeek', Calendar.prototype.dayOfWeek);
+DefineIntrinsic('Temporal.Calendar.prototype.dayOfYear', Calendar.prototype.dayOfYear);
+DefineIntrinsic('Temporal.Calendar.prototype.daysInMonth', Calendar.prototype.daysInMonth);
+DefineIntrinsic('Temporal.Calendar.prototype.daysInWeek', Calendar.prototype.daysInWeek);
+DefineIntrinsic('Temporal.Calendar.prototype.daysInYear', Calendar.prototype.daysInYear);
+DefineIntrinsic('Temporal.Calendar.prototype.era', Calendar.prototype.era);
+DefineIntrinsic('Temporal.Calendar.prototype.eraYear', Calendar.prototype.eraYear);
+DefineIntrinsic('Temporal.Calendar.prototype.fields', Calendar.prototype.fields);
+DefineIntrinsic('Temporal.Calendar.prototype.inLeapYear', Calendar.prototype.inLeapYear);
+DefineIntrinsic('Temporal.Calendar.prototype.mergeFields', Calendar.prototype.mergeFields);
+DefineIntrinsic('Temporal.Calendar.prototype.month', Calendar.prototype.month);
+DefineIntrinsic('Temporal.Calendar.prototype.monthCode', Calendar.prototype.monthCode);
+DefineIntrinsic('Temporal.Calendar.prototype.monthDayFromFields', Calendar.prototype.monthDayFromFields);
+DefineIntrinsic('Temporal.Calendar.prototype.monthsInYear', Calendar.prototype.monthsInYear);
+DefineIntrinsic('Temporal.Calendar.prototype.weekOfYear', Calendar.prototype.weekOfYear);
+DefineIntrinsic('Temporal.Calendar.prototype.year', Calendar.prototype.year);
+DefineIntrinsic('Temporal.Calendar.prototype.yearMonthFromFields', Calendar.prototype.yearMonthFromFields);
+DefineIntrinsic('Temporal.Calendar.prototype.yearOfWeek', Calendar.prototype.yearOfWeek);
 
 /**
  * Implementation for the ISO 8601 calendar. This is the only calendar that's
@@ -381,23 +409,23 @@ DefineIntrinsic('Temporal.Calendar.from', Calendar.from);
  * without Intl (ECMA-402) support.
  */
 impl['iso8601'] = {
-  dateFromFields(fieldsParam, options, calendar) {
+  dateFromFields(fieldsParam, options, calendarSlotValue) {
     let fields = ES.PrepareTemporalFields(fieldsParam, ['day', 'month', 'monthCode', 'year'], ['year', 'day']);
     const overflow = ES.ToTemporalOverflow(options);
     fields = resolveNonLunisolarMonth(fields);
     let { year, month, day } = fields;
     ({ year, month, day } = ES.RegulateISODate(year, month, day, overflow));
-    return ES.CreateTemporalDate(year, month, day, calendar);
+    return ES.CreateTemporalDate(year, month, day, calendarSlotValue);
   },
-  yearMonthFromFields(fieldsParam, options, calendar) {
+  yearMonthFromFields(fieldsParam, options, calendarSlotValue) {
     let fields = ES.PrepareTemporalFields(fieldsParam, ['month', 'monthCode', 'year'], ['year']);
     const overflow = ES.ToTemporalOverflow(options);
     fields = resolveNonLunisolarMonth(fields);
     let { year, month } = fields;
     ({ year, month } = ES.RegulateISOYearMonth(year, month, overflow));
-    return ES.CreateTemporalYearMonth(year, month, calendar, /* referenceISODay = */ 1);
+    return ES.CreateTemporalYearMonth(year, month, calendarSlotValue, /* referenceISODay = */ 1);
   },
-  monthDayFromFields(fieldsParam, options, calendar) {
+  monthDayFromFields(fieldsParam, options, calendarSlotValue) {
     let fields = ES.PrepareTemporalFields(fieldsParam, ['day', 'month', 'monthCode', 'year'], ['day']);
     const overflow = ES.ToTemporalOverflow(options);
     if (fields.month !== undefined && fields.year === undefined && fields.monthCode === undefined) {
@@ -408,7 +436,7 @@ impl['iso8601'] = {
     fields = resolveNonLunisolarMonth(fields);
     let { month, day, year } = fields;
     ({ month, day } = ES.RegulateISODate(useYear ? year : referenceISOYear, month, day, overflow));
-    return ES.CreateTemporalMonthDay(month, day, calendar, referenceISOYear);
+    return ES.CreateTemporalMonthDay(month, day, calendarSlotValue, referenceISOYear);
   },
   fields(fields) {
     return fields;
@@ -426,12 +454,12 @@ impl['iso8601'] = {
     }
     return [...ES.Call(SetPrototypeValues, result, [])];
   },
-  dateAdd(date, years, months, weeks, days, overflow, calendar) {
+  dateAdd(date, years, months, weeks, days, overflow, calendarSlotValue) {
     let year = GetSlot(date, ISO_YEAR);
     let month = GetSlot(date, ISO_MONTH);
     let day = GetSlot(date, ISO_DAY);
     ({ year, month, day } = ES.AddISODate(year, month, day, years, months, weeks, days, overflow));
-    return ES.CreateTemporalDate(year, month, day, calendar);
+    return ES.CreateTemporalDate(year, month, day, calendarSlotValue);
   },
   dateUntil(one, two, largestUnit) {
     return ES.DifferenceISODate(
@@ -2312,35 +2340,35 @@ class NonIsoCalendar implements CalendarImpl {
   dateFromFields(
     fieldsParam: Params['dateFromFields'][0],
     options: NonNullable<Params['dateFromFields'][1]>,
-    calendar: Temporal.Calendar
+    calendarSlotValue: string
   ): Temporal.PlainDate {
     const cache = new OneObjectCache();
     const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as AnyTemporalKey[];
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.calendarToIsoDate(fields, overflow, cache);
-    const result = ES.CreateTemporalDate(year, month, day, calendar);
+    const result = ES.CreateTemporalDate(year, month, day, calendarSlotValue);
     cache.setObject(result);
     return result;
   }
   yearMonthFromFields(
     fieldsParam: Params['yearMonthFromFields'][0],
     options: NonNullable<Params['yearMonthFromFields'][1]>,
-    calendar: Temporal.Calendar
+    calendarSlotValue: CalendarSlot
   ): Temporal.PlainYearMonth {
     const cache = new OneObjectCache();
     const fieldNames = this.fields(['month', 'monthCode', 'year']) as AnyTemporalKey[];
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
     const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.calendarToIsoDate({ ...fields, day: 1 }, overflow, cache);
-    const result = ES.CreateTemporalYearMonth(year, month, calendar, /* referenceISODay = */ day);
+    const result = ES.CreateTemporalYearMonth(year, month, calendarSlotValue, /* referenceISODay = */ day);
     cache.setObject(result);
     return result;
   }
   monthDayFromFields(
     fieldsParam: Params['monthDayFromFields'][0],
     options: NonNullable<Params['monthDayFromFields'][1]>,
-    calendar: Temporal.Calendar
+    calendarSlotValue: CalendarSlot
   ): Temporal.PlainMonthDay {
     const cache = new OneObjectCache();
     // For lunisolar calendars, either `monthCode` or `year` must be provided
@@ -2350,7 +2378,7 @@ class NonIsoCalendar implements CalendarImpl {
     const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.monthDayFromFields(fields, overflow, cache);
     // `year` is a reference year where this month/day exists in this calendar
-    const result = ES.CreateTemporalMonthDay(month, day, calendar, /* referenceISOYear = */ year);
+    const result = ES.CreateTemporalMonthDay(month, day, calendarSlotValue, /* referenceISOYear = */ year);
     cache.setObject(result);
     return result;
   }
@@ -2411,14 +2439,14 @@ class NonIsoCalendar implements CalendarImpl {
     weeks: number,
     days: number,
     overflow: Overflow,
-    calendar: Temporal.Calendar
+    calendarSlotValue: CalendarSlot
   ): Temporal.PlainDate {
     const cache = OneObjectCache.getCacheForObject(date);
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     const added = this.helper.addCalendar(calendarDate, { years, months, weeks, days }, overflow, cache);
     const isoAdded = this.helper.calendarToIsoDate(added, 'constrain', cache);
     const { year, month, day } = isoAdded;
-    const newTemporalObject = ES.CreateTemporalDate(year, month, day, calendar);
+    const newTemporalObject = ES.CreateTemporalDate(year, month, day, calendarSlotValue);
     // The new object's cache starts with the cache of the old object
     const newCache = new OneObjectCache(cache);
     newCache.setObject(newTemporalObject);
