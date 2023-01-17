@@ -48,6 +48,8 @@ export type AnyTemporalConstructor =
   | typeof Temporal.ZonedDateTime;
 */
 
+export type CalendarSlot = Temporal.CalendarProtocol | string;
+
 // Used in AnyTemporalLikeType
 // ts-prune-ignore-next
 type AllTemporalLikeTypes = [

@@ -1,6 +1,6 @@
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
-import type { BuiltinCalendarId, AnyTemporalType } from './internaltypes';
+import type { BuiltinCalendarId, AnyTemporalType, CalendarSlot } from './internaltypes';
 
 // Instant
 export const EPOCHNANOSECONDS = 'slot-epochNanoSeconds';
@@ -69,7 +69,7 @@ interface Slots extends SlotInfoRecord {
   [ISO_MILLISECOND]: SlotInfo<number, TypesWithCalendarUnits>;
   [ISO_MICROSECOND]: SlotInfo<number, TypesWithCalendarUnits>;
   [ISO_NANOSECOND]: SlotInfo<number, TypesWithCalendarUnits>;
-  [CALENDAR]: SlotInfo<Temporal.CalendarProtocol, TypesWithCalendarUnits | Temporal.ZonedDateTime>;
+  [CALENDAR]: SlotInfo<CalendarSlot, TypesWithCalendarUnits>;
 
   // Date, YearMonth, MonthDay common slots
   [DATE_BRAND]: SlotInfo<true, Temporal.PlainDate>;

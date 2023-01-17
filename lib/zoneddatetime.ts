@@ -42,9 +42,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
 
     ES.CreateTemporalZonedDateTimeSlots(this, epochNanoseconds, timeZone, calendar);
   }
-  get calendar(): Return['calendar'] {
+  get calendarId(): Return['calendarId'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
-    return GetSlot(this, CALENDAR);
+    return ES.ToTemporalCalendarIdentifier(GetSlot(this, CALENDAR));
   }
   get timeZone(): Return['timeZone'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
@@ -530,6 +530,11 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       timeZone: tz
     };
   }
+  getCalendar(): Return['getCalendar'] {
+    if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
+    return ES.ToTemporalCalendarObject(GetSlot(this, CALENDAR));
+  }
+
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
     if (ES.IsTemporalZonedDateTime(item)) {

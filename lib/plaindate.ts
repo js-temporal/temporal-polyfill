@@ -32,9 +32,9 @@ export class PlainDate implements Temporal.PlainDate {
 
     ES.CreateTemporalDateSlots(this, isoYear, isoMonth, isoDay, calendar);
   }
-  get calendar(): Return['calendar'] {
+  get calendarId(): Return['calendarId'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
-    return GetSlot(this, CALENDAR);
+    return ES.ToTemporalCalendarIdentifier(GetSlot(this, CALENDAR));
   }
   get era(): Return['era'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
@@ -288,6 +288,11 @@ export class PlainDate implements Temporal.PlainDate {
       isoYear: GetSlot(this, ISO_YEAR)
     };
   }
+  getCalendar(): Return['getCalendar'] {
+    if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
+    return ES.ToTemporalCalendarObject(GetSlot(this, CALENDAR));
+  }
+
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
     if (ES.IsTemporalDate(item)) {

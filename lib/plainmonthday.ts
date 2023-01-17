@@ -30,9 +30,9 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     return ES.CalendarDay(GetSlot(this, CALENDAR), this);
   }
-  get calendar(): Return['calendar'] {
+  get calendarId(): Return['calendarId'] {
     if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
-    return GetSlot(this, CALENDAR);
+    return ES.ToTemporalCalendarIdentifier(GetSlot(this, CALENDAR));
   }
 
   with(temporalMonthDayLike: Params['with'][0], optionsParam: Params['with'][1] = undefined): Return['with'] {
@@ -110,6 +110,11 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
       isoYear: GetSlot(this, ISO_YEAR)
     };
   }
+  getCalendar(): Return['getCalendar'] {
+    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
+    return ES.ToTemporalCalendarObject(GetSlot(this, CALENDAR));
+  }
+
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
     if (ES.IsTemporalMonthDay(item)) {
