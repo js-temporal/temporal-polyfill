@@ -121,7 +121,6 @@ const BUILTIN_CALENDAR_IDS = [
 ];
 
 /* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function */
-
 /**
  * uncheckedAssertNarrowedType forces TypeScript to change the type of the argument to the one given in
  * the type parameter. This should only be used to help TS understand when variables change types,
@@ -132,17 +131,6 @@ export function uncheckedAssertNarrowedType<T = unknown>(
   arg: unknown,
   justification: string
 ): asserts arg is T extends typeof arg ? T : never {}
-
-/**
- * Casts a ReadonlyArray to a writable Array. This is typically needed in the
- * case where an array of string literals is declared `as const` so that the
- * elements get literal types instead of just `string`. But `as const` arrays
- * are also readonly, which is bad in cases where you want to subsequently
- * mutate the array, e.g. to sort it. This utility function will allow mutation
- * of these `as const` arrays.
- * */
-export function uncheckedAssertWritableArray<T>(arg: ReadonlyArray<T>): asserts arg is T[] {}
-
 /* eslint-enable */
 
 type ArrayElement<ArrayType> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
@@ -262,14 +250,6 @@ function signJSBI(value: JSBI): 1 | 0 | -1 {
 function abs(x: JSBI): JSBI {
   if (JSBI.lessThan(x, ZERO)) return JSBI.multiply(x, NEGATIVE_ONE);
   return x;
-}
-
-export function ArrayPush<NewValue>(
-  arr: ReadonlyArray<NewValue>,
-  ...newItem: readonly NewValue[]
-): ReadonlyArray<NewValue> {
-  ArrayPrototypePush.apply(arr, newItem as any[]);
-  return arr;
 }
 
 type BuiltinCastFunction = (v: unknown) => string | number;
@@ -1397,8 +1377,7 @@ export function ToTemporalTimeRecord(
   completeness: FieldCompleteness = 'complete'
 ): Partial<TimeRecord> {
   // NOTE: Field order is sorted to make the sort in PrepareTemporalFields more efficient.
-  const fields = ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second'] as const;
-  uncheckedAssertWritableArray(fields);
+  const fields: (keyof TimeRecord)[] = ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second'];
   const partial = PrepareTemporalFields(bag, fields, 'partial', { emptySourceErrorMessage: 'invalid time-like' });
   const result: Partial<TimeRecord> = {};
   for (const field of fields) {
@@ -1784,7 +1763,7 @@ export function ToTemporalZonedDateTime(
   if (IsObject(item)) {
     if (IsTemporalZonedDateTime(item)) return item;
     calendar = GetTemporalCalendarWithISODefault(item);
-    const fieldNames = CalendarFields(calendar, [
+    const fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = CalendarFields(calendar, [
       'day',
       'hour',
       'microsecond',
@@ -1796,9 +1775,8 @@ export function ToTemporalZonedDateTime(
       'second',
       'year'
     ] as const);
-    const fieldNamesWithTzAndOffset = ArrayPush(fieldNames, 'timeZone', 'offset');
-    uncheckedAssertWritableArray(fieldNamesWithTzAndOffset);
-    const fields = PrepareTemporalFields(item, fieldNamesWithTzAndOffset, ['timeZone']);
+    fieldNames.push('timeZone', 'offset');
+    const fields = PrepareTemporalFields(item, fieldNames, ['timeZone']);
     timeZone = ToTemporalTimeZone(fields.timeZone);
     offset = fields.offset;
     if (offset === undefined) {

@@ -21,7 +21,7 @@ import { DateTimeFormat } from './intl';
 import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS, uncheckedAssertWritableArray } from './ecmascript';
+import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS } from './ecmascript';
 
 export class ZonedDateTime implements Temporal.ZonedDateTime {
   constructor(
@@ -185,7 +185,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     ES.RejectObjectWithCalendarOrTimeZone(temporalZonedDateTimeLike);
 
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, [
+    let fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = ES.CalendarFields(calendar, [
       'day',
       'hour',
       'microsecond',
@@ -197,16 +197,14 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       'second',
       'year'
     ] as const);
-    const fieldNamesWithOffset = ES.ArrayPush(fieldNames, 'offset');
-    uncheckedAssertWritableArray(fieldNamesWithOffset);
-    const props = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNamesWithOffset, 'partial');
+    fieldNames.push('offset');
+    const partialZonedDateTime = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNames, 'partial');
 
     const timeZone = GetSlot(this, TIME_ZONE);
-    const fieldNamesWithTimeZoneAndOffset = ES.ArrayPush(fieldNamesWithOffset, 'timeZone');
-    uncheckedAssertWritableArray(fieldNamesWithTimeZoneAndOffset);
-    let fields = ES.PrepareTemporalFields(this, fieldNamesWithTimeZoneAndOffset, ['timeZone', 'offset']);
-    fields = ES.CalendarMergeFields(calendar, fields, props);
-    fields = ES.PrepareTemporalFields(fields, fieldNamesWithTimeZoneAndOffset, ['timeZone', 'offset']);
+    fieldNames.push('timeZone');
+    let fields = ES.PrepareTemporalFields(this, fieldNames, ['timeZone', 'offset']);
+    fields = ES.CalendarMergeFields(calendar, fields, partialZonedDateTime);
+    fields = ES.PrepareTemporalFields(fields, fieldNames, ['timeZone', 'offset']);
 
     const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);

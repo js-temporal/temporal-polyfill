@@ -44,9 +44,9 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
-    const props = ES.PrepareTemporalFields(temporalMonthDayLike, fieldNames, 'partial');
+    const partialMonthDay = ES.PrepareTemporalFields(temporalMonthDayLike, fieldNames, 'partial');
     let fields = ES.PrepareTemporalFields(this, fieldNames, []);
-    fields = ES.CalendarMergeFields(calendar, fields, props);
+    fields = ES.CalendarMergeFields(calendar, fields, partialMonthDay);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
 
     const options = ES.GetOptionsObject(optionsParam);
