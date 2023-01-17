@@ -467,7 +467,7 @@ function MaybeFormatCalendarAnnotation(
   showCalendar: Temporal.ShowCalendarOption['calendarName']
 ): string {
   if (showCalendar === 'never') return '';
-  return FormatCalendarAnnotation(ToString(ToTemporalCalendarObject(calendar)), showCalendar);
+  return FormatCalendarAnnotation(ToTemporalCalendarIdentifier(calendar), showCalendar);
 }
 
 function FormatCalendarAnnotation(id: string, showCalendar: Temporal.ShowCalendarOption['calendarName']) {
@@ -2470,8 +2470,8 @@ export function ToTemporalCalendarObject(slotValue: CalendarSlot) {
 
 export function CalendarEquals(one: CalendarSlot, two: CalendarSlot) {
   if (one === two) return true;
-  const cal1 = ToString(one);
-  const cal2 = ToString(two);
+  const cal1 = ToTemporalCalendarIdentifier(one);
+  const cal2 = ToTemporalCalendarIdentifier(two);
   return cal1 === cal2;
 }
 
@@ -2481,8 +2481,8 @@ export function CalendarEquals(one: CalendarSlot, two: CalendarSlot) {
 // re-getting the .id properties.
 function CalendarEqualsOrThrow(one: CalendarSlot, two: CalendarSlot, errorMessageAction: string) {
   if (one === two) return;
-  const cal1 = ToString(one);
-  const cal2 = ToString(two);
+  const cal1 = ToTemporalCalendarIdentifier(one);
+  const cal2 = ToTemporalCalendarIdentifier(two);
   if (cal1 !== cal2) {
     throw new RangeError(`cannot ${errorMessageAction} of ${cal1} and ${cal2} calendars`);
   }
@@ -2490,8 +2490,8 @@ function CalendarEqualsOrThrow(one: CalendarSlot, two: CalendarSlot, errorMessag
 
 export function ConsolidateCalendars(one: CalendarSlot, two: CalendarSlot) {
   if (one === two) return two;
-  const sOne = ToString(one);
-  const sTwo = ToString(two);
+  const sOne = ToTemporalCalendarIdentifier(one);
+  const sTwo = ToTemporalCalendarIdentifier(two);
   if (sOne === sTwo || sOne === 'iso8601') {
     return two;
   } else if (sTwo === 'iso8601') {
@@ -3004,7 +3004,7 @@ export function TemporalMonthDayToString(
   const day = ISODateTimePartString(GetSlot(monthDay, ISO_DAY));
   let resultString = `${month}-${day}`;
   const calendar = GetSlot(monthDay, CALENDAR);
-  const calendarID = ToString(calendar);
+  const calendarID = ToTemporalCalendarIdentifier(calendar);
   if (showCalendar === 'always' || showCalendar === 'critical' || calendarID !== 'iso8601') {
     const year = ISOYearString(GetSlot(monthDay, ISO_YEAR));
     resultString = `${year}-${resultString}`;
@@ -3022,7 +3022,7 @@ export function TemporalYearMonthToString(
   const month = ISODateTimePartString(GetSlot(yearMonth, ISO_MONTH));
   let resultString = `${year}-${month}`;
   const calendar = GetSlot(yearMonth, CALENDAR);
-  const calendarID = ToString(calendar);
+  const calendarID = ToTemporalCalendarIdentifier(calendar);
   if (showCalendar === 'always' || showCalendar === 'critical' || calendarID !== 'iso8601') {
     const day = ISODateTimePartString(GetSlot(yearMonth, ISO_DAY));
     resultString += `-${day}`;
