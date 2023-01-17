@@ -105,9 +105,9 @@ export class PlainDate implements Temporal.PlainDate {
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
-    const props = ES.PrepareTemporalFields(temporalDateLike, fieldNames, 'partial');
+    const partialDate = ES.PrepareTemporalFields(temporalDateLike, fieldNames, 'partial');
     let fields = ES.PrepareTemporalFields(this, fieldNames, []);
-    fields = ES.CalendarMergeFields(calendar, fields, props);
+    fields = ES.CalendarMergeFields(calendar, fields, partialDate);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
 
     const options = ES.GetOptionsObject(optionsParam);
