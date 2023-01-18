@@ -1,6 +1,6 @@
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
-import type { BuiltinCalendarId, AnyTemporalType, CalendarSlot } from './internaltypes';
+import type { BuiltinCalendarId, AnyTemporalType, CalendarSlot, TimeZoneSlot } from './internaltypes';
 
 // Instant
 export const EPOCHNANOSECONDS = 'slot-epochNanoSeconds';
@@ -78,7 +78,7 @@ interface Slots extends SlotInfoRecord {
 
   // ZonedDateTime
   [INSTANT]: SlotInfo<Temporal.Instant, Temporal.ZonedDateTime>;
-  [TIME_ZONE]: SlotInfo<Temporal.TimeZoneProtocol, Temporal.ZonedDateTime>;
+  [TIME_ZONE]: SlotInfo<TimeZoneSlot, Temporal.ZonedDateTime>;
 
   // Duration
   [YEARS]: SlotInfo<number, Temporal.Duration>;

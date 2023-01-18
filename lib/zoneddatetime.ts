@@ -26,8 +26,8 @@ import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS } from './ecmascript';
 export class ZonedDateTime implements Temporal.ZonedDateTime {
   constructor(
     epochNanosecondsParam: bigint | JSBI,
-    timeZoneParam: Temporal.TimeZoneProtocol | string,
-    calendarParam: Temporal.CalendarProtocol | string = 'iso8601'
+    timeZoneParam: string | Temporal.TimeZoneProtocol,
+    calendarParam: string | Temporal.CalendarProtocol = 'iso8601'
   ) {
     // Note: if the argument is not passed, ToBigInt(undefined) will throw. This check exists only
     //       to improve the error message.
@@ -46,9 +46,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     return ES.ToTemporalCalendarIdentifier(GetSlot(this, CALENDAR));
   }
-  get timeZone(): Return['timeZone'] {
+  get timeZoneId(): Return['timeZoneId'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
-    return GetSlot(this, TIME_ZONE);
+    return ES.ToTemporalTimeZoneIdentifier(GetSlot(this, TIME_ZONE));
   }
   get year(): Return['year'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
@@ -533,6 +533,10 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   getCalendar(): Return['getCalendar'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     return ES.ToTemporalCalendarObject(GetSlot(this, CALENDAR));
+  }
+  getTimeZone(): Return['getTimeZone'] {
+    if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
+    return ES.ToTemporalTimeZoneObject(GetSlot(this, TIME_ZONE));
   }
 
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {

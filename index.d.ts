@@ -682,7 +682,7 @@ export namespace Temporal {
     toJSON?(): string;
   }
 
-  export type CalendarLike = CalendarProtocol | string | { calendar: CalendarProtocol | string };
+  export type CalendarLike = string | CalendarProtocol | { calendar: string | CalendarProtocol };
 
   /**
    * A `Temporal.Calendar` is a representation of a calendar system. It includes
@@ -778,7 +778,7 @@ export namespace Temporal {
     isoYear: number;
     isoMonth: number;
     isoDay: number;
-    calendar: CalendarProtocol | string;
+    calendar: string | CalendarProtocol;
   };
 
   /**
@@ -873,7 +873,7 @@ export namespace Temporal {
     isoMillisecond: number;
     isoMicrosecond: number;
     isoNanosecond: number;
-    calendar: CalendarProtocol | string;
+    calendar: string | CalendarProtocol;
   };
 
   /**
@@ -1107,7 +1107,7 @@ export namespace Temporal {
     toJSON?(): string;
   }
 
-  export type TimeZoneLike = TimeZoneProtocol | string | { timeZone: TimeZoneProtocol | string };
+  export type TimeZoneLike = string | TimeZoneProtocol | { timeZone: string | TimeZoneProtocol };
 
   /**
    * A `Temporal.TimeZone` is a representation of a time zone: either an
@@ -1231,8 +1231,8 @@ export namespace Temporal {
     isoMicrosecond: number;
     isoNanosecond: number;
     offset: string;
-    timeZone: TimeZoneProtocol;
-    calendar: CalendarProtocol | string;
+    timeZone: string | TimeZoneProtocol;
+    calendar: string | CalendarProtocol;
   };
 
   export class ZonedDateTime {
@@ -1257,7 +1257,8 @@ export namespace Temporal {
     readonly millisecond: number;
     readonly microsecond: number;
     readonly nanosecond: number;
-    readonly timeZone: TimeZoneProtocol;
+    readonly timeZoneId: string;
+    getTimeZone(): TimeZoneProtocol;
     readonly calendarId: string;
     getCalendar(): CalendarProtocol;
     readonly dayOfWeek: number;

@@ -208,8 +208,8 @@ export class PlainDate implements Temporal.PlainDate {
   toZonedDateTime(item: Params['toZonedDateTime'][0]): Return['toZonedDateTime'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
 
-    type TimeZoneAndPlainTimeProps = Exclude<typeof item, Temporal.TimeZoneProtocol | string>;
-    let timeZone: Temporal.TimeZoneProtocol, temporalTime: TimeZoneAndPlainTimeProps['plainTime'];
+    type TimeZoneAndPlainTimeProps = Exclude<typeof item, string | Temporal.TimeZoneProtocol>;
+    let timeZone: string | Temporal.TimeZoneProtocol, temporalTime: TimeZoneAndPlainTimeProps['plainTime'];
     if (ES.IsObject(item)) {
       if (ES.IsTemporalTimeZone(item)) {
         timeZone = item;
