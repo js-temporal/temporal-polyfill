@@ -11,8 +11,8 @@ type TemporalIntrinsics = Omit<typeof Temporal, 'Now' | 'Instant' | 'ZonedDateTi
   ZonedDateTime: OmitConstructor<Temporal.ZonedDateTime> &
     (new (
       epochNanoseconds: JSBI,
-      timeZone: Temporal.TimeZoneProtocol | string,
-      calendar?: Temporal.CalendarProtocol | string
+      timeZone: string | Temporal.TimeZoneProtocol,
+      calendar?: string | Temporal.CalendarProtocol
     ) => Temporal.ZonedDateTime) & {
       prototype: typeof Temporal.ZonedDateTime.prototype;
       from: typeof Temporal.ZonedDateTime.from;
@@ -42,8 +42,19 @@ type TemporalCalendarIntrinsicRegisteredKeys = {
   [key in keyof TemporalCalendarIntrinsicRegistrations as `%${key}%`]: TemporalCalendarIntrinsicRegistrations[key];
 };
 
+type TimeZonePrototypeKeys = 'getOffsetNanosecondsFor' | 'getPossibleInstantsFor';
+type TemporalTimeZoneIntrinsicRegistrations = {
+  [key in TimeZonePrototypeKeys as `Temporal.TimeZone.prototype.${key}`]: Temporal.TimeZone[key];
+} & {
+  'Temporal.TimeZone.from': typeof Temporal.TimeZone.from;
+};
+type TemporalTimeZoneIntrinsicRegisteredKeys = {
+  [key in keyof TemporalTimeZoneIntrinsicRegistrations as `%${key}%`]: TemporalTimeZoneIntrinsicRegistrations[key];
+};
+
 const INTRINSICS = {} as TemporalIntrinsicRegisteredKeys &
   TemporalIntrinsicPrototypeRegisteredKeys &
+  TemporalTimeZoneIntrinsicRegisteredKeys &
   TemporalCalendarIntrinsicRegisteredKeys;
 
 type customFormatFunction<T> = (
@@ -125,7 +136,8 @@ export function MakeIntrinsicClass(
 type IntrinsicDefinitionKeys =
   | keyof TemporalIntrinsicRegistrations
   | keyof TemporalIntrinsicPrototypeRegistrations
-  | keyof TemporalCalendarIntrinsicRegistrations;
+  | keyof TemporalCalendarIntrinsicRegistrations
+  | keyof TemporalTimeZoneIntrinsicRegistrations;
 export function DefineIntrinsic<KeyT extends keyof TemporalIntrinsicRegistrations>(
   name: KeyT,
   value: TemporalIntrinsicRegistrations[KeyT]
@@ -137,6 +149,10 @@ export function DefineIntrinsic<KeyT extends keyof TemporalIntrinsicPrototypeReg
 export function DefineIntrinsic<KeyT extends keyof TemporalCalendarIntrinsicRegistrations>(
   name: KeyT,
   value: TemporalCalendarIntrinsicRegistrations[KeyT]
+): void;
+export function DefineIntrinsic<KeyT extends keyof TemporalTimeZoneIntrinsicRegistrations>(
+  name: KeyT,
+  value: TemporalTimeZoneIntrinsicRegistrations[KeyT]
 ): void;
 export function DefineIntrinsic<KeyT>(name: KeyT, value: never): void;
 export function DefineIntrinsic<KeyT extends IntrinsicDefinitionKeys>(name: KeyT, value: unknown): void {

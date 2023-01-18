@@ -40,7 +40,8 @@ import type {
   BuiltinCalendarId,
   Keys,
   AnyTemporalKey,
-  CalendarSlot
+  CalendarSlot,
+  TimeZoneSlot
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
 import {
@@ -459,7 +460,10 @@ function ParseTemporalTimeZone(stringIdent: string) {
   const { ianaName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
   if (ianaName) return GetCanonicalTimeZoneIdentifier(ianaName);
   if (z) return 'UTC';
-  return offset as string; // if !ianaName && !z then offset must be present
+  // if !ianaName && !z then offset must be present
+  assertExists(offset);
+  const offsetNs = ParseTimeZoneOffsetString(offset);
+  return FormatTimeZoneOffsetString(offsetNs);
 }
 
 function MaybeFormatCalendarAnnotation(
@@ -1702,7 +1706,7 @@ export function InterpretISODateTimeOffset(
   nanosecond: number,
   offsetBehaviour: OffsetBehaviour,
   offsetNs: number,
-  timeZone: Temporal.TimeZoneProtocol,
+  timeZone: string | Temporal.TimeZoneProtocol,
   disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>,
   offsetOpt: Temporal.OffsetDisambiguationOptions['offset'],
   matchMinute: boolean
@@ -2033,7 +2037,7 @@ export function CreateTemporalYearMonth(
 export function CreateTemporalZonedDateTimeSlots(
   result: Temporal.ZonedDateTime,
   epochNanoseconds: JSBI,
-  timeZone: Temporal.TimeZoneProtocol,
+  timeZone: string | Temporal.TimeZoneProtocol,
   calendar: CalendarSlot
 ) {
   ValidateEpochNanoseconds(epochNanoseconds);
@@ -2059,7 +2063,7 @@ export function CreateTemporalZonedDateTimeSlots(
 
 export function CreateTemporalZonedDateTime(
   epochNanoseconds: JSBI,
-  timeZone: Temporal.TimeZoneProtocol,
+  timeZone: string | Temporal.TimeZoneProtocol,
   calendar: CalendarSlot = 'iso8601'
 ) {
   const TemporalZonedDateTime = GetIntrinsic('%Temporal.ZonedDateTime%');
@@ -2418,7 +2422,7 @@ export function ToTemporalCalendarSlotValue(calendarLikeParam: CalendarParams['f
       throw new RangeError('Expected a calendar object but received a Temporal.TimeZone');
     }
     if (!('calendar' in calendarLike)) return calendarLike;
-    calendarLike = (calendarLike as { calendar: Temporal.CalendarProtocol | string }).calendar;
+    calendarLike = (calendarLike as { calendar: string | Temporal.CalendarProtocol }).calendar;
     if (IsObject(calendarLike)) {
       if (IsTemporalTime(calendarLike)) {
         throw new RangeError('Expected a calendar object as the calendar property but received a Temporal.PlainTime');
@@ -2555,18 +2559,29 @@ export function ToTemporalTimeZone(temporalTimeZoneLikeParam: TimeZoneParams['fr
     if (IsTemporalTimeZone(temporalTimeZoneLike)) return temporalTimeZoneLike;
     if (IsTemporalZonedDateTime(temporalTimeZoneLike)) return GetSlot(temporalTimeZoneLike, TIME_ZONE);
     if (!('timeZone' in temporalTimeZoneLike)) return temporalTimeZoneLike;
-    temporalTimeZoneLike = (temporalTimeZoneLike as { timeZone: Temporal.TimeZoneProtocol | string }).timeZone;
+    temporalTimeZoneLike = (temporalTimeZoneLike as { timeZone: string | Temporal.TimeZoneProtocol }).timeZone;
     if (IsObject(temporalTimeZoneLike) && !('timeZone' in temporalTimeZoneLike)) {
       return temporalTimeZoneLike;
     }
   }
   const identifier = ToString(temporalTimeZoneLike);
-  const timeZone = ParseTemporalTimeZone(identifier);
-  const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-  return new TemporalTimeZone(timeZone);
+  return ParseTemporalTimeZone(identifier);
 }
 
-export function TimeZoneEquals(one: Temporal.TimeZoneProtocol, two: Temporal.TimeZoneProtocol) {
+export function ToTemporalTimeZoneIdentifier(slotValue: TimeZoneSlot) {
+  if (typeof slotValue === 'string') return slotValue;
+  const result = slotValue.id;
+  if (typeof result !== 'string') throw new TypeError('timeZone.id should be a string');
+  return result;
+}
+
+export function ToTemporalTimeZoneObject(slotValue: TimeZoneSlot) {
+  if (IsObject(slotValue)) return slotValue;
+  const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
+  return new TemporalTimeZone(slotValue);
+}
+
+export function TimeZoneEquals(one: string | Temporal.TimeZoneProtocol, two: string | Temporal.TimeZoneProtocol) {
   if (one === two) return true;
   const tz1 = ToString(one);
   const tz2 = ToString(two);
@@ -2595,9 +2610,15 @@ export function TemporalDateTimeToTime(dateTime: Temporal.PlainDateTime) {
 }
 
 export function GetOffsetNanosecondsFor(
-  timeZone: Temporal.TimeZoneProtocol,
+  timeZone: string | Temporal.TimeZoneProtocol,
   instant: TimeZoneProtocolParams['getOffsetNanosecondsFor'][0]
 ) {
+  if (typeof timeZone === 'string') {
+    const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
+    const timeZoneObject = new TemporalTimeZone(timeZone);
+    return Call(GetIntrinsic('%Temporal.TimeZone.prototype.getOffsetNanosecondsFor%'), timeZoneObject, [instant]);
+  }
+
   const getOffsetNanosecondsFor = GetMethod(timeZone, 'getOffsetNanosecondsFor');
   if (typeof getOffsetNanosecondsFor !== 'function') {
     throw new TypeError('getOffsetNanosecondsFor not callable');
@@ -2612,13 +2633,13 @@ export function GetOffsetNanosecondsFor(
   return offsetNs;
 }
 
-export function GetOffsetStringFor(timeZone: Temporal.TimeZoneProtocol, instant: Temporal.Instant) {
+export function GetOffsetStringFor(timeZone: string | Temporal.TimeZoneProtocol, instant: Temporal.Instant) {
   const offsetNs = GetOffsetNanosecondsFor(timeZone, instant);
   return FormatTimeZoneOffsetString(offsetNs);
 }
 
 export function GetPlainDateTimeFor(
-  timeZone: Temporal.TimeZoneProtocol,
+  timeZone: string | Temporal.TimeZoneProtocol,
   instant: Temporal.Instant,
   calendar: CalendarSlot
 ) {
@@ -2640,7 +2661,7 @@ export function GetPlainDateTimeFor(
 }
 
 export function GetInstantFor(
-  timeZone: Temporal.TimeZoneProtocol,
+  timeZone: string | Temporal.TimeZoneProtocol,
   dateTime: Temporal.PlainDateTime,
   disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>
 ) {
@@ -2650,7 +2671,7 @@ export function GetInstantFor(
 
 function DisambiguatePossibleInstants(
   possibleInstants: Temporal.Instant[],
-  timeZone: Temporal.TimeZoneProtocol,
+  timeZone: string | Temporal.TimeZoneProtocol,
   dateTime: Temporal.PlainDateTime,
   disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>
 ) {
@@ -2779,9 +2800,14 @@ function DisambiguatePossibleInstants(
 }
 
 function GetPossibleInstantsFor(
-  timeZone: Temporal.TimeZoneProtocol,
+  timeZone: string | Temporal.TimeZoneProtocol,
   dateTime: TimeZoneProtocolParams['getPossibleInstantsFor'][0]
 ) {
+  if (typeof timeZone === 'string') {
+    const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
+    const timeZoneObject = new TemporalTimeZone(timeZone);
+    return Call(GetIntrinsic('%Temporal.TimeZone.prototype.getPossibleInstantsFor%'), timeZoneObject, [dateTime]);
+  }
   const getPossibleInstantsFor = GetMethod(timeZone, 'getPossibleInstantsFor');
   const possibleInstants = Call(getPossibleInstantsFor, timeZone, [dateTime]);
   const result: Temporal.Instant[] = [];
@@ -2835,7 +2861,7 @@ export function FormatSecondsStringPart(
 
 export function TemporalInstantToString(
   instant: Temporal.Instant,
-  timeZone: Temporal.TimeZoneProtocol | undefined,
+  timeZone: string | Temporal.TimeZoneProtocol | undefined,
   precision: ReturnType<typeof ToSecondsStringPrecisionRecord>['precision']
 ) {
   let outputTimeZone = timeZone;
@@ -4560,7 +4586,7 @@ function DifferenceISODateTime(
 function DifferenceZonedDateTime(
   ns1: JSBI,
   ns2: JSBI,
-  timeZone: Temporal.TimeZoneProtocol,
+  timeZone: string | Temporal.TimeZoneProtocol,
   calendar: CalendarSlot,
   largestUnit: Temporal.DateTimeUnit,
   options: Temporal.DifferenceOptions<Temporal.DateTimeUnit>
@@ -5349,7 +5375,7 @@ function AddDateTime(
 
 export function AddZonedDateTime(
   instant: Temporal.Instant,
-  timeZone: Temporal.TimeZoneProtocol,
+  timeZone: string | Temporal.TimeZoneProtocol,
   calendar: CalendarSlot,
   years: number,
   months: number,

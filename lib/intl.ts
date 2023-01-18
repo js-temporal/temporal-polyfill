@@ -58,8 +58,8 @@ interface CustomFormatters {
 
 interface PrivateProps extends CustomFormatters {
   [ORIGINAL]: globalThis.Intl.DateTimeFormat;
-  [TZ_RESOLVED]: Temporal.TimeZoneProtocol | string;
-  [TZ_GIVEN]: Temporal.TimeZoneProtocol | string | null;
+  [TZ_RESOLVED]: string | Temporal.TimeZoneProtocol;
+  [TZ_GIVEN]: string | Temporal.TimeZoneProtocol | null;
   [CAL_ID]: globalThis.Intl.ResolvedDateTimeFormatOptions['calendar'];
   [LOCALE]: globalThis.Intl.ResolvedDateTimeFormatOptions['locale'];
   [OPTIONS]: Intl.DateTimeFormatOptions;

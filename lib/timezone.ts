@@ -1,6 +1,6 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
+import { DefineIntrinsic, GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import {
   TIMEZONE_ID,
   EPOCHNANOSECONDS,
@@ -157,9 +157,12 @@ export class TimeZone implements Temporal.TimeZone {
     return ES.ToString(this);
   }
   static from(item: Params['from'][0]): Return['from'] {
-    return ES.ToTemporalTimeZone(item);
+    const timeZoneSlotValue = ES.ToTemporalTimeZone(item);
+    return ES.ToTemporalTimeZoneObject(timeZoneSlotValue);
   }
   [Symbol.toStringTag]!: 'Temporal.TimeZone';
 }
 
 MakeIntrinsicClass(TimeZone, 'Temporal.TimeZone');
+DefineIntrinsic('Temporal.TimeZone.prototype.getOffsetNanosecondsFor', TimeZone.prototype.getOffsetNanosecondsFor);
+DefineIntrinsic('Temporal.TimeZone.prototype.getPossibleInstantsFor', TimeZone.prototype.getPossibleInstantsFor);

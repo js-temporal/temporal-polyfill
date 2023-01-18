@@ -11,7 +11,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   constructor(
     isoMonthParam: Params['constructor'][0],
     isoDayParam: Params['constructor'][0],
-    calendarParam: Temporal.CalendarProtocol | string = 'iso8601',
+    calendarParam: string | Temporal.CalendarProtocol = 'iso8601',
     referenceISOYearParam = 1972
   ) {
     const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);
