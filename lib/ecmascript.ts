@@ -2265,13 +2265,17 @@ export function CalendarEquals(one: Temporal.CalendarProtocol, two: Temporal.Cal
   const cal2 = ToString(two);
   return cal1 === cal2;
 }
+
 // This operation is not in the spec, it implements the following:
 // "If ? CalendarEquals(one, two) is false, throw a RangeError exception."
 // This is so that we can build an informative error message without
 // re-getting the .id properties.
-
-export function CalendarEqualsOrThrow(one, two, errorMessageAction) {
-  if (one === two) return true;
+function CalendarEqualsOrThrow(
+  one: Temporal.CalendarProtocol,
+  two: Temporal.CalendarProtocol,
+  errorMessageAction: string
+) {
+  if (one === two) return;
   const cal1 = ToString(one);
   const cal2 = ToString(two);
   if (cal1 !== cal2) {
