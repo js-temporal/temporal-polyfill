@@ -157,7 +157,7 @@ export class TimeZone implements Temporal.TimeZone {
     return ES.ToString(this);
   }
   static from(item: Params['from'][0]): Return['from'] {
-    const timeZoneSlotValue = ES.ToTemporalTimeZone(item);
+    const timeZoneSlotValue = ES.ToTemporalTimeZoneSlotValue(item);
     return ES.ToTemporalTimeZoneObject(timeZoneSlotValue);
   }
   [Symbol.toStringTag]!: 'Temporal.TimeZone';

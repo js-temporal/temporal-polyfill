@@ -392,7 +392,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     optionsParam: Params['toZonedDateTime'][1] = undefined
   ): Return['toZonedDateTime'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
-    const timeZone = ES.ToTemporalTimeZone(temporalTimeZoneLike);
+    const timeZone = ES.ToTemporalTimeZoneSlotValue(temporalTimeZoneLike);
     const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
     const instant = ES.GetInstantFor(timeZone, this, disambiguation);
