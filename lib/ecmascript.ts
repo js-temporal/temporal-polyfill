@@ -1167,7 +1167,7 @@ export function ToRelativeTemporalObject(options: {
   if (IsObject(relativeTo)) {
     if (IsTemporalZonedDateTime(relativeTo) || IsTemporalDate(relativeTo)) return relativeTo;
     if (IsTemporalDateTime(relativeTo)) return TemporalDateTimeToDate(relativeTo);
-    calendar = GetTemporalCalendarWithISODefault(relativeTo);
+    calendar = GetTemporalCalendarSlotValueWithISODefault(relativeTo);
     const fieldNames = CalendarFields(calendar, [
       'day',
       'hour',
@@ -1211,7 +1211,7 @@ export function ToRelativeTemporalObject(options: {
       );
     }
     if (!calendar) calendar = 'iso8601';
-    calendar = ToTemporalCalendar(calendar);
+    calendar = ToTemporalCalendarSlotValue(calendar);
   }
   if (timeZone === undefined) return CreateTemporalDate(year, month, day, calendar);
   timeZone = ToTemporalTimeZone(timeZone);
@@ -1449,7 +1449,7 @@ export function ToTemporalDate(
         GetSlot(item, CALENDAR)
       );
     }
-    const calendar = GetTemporalCalendarWithISODefault(item);
+    const calendar = GetTemporalCalendarSlotValueWithISODefault(item);
     const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
     const fields = PrepareTemporalFields(item, fieldNames, []);
     return CalendarDateFromFields(calendar, fields, options);
@@ -1517,7 +1517,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
       );
     }
 
-    calendar = GetTemporalCalendarWithISODefault(item);
+    calendar = GetTemporalCalendarSlotValueWithISODefault(item);
     const fieldNames = CalendarFields(calendar, [
       'day',
       'hour',
@@ -1544,7 +1544,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
     if (z) throw new RangeError('Z designator not supported for PlainDateTime');
     RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
     if (calendar === undefined) calendar = 'iso8601';
-    calendar = ToTemporalCalendar(calendar);
+    calendar = ToTemporalCalendarSlotValue(calendar);
   }
   return CreateTemporalDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar);
 }
@@ -1594,7 +1594,7 @@ export function ToTemporalMonthDay(
       let calendarFromItem = item.calendar;
       calendarAbsent = calendarFromItem === undefined;
       if (calendarFromItem === undefined) calendarFromItem = 'iso8601';
-      calendar = ToTemporalCalendar(calendarFromItem);
+      calendar = ToTemporalCalendarSlotValue(calendarFromItem);
     }
     // HasSlot above adjusts the type of 'item' to include
     // TypesWithCalendarUnits, which causes type-inference failures below.
@@ -1613,7 +1613,7 @@ export function ToTemporalMonthDay(
   ToTemporalOverflow(options); // validate and ignore
   let { month, day, referenceISOYear, calendar } = ParseTemporalMonthDayString(ToString(item));
   if (calendar === undefined) calendar = 'iso8601';
-  calendar = ToTemporalCalendar(calendar);
+  calendar = ToTemporalCalendarSlotValue(calendar);
 
   if (referenceISOYear === undefined) {
     RejectISODate(1972, month, day);
@@ -1669,7 +1669,7 @@ export function ToTemporalYearMonth(
 ): Temporal.PlainYearMonth {
   if (IsObject(item)) {
     if (IsTemporalYearMonth(item)) return item;
-    const calendar = GetTemporalCalendarWithISODefault(item);
+    const calendar = GetTemporalCalendarSlotValueWithISODefault(item);
     const fieldNames = CalendarFields(calendar, ['month', 'monthCode', 'year'] as const);
     const fields = PrepareTemporalFields(item, fieldNames, []);
     return CalendarYearMonthFromFields(calendar, fields, options);
@@ -1678,7 +1678,7 @@ export function ToTemporalYearMonth(
   ToTemporalOverflow(options); // validate and ignore
   let { year, month, referenceISODay, calendar } = ParseTemporalYearMonthString(ToString(item));
   if (calendar === undefined) calendar = 'iso8601';
-  calendar = ToTemporalCalendar(calendar);
+  calendar = ToTemporalCalendarSlotValue(calendar);
 
   if (referenceISODay === undefined) {
     RejectISODate(year, month, 1);
@@ -1787,7 +1787,7 @@ export function ToTemporalZonedDateTime(
   let offsetBehaviour: OffsetBehaviour = 'option';
   if (IsObject(item)) {
     if (IsTemporalZonedDateTime(item)) return item;
-    calendar = GetTemporalCalendarWithISODefault(item);
+    calendar = GetTemporalCalendarSlotValueWithISODefault(item);
     const fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = CalendarFields(calendar, [
       'day',
       'hour',
@@ -1827,7 +1827,7 @@ export function ToTemporalZonedDateTime(
     const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
     timeZone = new TemporalTimeZone(ianaName);
     if (!calendar) calendar = 'iso8601';
-    calendar = ToTemporalCalendar(calendar);
+    calendar = ToTemporalCalendarSlotValue(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
     disambiguation = ToTemporalDisambiguation(options);
     offsetOpt = ToTemporalOffset(options, 'reject');
@@ -2399,14 +2399,14 @@ export function CalendarInLeapYear(calendar: CalendarSlot, dateLike: CalendarPro
   return result;
 }
 
-export function ToTemporalCalendar(calendarLikeParam: string | { calendar: string }): string;
-export function ToTemporalCalendar(
+export function ToTemporalCalendarSlotValue(calendarLikeParam: string | { calendar: string }): string;
+export function ToTemporalCalendarSlotValue(
   calendarLikeParam: Temporal.CalendarProtocol | { calendar: Temporal.CalendarProtocol }
 ): Temporal.CalendarProtocol;
-export function ToTemporalCalendar(
+export function ToTemporalCalendarSlotValue(
   calendarLikeParam: string | Temporal.CalendarProtocol | { calendar: string | Temporal.CalendarProtocol }
 ): string | Temporal.CalendarProtocol;
-export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0]) {
+export function ToTemporalCalendarSlotValue(calendarLikeParam: CalendarParams['from'][0]) {
   let calendarLike = calendarLikeParam;
   if (IsObject(calendarLike)) {
     if (IsTemporalCalendar(calendarLike)) return calendarLike;
@@ -2446,13 +2446,13 @@ export function ToTemporalCalendar(calendarLikeParam: CalendarParams['from'][0])
   return ASCIILowercase(calendar);
 }
 
-function GetTemporalCalendarWithISODefault(
+function GetTemporalCalendarSlotValueWithISODefault(
   item: Temporal.CalendarProtocol | { calendar?: Temporal.PlainDateLike['calendar'] }
 ): CalendarSlot {
   if (HasSlot(item, CALENDAR)) return GetSlot(item, CALENDAR);
   const { calendar } = item;
   if (calendar === undefined) return 'iso8601';
-  return ToTemporalCalendar(calendar);
+  return ToTemporalCalendarSlotValue(calendar);
 }
 
 export function ToTemporalCalendarIdentifier(slotValue: CalendarSlot) {

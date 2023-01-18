@@ -28,7 +28,7 @@ export class PlainDate implements Temporal.PlainDate {
     const isoYear = ES.ToIntegerWithTruncation(isoYearParam);
     const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);
     const isoDay = ES.ToIntegerWithTruncation(isoDayParam);
-    const calendar = ES.ToTemporalCalendar(calendarParam);
+    const calendar = ES.ToTemporalCalendarSlotValue(calendarParam);
 
     ES.CreateTemporalDateSlots(this, isoYear, isoMonth, isoDay, calendar);
   }
@@ -115,7 +115,7 @@ export class PlainDate implements Temporal.PlainDate {
   }
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
-    const calendar = ES.ToTemporalCalendar(calendarParam);
+    const calendar = ES.ToTemporalCalendarSlotValue(calendarParam);
     return new PlainDate(GetSlot(this, ISO_YEAR), GetSlot(this, ISO_MONTH), GetSlot(this, ISO_DAY), calendar);
   }
   add(temporalDurationLike: Params['add'][0], optionsParam: Params['add'][1] = undefined): Return['add'] {
