@@ -68,7 +68,7 @@ export class TimeZone implements Temporal.TimeZone {
   ): Return['getPlainDateTimeFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const instant = ES.ToTemporalInstant(instantParam);
-    const calendar = ES.ToTemporalCalendar(calendarParam);
+    const calendar = ES.ToTemporalCalendarSlotValue(calendarParam);
     return ES.GetPlainDateTimeFor(this, instant, calendar);
   }
   getInstantFor(

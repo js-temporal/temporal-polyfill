@@ -372,7 +372,7 @@ export class Calendar implements Temporal.Calendar {
     return ES.ToString(this);
   }
   static from(item: Params['from'][0]): Return['from'] {
-    const calendarSlotValue = ES.ToTemporalCalendar(item);
+    const calendarSlotValue = ES.ToTemporalCalendarSlotValue(item);
     return ES.ToTemporalCalendarObject(calendarSlotValue);
   }
   [Symbol.toStringTag]!: 'Temporal.Calendar';

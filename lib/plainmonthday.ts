@@ -16,7 +16,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   ) {
     const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);
     const isoDay = ES.ToIntegerWithTruncation(isoDayParam);
-    const calendar = ES.ToTemporalCalendar(calendarParam);
+    const calendar = ES.ToTemporalCalendarSlotValue(calendarParam);
     const referenceISOYear = ES.ToIntegerWithTruncation(referenceISOYearParam);
 
     ES.CreateTemporalMonthDaySlots(this, isoMonth, isoDay, calendar, referenceISOYear);

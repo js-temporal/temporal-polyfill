@@ -41,7 +41,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     const millisecond = millisecondParam === undefined ? 0 : ES.ToIntegerWithTruncation(millisecondParam);
     const microsecond = microsecondParam === undefined ? 0 : ES.ToIntegerWithTruncation(microsecondParam);
     const nanosecond = nanosecondParam === undefined ? 0 : ES.ToIntegerWithTruncation(nanosecondParam);
-    const calendar = ES.ToTemporalCalendar(calendarParam);
+    const calendar = ES.ToTemporalCalendarSlotValue(calendarParam);
 
     ES.CreateTemporalDateTimeSlots(
       this,
@@ -248,7 +248,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   }
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
-    const calendar = ES.ToTemporalCalendar(calendarParam);
+    const calendar = ES.ToTemporalCalendarSlotValue(calendarParam);
     return new PlainDateTime(
       GetSlot(this, ISO_YEAR),
       GetSlot(this, ISO_MONTH),
