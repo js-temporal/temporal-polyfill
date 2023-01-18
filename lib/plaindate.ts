@@ -214,15 +214,16 @@ export class PlainDate implements Temporal.PlainDate {
       if (ES.IsTemporalTimeZone(item)) {
         timeZone = item;
       } else {
-        if (item.timeZone === undefined) {
-          timeZone = ES.ToTemporalTimeZone(item);
+        const timeZoneLike = item.timeZone;
+        if (timeZoneLike === undefined) {
+          timeZone = ES.ToTemporalTimeZoneSlotValue(item);
         } else {
-          timeZone = ES.ToTemporalTimeZone(item.timeZone);
+          timeZone = ES.ToTemporalTimeZoneSlotValue(timeZoneLike);
           temporalTime = item.plainTime;
         }
       }
     } else {
-      timeZone = ES.ToTemporalTimeZone(item);
+      timeZone = ES.ToTemporalTimeZoneSlotValue(item);
     }
 
     const year = GetSlot(this, ISO_YEAR);

@@ -1197,13 +1197,13 @@ export function ToRelativeTemporalObject(options: {
     offset = fields.offset;
     if (offset === undefined) offsetBehaviour = 'wall';
     timeZone = fields.timeZone;
-    if (timeZone !== undefined) timeZone = ToTemporalTimeZone(timeZone);
+    if (timeZone !== undefined) timeZone = ToTemporalTimeZoneSlotValue(timeZone);
   } else {
     let ianaName, z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, ianaName, offset, z } =
       ParseISODateTime(ToString(relativeTo)));
     if (ianaName) {
-      timeZone = ToTemporalTimeZone(ianaName);
+      timeZone = ToTemporalTimeZoneSlotValue(ianaName);
       if (z) {
         offsetBehaviour = 'exact';
       } else if (!offset) {
@@ -1806,7 +1806,7 @@ export function ToTemporalZonedDateTime(
     ] as const);
     fieldNames.push('timeZone', 'offset');
     const fields = PrepareTemporalFields(item, fieldNames, ['timeZone']);
-    timeZone = ToTemporalTimeZone(fields.timeZone);
+    timeZone = ToTemporalTimeZoneSlotValue(fields.timeZone);
     offset = fields.offset;
     if (offset === undefined) {
       offsetBehaviour = 'wall';
@@ -1822,7 +1822,7 @@ export function ToTemporalZonedDateTime(
     let ianaName, z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, ianaName, offset, z, calendar } =
       ParseTemporalZonedDateTimeString(ToString(item)));
-    timeZone = ToTemporalTimeZone(ianaName);
+    timeZone = ToTemporalTimeZoneSlotValue(ianaName);
     if (z) {
       offsetBehaviour = 'exact';
     } else if (!offset) {
@@ -2551,7 +2551,7 @@ export function CalendarMonthDayFromFields(
   return result;
 }
 
-export function ToTemporalTimeZone(temporalTimeZoneLikeParam: TimeZoneParams['from'][0]) {
+export function ToTemporalTimeZoneSlotValue(temporalTimeZoneLikeParam: TimeZoneParams['from'][0]) {
   let temporalTimeZoneLike = temporalTimeZoneLikeParam;
   if (IsObject(temporalTimeZoneLike)) {
     if (IsTemporalTimeZone(temporalTimeZoneLike)) return temporalTimeZoneLike;
