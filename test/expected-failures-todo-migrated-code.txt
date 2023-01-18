@@ -104,7 +104,6 @@ built-ins/Temporal/ZonedDateTime/prototype/until/argument-calendar-fields-undefi
 built-ins/Temporal/ZonedDateTime/prototype/until/argument-propertybag-timezone-wrong-type.js
 built-ins/Temporal/ZonedDateTime/prototype/until/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/with/calendar-fields-undefined.js
-built-ins/Temporal/ZonedDateTime/prototype/with/copies-merge-fields-object.js
 built-ins/Temporal/ZonedDateTime/prototype/with/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/withPlainDate/argument-calendar-fields-undefined.js
 built-ins/Temporal/ZonedDateTime/prototype/withTimeZone/timezone-wrong-type.js
