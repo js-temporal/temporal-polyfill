@@ -141,9 +141,6 @@ built-ins/Temporal/ZonedDateTime/prototype/since/argument-propertybag-calendar-w
 built-ins/Temporal/ZonedDateTime/prototype/since/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/subtract/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/toPlainDateTime/plain-custom-timezone.js
-built-ins/Temporal/ZonedDateTime/prototype/toString/order-of-operations.js
-built-ins/Temporal/ZonedDateTime/prototype/toString/timezonename-auto.js
-built-ins/Temporal/ZonedDateTime/prototype/toString/timezonename-critical.js
 built-ins/Temporal/ZonedDateTime/prototype/until/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/prototype/until/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/with/order-of-operations.js
@@ -153,9 +150,6 @@ intl402/Temporal/Calendar/prototype/era/argument-propertybag-calendar-wrong-type
 intl402/Temporal/Calendar/prototype/eraYear/argument-propertybag-calendar-wrong-type.js
 intl402/Temporal/Duration/prototype/round/relativeto-string-datetime.js
 intl402/Temporal/ZonedDateTime/prototype/toLocaleString/options-timeZone.js
-intl402/Temporal/ZonedDateTime/prototype/toLocaleString/time-zone-canonicalized.js
-staging/Temporal/UserTimezone/old/trivial-protocol.js
-staging/Temporal/ZonedDateTime/old/construction-and-properties.js
 intl402/DateTimeFormat/prototype/format/temporal-zoneddatetime-not-supported.js
 intl402/DateTimeFormat/prototype/formatRange/temporal-zoneddatetime-not-supported.js
 intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-zoneddatetime-not-supported.js

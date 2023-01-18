@@ -2581,8 +2581,8 @@ export function ToTemporalTimeZoneObject(slotValue: TimeZoneSlot) {
 
 export function TimeZoneEquals(one: string | Temporal.TimeZoneProtocol, two: string | Temporal.TimeZoneProtocol) {
   if (one === two) return true;
-  const tz1 = ToString(one);
-  const tz2 = ToString(two);
+  const tz1 = ToTemporalTimeZoneIdentifier(one);
+  const tz2 = ToTemporalTimeZoneIdentifier(two);
   return tz1 === tz2;
 }
 
@@ -3091,8 +3091,9 @@ export function TemporalZonedDateTimeToString(
     result += FormatISOTimeZoneOffsetString(offsetNs);
   }
   if (showTimeZone !== 'never') {
+    const identifier = ToTemporalTimeZoneIdentifier(tz);
     const flag = showTimeZone === 'critical' ? '!' : '';
-    result += `[${flag}${tz}]`;
+    result += `[${flag}${identifier}]`;
   }
   result += MaybeFormatCalendarAnnotation(GetSlot(zdt, CALENDAR), showCalendar);
   return result;
