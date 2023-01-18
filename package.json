@@ -88,7 +88,7 @@
   "devDependencies": {
     "@babel/core": "^7.20.5",
     "@babel/preset-env": "^7.20.2",
-    "@js-temporal/temporal-test262-runner": "^0.7.0",
+    "@js-temporal/temporal-test262-runner": "^0.8.0",
     "@pipobscure/demitasse": "^1.0.10",
     "@pipobscure/demitasse-pretty": "^1.0.10",
     "@pipobscure/demitasse-run": "^1.0.10",
