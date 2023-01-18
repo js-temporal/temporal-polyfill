@@ -627,7 +627,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     }
 
     const timeZone = GetSlot(temporalObj, TIME_ZONE);
-    const objTimeZone = ES.ToString(timeZone);
+    const objTimeZone = ES.ToTemporalTimeZoneIdentifier(timeZone);
     if (main[TZ_GIVEN] && main[TZ_GIVEN] !== objTimeZone) {
       throw new RangeError(`timeZone option ${main[TZ_GIVEN]} doesn't match actual time zone ${objTimeZone}`);
     }
