@@ -1197,12 +1197,13 @@ export function ToRelativeTemporalObject(options: {
     offset = fields.offset;
     if (offset === undefined) offsetBehaviour = 'wall';
     timeZone = fields.timeZone;
+    if (timeZone !== undefined) timeZone = ToTemporalTimeZone(timeZone);
   } else {
     let ianaName, z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, ianaName, offset, z } =
       ParseISODateTime(ToString(relativeTo)));
     if (ianaName) {
-      timeZone = ianaName;
+      timeZone = ToTemporalTimeZone(ianaName);
       if (z) {
         offsetBehaviour = 'exact';
       } else if (!offset) {
@@ -1218,7 +1219,6 @@ export function ToRelativeTemporalObject(options: {
     calendar = ToTemporalCalendarSlotValue(calendar);
   }
   if (timeZone === undefined) return CreateTemporalDate(year, month, day, calendar);
-  timeZone = ToTemporalTimeZone(timeZone);
   // If offset is missing here, then offsetBehavior will never be be 'option'.
   assertExists(offset);
   const offsetNs = offsetBehaviour === 'option' ? ParseTimeZoneOffsetString(offset) : 0;
@@ -1822,14 +1822,12 @@ export function ToTemporalZonedDateTime(
     let ianaName, z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, ianaName, offset, z, calendar } =
       ParseTemporalZonedDateTimeString(ToString(item)));
-    if (!ianaName) throw new RangeError('time zone ID required in brackets');
+    timeZone = ToTemporalTimeZone(ianaName);
     if (z) {
       offsetBehaviour = 'exact';
     } else if (!offset) {
       offsetBehaviour = 'wall';
     }
-    const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-    timeZone = new TemporalTimeZone(ianaName);
     if (!calendar) calendar = 'iso8601';
     calendar = ToTemporalCalendarSlotValue(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
@@ -2865,10 +2863,7 @@ export function TemporalInstantToString(
   precision: ReturnType<typeof ToSecondsStringPrecisionRecord>['precision']
 ) {
   let outputTimeZone = timeZone;
-  if (outputTimeZone === undefined) {
-    const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-    outputTimeZone = new TemporalTimeZone('UTC');
-  }
+  if (outputTimeZone === undefined) outputTimeZone = 'UTC';
   const dateTime = GetPlainDateTimeFor(outputTimeZone, instant, 'iso8601');
   const year = ISOYearString(GetSlot(dateTime, ISO_YEAR));
   const month = ISODateTimePartString(GetSlot(dateTime, ISO_MONTH));
