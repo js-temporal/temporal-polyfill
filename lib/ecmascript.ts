@@ -2401,17 +2401,15 @@ export function CalendarInLeapYear(calendar: CalendarSlot, dateLike: CalendarPro
   return result;
 }
 
-export function ToTemporalCalendarSlotValue(calendarLikeParam: string | { calendar: string }): string;
+export function ToTemporalCalendarSlotValue(calendarLike: string | { calendar: string }): string;
 export function ToTemporalCalendarSlotValue(
-  calendarLikeParam: Temporal.CalendarProtocol | { calendar: Temporal.CalendarProtocol }
+  calendarLike: Temporal.CalendarProtocol | { calendar: Temporal.CalendarProtocol }
 ): Temporal.CalendarProtocol;
 export function ToTemporalCalendarSlotValue(
-  calendarLikeParam: string | Temporal.CalendarProtocol | { calendar: string | Temporal.CalendarProtocol }
+  calendarLike: string | Temporal.CalendarProtocol | { calendar: string | Temporal.CalendarProtocol }
 ): string | Temporal.CalendarProtocol;
-export function ToTemporalCalendarSlotValue(calendarLikeParam: CalendarParams['from'][0]) {
-  let calendarLike = calendarLikeParam;
+export function ToTemporalCalendarSlotValue(calendarLike: CalendarParams['from'][0]) {
   if (IsObject(calendarLike)) {
-    if (IsTemporalCalendar(calendarLike)) return calendarLike;
     if (HasSlot(calendarLike, CALENDAR)) return GetSlot(calendarLike, CALENDAR);
     if (IsTemporalTime(calendarLike)) {
       throw new RangeError('Expected a calendar object but received a Temporal.PlainTime');
@@ -2419,17 +2417,7 @@ export function ToTemporalCalendarSlotValue(calendarLikeParam: CalendarParams['f
     if (IsTemporalTimeZone(calendarLike)) {
       throw new RangeError('Expected a calendar object but received a Temporal.TimeZone');
     }
-    if (!('calendar' in calendarLike)) return calendarLike;
-    calendarLike = (calendarLike as { calendar: string | Temporal.CalendarProtocol }).calendar;
-    if (IsObject(calendarLike)) {
-      if (IsTemporalTime(calendarLike)) {
-        throw new RangeError('Expected a calendar object as the calendar property but received a Temporal.PlainTime');
-      }
-      if (IsTemporalTimeZone(calendarLike)) {
-        throw new RangeError('Expected a calendar object as the calendar property but received a Temporal.TimeZone');
-      }
-      if (!('calendar' in calendarLike)) return calendarLike;
-    }
+    return calendarLike;
   }
   const identifier = ToString(calendarLike);
   if (IsBuiltinCalendar(identifier)) return ASCIILowercase(identifier);
