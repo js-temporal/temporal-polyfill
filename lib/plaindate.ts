@@ -209,16 +209,24 @@ export class PlainDate implements Temporal.PlainDate {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
 
     type TimeZoneAndPlainTimeProps = Exclude<typeof item, string | Temporal.TimeZoneProtocol>;
-    let timeZone: string | Temporal.TimeZoneProtocol, temporalTime: TimeZoneAndPlainTimeProps['plainTime'];
+    let timeZone: Temporal.TimeZoneLike, temporalTime: TimeZoneAndPlainTimeProps['plainTime'];
     if (ES.IsObject(item)) {
       if (ES.IsTemporalTimeZone(item)) {
         timeZone = item;
       } else {
-        const timeZoneLike = item.timeZone;
+        const timeZoneLike = (item as TimeZoneAndPlainTimeProps).timeZone;
         if (timeZoneLike === undefined) {
+          ES.uncheckedAssertNarrowedType<Temporal.TimeZoneProtocol>(
+            item,
+            "if no timeZone property, then assume it's a custom time zone object"
+          );
           timeZone = ES.ToTemporalTimeZoneSlotValue(item);
         } else {
           timeZone = ES.ToTemporalTimeZoneSlotValue(timeZoneLike);
+          ES.uncheckedAssertNarrowedType<TimeZoneAndPlainTimeProps>(
+            item,
+            "it's a property bag with a timeZone and optional plainTime"
+          );
           temporalTime = item.plainTime;
         }
       }
