@@ -147,3 +147,23 @@ intl402/DateTimeFormat/prototype/format/temporal-zoneddatetime-not-supported.js
 intl402/DateTimeFormat/prototype/formatRange/temporal-zoneddatetime-not-supported.js
 intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-zoneddatetime-not-supported.js
 intl402/DateTimeFormat/prototype/formatToParts/temporal-zoneddatetime-not-supported.js
+# The tests below will start working again in a few commits
+built-ins/Temporal/Duration/compare/relativeto-propertybag-timezone-wrong-type.js
+built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-timezone-wrong-type.js
+built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-timezone-wrong-type.js
+built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-timezone-wrong-type.js
+built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-timezone-wrong-type.js
+built-ins/Temporal/Instant/prototype/toString/timezone-wrong-type.js
+built-ins/Temporal/Now/plainDate/timezone-wrong-type.js
+built-ins/Temporal/Now/plainDateISO/timezone-wrong-type.js
+built-ins/Temporal/Now/plainDateTime/timezone-wrong-type.js
+built-ins/Temporal/Now/plainDateTimeISO/timezone-wrong-type.js
+built-ins/Temporal/Now/plainTimeISO/timezone-wrong-type.js
+built-ins/Temporal/PlainDate/prototype/toZonedDateTime/timezone-wrong-type.js
+built-ins/Temporal/PlainDateTime/prototype/toZonedDateTime/timezone-wrong-type.js
+built-ins/Temporal/PlainTime/prototype/toZonedDateTime/timezone-wrong-type.js
+built-ins/Temporal/ZonedDateTime/compare/argument-propertybag-timezone-wrong-type.js
+built-ins/Temporal/ZonedDateTime/from/argument-propertybag-timezone-wrong-type.js
+built-ins/Temporal/ZonedDateTime/prototype/equals/argument-propertybag-timezone-wrong-type.js
+built-ins/Temporal/ZonedDateTime/prototype/since/argument-propertybag-timezone-wrong-type.js
+built-ins/Temporal/ZonedDateTime/prototype/until/argument-propertybag-timezone-wrong-type.js

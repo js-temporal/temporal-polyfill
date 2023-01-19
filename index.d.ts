@@ -1092,7 +1092,6 @@ export namespace Temporal {
    */
   export interface TimeZoneProtocol {
     id?: string;
-    timeZone?: never;
     getOffsetNanosecondsFor(instant: Temporal.Instant | string): number;
     getOffsetStringFor?(instant: Temporal.Instant | string): string;
     getPlainDateTimeFor?(instant: Temporal.Instant | string, calendar?: CalendarLike): Temporal.PlainDateTime;
@@ -1107,7 +1106,7 @@ export namespace Temporal {
     toJSON?(): string;
   }
 
-  export type TimeZoneLike = string | TimeZoneProtocol | { timeZone: string | TimeZoneProtocol };
+  export type TimeZoneLike = string | TimeZoneProtocol | ZonedDateTime;
 
   /**
    * A `Temporal.TimeZone` is a representation of a time zone: either an
@@ -1116,13 +1115,14 @@ export namespace Temporal {
    * and UTC at a particular time, and daylight saving time (DST) changes; or
    * simply a particular UTC offset with no DST.
    *
-   * Since `Temporal.Instant` and `Temporal.PlainDateTime` do not contain any time
-   * zone information, a `Temporal.TimeZone` object is required to convert
-   * between the two.
+   * `Temporal.ZonedDateTime` is the only Temporal type to contain a time zone.
+   * Other types, like `Temporal.Instant` and `Temporal.PlainDateTime`, do not
+   * contain any time zone information, and a `Temporal.TimeZone` object is
+   * required to convert between them.
    *
    * See https://tc39.es/proposal-temporal/docs/timezone.html for more details.
    */
-  export class TimeZone implements Omit<Required<TimeZoneProtocol>, 'timeZone'> {
+  export class TimeZone implements TimeZoneProtocol {
     static from(timeZone: TimeZoneLike): Temporal.TimeZone | TimeZoneProtocol;
     constructor(timeZoneIdentifier: string);
     readonly id: string;

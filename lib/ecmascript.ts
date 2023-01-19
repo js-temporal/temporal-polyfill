@@ -2551,16 +2551,13 @@ export function CalendarMonthDayFromFields(
   return result;
 }
 
-export function ToTemporalTimeZoneSlotValue(temporalTimeZoneLikeParam: TimeZoneParams['from'][0]) {
-  let temporalTimeZoneLike = temporalTimeZoneLikeParam;
+export function ToTemporalTimeZoneSlotValue(temporalTimeZoneLike: TimeZoneParams['from'][0]) {
   if (IsObject(temporalTimeZoneLike)) {
-    if (IsTemporalTimeZone(temporalTimeZoneLike)) return temporalTimeZoneLike;
     if (IsTemporalZonedDateTime(temporalTimeZoneLike)) return GetSlot(temporalTimeZoneLike, TIME_ZONE);
-    if (!('timeZone' in temporalTimeZoneLike)) return temporalTimeZoneLike;
-    temporalTimeZoneLike = (temporalTimeZoneLike as { timeZone: string | Temporal.TimeZoneProtocol }).timeZone;
-    if (IsObject(temporalTimeZoneLike) && !('timeZone' in temporalTimeZoneLike)) {
-      return temporalTimeZoneLike;
+    if (IsTemporalCalendar(temporalTimeZoneLike)) {
+      throw new RangeError('Expected a time zone object but received a Temporal.Calendar');
     }
+    return temporalTimeZoneLike;
   }
   const identifier = ToString(temporalTimeZoneLike);
   return ParseTemporalTimeZone(identifier);
