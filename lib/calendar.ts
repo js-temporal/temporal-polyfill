@@ -369,7 +369,7 @@ export class Calendar implements Temporal.Calendar {
   }
   toJSON(): Return['toJSON'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
-    return ES.ToString(this);
+    return GetSlot(this, CALENDAR_ID);
   }
   static from(item: Params['from'][0]): Return['from'] {
     const calendarSlotValue = ES.ToTemporalCalendarSlotValue(item);
