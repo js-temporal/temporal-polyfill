@@ -4,20 +4,18 @@ env:
   node: true
 plugins:
   - prettier
-  - '@typescript-eslint'
+parser: '@typescript-eslint/parser'
 extends:
   - 'eslint:recommended'
   - 'plugin:prettier/recommended'
-  - 'plugin:@typescript-eslint/recommended'
-parser: '@typescript-eslint/parser' # for index.d.ts
+parserOptions:
+  ecmaVersion: 2020
+  sourceType: module
 globals:
   Atomics: readonly
   BigInt: readonly
   SharedArrayBuffer: readonly
   globalThis: readonly
-parserOptions:
-  ecmaVersion: 2020
-  sourceType: module
 ignorePatterns:
   - node_modules/
   - /dist/
@@ -38,7 +36,6 @@ rules:
     - error
     - multi-line
   func-call-spacing: off
-  '@typescript-eslint/func-call-spacing': error
   function-call-argument-newline:
     - error
     - consistent
@@ -78,14 +75,6 @@ rules:
     - avoidEscape: true
   semi: error
   space-infix-ops: error
-  '@typescript-eslint/explicit-module-boundary-types': off
-  '@typescript-eslint/no-empty-function': off
-  '@typescript-eslint/no-empty-interface':
-    - error
-    - allowSingleExtends: true
-  '@typescript-eslint/no-var-requires': off
-  '@typescript-eslint/ban-ts-comment': off
-  '@typescript-eslint/no-explicit-any': off # TODO turn this back on
 overrides:
   - files:
       - lib/duration.ts
@@ -100,3 +89,28 @@ overrides:
       - test/**/*
     rules:
       no-param-reassign: off
+  - files:
+      - '**/*.ts'
+    plugins:
+      - '@typescript-eslint'
+    parserOptions:
+      ecmaVersion: 2020
+      sourceType: module
+      project:
+        - './tsconfig.json'
+    extends:
+      - 'plugin:@typescript-eslint/recommended'
+      # TODO turn this on - it catches lots of implicit 'any's
+      # - 'plugin:@typescript-eslint/recommended-requiring-type-checking'
+    rules:
+      '@typescript-eslint/explicit-module-boundary-types': off
+      '@typescript-eslint/no-empty-function': error
+      '@typescript-eslint/no-empty-interface':
+        - error
+        - allowSingleExtends: true
+      '@typescript-eslint/no-var-requires': off
+      '@typescript-eslint/ban-ts-comment': off
+      '@typescript-eslint/no-explicit-any': off # Todo re-enable this
+      '@typescript-eslint/no-unnecessary-type-assertion': error
+      '@typescript-eslint/func-call-spacing': error
+      prefer-const: off
