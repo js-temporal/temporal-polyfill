@@ -1,5 +1,6 @@
 {
   "compileOnSave": false,
+  "include": ["lib/*.ts"],
   "compilerOptions": {
     "allowUnreachableCode": false,
     "downlevelIteration": true,
