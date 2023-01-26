@@ -9,7 +9,9 @@ jobs:
         uses: actions/setup-node@v1
         with:
           node-version: 19.x
+      - run: node --version
       - run: npm ci --no-optional
+      - run: npx tsc --version
       - run: npm run lint
   lint-unused-code: # look for unused functions and unused exports
     runs-on: ubuntu-latest
