@@ -594,7 +594,7 @@ export function ParseTemporalInstant(isoString: string) {
   if (!z && !offset) throw new RangeError('Temporal.Instant requires a time zone offset');
   // At least one of z or offset is defined, but TS doesn't seem to understand
   // that we only use offset if z is not defined (and thus offset must be defined).
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-type-assertion
   const offsetNs = z ? 0 : ParseTimeZoneOffsetString(offset!);
   ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = BalanceISODateTime(
     year,

@@ -785,7 +785,7 @@ abstract class HelperBase {
     return calendarDate;
   }
   validateCalendarDate(calendarDate: Partial<FullCalendarDate>): asserts calendarDate is FullCalendarDate {
-    const { era, month, year, day, eraYear, monthCode, monthExtra } = calendarDate as Partial<FullCalendarDate>;
+    const { era, month, year, day, eraYear, monthCode, monthExtra } = calendarDate;
     // When there's a suffix (e.g. "5bis" for a leap month in Chinese calendar)
     // the derived class must deal with it.
     if (monthExtra !== undefined) throw new RangeError('Unexpected `monthExtra` value');
@@ -2082,7 +2082,7 @@ abstract class ChineseBaseHelper extends HelperBase {
   abstract override id: BuiltinCalendarId;
   calendarType = 'lunisolar' as const;
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
-    const months = this.getMonthList(calendarDate.year, cache as OneObjectCache);
+    const months = this.getMonthList(calendarDate.year, cache);
     return ObjectEntries(months).length === 13;
   }
   monthsInYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
