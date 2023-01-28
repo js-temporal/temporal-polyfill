@@ -3,12 +3,6 @@
 
 built-ins/Temporal/Calendar/prototype/mergeFields/non-string-properties.js
 built-ins/Temporal/Calendar/prototype/mergeFields/order-of-operations.js
-built-ins/Temporal/Instant/prototype/toZonedDateTime/timezone-wrong-type.js
-built-ins/Temporal/Instant/prototype/toZonedDateTimeISO/timezone-wrong-type.js
-built-ins/Temporal/Now/zonedDateTime/timezone-wrong-type.js
-built-ins/Temporal/Now/zonedDateTimeISO/timezone-wrong-type.js
-built-ins/Temporal/TimeZone/from/timezone-wrong-type.js
-built-ins/Temporal/ZonedDateTime/prototype/withTimeZone/timezone-wrong-type.js
 intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boundaries.js
 intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
 # Failures below here started failing when test262 was advanced to
@@ -51,25 +45,12 @@ built-ins/Temporal/Duration/prototype/subtract/order-of-operations.js
 built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/total/order-of-operations.js
 built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-calendar-wrong-type.js
-built-ins/Temporal/Instant/prototype/toString/order-of-operations.js
-built-ins/Temporal/Instant/prototype/toString/timezone.js
 built-ins/Temporal/Instant/prototype/toZonedDateTime/calendar-wrong-type.js
-built-ins/Temporal/Instant/prototype/toZonedDateTime/plain-custom-timezone.js
 built-ins/Temporal/Now/plainDate/calendar-wrong-type.js
-built-ins/Temporal/Now/plainDate/toPlainDate-override.js
-built-ins/Temporal/Now/plainDateTime/calendar-function.js
 built-ins/Temporal/Now/plainDateTime/calendar-object.js
 built-ins/Temporal/Now/plainDateTime/calendar-wrong-type.js
-built-ins/Temporal/Now/plainDateTime/timezone-object.js
-built-ins/Temporal/Now/plainDateTime/timezone.js
-built-ins/Temporal/Now/plainDateTimeISO/timezone-object.js
-built-ins/Temporal/Now/plainTimeISO/timezone.js
-built-ins/Temporal/Now/plainTimeISO/toPlainTime-override.js
-built-ins/Temporal/Now/zonedDateTime/calendar-function.js
 built-ins/Temporal/Now/zonedDateTime/calendar-object.js
 built-ins/Temporal/Now/zonedDateTime/calendar-wrong-type.js
-built-ins/Temporal/Now/zonedDateTime/timezone-object.js
-built-ins/Temporal/Now/zonedDateTimeISO/timezone-object.js
 built-ins/Temporal/PlainDate/calendar-wrong-type.js
 built-ins/Temporal/PlainDate/compare/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDate/from/argument-propertybag-calendar-wrong-type.js
@@ -92,8 +73,6 @@ built-ins/Temporal/PlainDateTime/prototype/equals/argument-propertybag-calendar-
 built-ins/Temporal/PlainDateTime/prototype/since/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDateTime/prototype/since/order-of-operations.js
 built-ins/Temporal/PlainDateTime/prototype/subtract/order-of-operations.js
-built-ins/Temporal/PlainDateTime/prototype/toZonedDateTime/order-of-operations.js
-built-ins/Temporal/PlainDateTime/prototype/toZonedDateTime/plain-custom-timezone.js
 built-ins/Temporal/PlainDateTime/prototype/until/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/PlainDateTime/prototype/until/order-of-operations.js
 built-ins/Temporal/PlainDateTime/prototype/with/order-of-operations.js
@@ -133,7 +112,6 @@ built-ins/Temporal/ZonedDateTime/prototype/equals/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/since/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/prototype/since/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/subtract/order-of-operations.js
-built-ins/Temporal/ZonedDateTime/prototype/toPlainDateTime/plain-custom-timezone.js
 built-ins/Temporal/ZonedDateTime/prototype/until/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/prototype/until/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/with/order-of-operations.js
@@ -148,22 +126,3 @@ intl402/DateTimeFormat/prototype/formatRange/temporal-zoneddatetime-not-supporte
 intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-zoneddatetime-not-supported.js
 intl402/DateTimeFormat/prototype/formatToParts/temporal-zoneddatetime-not-supported.js
 # The tests below will start working again in a few commits
-built-ins/Temporal/Duration/compare/relativeto-propertybag-timezone-wrong-type.js
-built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-timezone-wrong-type.js
-built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-timezone-wrong-type.js
-built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-timezone-wrong-type.js
-built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-timezone-wrong-type.js
-built-ins/Temporal/Instant/prototype/toString/timezone-wrong-type.js
-built-ins/Temporal/Now/plainDate/timezone-wrong-type.js
-built-ins/Temporal/Now/plainDateISO/timezone-wrong-type.js
-built-ins/Temporal/Now/plainDateTime/timezone-wrong-type.js
-built-ins/Temporal/Now/plainDateTimeISO/timezone-wrong-type.js
-built-ins/Temporal/Now/plainTimeISO/timezone-wrong-type.js
-built-ins/Temporal/PlainDate/prototype/toZonedDateTime/timezone-wrong-type.js
-built-ins/Temporal/PlainDateTime/prototype/toZonedDateTime/timezone-wrong-type.js
-built-ins/Temporal/PlainTime/prototype/toZonedDateTime/timezone-wrong-type.js
-built-ins/Temporal/ZonedDateTime/compare/argument-propertybag-timezone-wrong-type.js
-built-ins/Temporal/ZonedDateTime/from/argument-propertybag-timezone-wrong-type.js
-built-ins/Temporal/ZonedDateTime/prototype/equals/argument-propertybag-timezone-wrong-type.js
-built-ins/Temporal/ZonedDateTime/prototype/since/argument-propertybag-timezone-wrong-type.js
-built-ins/Temporal/ZonedDateTime/prototype/until/argument-propertybag-timezone-wrong-type.js
