@@ -613,8 +613,7 @@ export namespace Temporal {
   type MonthOrMonthCode = { month: number } | { monthCode: string };
 
   export interface CalendarProtocol {
-    id?: string;
-    calendar?: never;
+    id: string;
     year(date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth | PlainDateLike | string): number;
     month(
       date:
@@ -678,11 +677,21 @@ export namespace Temporal {
     ): Temporal.Duration;
     fields(fields: Iterable<string>): Iterable<string>;
     mergeFields(fields: Record<string, unknown>, additionalFields: Record<string, unknown>): Record<string, unknown>;
-    toString(): string;
+    toString?(): string;
     toJSON?(): string;
   }
 
-  export type CalendarLike = string | CalendarProtocol | { calendar: string | CalendarProtocol };
+  /**
+   * Any of these types can be passed to Temporal methods instead of a Temporal.Calendar.
+   * */
+  export type CalendarLike =
+    | string
+    | CalendarProtocol
+    | ZonedDateTime
+    | PlainDateTime
+    | PlainDate
+    | PlainYearMonth
+    | PlainMonthDay;
 
   /**
    * A `Temporal.Calendar` is a representation of a calendar system. It includes
@@ -1106,6 +1115,9 @@ export namespace Temporal {
     toJSON?(): string;
   }
 
+  /**
+   * Any of these types can be passed to Temporal methods instead of a Temporal.TimeZone.
+   * */
   export type TimeZoneLike = string | TimeZoneProtocol | ZonedDateTime;
 
   /**
