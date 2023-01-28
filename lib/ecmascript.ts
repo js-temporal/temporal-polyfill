@@ -2401,21 +2401,42 @@ export function CalendarInLeapYear(calendar: CalendarSlot, dateLike: CalendarPro
   return result;
 }
 
-export function ToTemporalCalendarSlotValue(calendarLike: string | { calendar: string }): string;
-export function ToTemporalCalendarSlotValue(
-  calendarLike: Temporal.CalendarProtocol | { calendar: Temporal.CalendarProtocol }
-): Temporal.CalendarProtocol;
-export function ToTemporalCalendarSlotValue(
-  calendarLike: string | Temporal.CalendarProtocol | { calendar: string | Temporal.CalendarProtocol }
-): string | Temporal.CalendarProtocol;
+type MaybeCalendarProtocol = Partial<Omit<Temporal.CalendarProtocol, 'toString' | 'toJSON'>>;
+function ObjectImplementsTemporalCalendarProtocol(object: MaybeCalendarProtocol) {
+  if (IsTemporalCalendar(object)) return true;
+  return (
+    'dateAdd' in object &&
+    'dateFromFields' in object &&
+    'dateUntil' in object &&
+    'day' in object &&
+    'dayOfWeek' in object &&
+    'dayOfYear' in object &&
+    'daysInMonth' in object &&
+    'daysInWeek' in object &&
+    'daysInYear' in object &&
+    'fields' in object &&
+    'id' in object &&
+    'inLeapYear' in object &&
+    'mergeFields' in object &&
+    'month' in object &&
+    'monthCode' in object &&
+    'monthDayFromFields' in object &&
+    'monthsInYear' in object &&
+    'weekOfYear' in object &&
+    'year' in object &&
+    'yearMonthFromFields' in object &&
+    'yearOfWeek' in object
+  );
+}
+
+export function ToTemporalCalendarSlotValue(calendarLike: string): string;
+export function ToTemporalCalendarSlotValue(calendarLike: Temporal.CalendarProtocol): Temporal.CalendarProtocol;
+export function ToTemporalCalendarSlotValue(calendarLike: Temporal.CalendarLike): string | Temporal.CalendarProtocol;
 export function ToTemporalCalendarSlotValue(calendarLike: CalendarParams['from'][0]) {
   if (IsObject(calendarLike)) {
     if (HasSlot(calendarLike, CALENDAR)) return GetSlot(calendarLike, CALENDAR);
-    if (IsTemporalTime(calendarLike)) {
-      throw new RangeError('Expected a calendar object but received a Temporal.PlainTime');
-    }
-    if (IsTemporalTimeZone(calendarLike)) {
-      throw new RangeError('Expected a calendar object but received a Temporal.TimeZone');
+    if (!ObjectImplementsTemporalCalendarProtocol(calendarLike)) {
+      throw new TypeError('expected a Temporal.Calendar or object implementing the Temporal.Calendar protocol');
     }
     return calendarLike;
   }
@@ -2436,9 +2457,7 @@ export function ToTemporalCalendarSlotValue(calendarLike: CalendarParams['from']
   return ASCIILowercase(calendar);
 }
 
-function GetTemporalCalendarSlotValueWithISODefault(
-  item: Temporal.CalendarProtocol | { calendar?: Temporal.PlainDateLike['calendar'] }
-): CalendarSlot {
+function GetTemporalCalendarSlotValueWithISODefault(item: { calendar?: Temporal.CalendarLike }): CalendarSlot {
   if (HasSlot(item, CALENDAR)) return GetSlot(item, CALENDAR);
   const { calendar } = item;
   if (calendar === undefined) return 'iso8601';
@@ -2547,6 +2566,11 @@ function ObjectImplementsTemporalTimeZoneProtocol(object: MaybeTimeZoneProtocol)
   return 'getOffsetNanosecondsFor' in object && 'getPossibleInstantsFor' in object && 'id' in object;
 }
 
+export function ToTemporalTimeZoneSlotValue(temporalTimeZoneLike: string): string;
+export function ToTemporalTimeZoneSlotValue(temporalTimeZoneLike: Temporal.TimeZoneProtocol): Temporal.TimeZoneProtocol;
+export function ToTemporalTimeZoneSlotValue(
+  temporalTimeZoneLike: Temporal.TimeZoneLike
+): string | Temporal.TimeZoneProtocol;
 export function ToTemporalTimeZoneSlotValue(temporalTimeZoneLike: TimeZoneParams['from'][0]) {
   if (IsObject(temporalTimeZoneLike)) {
     if (IsTemporalZonedDateTime(temporalTimeZoneLike)) return GetSlot(temporalTimeZoneLike, TIME_ZONE);
