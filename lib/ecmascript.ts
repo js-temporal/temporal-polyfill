@@ -167,7 +167,7 @@ function GetMethod<T extends { [s in M]?: undefined | ((...args: any[]) => unkno
   return result;
 }
 
-function Call<T, A extends readonly any[], R>(
+export function Call<T, A extends readonly any[], R>(
   target: (this: T, ...args: A) => R,
   thisArgument: T,
   argumentsList: Readonly<A>
