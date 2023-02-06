@@ -151,7 +151,7 @@ export class Instant implements Temporal.Instant {
         item = timeZoneProperty;
       }
     }
-    const timeZone = ES.ToTemporalTimeZone(item as string | Temporal.TimeZoneProtocol);
+    const timeZone = ES.ToTemporalTimeZone(item);
     const calendar = ES.GetISO8601Calendar();
     return ES.CreateTemporalZonedDateTime(GetSlot(this, EPOCHNANOSECONDS), timeZone, calendar);
   }
