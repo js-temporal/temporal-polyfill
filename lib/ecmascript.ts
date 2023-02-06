@@ -3617,17 +3617,17 @@ export function UnbalanceDurationRelative(
     case 'month':
       {
         if (!calendar) throw new RangeError('a starting point is required for months balancing');
+        assertExists(relativeTo);
         // balance years down to months
         const dateAdd = calendar.dateAdd;
         const dateUntil = calendar.dateUntil;
-        let relativeToDateOnly: Temporal.PlainDateLike = relativeTo as Temporal.PlainDateLike;
         while (MathAbs(years) > 0) {
-          const newRelativeTo = CalendarDateAdd(calendar, relativeToDateOnly, oneYear, undefined, dateAdd);
+          const newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, undefined, dateAdd);
           const untilOptions = ObjectCreate(null);
           untilOptions.largestUnit = 'month';
-          const untilResult = CalendarDateUntil(calendar, relativeToDateOnly, newRelativeTo, untilOptions, dateUntil);
+          const untilResult = CalendarDateUntil(calendar, relativeTo, newRelativeTo, untilOptions, dateUntil);
           const oneYearMonths = GetSlot(untilResult, MONTHS);
-          relativeToDateOnly = newRelativeTo;
+          relativeTo = newRelativeTo;
           months += oneYearMonths;
           years -= sign;
         }
@@ -3635,10 +3635,11 @@ export function UnbalanceDurationRelative(
       break;
     case 'week':
       if (!calendar) throw new RangeError('a starting point is required for weeks balancing');
+      assertExists(relativeTo);
       // balance years down to days
       while (MathAbs(years) > 0) {
         let oneYearDays;
-        ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneYear));
+        ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear));
         days += oneYearDays;
         years -= sign;
       }
@@ -3646,7 +3647,7 @@ export function UnbalanceDurationRelative(
       // balance months down to days
       while (MathAbs(months) > 0) {
         let oneMonthDays;
-        ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneMonth));
+        ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
         days += oneMonthDays;
         months -= sign;
       }
@@ -3655,8 +3656,9 @@ export function UnbalanceDurationRelative(
       // balance years down to days
       while (MathAbs(years) > 0) {
         if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
+        assertExists(relativeTo);
         let oneYearDays;
-        ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneYear));
+        ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear));
         days += oneYearDays;
         years -= sign;
       }
@@ -3664,8 +3666,9 @@ export function UnbalanceDurationRelative(
       // balance months down to days
       while (MathAbs(months) > 0) {
         if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
+        assertExists(relativeTo);
         let oneMonthDays;
-        ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneMonth));
+        ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
         days += oneMonthDays;
         months -= sign;
       }
@@ -3673,8 +3676,9 @@ export function UnbalanceDurationRelative(
       // balance weeks down to days
       while (MathAbs(weeks) > 0) {
         if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
+        assertExists(relativeTo);
         let oneWeekDays;
-        ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo as Temporal.PlainDate, oneWeek));
+        ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek));
         days += oneWeekDays;
         weeks -= sign;
       }
@@ -3713,9 +3717,8 @@ export function BalanceDurationRelative(
 
   switch (largestUnit) {
     case 'year': {
-      // These conditions are effectively identical (as relativeTo being defined forces calendar to be defined)
-      // but checking for their truthiness here helps TypeScript and avoids the need for casts below.
-      if (!relativeTo || !calendar) throw new RangeError('a starting point is required for years balancing');
+      if (!calendar) throw new RangeError('a starting point is required for years balancing');
+      assertExists(relativeTo);
       // balance days up to years
       let newRelativeTo, oneYearDays;
       ({ relativeTo: newRelativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear));
@@ -3757,9 +3760,8 @@ export function BalanceDurationRelative(
       break;
     }
     case 'month': {
-      // These conditions are effectively identical (as relativeTo being defined forces calendar to be defined)
-      // but checking for their truthiness here helps TypeScript and avoids the need for casts below.
-      if (!relativeTo || !calendar) throw new RangeError('a starting point is required for months balancing');
+      if (!calendar) throw new RangeError('a starting point is required for months balancing');
+      assertExists(relativeTo);
       // balance days up to months
       let newRelativeTo, oneMonthDays;
       ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth));
@@ -3772,9 +3774,8 @@ export function BalanceDurationRelative(
       break;
     }
     case 'week': {
-      // These conditions are effectively identical (as relativeTo being defined forces calendar to be defined)
-      // but checking for their truthiness here helps TypeScript and avoids the need for casts below.
-      if (!relativeTo || !calendar) throw new RangeError('a starting point is required for weeks balancing');
+      if (!calendar) throw new RangeError('a starting point is required for weeks balancing');
+      assertExists(relativeTo);
       // balance days up to weeks
       let newRelativeTo, oneWeekDays;
       ({ relativeTo: newRelativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek));
@@ -5711,9 +5712,8 @@ export function RoundDuration(
   let total: number;
   switch (unit) {
     case 'year': {
-      // These conditions are effectively identical (as relativeTo being defined forces calendar to be defined)
-      // but checking for their truthiness here helps TypeScript and avoids the need for casts below.
-      if (!relativeTo || !calendar) throw new RangeError('A starting point is required for years rounding');
+      if (!calendar) throw new RangeError('A starting point is required for years rounding');
+      assertExists(relativeTo);
 
       // convert months and weeks to days by calculating difference(
       // relativeTo + years, relativeTo + { years, months, weeks })
@@ -5765,9 +5765,8 @@ export function RoundDuration(
       break;
     }
     case 'month': {
-      // These conditions are effectively identical (as relativeTo being defined forces calendar to be defined)
-      // but checking for their truthiness here helps TypeScript and avoids the need for casts below.
-      if (!relativeTo || !calendar) throw new RangeError('A starting point is required for months rounding');
+      if (!calendar) throw new RangeError('A starting point is required for months rounding');
+      assertExists(relativeTo);
 
       // convert weeks to days by calculating difference(relativeTo +
       //   { years, months }, relativeTo + { years, months, weeks })
@@ -5812,9 +5811,8 @@ export function RoundDuration(
       break;
     }
     case 'week': {
-      // These conditions are effectively identical (as relativeTo being defined forces calendar to be defined)
-      // but checking for their truthiness here helps TypeScript and avoids the need for casts below.
-      if (!relativeTo || !calendar) throw new RangeError('A starting point is required for weeks rounding');
+      if (!calendar) throw new RangeError('A starting point is required for weeks rounding');
+      assertExists(relativeTo);
       // Weeks may be different lengths of days depending on the calendar,
       // convert days to weeks in a loop as described above under 'years'.
       const sign = MathSign(days);

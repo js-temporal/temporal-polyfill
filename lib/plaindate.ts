@@ -248,6 +248,10 @@ export class PlainDate implements Temporal.PlainDate {
       nanosecond = 0;
     if (temporalTime !== undefined) {
       temporalTime = ES.ToTemporalTime(temporalTime);
+      ES.uncheckedAssertNarrowedType<Temporal.ZonedDateTime>(
+        temporalTime,
+        'ToTemporalTime above always returns a PlainTime'
+      );
       hour = GetSlot(temporalTime, ISO_HOUR);
       minute = GetSlot(temporalTime, ISO_MINUTE);
       second = GetSlot(temporalTime, ISO_SECOND);
