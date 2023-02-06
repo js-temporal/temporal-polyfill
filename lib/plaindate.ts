@@ -216,7 +216,8 @@ export class PlainDate implements Temporal.PlainDate {
   toZonedDateTime(item: Params['toZonedDateTime'][0]): Return['toZonedDateTime'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
 
-    let timeZone, temporalTime;
+    type TimeZoneAndPlainTimeProps = Exclude<typeof item, Temporal.TimeZoneProtocol | string>;
+    let timeZone: Temporal.TimeZoneProtocol, temporalTime: TimeZoneAndPlainTimeProps['plainTime'];
     if (ES.IsObject(item)) {
       const timeZoneLike = item.timeZone;
       if (timeZoneLike === undefined) {
@@ -225,11 +226,10 @@ export class PlainDate implements Temporal.PlainDate {
         // not a TimeZoneProtocol.
         // TODO: should we check for that shape to improve on the (bad) error
         // message that the caller will get from ToTemporalTimeZone?
-        timeZone = ES.ToTemporalTimeZone(item as Temporal.TimeZoneProtocol);
+        timeZone = ES.ToTemporalTimeZone(item);
       } else {
         timeZone = ES.ToTemporalTimeZone(timeZoneLike);
-        type TimeZoneAndPlainTimeProps = Exclude<typeof item, Temporal.TimeZoneProtocol>;
-        temporalTime = (item as TimeZoneAndPlainTimeProps).plainTime;
+        temporalTime = item.plainTime;
       }
     } else {
       timeZone = ES.ToTemporalTimeZone(item);
