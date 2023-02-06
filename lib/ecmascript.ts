@@ -120,6 +120,31 @@ const BUILTIN_CALENDAR_IDS = [
   'gregory'
 ];
 
+/*
+ * uncheckedAssertNarrowedType forces TypeScript to change the type of the argment to the one given in
+ * the type parameter. This should only be used to help TS understand when variables change types,
+ * but TS can't or won't infer this automatically. They should be used sparingly, because
+ * if used incorrectly can lead to difficult-to-diagnose problems.
+ */
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-empty-function */
+export function uncheckedAssertNarrowedType<T = unknown>(
+  arg: unknown,
+  justification: string
+): asserts arg is T extends typeof arg ? T : never {}
+/* eslint-enable */
+/**
+ * In debug builds, this function verifies that the given argument "exists" (is not
+ * null or undefined). This function becomes a no-op in the final bundles distributed via NPM.
+ * @param arg
+ */
+function assertExists<A>(arg: A): asserts arg is NonNullable<A> {
+  if (DEBUG) {
+    if (arg != null) {
+      throw new Error('Expected arg to be set.');
+    }
+  }
+}
+
 function IsInteger(value: unknown): value is number {
   if (typeof value !== 'number' || !NumberIsFinite(value)) return false;
   const abs = MathAbs(value);
