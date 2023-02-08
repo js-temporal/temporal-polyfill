@@ -962,7 +962,6 @@ abstract class HelperBase {
     // If the initial guess is not in the same month, then then bisect the
     // distance to the target, starting with 8 days per step.
     let increment = 8;
-    let maybeConstrained = false;
     while (sign) {
       isoEstimate = this.addDaysIso(isoEstimate, sign * increment);
       const oldRoundtripEstimate = roundtripEstimate;
@@ -975,11 +974,6 @@ abstract class HelperBase {
           isoEstimate = calculateSameMonthResult(diff.days);
           // Signal the loop condition that there's a match.
           sign = 0;
-          // If the calendar day is larger than the minimal length for this
-          // month, then it might be larger than the actual length of the month.
-          // So we won't cache it as the correct calendar date for this ISO
-          // date.
-          maybeConstrained = date.day > this.minimumMonthLength(date);
         } else if (oldSign && sign !== oldSign) {
           if (increment > 1) {
             // If the estimate overshot the target, try again with a smaller increment
@@ -997,7 +991,6 @@ abstract class HelperBase {
               const order = this.compareCalendarDates(roundtripEstimate, oldRoundtripEstimate);
               // If current value is larger, then back up to the previous value.
               if (order > 0) isoEstimate = this.addDaysIso(isoEstimate, -1);
-              maybeConstrained = true;
               sign = 0;
             }
           }
@@ -1014,17 +1007,6 @@ abstract class HelperBase {
       (this.hasEra && (date.era === undefined || date.eraYear === undefined))
     ) {
       throw new RangeError('Unexpected missing property');
-    }
-    if (!maybeConstrained) {
-      // Also cache the reverse mapping
-      const keyReverse = JSON.stringify({
-        func: 'isoToCalendarDate',
-        isoYear: isoEstimate.year,
-        isoMonth: isoEstimate.month,
-        isoDay: isoEstimate.day,
-        id: this.id
-      });
-      cache.set(keyReverse, date);
     }
     return isoEstimate;
   }
