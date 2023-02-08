@@ -1248,13 +1248,15 @@ abstract class HelperBase {
   hasEra = true;
   // See https://github.com/tc39/proposal-temporal/issues/1784
   erasBeginMidYear = false;
-  monthDayFromFields(fields: Partial<FullCalendarDate>, overflow: Overflow, cache: OneObjectCache): IsoYMD {
-    let { year, month, monthCode, day, era, eraYear } = fields;
+  monthDayFromFields(fields: FullCalendarDate, overflow: Overflow, cache: OneObjectCache): IsoYMD {
+    let { monthCode, day } = fields;
     if (monthCode === undefined) {
+      let { year, era, eraYear } = fields;
       if (year === undefined && (era === undefined || eraYear === undefined)) {
         throw new TypeError('`monthCode`, `year`, or `era` and `eraYear` is required');
       }
-      ({ monthCode, year } = this.adjustCalendarDate({ year, month, monthCode, day, era, eraYear }, cache, overflow));
+      // Apply overflow behaviour to year/month/day, to get correct monthCode/day
+      ({ monthCode, day } = this.isoToCalendarDate(this.calendarToIsoDate(fields, overflow, cache), cache));
     }
 
     let isoYear, isoMonth, isoDay;
