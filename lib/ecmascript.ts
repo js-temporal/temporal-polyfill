@@ -2087,14 +2087,13 @@ export function CalendarFields<K extends AnyTemporalKey>(
   fieldNamesParam: ReadonlyArray<K>
 ) {
   const fields = GetMethod(calendar, 'fields');
-  if (fields === undefined) return fieldNamesParam as K[];
   const fieldNames = Call(fields, calendar, [fieldNamesParam]);
-  const result: string[] = [];
+  const result: K[] = [];
   for (const name of fieldNames) {
     if (typeof name !== 'string') throw new TypeError('bad return from calendar.fields()');
     ArrayPrototypePush.call(result, name);
   }
-  return result as K[];
+  return result;
 }
 
 export function CalendarMergeFields<Base extends Record<string, unknown>, ToAdd extends Record<string, unknown>>(
@@ -2102,11 +2101,8 @@ export function CalendarMergeFields<Base extends Record<string, unknown>, ToAdd 
   fields: Base,
   additionalFields: ToAdd
 ) {
-  const calMergeFields = GetMethod(calendar, 'mergeFields');
-  if (!calMergeFields) {
-    return { ...fields, ...additionalFields };
-  }
-  const result = Reflect.apply(calMergeFields, calendar, [fields, additionalFields]);
+  const mergeFields = GetMethod(calendar, 'mergeFields');
+  const result = Call(mergeFields, calendar, [fields, additionalFields]);
   if (!IsObject(result)) throw new TypeError('bad return from calendar.mergeFields()');
   return result as Base & ToAdd;
 }

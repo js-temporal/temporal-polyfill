@@ -106,11 +106,6 @@ intl402/Temporal/Calendar/prototype/era/argument-calendar-fields-undefined.js
 intl402/Temporal/Calendar/prototype/eraYear/argument-calendar-fields-undefined.js
 intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boundaries.js
 intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
-built-ins/Temporal/Duration/prototype/round/roundingincrement-out-of-range.js
-built-ins/Temporal/PlainDate/prototype/since/roundingincrement-out-of-range.js
-built-ins/Temporal/PlainDate/prototype/until/roundingincrement-out-of-range.js
-built-ins/Temporal/PlainYearMonth/prototype/since/roundingincrement-out-of-range.js
-built-ins/Temporal/PlainYearMonth/prototype/until/roundingincrement-out-of-range.js
 intl402/Temporal/Calendar/prototype/mergeFields/gregorian-mutually-exclusive-fields.js
 intl402/Temporal/Calendar/prototype/mergeFields/japanese-mutually-exclusive-fields.js
 intl402/Temporal/Calendar/prototype/monthDayFromFields/reference-year-1972.js
