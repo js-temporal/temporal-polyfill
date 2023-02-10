@@ -1381,9 +1381,6 @@ export function PrepareTemporalFields<
   if (requiredFields === 'partial' && !any) {
     throw new TypeError(emptySourceErrorMessage);
   }
-  if ((result.era === undefined) !== (result.eraYear === undefined)) {
-    throw new RangeError("properties 'era' and 'eraYear' must be provided together");
-  }
   return result as unknown as PrepareTemporalFieldsReturn<FieldKeys, RequiredFields, Owner<FieldKeys>>;
 }
 

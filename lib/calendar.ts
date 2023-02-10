@@ -212,7 +212,7 @@ export class Calendar implements Temporal.Calendar {
     const additionalFields = ES.ToObject(additionalFieldsParam);
     const additionalFieldsCopy = ObjectCreate(null);
     ES.CopyDataProperties(additionalFieldsCopy, additionalFields, [], [undefined]);
-    const additionalKeys = ReflectOwnKeys(additionalFieldsCopy);
+    const additionalKeys = ReflectOwnKeys(additionalFieldsCopy) as (keyof typeof additionalFields)[];
     const overriddenKeys = impl[GetSlot(this, CALENDAR_ID)].fieldKeysToIgnore(additionalKeys);
     const merged = ObjectCreate(null);
     const fieldsKeys = ReflectOwnKeys(fieldsCopy);
@@ -832,6 +832,11 @@ abstract class HelperBase {
       }
       if (eraYear !== undefined && year !== undefined && eraYear !== year) {
         throw new RangeError(`eraYear ${eraYear} does not match year ${year}`);
+      }
+    }
+    if (this.hasEra) {
+      if ((calendarDate['era'] === undefined) !== (calendarDate['eraYear'] === undefined)) {
+        throw new RangeError("properties 'era' and 'eraYear' must be provided together");
       }
     }
   }
