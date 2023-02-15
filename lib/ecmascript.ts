@@ -141,7 +141,7 @@ type ArrayWithNewKeys<T, Keys> = Array<ArrayElement<T> | Keys>;
  * null or undefined). This function becomes a no-op in the final bundles distributed via NPM.
  * @param arg
  */
-function assertExists<A>(arg: A): asserts arg is NonNullable<A> {
+export function assertExists<A>(arg: A): asserts arg is NonNullable<A> {
   if (DEBUG) {
     if (arg != null) {
       throw new Error('Expected arg to be set.');

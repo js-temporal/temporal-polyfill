@@ -96,5 +96,3 @@ intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boun
 intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
 intl402/Temporal/Calendar/prototype/mergeFields/gregorian-mutually-exclusive-fields.js
 intl402/Temporal/Calendar/prototype/mergeFields/japanese-mutually-exclusive-fields.js
-intl402/Temporal/Calendar/prototype/monthDayFromFields/reference-year-1972.js
-intl402/Temporal/Calendar/prototype/yearMonthFromFields/reference-day.js
