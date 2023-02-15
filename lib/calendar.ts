@@ -2216,20 +2216,17 @@ abstract class ChineseBaseHelper extends HelperBase {
       if (year === undefined) year = eraYear;
       if (eraYear === undefined) eraYear = year;
       if (month === undefined) {
+        ES.assertExists(monthCode);
         const months = this.getMonthList(year as number, cache);
-        let numberPart = (monthCode as string).replace('L', 'bis').slice(1);
+        let numberPart = monthCode.replace('L', 'bis').slice(1);
         if (numberPart[0] === '0') numberPart = numberPart.slice(1);
         let monthInfo = months[numberPart];
         month = monthInfo && monthInfo.monthIndex;
+
         // If this leap month isn't present in this year, constrain to the same
         // day of the previous month.
-        if (
-          month === undefined &&
-          (monthCode as string).endsWith('L') &&
-          !ArrayIncludes.call(['M01L', 'M12L', 'M13L'], monthCode as string) &&
-          overflow === 'constrain'
-        ) {
-          let withoutML = (monthCode as string).slice(1, -1);
+        if (month === undefined && monthCode.endsWith('L') && monthCode != 'M13L' && overflow === 'constrain') {
+          let withoutML = monthCode.slice(1, -1);
           if (withoutML[0] === '0') withoutML = withoutML.slice(1);
           monthInfo = months[withoutML];
           if (monthInfo) {
@@ -2275,7 +2272,7 @@ abstract class ChineseBaseHelper extends HelperBase {
         year: year as number,
         eraYear,
         month,
-        monthCode: monthCode as string,
+        monthCode: monthCode,
         day: day as number
       };
     }
