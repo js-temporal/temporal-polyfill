@@ -37,8 +37,8 @@ const MathAbs = Math.abs;
 const MathFloor = Math.floor;
 const ObjectCreate = Object.create;
 const ObjectEntries = Object.entries;
-const ObjectKeys = Object.keys;
 const OriginalSet = Set;
+const ReflectOwnKeys = Reflect.ownKeys;
 const SetPrototypeAdd = Set.prototype.add;
 const SetPrototypeValues = Set.prototype.values;
 
@@ -212,10 +212,16 @@ export class Calendar implements Temporal.Calendar {
     const additionalFields = ES.ToObject(additionalFieldsParam);
     const additionalFieldsCopy = ObjectCreate(null);
     ES.CopyDataProperties(additionalFieldsCopy, additionalFields, [], [undefined]);
-    const additionalKeys = ObjectKeys(additionalFieldsCopy);
+    const additionalKeys = ReflectOwnKeys(additionalFieldsCopy);
     const overriddenKeys = impl[GetSlot(this, CALENDAR_ID)].fieldKeysToIgnore(additionalKeys);
     const merged = ObjectCreate(null);
-    ES.CopyDataProperties(merged, fieldsCopy, overriddenKeys, [undefined]);
+    const fieldsKeys = ReflectOwnKeys(fieldsCopy);
+    for (const key of fieldsKeys) {
+      let propValue = undefined;
+      if (ES.Call(ArrayIncludes, overriddenKeys, [key])) propValue = additionalFieldsCopy[key];
+      else propValue = fieldsCopy[key];
+      if (propValue !== undefined) merged[key] = propValue;
+    }
     ES.CopyDataProperties(merged, additionalFieldsCopy, []);
     return merged;
   }
