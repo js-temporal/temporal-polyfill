@@ -1,0 +1,7 @@
+extends:
+ - ../.eslintrc.yml
+overrides:
+ - files:
+   - 'rebase-upstream-commits.ts'
+   rules:
+     no-console: off

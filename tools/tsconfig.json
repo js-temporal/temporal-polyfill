@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig.json",
+  "compileOnSave": false,
+  "include": ["*.ts"],
+  "compilerOptions": {
+    "lib": ["ES2021"],
+    "types": ["node"],
+    "module": "NodeNext",
+    "moduleResolution": "node",
+    "allowSyntheticDefaultImports": true,
+    "target": "es2021"
+  }
+}
