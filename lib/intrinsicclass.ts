@@ -88,12 +88,14 @@ export function MakeIntrinsicClass(
     configurable: true
   });
   if (DEBUG) {
-    Object.defineProperty(Class.prototype, Symbol.for('nodejs.util.inspect.custom'), {
-      value: customUtilInspectFormatters[name] || defaultUtilInspectFormatter,
-      writable: false,
-      enumerable: false,
-      configurable: true
-    });
+    for (const symbolName of ['nodejs.util.inspect.custom', 'Deno.customInspect']) {
+      Object.defineProperty(Class.prototype, Symbol.for(symbolName), {
+        value: customUtilInspectFormatters[name] || defaultUtilInspectFormatter,
+        writable: false,
+        enumerable: false,
+        configurable: true
+      });
+    }
   }
   for (const prop of Object.getOwnPropertyNames(Class)) {
     // we know that `prop` is present, so the descriptor is never undefined
