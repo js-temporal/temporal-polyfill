@@ -117,9 +117,10 @@ function DateTimeFormatImpl(
   }
   const hasOptions = typeof optionsParam !== 'undefined';
   const options = hasOptions ? ObjectAssign({}, optionsParam) : {};
-  // TODO: remove type assertion after Temporal types land in TS lib types
   const original = new IntlDateTimeFormat(
+    // TODO: remove type assertion after TS lib types updated per https://github.com/microsoft/TypeScript/issues/52946
     locale as ConstructorParameters<typeof IntlDateTimeFormat>[0],
+    // TODO: remove type assertion after Temporal types land in TS lib types
     options as globalThis.Intl.DateTimeFormatOptions
   );
   const ro = original.resolvedOptions();
@@ -173,7 +174,9 @@ DateTimeFormatImpl.supportedLocalesOf = function (
   options: Params['supportedLocalesOf'][1]
 ) {
   return IntlDateTimeFormat.supportedLocalesOf(
+    // TODO: remove type assertion after TS lib types updated per https://github.com/microsoft/TypeScript/issues/52946
     locales as Parameters<typeof IntlDateTimeFormat['supportedLocalesOf']>[0],
+    // TODO: remove type assertion after Temporal types land in TS lib types
     options as globalThis.Intl.DateTimeFormatOptions
   );
 };

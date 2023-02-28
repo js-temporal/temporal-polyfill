@@ -548,7 +548,7 @@ export namespace Temporal {
     subtract(other: Temporal.Duration | DurationLike | string, options?: DurationArithmeticOptions): Temporal.Duration;
     round(roundTo: DurationRoundTo): Temporal.Duration;
     total(totalOf: DurationTotalOf): number;
-    toLocaleString(locales?: globalThis.Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
+    toLocaleString(locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
     toJSON(): string;
     toString(options?: ToStringPrecisionOptions): string;
     valueOf(): never;
@@ -601,7 +601,7 @@ export namespace Temporal {
     ): Temporal.Instant;
     toZonedDateTime(calendarAndTimeZone: { timeZone: TimeZoneLike; calendar: CalendarLike }): Temporal.ZonedDateTime;
     toZonedDateTimeISO(tzLike: TimeZoneLike): Temporal.ZonedDateTime;
-    toLocaleString(locales?: globalThis.Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
+    toLocaleString(locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
     toJSON(): string;
     toString(options?: InstantToStringOptions): string;
     valueOf(): never;
@@ -836,7 +836,7 @@ export namespace Temporal {
     toPlainYearMonth(): Temporal.PlainYearMonth;
     toPlainMonthDay(): Temporal.PlainMonthDay;
     getISOFields(): PlainDateISOFields;
-    toLocaleString(locales?: globalThis.Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
+    toLocaleString(locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
     toJSON(): string;
     toString(options?: ShowCalendarOption): string;
     valueOf(): never;
@@ -955,7 +955,7 @@ export namespace Temporal {
     toPlainMonthDay(): Temporal.PlainMonthDay;
     toPlainTime(): Temporal.PlainTime;
     getISOFields(): PlainDateTimeISOFields;
-    toLocaleString(locales?: globalThis.Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
+    toLocaleString(locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
     toJSON(): string;
     toString(options?: CalendarTypeToStringOptions): string;
     valueOf(): never;
@@ -992,7 +992,7 @@ export namespace Temporal {
     with(monthDayLike: PlainMonthDayLike, options?: AssignmentOptions): Temporal.PlainMonthDay;
     toPlainDate(year: { year: number }): Temporal.PlainDate;
     getISOFields(): PlainDateISOFields;
-    toLocaleString(locales?: globalThis.Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
+    toLocaleString(locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
     toJSON(): string;
     toString(options?: ShowCalendarOption): string;
     valueOf(): never;
@@ -1085,7 +1085,7 @@ export namespace Temporal {
       plainDate: Temporal.PlainDate | PlainDateLike | string;
     }): Temporal.ZonedDateTime;
     getISOFields(): PlainTimeISOFields;
-    toLocaleString(locales?: globalThis.Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
+    toLocaleString(locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
     toJSON(): string;
     toString(options?: ToStringPrecisionOptions): string;
     valueOf(): never;
@@ -1199,7 +1199,7 @@ export namespace Temporal {
     ): Temporal.Duration;
     toPlainDate(day: { day: number }): Temporal.PlainDate;
     getISOFields(): PlainDateISOFields;
-    toLocaleString(locales?: globalThis.Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
+    toLocaleString(locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
     toJSON(): string;
     toString(options?: ShowCalendarOption): string;
     valueOf(): never;
@@ -1312,7 +1312,7 @@ export namespace Temporal {
     toPlainMonthDay(): Temporal.PlainMonthDay;
     toPlainTime(): Temporal.PlainTime;
     getISOFields(): ZonedDateTimeISOFields;
-    toLocaleString(locales?: globalThis.Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
+    toLocaleString(locales?: Intl.LocalesArgument, options?: Intl.DateTimeFormatOptions): string;
     toJSON(): string;
     toString(options?: ZonedDateTimeToStringOptions): string;
     valueOf(): never;
@@ -1537,16 +1537,41 @@ declare namespace Intl {
      * Creates `Intl.DateTimeFormat` objects that enable language-sensitive
      * date and time formatting.
      */
-    new (locales?: globalThis.Intl.LocalesArgument, options?: DateTimeFormatOptions): DateTimeFormat;
-    (locales?: globalThis.Intl.LocalesArgument, options?: DateTimeFormatOptions): DateTimeFormat;
+    new (locales?: Intl.LocalesArgument, options?: DateTimeFormatOptions): DateTimeFormat;
+    (locales?: Intl.LocalesArgument, options?: DateTimeFormatOptions): DateTimeFormat;
 
     /**
      * Get an array containing those of the provided locales that are supported
      * in date and time formatting without having to fall back to the runtime's
      * default locale.
      */
-    supportedLocalesOf(locales: globalThis.Intl.LocalesArgument, options?: DateTimeFormatOptions): string[];
+    supportedLocalesOf(locales: Intl.LocalesArgument, options?: DateTimeFormatOptions): string[];
   };
+
+  // TODO: remove UnicodeBCP47LocaleIdentifier and LocalesArgument once TS lib declarations for these in widespread use
+
+  /**
+   * A string that is a valid [Unicode BCP 47 Locale
+   * Identifier](https://unicode.org/reports/tr35/#Unicode_locale_identifier).
+   *
+   * For example: "fa", "es-MX", "zh-Hant-TW".
+   *
+   * See [MDN - Intl - locales
+   * argument](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl#locales_argument).
+   */
+  type UnicodeBCP47LocaleIdentifier = string;
+
+  /**
+   * The locale or locales to use
+   *
+   * See [MDN - Intl - locales
+   * argument](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Intl#locales_argument).
+   */
+  type LocalesArgument =
+    | UnicodeBCP47LocaleIdentifier
+    | globalThis.Intl.Locale
+    | readonly (UnicodeBCP47LocaleIdentifier | globalThis.Intl.Locale)[]
+    | undefined;
 }
 
 export { Intl as Intl };
