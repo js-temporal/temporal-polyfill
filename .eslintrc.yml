@@ -91,6 +91,8 @@ overrides:
       no-param-reassign: off
   - files:
       - '**/*.ts'
+    excludedFiles:
+      - './index-lt-4.7.4.d.ts'
     plugins:
       - '@typescript-eslint'
     parserOptions:
@@ -114,3 +116,10 @@ overrides:
       '@typescript-eslint/no-unnecessary-type-assertion': error
       '@typescript-eslint/func-call-spacing': error
       prefer-const: off
+  - files:
+      - './index-lt-4.7.4.d.ts'
+    parserOptions:
+      project: null
+    rules:
+      no-unused-vars: off
+      no-undef: off
