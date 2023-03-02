@@ -138,9 +138,6 @@ export function uncheckedAssertNarrowedType<T = unknown>(
 ): asserts arg is T extends typeof arg ? T : never {}
 /* eslint-enable */
 
-type ArrayElement<ArrayType> = ArrayType extends readonly (infer ElementType)[] ? ElementType : never;
-type ArrayWithNewKeys<T, Keys> = Array<ArrayElement<T> | Keys>;
-
 /**
  * In debug builds, this function verifies that the given argument "exists" (is not
  * null or undefined). This function becomes a no-op in the final bundles distributed via NPM.
@@ -1226,20 +1223,22 @@ export function ToRelativeTemporalObject(options: {
     if (IsTemporalZonedDateTime(relativeTo) || IsTemporalDate(relativeTo)) return relativeTo;
     if (IsTemporalDateTime(relativeTo)) return TemporalDateTimeToDate(relativeTo);
     calendar = GetTemporalCalendarSlotValueWithISODefault(relativeTo);
-    const fieldNames = CalendarFields(calendar, [
+    const fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = CalendarFields(calendar, [
       'day',
+      'month',
+      'monthCode',
+      'year'
+    ]);
+    Call(ArrayPrototypePush, fieldNames, [
       'hour',
       'microsecond',
       'millisecond',
       'minute',
-      'month',
-      'monthCode',
       'nanosecond',
+      'offset',
       'second',
-      'year'
-    ] as const);
-    type FieldNamesWithTimeZoneAndOffset = ArrayWithNewKeys<typeof fieldNames, 'timeZone' | 'offset'>;
-    (fieldNames as FieldNamesWithTimeZoneAndOffset).push('timeZone', 'offset');
+      'timeZone'
+    ]);
     const fields = PrepareTemporalFields(relativeTo, fieldNames, []);
     const dateOptions = ObjectCreate(null) as Temporal.AssignmentOptions;
     dateOptions.overflow = 'constrain';
@@ -1597,18 +1596,8 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
     }
 
     calendar = GetTemporalCalendarSlotValueWithISODefault(item);
-    const fieldNames = CalendarFields(calendar, [
-      'day',
-      'hour',
-      'microsecond',
-      'millisecond',
-      'minute',
-      'month',
-      'monthCode',
-      'nanosecond',
-      'second',
-      'year'
-    ] as const);
+    const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
+    Call(ArrayPrototypePush, fieldNames, ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second']);
     const fields = PrepareTemporalFields(item, fieldNames, []);
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = InterpretTemporalDateTimeFields(
       calendar,
@@ -1873,17 +1862,20 @@ export function ToTemporalZonedDateTime(
     calendar = GetTemporalCalendarSlotValueWithISODefault(item);
     const fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = CalendarFields(calendar, [
       'day',
+      'month',
+      'monthCode',
+      'year'
+    ]);
+    Call(ArrayPrototypePush, fieldNames, [
       'hour',
       'microsecond',
       'millisecond',
       'minute',
-      'month',
-      'monthCode',
       'nanosecond',
+      'offset',
       'second',
-      'year'
-    ] as const);
-    fieldNames.push('timeZone', 'offset');
+      'timeZone'
+    ]);
     const fields = PrepareTemporalFields(item, fieldNames, ['timeZone']);
     timeZone = ToTemporalTimeZoneSlotValue(fields.timeZone);
     offset = fields.offset;

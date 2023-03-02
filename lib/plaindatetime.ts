@@ -19,6 +19,8 @@ import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainDateTimeParams as Params, PlainDateTimeReturn as Return } from './internaltypes';
 
+const ArrayPrototypePush = Array.prototype.push;
+
 export class PlainDateTime implements Temporal.PlainDateTime {
   constructor(
     isoYearParam: Params['constructor'][0],
@@ -154,18 +156,8 @@ export class PlainDateTime implements Temporal.PlainDateTime {
 
     const options = ES.GetOptionsObject(optionsParam);
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, [
-      'day',
-      'hour',
-      'microsecond',
-      'millisecond',
-      'minute',
-      'month',
-      'monthCode',
-      'nanosecond',
-      'second',
-      'year'
-    ] as const);
+    const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
+    ES.Call(ArrayPrototypePush, fieldNames, ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second']);
     let fields = ES.PrepareTemporalFields(this, fieldNames, []);
     const partialDateTime = ES.PrepareTemporalFields(temporalDateTimeLike, fieldNames, 'partial');
     fields = ES.CalendarMergeFields(calendar, fields, partialDateTime);

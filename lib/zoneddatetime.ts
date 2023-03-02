@@ -23,6 +23,7 @@ import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } fro
 import JSBI from 'jsbi';
 import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS } from './ecmascript';
 
+const ArrayPrototypePush = Array.prototype.push;
 const customResolvedOptions = DateTimeFormat.prototype.resolvedOptions as Intl.DateTimeFormat['resolvedOptions'];
 
 export class ZonedDateTime implements Temporal.ZonedDateTime {
@@ -187,19 +188,21 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);
-    let fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = ES.CalendarFields(calendar, [
+    const fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = ES.CalendarFields(calendar, [
       'day',
+      'month',
+      'monthCode',
+      'year'
+    ]);
+    ES.Call(ArrayPrototypePush, fieldNames, [
       'hour',
       'microsecond',
       'millisecond',
       'minute',
-      'month',
-      'monthCode',
       'nanosecond',
-      'second',
-      'year'
-    ] as const);
-    fieldNames.push('offset');
+      'offset',
+      'second'
+    ]);
     let fields = ES.PrepareTemporalFields(this, fieldNames, ['offset']);
     const partialZonedDateTime = ES.PrepareTemporalFields(temporalZonedDateTimeLike, fieldNames, 'partial');
     fields = ES.CalendarMergeFields(calendar, fields, partialZonedDateTime);
