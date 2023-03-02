@@ -117,8 +117,12 @@ function DateTimeFormatImpl(
   }
   const hasOptions = typeof optionsParam !== 'undefined';
   const options = hasOptions ? ObjectAssign({}, optionsParam) : {};
-  // TODO: remove type assertion after Temporal types land in TS lib types
-  const original = new IntlDateTimeFormat(locale, options as globalThis.Intl.DateTimeFormatOptions);
+  const original = new IntlDateTimeFormat(
+    // TODO: remove type assertion after TS lib types updated per https://github.com/microsoft/TypeScript/issues/52946
+    locale as ConstructorParameters<typeof IntlDateTimeFormat>[0],
+    // TODO: remove type assertion after Temporal types land in TS lib types
+    options as globalThis.Intl.DateTimeFormatOptions
+  );
   const ro = original.resolvedOptions();
 
   // DateTimeFormat instances are very expensive to create. Therefore, they will
@@ -169,7 +173,12 @@ DateTimeFormatImpl.supportedLocalesOf = function (
   locales: Params['supportedLocalesOf'][0],
   options: Params['supportedLocalesOf'][1]
 ) {
-  return IntlDateTimeFormat.supportedLocalesOf(locales, options as globalThis.Intl.DateTimeFormatOptions);
+  return IntlDateTimeFormat.supportedLocalesOf(
+    // TODO: remove type assertion after TS lib types updated per https://github.com/microsoft/TypeScript/issues/52946
+    locales as Parameters<typeof IntlDateTimeFormat['supportedLocalesOf']>[0],
+    // TODO: remove type assertion after Temporal types land in TS lib types
+    options as globalThis.Intl.DateTimeFormatOptions
+  );
 };
 
 const propertyDescriptors: Partial<Record<keyof Intl.DateTimeFormat, PropertyDescriptor>> = {
