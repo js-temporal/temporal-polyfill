@@ -188,16 +188,16 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const options = ES.GetOptionsObject(optionsParam);
 
     const calendar = GetSlot(this, CALENDAR);
+    const timeZone = GetSlot(this, TIME_ZONE);
+    const offsetNs = ES.GetOffsetNanosecondsFor(timeZone, GetSlot(this, INSTANT));
+    const dt = dateTime(this, offsetNs);
     const fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = ES.CalendarFields(calendar, [
       'day',
       'month',
       'monthCode',
       'year'
     ]);
-    let fields = ES.PrepareTemporalFields(this, fieldNames, []);
-    const timeZone = GetSlot(this, TIME_ZONE);
-    const offsetNs = ES.GetOffsetNanosecondsFor(timeZone, GetSlot(this, INSTANT));
-    const dt = dateTime(this, offsetNs);
+    let fields = ES.PrepareTemporalFields(dt, fieldNames, []);
     fields.hour = GetSlot(dt, ISO_HOUR);
     fields.minute = GetSlot(dt, ISO_MINUTE);
     fields.second = GetSlot(dt, ISO_SECOND);
