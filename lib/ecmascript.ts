@@ -6397,20 +6397,15 @@ export function RoundDuration(
   let microseconds = microsecondsParam;
   let nanoseconds = JSBI.BigInt(nanosecondsParam);
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
-  let calendar, zonedRelativeTo;
+
   // A cast is used below because relativeTo will be either PlainDate or
   // undefined for the rest of this long method (after any ZDT=>PlainDate
   // conversion below), and TS isn't smart enough to know that the type has
   // changed. See https://github.com/microsoft/TypeScript/issues/27706.
   let relativeTo = relativeToParam as Temporal.PlainDate | undefined;
-  if (relativeTo) {
-    if (IsTemporalZonedDateTime(relativeTo)) {
-      zonedRelativeTo = relativeTo;
-      relativeTo = ToTemporalDate(relativeTo);
-    } else if (!IsTemporalDate(relativeTo)) {
-      throw new Error('assertion failure in RoundDuration: _relativeTo_ must be PlainDate');
-    }
-    calendar = GetSlot(relativeTo, CALENDAR);
+
+  if ((unit === 'year' || unit === 'month' || unit === 'week') && !relativeTo) {
+    throw new RangeError(`A starting point is required for ${unit}s rounding`);
   }
 
   // First convert time units up to days, if rounding to days or higher units.
@@ -6421,8 +6416,8 @@ export function RoundDuration(
   if (unit === 'year' || unit === 'month' || unit === 'week' || unit === 'day') {
     nanoseconds = TotalDurationNanoseconds(0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, 0);
     let deltaDays;
-    if (zonedRelativeTo) {
-      const intermediate = MoveRelativeZonedDateTime(zonedRelativeTo, years, months, weeks, days);
+    if (IsTemporalZonedDateTime(relativeTo)) {
+      const intermediate = MoveRelativeZonedDateTime(relativeTo, years, months, weeks, days);
       let dayLengthNumber;
       ({ days: deltaDays, nanoseconds, dayLengthNs: dayLengthNumber } = NanosecondsToDays(nanoseconds, intermediate));
       dayLengthNs = JSBI.BigInt(dayLengthNumber);
@@ -6438,8 +6433,9 @@ export function RoundDuration(
   let total: number;
   switch (unit) {
     case 'year': {
-      if (!calendar) throw new RangeError('A starting point is required for years rounding');
       assertExists(relativeTo);
+      relativeTo = ToTemporalDate(relativeTo);
+      const calendar = GetSlot(relativeTo, CALENDAR);
 
       // convert months and weeks to days by calculating difference(
       // relativeTo + years, relativeTo + { years, months, weeks })
@@ -6487,8 +6483,9 @@ export function RoundDuration(
       break;
     }
     case 'month': {
-      if (!calendar) throw new RangeError('A starting point is required for months rounding');
       assertExists(relativeTo);
+      relativeTo = ToTemporalDate(relativeTo);
+      const calendar = GetSlot(relativeTo, CALENDAR);
 
       // convert weeks to days by calculating difference(relativeTo +
       //   { years, months }, relativeTo + { years, months, weeks })
@@ -6528,8 +6525,9 @@ export function RoundDuration(
       break;
     }
     case 'week': {
-      if (!calendar) throw new RangeError('A starting point is required for weeks rounding');
       assertExists(relativeTo);
+      relativeTo = ToTemporalDate(relativeTo);
+      const calendar = GetSlot(relativeTo, CALENDAR);
 
       // Weeks may be different lengths of days depending on the calendar,
       // convert days to weeks in a loop as described above under 'years'.
