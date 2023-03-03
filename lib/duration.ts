@@ -553,7 +553,7 @@ export class Duration implements Temporal.Duration {
     const one = ES.ToTemporalDuration(oneParam);
     const two = ES.ToTemporalDuration(twoParam);
     const options = ES.GetOptionsObject(optionsParam);
-    const relativeTo = ES.ToRelativeTemporalObject(options);
+    let relativeTo = ES.ToRelativeTemporalObject(options);
     const y1 = GetSlot(one, YEARS);
     const mon1 = GetSlot(one, MONTHS);
     const w1 = GetSlot(one, WEEKS);
@@ -577,6 +577,7 @@ export class Duration implements Temporal.Duration {
     const shift1 = ES.CalculateOffsetShift(relativeTo, y1, mon1, w1, d1);
     const shift2 = ES.CalculateOffsetShift(relativeTo, y2, mon2, w2, d2);
     if (y1 !== 0 || y2 !== 0 || mon1 !== 0 || mon2 !== 0 || w1 !== 0 || w2 !== 0) {
+      if (ES.IsTemporalZonedDateTime(relativeTo)) relativeTo = ES.ToTemporalDate(relativeTo);
       ({ days: d1 } = ES.UnbalanceDateDurationRelative(y1, mon1, w1, d1, 'day', relativeTo));
       ({ days: d2 } = ES.UnbalanceDateDurationRelative(y2, mon2, w2, d2, 'day', relativeTo));
     }
