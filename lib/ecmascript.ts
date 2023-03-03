@@ -1542,10 +1542,11 @@ export function ToTemporalDate(
 export function InterpretTemporalDateTimeFields(
   calendar: CalendarSlot,
   fields: PrimitiveFieldsOf<Temporal.PlainDateTimeLike> & Parameters<typeof CalendarDateFromFields>[1],
-  options?: Temporal.AssignmentOptions
+  options: Temporal.AssignmentOptions
 ) {
   let { hour, minute, second, millisecond, microsecond, nanosecond } = ToTemporalTimeRecord(fields);
   const overflow = ToTemporalOverflow(options);
+  options.overflow = overflow; // options is always an internal object, so not observable
   const date = CalendarDateFromFields(calendar, fields, options);
   const year = GetSlot(date, ISO_YEAR);
   const month = GetSlot(date, ISO_MONTH);
@@ -1563,24 +1564,17 @@ export function InterpretTemporalDateTimeFields(
 }
 
 export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options?: PlainDateTimeParams['from'][1]) {
-  let year: number,
-    month: number,
-    day: number,
-    hour: number,
-    minute: number,
-    second: number,
-    millisecond: number,
-    microsecond: number,
-    nanosecond: number,
-    calendar;
+  let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar;
+  const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
+
   if (IsObject(item)) {
     if (IsTemporalDateTime(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
-      ToTemporalOverflow(options); // validate and ignore
+      ToTemporalOverflow(resolvedOptions); // validate and ignore
       return GetPlainDateTimeFor(GetSlot(item, TIME_ZONE), GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
     }
     if (IsTemporalDate(item)) {
-      ToTemporalOverflow(options); // validate and ignore
+      ToTemporalOverflow(resolvedOptions); // validate and ignore
       return CreateTemporalDateTime(
         GetSlot(item, ISO_YEAR),
         GetSlot(item, ISO_MONTH),
@@ -1602,10 +1596,9 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = InterpretTemporalDateTimeFields(
       calendar,
       fields,
-      options
+      resolvedOptions
     ));
   } else {
-    ToTemporalOverflow(options); // validate and ignore
     let z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, z } =
       ParseTemporalDateTimeString(RequireString(item)));
@@ -1614,6 +1607,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
     if (!calendar) calendar = 'iso8601';
     if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
     calendar = ASCIILowercase(calendar);
+    ToTemporalOverflow(resolvedOptions); // validate and ignore
   }
   return CreateTemporalDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar);
 }
@@ -1841,20 +1835,9 @@ export function ToTemporalZonedDateTime(
   item: ZonedDateTimeParams['from'][0],
   options?: ZonedDateTimeParams['from'][1]
 ) {
-  let year: number,
-    month: number,
-    day: number,
-    hour: number,
-    minute: number,
-    second: number,
-    millisecond: number,
-    microsecond: number,
-    nanosecond: number,
-    timeZone,
-    offset: string | undefined,
-    calendar: string | Temporal.CalendarProtocol | undefined;
-  let disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>;
-  let offsetOpt: NonNullable<Temporal.OffsetDisambiguationOptions['offset']>;
+  let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, timeZone, offset, calendar;
+  const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
+  let disambiguation, offsetOpt;
   let matchMinute = false;
   let offsetBehaviour: OffsetBehaviour = 'option';
   if (IsObject(item)) {
@@ -1882,12 +1865,12 @@ export function ToTemporalZonedDateTime(
     if (offset === undefined) {
       offsetBehaviour = 'wall';
     }
-    disambiguation = ToTemporalDisambiguation(options);
-    offsetOpt = ToTemporalOffset(options, 'reject');
+    disambiguation = ToTemporalDisambiguation(resolvedOptions);
+    offsetOpt = ToTemporalOffset(resolvedOptions, 'reject');
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = InterpretTemporalDateTimeFields(
       calendar,
       fields,
-      options
+      resolvedOptions
     ));
   } else {
     let tzAnnotation, z;
@@ -1916,9 +1899,9 @@ export function ToTemporalZonedDateTime(
     if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
     calendar = ASCIILowercase(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
-    disambiguation = ToTemporalDisambiguation(options);
-    offsetOpt = ToTemporalOffset(options, 'reject');
-    ToTemporalOverflow(options); // validate and ignore
+    disambiguation = ToTemporalDisambiguation(resolvedOptions);
+    offsetOpt = ToTemporalOffset(resolvedOptions, 'reject');
+    ToTemporalOverflow(resolvedOptions); // validate and ignore
   }
   let offsetNs = 0;
   if (offsetBehaviour === 'option') offsetNs = ParseDateTimeUTCOffset(castExists(offset));
