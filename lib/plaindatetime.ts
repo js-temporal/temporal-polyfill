@@ -147,14 +147,14 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return ES.CalendarInLeapYear(GetSlot(this, CALENDAR), this);
   }
-  with(temporalDateTimeLike: Params['with'][0], optionsParam: Params['with'][1] = undefined): Return['with'] {
+  with(temporalDateTimeLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(temporalDateTimeLike)) {
       throw new TypeError('invalid argument');
     }
     ES.RejectTemporalLikeObject(temporalDateTimeLike);
 
-    const options = ES.GetOptionsObject(optionsParam);
+    const resolvedOptions = ES.SnapshotOwnProperties(ES.GetOptionsObject(options), null);
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
     let fields = ES.PrepareTemporalFields(this, fieldNames, []);
@@ -169,7 +169,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     fields = ES.CalendarMergeFields(calendar, fields, partialDateTime);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
     const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
-      ES.InterpretTemporalDateTimeFields(calendar, fields, options);
+      ES.InterpretTemporalDateTimeFields(calendar, fields, resolvedOptions);
 
     return ES.CreateTemporalDateTime(
       year,

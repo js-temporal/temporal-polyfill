@@ -179,13 +179,13 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     return ES.GetOffsetNanosecondsFor(GetSlot(this, TIME_ZONE), GetSlot(this, INSTANT));
   }
-  with(temporalZonedDateTimeLike: Params['with'][0], optionsParam: Params['with'][1] = undefined): Return['with'] {
+  with(temporalZonedDateTimeLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(temporalZonedDateTimeLike)) {
       throw new TypeError('invalid zoned-date-time-like');
     }
     ES.RejectTemporalLikeObject(temporalZonedDateTimeLike);
-    const options = ES.GetOptionsObject(optionsParam);
+    const resolvedOptions = ES.SnapshotOwnProperties(ES.GetOptionsObject(options), null);
 
     const calendar = GetSlot(this, CALENDAR);
     const timeZone = GetSlot(this, TIME_ZONE);
@@ -218,11 +218,11 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     fields = ES.CalendarMergeFields(calendar, fields, partialZonedDateTime);
     fields = ES.PrepareTemporalFields(fields, fieldNames, ['offset']);
 
-    const disambiguation = ES.ToTemporalDisambiguation(options);
-    const offset = ES.ToTemporalOffset(options, 'prefer');
+    const disambiguation = ES.ToTemporalDisambiguation(resolvedOptions);
+    const offset = ES.ToTemporalOffset(resolvedOptions, 'prefer');
 
     let { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
-      ES.InterpretTemporalDateTimeFields(calendar, fields, options);
+      ES.InterpretTemporalDateTimeFields(calendar, fields, resolvedOptions);
     const newOffsetNs = ES.ParseDateTimeUTCOffset(fields.offset);
     const epochNanoseconds = ES.InterpretISODateTimeOffset(
       year,
