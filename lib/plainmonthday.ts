@@ -35,13 +35,13 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     return ES.ToTemporalCalendarIdentifier(GetSlot(this, CALENDAR));
   }
 
-  with(temporalMonthDayLike: Params['with'][0], optionsParam: Params['with'][1] = undefined): Return['with'] {
+  with(temporalMonthDayLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
     if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(temporalMonthDayLike)) {
       throw new TypeError('invalid argument');
     }
     ES.RejectTemporalLikeObject(temporalMonthDayLike);
-    const options = ES.GetOptionsObject(optionsParam);
+    const resolvedOptions = ES.SnapshotOwnProperties(ES.GetOptionsObject(options), null);
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
@@ -50,7 +50,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     fields = ES.CalendarMergeFields(calendar, fields, partialMonthDay);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
 
-    return ES.CalendarMonthDayFromFields(calendar, fields, options);
+    return ES.CalendarMonthDayFromFields(calendar, fields, resolvedOptions);
   }
   equals(otherParam: Params['equals'][0]): Return['equals'] {
     if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');

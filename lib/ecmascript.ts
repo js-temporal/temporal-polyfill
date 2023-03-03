@@ -1507,8 +1507,10 @@ export function ToTemporalTimeRecord(
 
 export function ToTemporalDate(
   itemParam: PlainDateParams['from'][0],
-  options?: PlainDateParams['from'][1]
+  optionsParam?: PlainDateParams['from'][1]
 ): Temporal.PlainDate {
+  let options = optionsParam;
+  if (options !== undefined) options = SnapshotOwnProperties(GetOptionsObject(options), null);
   let item = itemParam;
   if (IsObject(item)) {
     if (IsTemporalDate(item)) return item;
@@ -1530,12 +1532,12 @@ export function ToTemporalDate(
     const fields = PrepareTemporalFields(item, fieldNames, []);
     return CalendarDateFromFields(calendar, fields, options);
   }
-  ToTemporalOverflow(options); // validate and ignore
   let { year, month, day, calendar, z } = ParseTemporalDateString(RequireString(item));
   if (z) throw new RangeError('Z designator not supported for PlainDate');
   if (!calendar) calendar = 'iso8601';
   if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
   calendar = ASCIILowercase(calendar);
+  ToTemporalOverflow(options); // validate and ignore
   return CreateTemporalDate(year, month, day, calendar);
 }
 
@@ -1645,8 +1647,10 @@ export function ToTemporalInstant(itemParam: InstantParams['from'][0]) {
 
 export function ToTemporalMonthDay(
   itemParam: PlainMonthDayParams['from'][0],
-  options?: PlainMonthDayParams['from'][1]
+  optionsParam?: PlainMonthDayParams['from'][1]
 ) {
+  let options = optionsParam;
+  if (options !== undefined) options = SnapshotOwnProperties(GetOptionsObject(options), null);
   let item = itemParam;
   if (IsObject(item)) {
     if (IsTemporalMonthDay(item)) return item;
@@ -1674,11 +1678,11 @@ export function ToTemporalMonthDay(
     return CalendarMonthDayFromFields(calendar, fields, options);
   }
 
-  ToTemporalOverflow(options); // validate and ignore
   let { month, day, referenceISOYear, calendar } = ParseTemporalMonthDayString(RequireString(item));
   if (calendar === undefined) calendar = 'iso8601';
   if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
   calendar = ASCIILowercase(calendar);
+  ToTemporalOverflow(options); // validate and ignore
 
   if (referenceISOYear === undefined) {
     RejectISODate(1972, month, day);
@@ -1730,8 +1734,10 @@ export function ToTemporalTime(
 
 export function ToTemporalYearMonth(
   item: PlainYearMonthParams['from'][0],
-  options?: PlainYearMonthParams['from'][1]
+  optionsParam?: PlainYearMonthParams['from'][1]
 ): Temporal.PlainYearMonth {
+  let options = optionsParam;
+  if (options !== undefined) options = SnapshotOwnProperties(GetOptionsObject(options), null);
   if (IsObject(item)) {
     if (IsTemporalYearMonth(item)) return item;
     const calendar = GetTemporalCalendarSlotValueWithISODefault(item);
@@ -1740,11 +1746,11 @@ export function ToTemporalYearMonth(
     return CalendarYearMonthFromFields(calendar, fields, options);
   }
 
-  ToTemporalOverflow(options); // validate and ignore
   let { year, month, referenceISODay, calendar } = ParseTemporalYearMonthString(RequireString(item));
   if (calendar === undefined) calendar = 'iso8601';
   if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
   calendar = ASCIILowercase(calendar);
+  ToTemporalOverflow(options); // validate and ignore
 
   if (referenceISODay === undefined) {
     RejectISODate(year, month, 1);
