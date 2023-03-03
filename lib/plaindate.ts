@@ -96,13 +96,13 @@ export class PlainDate implements Temporal.PlainDate {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     return ES.CalendarInLeapYear(GetSlot(this, CALENDAR), this);
   }
-  with(temporalDateLike: Params['with'][0], optionsParam: Params['with'][1] = undefined): Return['with'] {
+  with(temporalDateLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(temporalDateLike)) {
       throw new TypeError('invalid argument');
     }
     ES.RejectTemporalLikeObject(temporalDateLike);
-    const options = ES.GetOptionsObject(optionsParam);
+    const resolvedOptions = ES.SnapshotOwnProperties(ES.GetOptionsObject(options), null);
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
@@ -111,7 +111,7 @@ export class PlainDate implements Temporal.PlainDate {
     fields = ES.CalendarMergeFields(calendar, fields, partialDate);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
 
-    return ES.CalendarDateFromFields(calendar, fields, options);
+    return ES.CalendarDateFromFields(calendar, fields, resolvedOptions);
   }
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');

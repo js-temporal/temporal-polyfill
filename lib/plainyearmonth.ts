@@ -61,13 +61,13 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
     return ES.CalendarInLeapYear(GetSlot(this, CALENDAR), this);
   }
-  with(temporalYearMonthLike: Params['with'][0], optionsParam: Params['with'][1] = undefined): Return['with'] {
+  with(temporalYearMonthLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(temporalYearMonthLike)) {
       throw new TypeError('invalid argument');
     }
     ES.RejectTemporalLikeObject(temporalYearMonthLike);
-    const options = ES.GetOptionsObject(optionsParam);
+    const resolvedOptions = ES.SnapshotOwnProperties(ES.GetOptionsObject(options), null);
 
     const calendar = GetSlot(this, CALENDAR);
     const fieldNames = ES.CalendarFields(calendar, ['month', 'monthCode', 'year'] as const);
@@ -76,7 +76,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     fields = ES.CalendarMergeFields(calendar, fields, partialYearMonth);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
 
-    return ES.CalendarYearMonthFromFields(calendar, fields, options);
+    return ES.CalendarYearMonthFromFields(calendar, fields, resolvedOptions);
   }
   add(temporalDurationLike: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
