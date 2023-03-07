@@ -242,7 +242,7 @@ export class Duration implements Temporal.Duration {
         : ES.GetOptionsObject(roundToParam);
 
     let largestUnit = ES.GetTemporalUnit(roundTo, 'largestUnit', 'datetime', undefined, ['auto']);
-    let relativeTo = ES.ToRelativeTemporalObject(roundTo);
+    let { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject(roundTo);
     const roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
     const roundingMode = ES.ToTemporalRoundingMode(roundTo, 'halfExpand');
     let smallestUnit = ES.GetTemporalUnit(roundTo, 'smallestUnit', 'datetime', undefined);
@@ -282,7 +282,7 @@ export class Duration implements Temporal.Duration {
     const calendarUnitsPresent = years !== 0 || months !== 0 || weeks !== 0;
     const timeUnitsOverflowWillOccur =
       minutes >= 60 || seconds >= 60 || milliseconds >= 1000 || microseconds >= 1000 || nanoseconds >= 1000;
-    const hoursToDaysConversionMayOccur = (days !== 0 && ES.IsTemporalZonedDateTime(relativeTo)) || hours >= 24;
+    const hoursToDaysConversionMayOccur = (days !== 0 && zonedRelativeTo) || hours >= 24;
     if (
       roundingGranularityIsNoop &&
       !balancingRequested &&
@@ -293,13 +293,27 @@ export class Duration implements Temporal.Duration {
       return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
     }
 
+    const plainRelativeToWillBeUsed =
+      smallestUnit === 'year' ||
+      smallestUnit === 'month' ||
+      smallestUnit === 'week' ||
+      years !== 0 ||
+      months !== 0 ||
+      weeks !== 0 ||
+      days !== 0;
+    if (zonedRelativeTo && plainRelativeToWillBeUsed) {
+      // Convert a ZonedDateTime relativeTo to PlainDate only if needed in one
+      // of the operations below, because the conversion is user visible
+      plainRelativeTo = ES.ToTemporalDate(zonedRelativeTo);
+    }
+
     ({ years, months, weeks, days } = ES.UnbalanceDateDurationRelative(
       years,
       months,
       weeks,
       days,
       largestUnit,
-      relativeTo
+      plainRelativeTo
     ));
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       ES.RoundDuration(
@@ -316,9 +330,10 @@ export class Duration implements Temporal.Duration {
         roundingIncrement,
         smallestUnit,
         roundingMode,
-        relativeTo
+        plainRelativeTo,
+        zonedRelativeTo
       ));
-    if (ES.IsTemporalZonedDateTime(relativeTo)) {
+    if (zonedRelativeTo) {
       ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
         ES.AdjustRoundedDurationDays(
           years,
@@ -334,7 +349,7 @@ export class Duration implements Temporal.Duration {
           roundingIncrement,
           smallestUnit,
           roundingMode,
-          relativeTo
+          zonedRelativeTo
         ));
       ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDurationRelative(
         days,
@@ -345,7 +360,7 @@ export class Duration implements Temporal.Duration {
         microseconds,
         nanoseconds,
         largestUnit,
-        relativeTo
+        zonedRelativeTo
       ));
     } else {
       ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDuration(
@@ -365,7 +380,7 @@ export class Duration implements Temporal.Duration {
       weeks,
       days,
       largestUnit,
-      relativeTo
+      plainRelativeTo
     ));
 
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
@@ -388,15 +403,30 @@ export class Duration implements Temporal.Duration {
       typeof optionsParam === 'string'
         ? (ES.CreateOnePropObject('unit', optionsParam) as Exclude<typeof optionsParam, string>)
         : ES.GetOptionsObject(optionsParam);
-    const relativeTo = ES.ToRelativeTemporalObject(options);
+    let { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject(options);
     const unit = ES.GetTemporalUnit(options, 'unit', 'datetime', ES.REQUIRED);
 
+    const plainRelativeToWillBeUsed =
+      unit === 'year' || unit === 'month' || unit === 'week' || years !== 0 || months !== 0 || weeks !== 0;
+    if (zonedRelativeTo !== undefined && plainRelativeToWillBeUsed) {
+      // Convert a ZonedDateTime relativeTo to PlainDate only if needed in one
+      // of the operations below, because the conversion is user visible
+      plainRelativeTo = ES.ToTemporalDate(zonedRelativeTo);
+    }
+
     // Convert larger units down to days
-    ({ years, months, weeks, days } = ES.UnbalanceDateDurationRelative(years, months, weeks, days, unit, relativeTo));
+    ({ years, months, weeks, days } = ES.UnbalanceDateDurationRelative(
+      years,
+      months,
+      weeks,
+      days,
+      unit,
+      plainRelativeTo
+    ));
     // If the unit we're totalling is smaller than `days`, convert days down to that unit.
     let balanceResult;
-    if (ES.IsTemporalZonedDateTime(relativeTo)) {
-      const intermediate = ES.MoveRelativeZonedDateTime(relativeTo, years, months, weeks, 0);
+    if (zonedRelativeTo) {
+      const intermediate = ES.MoveRelativeZonedDateTime(zonedRelativeTo, years, months, weeks, 0);
       balanceResult = ES.BalancePossiblyInfiniteTimeDurationRelative(
         days,
         hours,
@@ -441,7 +471,8 @@ export class Duration implements Temporal.Duration {
       1,
       unit,
       'trunc',
-      relativeTo
+      plainRelativeTo,
+      zonedRelativeTo
     );
     return total;
   }
@@ -553,7 +584,7 @@ export class Duration implements Temporal.Duration {
     const one = ES.ToTemporalDuration(oneParam);
     const two = ES.ToTemporalDuration(twoParam);
     const options = ES.GetOptionsObject(optionsParam);
-    let relativeTo = ES.ToRelativeTemporalObject(options);
+    let { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject(options);
     const y1 = GetSlot(one, YEARS);
     const mon1 = GetSlot(one, MONTHS);
     const w1 = GetSlot(one, WEEKS);
@@ -574,12 +605,12 @@ export class Duration implements Temporal.Duration {
     const ms2 = GetSlot(two, MILLISECONDS);
     const µs2 = GetSlot(two, MICROSECONDS);
     let ns2 = GetSlot(two, NANOSECONDS);
-    const shift1 = ES.CalculateOffsetShift(relativeTo, y1, mon1, w1, d1);
-    const shift2 = ES.CalculateOffsetShift(relativeTo, y2, mon2, w2, d2);
+    const shift1 = ES.CalculateOffsetShift(zonedRelativeTo, y1, mon1, w1, d1);
+    const shift2 = ES.CalculateOffsetShift(zonedRelativeTo, y2, mon2, w2, d2);
     if (y1 !== 0 || y2 !== 0 || mon1 !== 0 || mon2 !== 0 || w1 !== 0 || w2 !== 0) {
-      if (ES.IsTemporalZonedDateTime(relativeTo)) relativeTo = ES.ToTemporalDate(relativeTo);
-      ({ days: d1 } = ES.UnbalanceDateDurationRelative(y1, mon1, w1, d1, 'day', relativeTo));
-      ({ days: d2 } = ES.UnbalanceDateDurationRelative(y2, mon2, w2, d2, 'day', relativeTo));
+      if (zonedRelativeTo) plainRelativeTo = ES.ToTemporalDate(zonedRelativeTo);
+      ({ days: d1 } = ES.UnbalanceDateDurationRelative(y1, mon1, w1, d1, 'day', plainRelativeTo));
+      ({ days: d2 } = ES.UnbalanceDateDurationRelative(y2, mon2, w2, d2, 'day', plainRelativeTo));
     }
     const totalNs1 = ES.TotalDurationNanoseconds(d1, h1, min1, s1, ms1, µs1, ns1, shift1);
     const totalNs2 = ES.TotalDurationNanoseconds(d2, h2, min2, s2, ms2, µs2, ns2, shift2);
