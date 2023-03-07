@@ -69,6 +69,8 @@ export type Keys<T> = T extends Record<string, unknown> ? keyof T : never;
 
 export type AnyTemporalKey = Exclude<Keys<AnyTemporalLikeType>, symbol>;
 
+export type FieldKey = Exclude<AnyTemporalKey, Keys<Temporal.DurationLike>>;
+
 // The properties below are all the names of Temporal properties that can be set with `with`.
 // `timeZone` and `calendar` are not on the list because they have special methods to set them.
 

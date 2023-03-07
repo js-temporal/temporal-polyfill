@@ -26,8 +26,8 @@ import type {
   BuiltinCalendarId,
   CalendarParams as Params,
   CalendarReturn as Return,
-  AnyTemporalKey,
-  CalendarSlot
+  CalendarSlot,
+  FieldKey
 } from './internaltypes';
 import type { CalendarFieldDescriptor } from './ecmascript';
 
@@ -102,7 +102,7 @@ interface CalendarImpl {
     two: Temporal.PlainDate,
     largestUnit: 'year' | 'month' | 'week' | 'day'
   ): { years: number; months: number; weeks: number; days: number };
-  fields(fields: string[]): string[];
+  fields(fields: FieldKey[]): FieldKey[];
   fieldKeysToIgnore(keys: string[]): string[];
 }
 
@@ -187,7 +187,7 @@ export class Calendar implements Temporal.Calendar {
   }
   fields(fields: Params['fields'][0]): Return['fields'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
-    const fieldsArray = [] as string[];
+    const fieldsArray = [] as FieldKey[];
     const allowed = new OriginalSet<string>(['year', 'month', 'monthCode', 'day']);
     for (const name of fields) {
       if (typeof name !== 'string') throw new TypeError('invalid fields');
@@ -2336,7 +2336,7 @@ class NonIsoCalendar implements CalendarImpl {
     calendarSlotValue: string
   ): Temporal.PlainDate {
     const cache = new OneObjectCache();
-    const fieldNames = ['day', 'month', 'monthCode', 'year'] as AnyTemporalKey[];
+    const fieldNames = ['day', 'month', 'monthCode', 'year'] as FieldKey[];
     const extraFieldDescriptors = this.CalendarFieldDescriptors('date');
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, [], extraFieldDescriptors);
     const overflow = ES.ToTemporalOverflow(options);
@@ -2351,7 +2351,7 @@ class NonIsoCalendar implements CalendarImpl {
     calendarSlotValue: CalendarSlot
   ): Temporal.PlainYearMonth {
     const cache = new OneObjectCache();
-    const fieldNames = ['month', 'monthCode', 'year'] as AnyTemporalKey[];
+    const fieldNames = ['month', 'monthCode', 'year'] as FieldKey[];
     const extraFieldDescriptors = this.CalendarFieldDescriptors('year-month');
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, [], extraFieldDescriptors);
     const overflow = ES.ToTemporalOverflow(options);
@@ -2368,7 +2368,7 @@ class NonIsoCalendar implements CalendarImpl {
     const cache = new OneObjectCache();
     // For lunisolar calendars, either `monthCode` or `year` must be provided
     // because `month` is ambiguous without a year or a code.
-    const fieldNames = ['day', 'month', 'monthCode', 'year'] as AnyTemporalKey[];
+    const fieldNames = ['day', 'month', 'monthCode', 'year'] as FieldKey[];
     const extraFieldDescriptors = this.CalendarFieldDescriptors('date');
     const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, [], extraFieldDescriptors);
     const overflow = ES.ToTemporalOverflow(options);
@@ -2378,7 +2378,7 @@ class NonIsoCalendar implements CalendarImpl {
     cache.setObject(result);
     return result;
   }
-  fields(fields: string[]): string[] {
+  fields(fields: FieldKey[]): FieldKey[] {
     // Note that `fields` is a new array created by the caller of this method,
     // not the original input passed by the original caller. So it's safe to
     // mutate it here because the mutation is not observable.
@@ -2579,3 +2579,11 @@ for (const Helper of [
   // per-calendar logic.
   impl[helper.id] = new NonIsoCalendar(helper);
 }
+
+function calendarFieldsImpl(calendar: BuiltinCalendarId, fieldNames: FieldKey[]): FieldKey[] {
+  return impl[calendar].fields(fieldNames);
+}
+export type CalendarFieldsImplType = typeof calendarFieldsImpl;
+// Probably not what the intrinsics mechanism was intended for, but view this as
+// an export of calendarFieldsImpl while avoiding circular dependencies
+DefineIntrinsic('calendarFieldsImpl', calendarFieldsImpl);

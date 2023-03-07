@@ -1,5 +1,6 @@
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
+import type { CalendarFieldsImplType } from './calendar';
 
 import { DEBUG } from './debug';
 
@@ -52,10 +53,16 @@ type TemporalTimeZoneIntrinsicRegisteredKeys = {
   [key in keyof TemporalTimeZoneIntrinsicRegistrations as `%${key}%`]: TemporalTimeZoneIntrinsicRegistrations[key];
 };
 
+type OtherIntrinsics = {
+  calendarFieldsImpl: CalendarFieldsImplType;
+};
+type OtherIntrinsicKeys = { [key in keyof OtherIntrinsics as `%${key}%`]: OtherIntrinsics[key] };
+
 const INTRINSICS = {} as TemporalIntrinsicRegisteredKeys &
   TemporalIntrinsicPrototypeRegisteredKeys &
   TemporalTimeZoneIntrinsicRegisteredKeys &
-  TemporalCalendarIntrinsicRegisteredKeys;
+  TemporalCalendarIntrinsicRegisteredKeys &
+  OtherIntrinsicKeys;
 
 type customFormatFunction<T> = (
   this: T & { _repr_: string }, // _repr_ is present if DEBUG
@@ -137,7 +144,8 @@ type IntrinsicDefinitionKeys =
   | keyof TemporalIntrinsicRegistrations
   | keyof TemporalIntrinsicPrototypeRegistrations
   | keyof TemporalCalendarIntrinsicRegistrations
-  | keyof TemporalTimeZoneIntrinsicRegistrations;
+  | keyof TemporalTimeZoneIntrinsicRegistrations
+  | keyof OtherIntrinsics;
 export function DefineIntrinsic<KeyT extends keyof TemporalIntrinsicRegistrations>(
   name: KeyT,
   value: TemporalIntrinsicRegistrations[KeyT]
@@ -154,6 +162,7 @@ export function DefineIntrinsic<KeyT extends keyof TemporalTimeZoneIntrinsicRegi
   name: KeyT,
   value: TemporalTimeZoneIntrinsicRegistrations[KeyT]
 ): void;
+export function DefineIntrinsic<KeyT extends keyof OtherIntrinsics>(name: KeyT, value: OtherIntrinsics[KeyT]): void;
 export function DefineIntrinsic<KeyT>(name: KeyT, value: never): void;
 export function DefineIntrinsic<KeyT extends IntrinsicDefinitionKeys>(name: KeyT, value: unknown): void {
   const key: `%${IntrinsicDefinitionKeys}%` = `%${name}%`;

@@ -48,6 +48,7 @@ import type {
   Keys,
   AnyTemporalKey,
   CalendarSlot,
+  FieldKey,
   TimeZoneSlot
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
@@ -1228,12 +1229,7 @@ export function ToRelativeTemporalObject(options: {
     if (IsTemporalDate(relativeTo)) return { plainRelativeTo: relativeTo };
     if (IsTemporalDateTime(relativeTo)) return { plainRelativeTo: TemporalDateTimeToDate(relativeTo) };
     calendar = GetTemporalCalendarSlotValueWithISODefault(relativeTo);
-    const fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = CalendarFields(calendar, [
-      'day',
-      'month',
-      'monthCode',
-      'year'
-    ]);
+    const fieldNames: FieldKey[] = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
     Call(ArrayPrototypePush, fieldNames, [
       'hour',
       'microsecond',
@@ -1569,7 +1565,7 @@ export function ToTemporalDate(
       );
     }
     const calendar = GetTemporalCalendarSlotValueWithISODefault(item);
-    const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
+    const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
     const fields = PrepareTemporalFields(item, fieldNames, []);
     return CalendarDateFromFields(calendar, fields, options);
   }
@@ -1740,7 +1736,7 @@ export function ToTemporalMonthDay(
     // HasSlot above adjusts the type of 'item' to include
     // TypesWithCalendarUnits, which causes type-inference failures below.
     // This is probably indicative of problems with HasSlot's typing.
-    const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
+    const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
     const fields = PrepareTemporalFields(item, fieldNames, []);
     // Callers who omit the calendar are not writing calendar-independent
     // code. In that case, `monthCode`/`year` can be omitted; `month` and
@@ -1814,7 +1810,7 @@ export function ToTemporalYearMonth(
   if (IsObject(item)) {
     if (IsTemporalYearMonth(item)) return item;
     const calendar = GetTemporalCalendarSlotValueWithISODefault(item);
-    const fieldNames = CalendarFields(calendar, ['month', 'monthCode', 'year'] as const);
+    const fieldNames = CalendarFields(calendar, ['month', 'monthCode', 'year']);
     const fields = PrepareTemporalFields(item, fieldNames, []);
     return CalendarYearMonthFromFields(calendar, fields, options);
   }
@@ -1946,12 +1942,7 @@ export function ToTemporalZonedDateTime(
   if (IsObject(item)) {
     if (IsTemporalZonedDateTime(item)) return item;
     calendar = GetTemporalCalendarSlotValueWithISODefault(item);
-    const fieldNames: (keyof Temporal.ZonedDateTimeLike)[] = CalendarFields(calendar, [
-      'day',
-      'month',
-      'monthCode',
-      'year'
-    ]);
+    const fieldNames: FieldKey[] = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
     Call(ArrayPrototypePush, fieldNames, [
       'hour',
       'microsecond',
@@ -2288,15 +2279,18 @@ export function CreateTemporalZonedDateTime(
 
 // TODO: should (can?) we make this generic so the field names are checked
 // against the type that the calendar is a property of?
-export function CalendarFields<K extends AnyTemporalKey>(calendar: CalendarSlot, fieldNamesParam: ReadonlyArray<K>) {
+export function CalendarFields(calendar: CalendarSlot, fieldNamesParam: FieldKey[]): FieldKey[] {
   if (typeof calendar === 'string') {
-    const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
-    const calendarObj = new TemporalCalendar(calendar);
-    return Call(GetIntrinsic('%Temporal.Calendar.prototype.fields%'), calendarObj, [fieldNamesParam]) as K[];
+    if (calendar === 'iso8601') return fieldNamesParam;
+    uncheckedAssertNarrowedType<BuiltinCalendarId>(
+      calendar,
+      'calendar is guaranteed to be a built-in ID at this point, because it comes from a slot'
+    );
+    return GetIntrinsic('%calendarFieldsImpl%')(calendar, fieldNamesParam);
   }
   const fields = GetMethod(calendar, 'fields');
   const fieldNames = Call(fields, calendar, [fieldNamesParam]);
-  const result: K[] = [];
+  const result: FieldKey[] = [];
   for (const name of fieldNames) {
     if (typeof name !== 'string') throw new TypeError('bad return from calendar.fields()');
     ArrayPrototypePush.call(result, name);
@@ -5379,7 +5373,7 @@ export function DifferenceTemporalPlainYearMonth(
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'date', ['week', 'day'], 'month', 'year');
   resolvedOptions.largestUnit = settings.largestUnit;
 
-  const fieldNames = CalendarFields(calendar, ['monthCode', 'year']) as AnyTemporalKey[];
+  const fieldNames = CalendarFields(calendar, ['monthCode', 'year']);
   const thisFields = PrepareTemporalFields(yearMonth, fieldNames, []);
   thisFields.day = 1;
   const thisDate = CalendarDateFromFields(calendar, thisFields);
@@ -6021,7 +6015,7 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   ({ days } = BalanceTimeDuration(days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, 'day'));
 
   const calendar = GetSlot(yearMonth, CALENDAR);
-  const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
+  const fieldNames = CalendarFields(calendar, ['monthCode', 'year']);
   const fields = PrepareTemporalFields(yearMonth, fieldNames, []);
   const fieldsCopy = SnapshotOwnProperties(fields, null);
   fields.day = 1;
