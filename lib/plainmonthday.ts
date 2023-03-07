@@ -45,7 +45,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     const resolvedOptions = ES.SnapshotOwnProperties(ES.GetOptionsObject(options), null);
 
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year'] as const);
+    const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
     let fields = ES.PrepareTemporalFields(this, fieldNames, []);
     const partialMonthDay = ES.PrepareTemporalFields(temporalMonthDayLike, fieldNames, 'partial');
     fields = ES.CalendarMergeFields(calendar, fields, partialMonthDay);
@@ -86,10 +86,10 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     if (!ES.IsObject(item)) throw new TypeError('argument should be an object');
     const calendar = GetSlot(this, CALENDAR);
 
-    const receiverFieldNames = ES.CalendarFields(calendar, ['day', 'monthCode'] as const);
+    const receiverFieldNames = ES.CalendarFields(calendar, ['day', 'monthCode']);
     const fields = ES.PrepareTemporalFields(this, receiverFieldNames, []);
 
-    const inputFieldNames = ES.CalendarFields(calendar, ['year'] as const);
+    const inputFieldNames = ES.CalendarFields(calendar, ['year']);
     const inputFields = ES.PrepareTemporalFields(item, inputFieldNames, []);
     let mergedFields = ES.CalendarMergeFields(calendar, fields, inputFields);
     const concatenatedFieldNames: FieldKey[] = ES.Call(ArrayPrototypeConcat, receiverFieldNames, inputFieldNames);

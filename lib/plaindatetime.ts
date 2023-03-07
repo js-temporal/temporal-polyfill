@@ -419,14 +419,14 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   toPlainYearMonth(): Return['toPlainYearMonth'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year'] as const);
+    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
     const fields = ES.PrepareTemporalFields(this, fieldNames, []);
     return ES.CalendarYearMonthFromFields(calendar, fields);
   }
   toPlainMonthDay(): Return['toPlainMonthDay'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode'] as const);
+    const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode']);
     const fields = ES.PrepareTemporalFields(this, fieldNames, []);
     return ES.CalendarMonthDayFromFields(calendar, fields);
   }
