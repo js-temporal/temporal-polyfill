@@ -90,7 +90,7 @@ import {
 export const ZERO = JSBI.BigInt(0);
 const ONE = JSBI.BigInt(1);
 const SIXTY = JSBI.BigInt(60);
-const TWENTY_FOUR = JSBI.BigInt(24);
+export const TWENTY_FOUR = JSBI.BigInt(24);
 export const THOUSAND = JSBI.BigInt(1e3);
 export const MILLION = JSBI.BigInt(1e6);
 export const BILLION = JSBI.BigInt(1e9);
@@ -3172,7 +3172,7 @@ export function TemporalDurationToString(
 ) {
   const sign = DurationSign(years, months, weeks, days, hours, minutes, seconds, ms, µs, ns);
 
-  let total = TotalDurationNanoseconds(0, 0, 0, seconds, ms, µs, ns, 0);
+  let total = TotalDurationNanoseconds(0, 0, seconds, ms, µs, ns);
   let nsBigInt: JSBI, µsBigInt: JSBI, msBigInt: JSBI, secondsBigInt: JSBI;
   ({ quotient: total, remainder: nsBigInt } = divmod(total, THOUSAND));
   ({ quotient: total, remainder: µsBigInt } = divmod(total, THOUSAND));
@@ -3924,24 +3924,18 @@ function BalanceTime(
 }
 
 export function TotalDurationNanoseconds(
-  daysParam: number,
   hoursParam: number | JSBI,
   minutesParam: number | JSBI,
   secondsParam: number | JSBI,
   millisecondsParam: number | JSBI,
   microsecondsParam: number | JSBI,
-  nanosecondsParam: number | JSBI,
-  offsetShift: number
+  nanosecondsParam: number | JSBI
 ) {
-  const days: JSBI = JSBI.BigInt(daysParam);
-  let nanoseconds: JSBI = JSBI.BigInt(nanosecondsParam);
-  if (daysParam !== 0) nanoseconds = JSBI.subtract(JSBI.BigInt(nanosecondsParam), JSBI.BigInt(offsetShift));
-  const hours = JSBI.add(JSBI.BigInt(hoursParam), JSBI.multiply(days, JSBI.BigInt(24)));
-  const minutes = JSBI.add(JSBI.BigInt(minutesParam), JSBI.multiply(hours, SIXTY));
+  const minutes = JSBI.add(JSBI.BigInt(minutesParam), JSBI.multiply(JSBI.BigInt(hoursParam), SIXTY));
   const seconds = JSBI.add(JSBI.BigInt(secondsParam), JSBI.multiply(minutes, SIXTY));
   const milliseconds = JSBI.add(JSBI.BigInt(millisecondsParam), JSBI.multiply(seconds, THOUSAND));
   const microseconds = JSBI.add(JSBI.BigInt(microsecondsParam), JSBI.multiply(milliseconds, THOUSAND));
-  return JSBI.add(JSBI.BigInt(nanoseconds), JSBI.multiply(microseconds, THOUSAND));
+  return JSBI.add(JSBI.BigInt(nanosecondsParam), JSBI.multiply(microseconds, THOUSAND));
 }
 
 function NanosecondsToDays(nanosecondsParam: JSBI, zonedRelativeTo: Temporal.ZonedDateTime) {
@@ -4095,15 +4089,15 @@ export function BalancePossiblyInfiniteTimeDuration(
     minutesBigInt: JSBI,
     hoursBigInt: JSBI,
     daysBigInt: JSBI;
+  daysBigInt = JSBI.BigInt(daysParam);
+  hoursBigInt = JSBI.add(JSBI.BigInt(hoursParam), JSBI.multiply(daysBigInt, TWENTY_FOUR));
   nanosecondsBigInt = TotalDurationNanoseconds(
-    daysParam,
-    hoursParam,
+    hoursBigInt,
     minutesParam,
     secondsParam,
     millisecondsParam,
     microsecondsParam,
-    nanosecondsParam,
-    0
+    nanosecondsParam
   );
 
   const sign = JSBI.lessThan(nanosecondsBigInt, ZERO) ? -1 : 1;
@@ -4549,27 +4543,6 @@ export function BalanceDateDurationRelative(
     weeks: JSBI.toNumber(weeks),
     days: JSBI.toNumber(days)
   };
-}
-
-export function CalculateOffsetShift(
-  relativeTo: Temporal.ZonedDateTime | undefined,
-  y: number,
-  mon: number,
-  w: number,
-  d: number
-) {
-  if (IsTemporalZonedDateTime(relativeTo)) {
-    const instant = GetSlot(relativeTo, INSTANT);
-    const timeZone = GetSlot(relativeTo, TIME_ZONE);
-    const calendar = GetSlot(relativeTo, CALENDAR);
-    const offsetBefore = GetOffsetNanosecondsFor(timeZone, instant);
-    const after = AddZonedDateTime(instant, timeZone, calendar, y, mon, w, d, 0, 0, 0, 0, 0, 0);
-    const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-    const instantAfter = new TemporalInstant(after);
-    const offsetAfter = GetOffsetNanosecondsFor(timeZone, instantAfter);
-    return offsetAfter - offsetBefore;
-  }
-  return 0;
 }
 
 export function CreateNegatedTemporalDuration(duration: Temporal.Duration) {
@@ -6345,16 +6318,7 @@ export function AdjustRoundedDurationDays(
   // duration, there's no way for another full day to come from the next
   // round of rounding. And if it were possible (e.g. contrived calendar
   // with 30-minute-long "days") then it'd risk an infinite loop.
-  let timeRemainderNs = TotalDurationNanoseconds(
-    0,
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds,
-    0
-  );
+  let timeRemainderNs = TotalDurationNanoseconds(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   const direction = MathSign(JSBI.toNumber(timeRemainderNs));
 
   const timeZone = GetSlot(zonedRelativeTo, TIME_ZONE);
@@ -6487,7 +6451,7 @@ export function RoundDuration(
   // larger. We'll cast away `undefined` when it's used lower down below.
   let dayLengthNs: JSBI | undefined;
   if (unit === 'year' || unit === 'month' || unit === 'week' || unit === 'day') {
-    nanoseconds = TotalDurationNanoseconds(0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, 0);
+    nanoseconds = TotalDurationNanoseconds(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
     let deltaDays;
     if (zonedRelativeTo) {
       const intermediate = MoveRelativeZonedDateTime(zonedRelativeTo, years, months, weeks, days);
