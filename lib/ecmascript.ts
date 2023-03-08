@@ -3983,7 +3983,7 @@ function NanosecondsToDays(nanosecondsParam: JSBI, zonedRelativeTo: Temporal.Zon
     'day',
     ObjectCreate(null) as Temporal.DifferenceOptions<Temporal.DateTimeUnit>
   );
-  let intermediateNs = AddZonedDateTime(start, timeZone, calendar, 0, 0, 0, daysNumber, 0, 0, 0, 0, 0, 0);
+  let intermediateNs = AddZonedDateTime(start, timeZone, calendar, 0, 0, 0, daysNumber, 0, 0, 0, 0, 0, 0, dtStart);
   // may disambiguate
 
   // If clock time after addition was in the middle of a skipped period, the
@@ -4011,7 +4011,8 @@ function NanosecondsToDays(nanosecondsParam: JSBI, zonedRelativeTo: Temporal.Zon
         0,
         0,
         0,
-        0
+        0,
+        dtStart
       );
       // may do disambiguation
     }
@@ -5048,7 +5049,22 @@ function DifferenceZonedDateTime(
     largestUnit,
     options
   );
-  const intermediateNs = AddZonedDateTime(start, timeZone, calendar, years, months, weeks, 0, 0, 0, 0, 0, 0, 0);
+  const intermediateNs = AddZonedDateTime(
+    start,
+    timeZone,
+    calendar,
+    years,
+    months,
+    weeks,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    dtStart
+  );
   // may disambiguate
   let timeRemainderNs = JSBI.subtract(ns2, intermediateNs);
   const intermediate = CreateTemporalZonedDateTime(intermediateNs, timeZone, calendar);
@@ -5813,6 +5829,7 @@ export function AddZonedDateTime(
   ms: number | JSBI,
   µs: number | JSBI,
   ns: number | JSBI,
+  precalculatedPlainDateTime?: Temporal.PlainDateTime,
   options?: Temporal.ArithmeticOptions
 ) {
   // If only time is to be added, then use Instant math. It's not OK to fall
@@ -5830,7 +5847,7 @@ export function AddZonedDateTime(
 
   // RFC 5545 requires the date portion to be added in calendar days and the
   // time portion to be added in exact time.
-  const dt = GetPlainDateTimeFor(timeZone, instant, calendar);
+  const dt = precalculatedPlainDateTime ?? GetPlainDateTimeFor(timeZone, instant, calendar);
   const datePart = CreateTemporalDate(GetSlot(dt, ISO_YEAR), GetSlot(dt, ISO_MONTH), GetSlot(dt, ISO_DAY), calendar);
   const dateDuration = new TemporalDuration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   const addedDate = CalendarDateAdd(calendar, datePart, dateDuration, options);
@@ -6070,6 +6087,7 @@ export function AddDurationToOrSubtractDurationFromZonedDateTime(
     sign * milliseconds,
     sign * microseconds,
     sign * nanoseconds,
+    undefined,
     options
   );
   return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
