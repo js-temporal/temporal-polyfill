@@ -397,20 +397,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     let nanosecond = GetSlot(dt, ISO_NANOSECOND);
 
     const calendar = GetSlot(this, CALENDAR);
-    const dtStart = ES.CreateTemporalDateTime(
-      GetSlot(dt, ISO_YEAR),
-      GetSlot(dt, ISO_MONTH),
-      GetSlot(dt, ISO_DAY),
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      'iso8601'
-    );
+    const dtStart = ES.CreateTemporalDateTime(year, month, day, 0, 0, 0, 0, 0, 0, 'iso8601');
     const instantStart = ES.GetInstantFor(timeZone, dtStart, 'compatible');
-    const endNs = ES.AddZonedDateTime(instantStart, timeZone, calendar, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0);
+    const endNs = ES.AddZonedDateTime(instantStart, timeZone, calendar, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, dtStart);
     const dayLengthNs = JSBI.subtract(endNs, JSBI.BigInt(GetSlot(instantStart, EPOCHNANOSECONDS)));
     if (JSBI.lessThanOrEqual(dayLengthNs, ZERO)) {
       throw new RangeError('cannot round a ZonedDateTime in a calendar with zero or negative length days');
