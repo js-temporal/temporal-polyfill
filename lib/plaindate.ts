@@ -124,7 +124,7 @@ export class PlainDate implements Temporal.PlainDate {
     const duration = ES.ToTemporalDuration(temporalDurationLike);
     const options = ES.GetOptionsObject(optionsParam);
 
-    return ES.CalendarDateAdd(GetSlot(this, CALENDAR), this, duration, options);
+    return ES.AddDate(GetSlot(this, CALENDAR), this, duration, options);
   }
   subtract(
     temporalDurationLike: Params['subtract'][0],
@@ -135,7 +135,7 @@ export class PlainDate implements Temporal.PlainDate {
     const duration = ES.CreateNegatedTemporalDuration(ES.ToTemporalDuration(temporalDurationLike));
     const options = ES.GetOptionsObject(optionsParam);
 
-    return ES.CalendarDateAdd(GetSlot(this, CALENDAR), this, duration, options);
+    return ES.AddDate(GetSlot(this, CALENDAR), this, duration, options);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
