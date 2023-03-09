@@ -3977,7 +3977,7 @@ function NanosecondsToDays(nanosecondsParam: JSBI, zonedRelativeTo: Temporal.Zon
     'day',
     ObjectCreate(null) as Temporal.DifferenceOptions<Temporal.DateTimeUnit>
   );
-  let intermediateNs = AddZonedDateTime(start, timeZone, calendar, 0, 0, 0, daysNumber, 0, 0, 0, 0, 0, 0, dtStart);
+  let relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZone, calendar, daysNumber);
   // may disambiguate
 
   // If clock time after addition was in the middle of a skipped period, the
@@ -3990,44 +3990,34 @@ function NanosecondsToDays(nanosecondsParam: JSBI, zonedRelativeTo: Temporal.Zon
   // `disambiguation: 'compatible'` can change clock time is forwards.
   let daysBigInt = JSBI.BigInt(daysNumber);
   if (sign === 1) {
-    while (JSBI.greaterThan(daysBigInt, ZERO) && JSBI.greaterThan(intermediateNs, endNs)) {
+    while (JSBI.greaterThan(daysBigInt, ZERO) && JSBI.greaterThan(relativeResult.epochNs, endNs)) {
       daysBigInt = JSBI.subtract(daysBigInt, ONE);
-      intermediateNs = AddZonedDateTime(
-        start,
-        timeZone,
-        calendar,
-        0,
-        0,
-        0,
-        JSBI.toNumber(daysBigInt),
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        dtStart
-      );
+      relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZone, calendar, JSBI.toNumber(daysBigInt));
       // may do disambiguation
     }
   }
-  nanoseconds = JSBI.subtract(endNs, intermediateNs);
+  nanoseconds = JSBI.subtract(endNs, relativeResult.epochNs);
 
   let isOverflow = false;
-  let relativeInstant = new TemporalInstant(intermediateNs);
   let dayLengthNs;
   do {
     // calculate length of the next day (day that contains the time remainder)
-    const oneDayFartherNs = AddZonedDateTime(relativeInstant, timeZone, calendar, 0, 0, 0, sign, 0, 0, 0, 0, 0, 0);
-    const relativeNs = GetSlot(relativeInstant, EPOCHNANOSECONDS);
-    dayLengthNs = JSBI.toNumber(JSBI.subtract(oneDayFartherNs, relativeNs));
+    const oneDayFarther = AddDaysToZonedDateTime(
+      relativeResult.instant,
+      relativeResult.dateTime,
+      timeZone,
+      calendar,
+      sign
+    );
+
+    dayLengthNs = JSBI.toNumber(JSBI.subtract(oneDayFarther.epochNs, relativeResult.epochNs));
     isOverflow = JSBI.greaterThanOrEqual(
       JSBI.multiply(JSBI.subtract(nanoseconds, JSBI.BigInt(dayLengthNs)), JSBI.BigInt(sign)),
       ZERO
     );
     if (isOverflow) {
       nanoseconds = JSBI.subtract(nanoseconds, JSBI.BigInt(dayLengthNs));
-      relativeInstant = new TemporalInstant(oneDayFartherNs);
+      relativeResult = oneDayFarther;
       daysBigInt = JSBI.add(daysBigInt, JSBI.BigInt(sign));
     }
   } while (isOverflow);
@@ -5843,6 +5833,58 @@ export function AddZonedDateTime(
   return AddInstant(GetSlot(instantIntermediate, EPOCHNANOSECONDS), h, min, s, ms, µs, ns);
 }
 
+type AddDaysRecord = {
+  instant: Temporal.Instant;
+  dateTime: Temporal.PlainDateTime;
+  epochNs: JSBI;
+};
+
+export function AddDaysToZonedDateTime(
+  instant: Temporal.Instant,
+  dateTime: Temporal.PlainDateTime,
+  timeZone: TimeZoneSlot,
+  calendar: CalendarSlot,
+  days: number
+): AddDaysRecord {
+  // Same as AddZonedDateTime above, but an optimized version with fewer
+  // observable calls that only adds a number of days. Returns an object with
+  // all three versions of the ZonedDateTime: epoch nanoseconds, Instant, and
+  // PlainDateTime
+  if (days === 0) {
+    return { instant, dateTime, epochNs: GetSlot(instant, EPOCHNANOSECONDS) };
+  }
+
+  const addedDate = AddISODate(
+    GetSlot(dateTime, ISO_YEAR),
+    GetSlot(dateTime, ISO_MONTH),
+    GetSlot(dateTime, ISO_DAY),
+    0,
+    0,
+    0,
+    days,
+    'constrain'
+  );
+  const dateTimeResult = CreateTemporalDateTime(
+    addedDate.year,
+    addedDate.month,
+    addedDate.day,
+    GetSlot(dateTime, ISO_HOUR),
+    GetSlot(dateTime, ISO_MINUTE),
+    GetSlot(dateTime, ISO_SECOND),
+    GetSlot(dateTime, ISO_MILLISECOND),
+    GetSlot(dateTime, ISO_MICROSECOND),
+    GetSlot(dateTime, ISO_NANOSECOND),
+    calendar
+  );
+
+  const instantResult = GetInstantFor(timeZone, dateTimeResult, 'compatible');
+  return {
+    instant: instantResult,
+    dateTime: dateTimeResult,
+    epochNs: GetSlot(instantResult, EPOCHNANOSECONDS)
+  };
+}
+
 type AddSubtractOperation = 'add' | 'subtract';
 
 export function AddDurationToOrSubtractDurationFromDuration(
@@ -6339,21 +6381,9 @@ export function AdjustRoundedDurationDays(
     0
   );
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-  const dayEnd = AddZonedDateTime(
-    new TemporalInstant(dayStart),
-    timeZone,
-    calendar,
-    0,
-    0,
-    0,
-    direction,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0
-  );
+  const dayStartInstant = new TemporalInstant(dayStart);
+  const dayStartDateTime = GetPlainDateTimeFor(timeZone, dayStartInstant, calendar);
+  const dayEnd = AddDaysToZonedDateTime(dayStartInstant, dayStartDateTime, timeZone, calendar, direction).epochNs;
   const dayLengthNs = JSBI.subtract(dayEnd, dayStart);
 
   const oneDayLess = JSBI.subtract(timeRemainderNs, dayLengthNs);
