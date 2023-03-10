@@ -2634,19 +2634,16 @@ export function TemporalDateTimeToTime(dateTime: Temporal.PlainDateTime) {
 
 export function GetOffsetNanosecondsFor(
   timeZone: string | Temporal.TimeZoneProtocol,
-  instant: TimeZoneProtocolParams['getOffsetNanosecondsFor'][0]
+  instant: TimeZoneProtocolParams['getOffsetNanosecondsFor'][0],
+  getOffsetNanosecondsForParam?: Temporal.TimeZoneProtocol['getOffsetNanosecondsFor']
 ) {
   if (typeof timeZone === 'string') {
     const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
     const timeZoneObject = new TemporalTimeZone(timeZone);
     return Call(GetIntrinsic('%Temporal.TimeZone.prototype.getOffsetNanosecondsFor%'), timeZoneObject, [instant]);
   }
-
-  const getOffsetNanosecondsFor = GetMethod(timeZone, 'getOffsetNanosecondsFor');
-  if (typeof getOffsetNanosecondsFor !== 'function') {
-    throw new TypeError('getOffsetNanosecondsFor not callable');
-  }
-  const offsetNs = Reflect.apply(getOffsetNanosecondsFor, timeZone, [instant]);
+  const getOffsetNanosecondsFor = getOffsetNanosecondsForParam ?? GetMethod(timeZone, 'getOffsetNanosecondsFor');
+  const offsetNs = Call(getOffsetNanosecondsFor, timeZone, [instant]);
   if (typeof offsetNs !== 'number') {
     throw new TypeError('bad return from getOffsetNanosecondsFor');
   }
@@ -2824,14 +2821,15 @@ function DisambiguatePossibleInstants(
 
 function GetPossibleInstantsFor(
   timeZone: string | Temporal.TimeZoneProtocol,
-  dateTime: TimeZoneProtocolParams['getPossibleInstantsFor'][0]
+  dateTime: TimeZoneProtocolParams['getPossibleInstantsFor'][0],
+  getPossibleInstantsForParam?: Temporal.TimeZoneProtocol['getPossibleInstantsFor']
 ) {
   if (typeof timeZone === 'string') {
     const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
     const timeZoneObject = new TemporalTimeZone(timeZone);
     return Call(GetIntrinsic('%Temporal.TimeZone.prototype.getPossibleInstantsFor%'), timeZoneObject, [dateTime]);
   }
-  const getPossibleInstantsFor = GetMethod(timeZone, 'getPossibleInstantsFor');
+  const getPossibleInstantsFor = getPossibleInstantsForParam ?? GetMethod(timeZone, 'getPossibleInstantsFor');
   const possibleInstants = Call(getPossibleInstantsFor, timeZone, [dateTime]);
   const result: Temporal.Instant[] = [];
   for (const instant of possibleInstants) {
