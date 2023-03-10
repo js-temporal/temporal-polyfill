@@ -1891,14 +1891,18 @@ export function InterpretISODateTimeOffset(
 
   // "prefer" or "reject"
   const possibleInstants = GetPossibleInstantsFor(timeZone, dt);
-  for (let index = 0; index < possibleInstants.length; index++) {
-    const candidate = possibleInstants[index];
-    const candidateOffset = GetOffsetNanosecondsFor(timeZone, candidate);
-    const roundedCandidateOffset = JSBI.toNumber(
-      RoundNumberToIncrement(JSBI.BigInt(candidateOffset), MINUTE_NANOS, 'halfExpand')
-    );
-    if (candidateOffset === offsetNs || (matchMinute && roundedCandidateOffset === offsetNs)) {
-      return GetSlot(candidate, EPOCHNANOSECONDS);
+  if (possibleInstants.length > 0) {
+    const getOffsetNanosecondsFor =
+      typeof timeZone !== 'string' ? GetMethod(timeZone, 'getOffsetNanosecondsFor') : undefined;
+    for (let index = 0; index < possibleInstants.length; index++) {
+      const candidate = possibleInstants[index];
+      const candidateOffset = GetOffsetNanosecondsFor(timeZone, candidate, getOffsetNanosecondsFor);
+      const roundedCandidateOffset = JSBI.toNumber(
+        RoundNumberToIncrement(JSBI.BigInt(candidateOffset), MINUTE_NANOS, 'halfExpand')
+      );
+      if (candidateOffset === offsetNs || (matchMinute && roundedCandidateOffset === offsetNs)) {
+        return GetSlot(candidate, EPOCHNANOSECONDS);
+      }
     }
   }
 
@@ -2970,8 +2974,10 @@ function DisambiguatePossibleInstants(
   const dayBefore = new Instant(JSBI.subtract(utcns, DAY_NANOS));
   const dayAfter = new Instant(JSBI.add(utcns, DAY_NANOS));
 
-  const offsetBefore = GetOffsetNanosecondsFor(timeZone, dayBefore);
-  const offsetAfter = GetOffsetNanosecondsFor(timeZone, dayAfter);
+  const getOffsetNanosecondsFor =
+    typeof timeZone !== 'string' ? GetMethod(timeZone, 'getOffsetNanosecondsFor') : undefined;
+  const offsetBefore = GetOffsetNanosecondsFor(timeZone, dayBefore, getOffsetNanosecondsFor);
+  const offsetAfter = GetOffsetNanosecondsFor(timeZone, dayAfter, getOffsetNanosecondsFor);
   const nanoseconds = offsetAfter - offsetBefore;
   switch (disambiguation) {
     case 'earlier': {
