@@ -1,5 +1,6 @@
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
+import { TimeZoneMethodRecord } from './methodrecord';
 
 import {
   ISO_YEAR,
@@ -416,7 +417,8 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     const timeZone = ES.ToTemporalTimeZoneSlotValue(temporalTimeZoneLike);
     const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
-    const instant = ES.GetInstantFor(timeZone, this, disambiguation);
+    const timeZoneRec = new TimeZoneMethodRecord(timeZone, ['getPossibleInstantsFor']);
+    const instant = ES.GetInstantFor(timeZoneRec, this, disambiguation);
     return ES.CreateTemporalZonedDateTime(GetSlot(instant, EPOCHNANOSECONDS), timeZone, GetSlot(this, CALENDAR));
   }
   toPlainDate(): Return['toPlainDate'] {
