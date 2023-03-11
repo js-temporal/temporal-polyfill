@@ -1,5 +1,6 @@
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
+import { CalendarMethodRecord } from './methodrecord';
 import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, GetSlot } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
@@ -70,14 +71,18 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     ES.RejectTemporalLikeObject(temporalYearMonthLike);
     const resolvedOptions = ES.SnapshotOwnProperties(ES.GetOptionsObject(options), null);
 
-    const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['month', 'monthCode', 'year']);
+    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), [
+      'fields',
+      'mergeFields',
+      'yearMonthFromFields'
+    ]);
+    const fieldNames = ES.CalendarFields(calendarRec, ['month', 'monthCode', 'year']);
     let fields = ES.PrepareTemporalFields(this, fieldNames, []);
     const partialYearMonth = ES.PrepareTemporalFields(temporalYearMonthLike, fieldNames, 'partial');
-    fields = ES.CalendarMergeFields(calendar, fields, partialYearMonth);
+    fields = ES.CalendarMergeFields(calendarRec, fields, partialYearMonth);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
 
-    return ES.CalendarYearMonthFromFields(calendar, fields, resolvedOptions);
+    return ES.CalendarYearMonthFromFields(calendarRec, fields, resolvedOptions);
   }
   add(temporalDurationLike: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
@@ -129,19 +134,19 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   toPlainDate(item: Params['toPlainDate'][0]): Return['toPlainDate'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(item)) throw new TypeError('argument should be an object');
-    const calendar = GetSlot(this, CALENDAR);
+    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['dateFromFields', 'fields', 'mergeFields']);
 
-    const receiverFieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
+    const receiverFieldNames = ES.CalendarFields(calendarRec, ['monthCode', 'year']);
     const fields = ES.PrepareTemporalFields(this, receiverFieldNames, []);
 
-    const inputFieldNames = ES.CalendarFields(calendar, ['day']);
+    const inputFieldNames = ES.CalendarFields(calendarRec, ['day']);
     const inputFields = ES.PrepareTemporalFields(item, inputFieldNames, []);
-    let mergedFields = ES.CalendarMergeFields(calendar, fields, inputFields);
+    let mergedFields = ES.CalendarMergeFields(calendarRec, fields, inputFields);
     const concatenatedFieldNames: FieldKey[] = ES.Call(ArrayPrototypeConcat, receiverFieldNames, inputFieldNames);
     mergedFields = ES.PrepareTemporalFields(mergedFields, concatenatedFieldNames, [], [], 'ignore');
     const options = ObjectCreate(null);
     options.overflow = 'reject';
-    return ES.CalendarDateFromFields(calendar, mergedFields, options);
+    return ES.CalendarDateFromFields(calendarRec, mergedFields, options);
   }
   getISOFields(): Return['getISOFields'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');

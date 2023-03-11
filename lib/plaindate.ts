@@ -1,6 +1,6 @@
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
-import { TimeZoneMethodRecord } from './methodrecord';
+import { CalendarMethodRecord, TimeZoneMethodRecord } from './methodrecord';
 import {
   ISO_YEAR,
   ISO_MONTH,
@@ -13,6 +13,9 @@ import {
   ISO_NANOSECOND,
   CALENDAR,
   EPOCHNANOSECONDS,
+  MONTHS,
+  WEEKS,
+  YEARS,
   GetSlot
 } from './slots';
 import type { Temporal } from '..';
@@ -59,7 +62,8 @@ export class PlainDate implements Temporal.PlainDate {
   }
   get day(): Return['day'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
-    return ES.CalendarDay(GetSlot(this, CALENDAR), this);
+    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['day']);
+    return ES.CalendarDay(calendarRec, this);
   }
   get dayOfWeek(): Return['dayOfWeek'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
@@ -105,14 +109,14 @@ export class PlainDate implements Temporal.PlainDate {
     ES.RejectTemporalLikeObject(temporalDateLike);
     const resolvedOptions = ES.SnapshotOwnProperties(ES.GetOptionsObject(options), null);
 
-    const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
+    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['dateFromFields', 'fields', 'mergeFields']);
+    const fieldNames = ES.CalendarFields(calendarRec, ['day', 'month', 'monthCode', 'year']);
     let fields = ES.PrepareTemporalFields(this, fieldNames, []);
     const partialDate = ES.PrepareTemporalFields(temporalDateLike, fieldNames, 'partial');
-    fields = ES.CalendarMergeFields(calendar, fields, partialDate);
+    fields = ES.CalendarMergeFields(calendarRec, fields, partialDate);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
 
-    return ES.CalendarDateFromFields(calendar, fields, resolvedOptions);
+    return ES.CalendarDateFromFields(calendarRec, fields, resolvedOptions);
   }
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
@@ -125,7 +129,12 @@ export class PlainDate implements Temporal.PlainDate {
     const duration = ES.ToTemporalDuration(temporalDurationLike);
     const options = ES.GetOptionsObject(optionsParam);
 
-    return ES.AddDate(GetSlot(this, CALENDAR), this, duration, options);
+    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR));
+    if (GetSlot(duration, YEARS) !== 0 || GetSlot(duration, MONTHS) !== 0 || GetSlot(duration, WEEKS) !== 0) {
+      calendarRec.lookup('dateAdd');
+    }
+
+    return ES.AddDate(calendarRec, this, duration, options);
   }
   subtract(
     temporalDurationLike: Params['subtract'][0],
@@ -136,7 +145,12 @@ export class PlainDate implements Temporal.PlainDate {
     const duration = ES.CreateNegatedTemporalDuration(ES.ToTemporalDuration(temporalDurationLike));
     const options = ES.GetOptionsObject(optionsParam);
 
-    return ES.AddDate(GetSlot(this, CALENDAR), this, duration, options);
+    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR));
+    if (GetSlot(duration, YEARS) !== 0 || GetSlot(duration, MONTHS) !== 0 || GetSlot(duration, WEEKS) !== 0) {
+      calendarRec.lookup('dateAdd');
+    }
+
+    return ES.AddDate(calendarRec, this, duration, options);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
@@ -276,17 +290,17 @@ export class PlainDate implements Temporal.PlainDate {
   }
   toPlainYearMonth(): Return['toPlainYearMonth'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
-    const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['monthCode', 'year']);
+    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['fields', 'yearMonthFromFields']);
+    const fieldNames = ES.CalendarFields(calendarRec, ['monthCode', 'year']);
     const fields = ES.PrepareTemporalFields(this, fieldNames, []);
-    return ES.CalendarYearMonthFromFields(calendar, fields);
+    return ES.CalendarYearMonthFromFields(calendarRec, fields);
   }
   toPlainMonthDay(): Return['toPlainMonthDay'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
-    const calendar = GetSlot(this, CALENDAR);
-    const fieldNames = ES.CalendarFields(calendar, ['day', 'monthCode']);
+    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['fields', 'monthDayFromFields']);
+    const fieldNames = ES.CalendarFields(calendarRec, ['day', 'monthCode']);
     const fields = ES.PrepareTemporalFields(this, fieldNames, []);
-    return ES.CalendarMonthDayFromFields(calendar, fields);
+    return ES.CalendarMonthDayFromFields(calendarRec, fields);
   }
   getISOFields(): Return['getISOFields'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
