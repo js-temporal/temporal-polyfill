@@ -32,7 +32,6 @@ import type {
   AnyTemporalLikeType,
   UnitSmallerThanOrEqualTo,
   CalendarProtocolParams,
-  TimeZoneProtocolParams,
   InstantParams,
   PlainMonthDayParams,
   ZonedDateTimeParams,
@@ -52,6 +51,7 @@ import type {
   TimeZoneSlot
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
+import { TimeZoneMethodRecord } from './methodrecord';
 import {
   CreateSlots,
   GetSlot,
@@ -1216,8 +1216,8 @@ export function ToRelativeTemporalObject(options: {
     | string
     | undefined;
 }):
-  | { zonedRelativeTo?: Temporal.ZonedDateTime; plainRelativeTo?: never }
-  | { plainRelativeTo?: Temporal.PlainDate; zonedRelativeTo?: never } {
+  | { zonedRelativeTo?: Temporal.ZonedDateTime; timeZoneRec?: TimeZoneMethodRecord; plainRelativeTo?: never }
+  | { plainRelativeTo?: Temporal.PlainDate; timeZoneRec?: never; zonedRelativeTo?: never } {
   const relativeTo = options.relativeTo;
   if (relativeTo === undefined) return {};
 
@@ -1225,7 +1225,13 @@ export function ToRelativeTemporalObject(options: {
   let matchMinutes = false;
   let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, timeZone, offset;
   if (IsObject(relativeTo)) {
-    if (IsTemporalZonedDateTime(relativeTo)) return { zonedRelativeTo: relativeTo };
+    if (IsTemporalZonedDateTime(relativeTo)) {
+      const timeZoneRec = new TimeZoneMethodRecord(GetSlot(relativeTo, TIME_ZONE), [
+        'getOffsetNanosecondsFor',
+        'getPossibleInstantsFor'
+      ]);
+      return { zonedRelativeTo: relativeTo, timeZoneRec };
+    }
     if (IsTemporalDate(relativeTo)) return { plainRelativeTo: relativeTo };
     if (IsTemporalDateTime(relativeTo)) return { plainRelativeTo: TemporalDateTimeToDate(relativeTo) };
     calendar = GetTemporalCalendarSlotValueWithISODefault(relativeTo);
@@ -1287,6 +1293,7 @@ export function ToRelativeTemporalObject(options: {
     calendar = ASCIILowercase(calendar);
   }
   if (timeZone === undefined) return { plainRelativeTo: CreateTemporalDate(year, month, day, calendar) };
+  const timeZoneRec = new TimeZoneMethodRecord(timeZone, ['getOffsetNanosecondsFor', 'getPossibleInstantsFor']);
   const offsetNs = offsetBehaviour === 'option' ? ParseDateTimeUTCOffset(castExists(offset)) : 0;
   const epochNanoseconds = InterpretISODateTimeOffset(
     year,
@@ -1300,12 +1307,12 @@ export function ToRelativeTemporalObject(options: {
     nanosecond,
     offsetBehaviour,
     offsetNs,
-    timeZone,
+    timeZoneRec,
     'compatible',
     'reject',
     matchMinutes
   );
-  return { zonedRelativeTo: CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar) };
+  return { zonedRelativeTo: CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar), timeZoneRec };
 }
 
 export function DefaultTemporalLargestUnit(
@@ -1547,7 +1554,8 @@ export function ToTemporalDate(
     if (IsTemporalDate(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
       ToTemporalOverflow(options); // validate and ignore
-      const pdt = GetPlainDateTimeFor(GetSlot(item, TIME_ZONE), GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
+      const timeZoneRec = new TimeZoneMethodRecord(GetSlot(item, TIME_ZONE), ['getOffsetNanosecondsFor']);
+      const pdt = GetPlainDateTimeFor(timeZoneRec, GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
       return CreateTemporalDate(
         GetSlot(pdt, ISO_YEAR),
         GetSlot(pdt, ISO_MONTH),
@@ -1619,7 +1627,8 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
     if (IsTemporalDateTime(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
       ToTemporalOverflow(resolvedOptions); // validate and ignore
-      return GetPlainDateTimeFor(GetSlot(item, TIME_ZONE), GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
+      const timeZoneRec = new TimeZoneMethodRecord(GetSlot(item, TIME_ZONE), ['getOffsetNanosecondsFor']);
+      return GetPlainDateTimeFor(timeZoneRec, GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
     }
     if (IsTemporalDate(item)) {
       ToTemporalOverflow(resolvedOptions); // validate and ignore
@@ -1765,7 +1774,8 @@ export function ToTemporalTime(
   if (IsObject(item)) {
     if (IsTemporalTime(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
-      item = GetPlainDateTimeFor(GetSlot(item, TIME_ZONE), GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
+      const timeZoneRec = new TimeZoneMethodRecord(GetSlot(item, TIME_ZONE), ['getOffsetNanosecondsFor']);
+      item = GetPlainDateTimeFor(timeZoneRec, GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
     }
     if (IsTemporalDateTime(item)) {
       const TemporalPlainTime = GetIntrinsic('%Temporal.PlainTime%');
@@ -1838,11 +1848,14 @@ export function InterpretISODateTimeOffset(
   nanosecond: number,
   offsetBehaviour: OffsetBehaviour,
   offsetNs: number,
-  timeZone: string | Temporal.TimeZoneProtocol,
+  timeZoneRec: TimeZoneMethodRecord,
   disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>,
   offsetOpt: Temporal.OffsetDisambiguationOptions['offset'],
   matchMinute: boolean
 ) {
+  // If offsetBehaviour !== "exact" and offsetOpt !== "use", at least
+  // getPossibleInstantsFor should be looked up in advance. timeZoneRec may be
+  // modified by looking up getOffsetNanosecondsFor as needed.
   const dt = CreateTemporalDateTime(
     year,
     month,
@@ -1859,7 +1872,7 @@ export function InterpretISODateTimeOffset(
   if (offsetBehaviour === 'wall' || offsetOpt === 'ignore') {
     // Simple case: ISO string without a TZ offset (or caller wants to ignore
     // the offset), so just convert DateTime to Instant in the given time zone
-    const instant = GetInstantFor(timeZone, dt, disambiguation);
+    const instant = GetInstantFor(timeZoneRec, dt, disambiguation);
     return GetSlot(instant, EPOCHNANOSECONDS);
   }
 
@@ -1885,13 +1898,12 @@ export function InterpretISODateTimeOffset(
   }
 
   // "prefer" or "reject"
-  const possibleInstants = GetPossibleInstantsFor(timeZone, dt);
+  const possibleInstants = GetPossibleInstantsFor(timeZoneRec, dt);
   if (possibleInstants.length > 0) {
-    const getOffsetNanosecondsFor =
-      typeof timeZone !== 'string' ? GetMethod(timeZone, 'getOffsetNanosecondsFor') : undefined;
+    if (!timeZoneRec.hasLookedUp('getOffsetNanosecondsFor')) timeZoneRec.lookup('getOffsetNanosecondsFor');
     for (let index = 0; index < possibleInstants.length; index++) {
       const candidate = possibleInstants[index];
-      const candidateOffset = GetOffsetNanosecondsFor(timeZone, candidate, getOffsetNanosecondsFor);
+      const candidateOffset = GetOffsetNanosecondsFor(timeZoneRec, candidate);
       const roundedCandidateOffset = JSBI.toNumber(
         RoundNumberToIncrement(JSBI.BigInt(candidateOffset), MINUTE_NANOS, 'halfExpand')
       );
@@ -1905,7 +1917,9 @@ export function InterpretISODateTimeOffset(
   // zone and date/time.
   if (offsetOpt === 'reject') {
     const offsetStr = FormatUTCOffsetNanoseconds(offsetNs);
-    const timeZoneString = IsTemporalTimeZone(timeZone) ? GetSlot(timeZone, TIMEZONE_ID) : 'time zone';
+    const timeZoneString = IsTemporalTimeZone(timeZoneRec.receiver)
+      ? GetSlot(timeZoneRec.receiver, TIMEZONE_ID)
+      : 'time zone';
     // The tsc emit for this line rewrites to invoke the PlainDateTime's valueOf method, NOT
     // toString (which is invoked by Node when using template literals directly).
     // See https://github.com/microsoft/TypeScript/issues/39744 for the proposed fix in tsc emit
@@ -1913,7 +1927,8 @@ export function InterpretISODateTimeOffset(
   }
   // fall through: offsetOpt === 'prefer', but the offset doesn't match
   // so fall back to use the time zone instead.
-  const instant = DisambiguatePossibleInstants(possibleInstants, timeZone, dt, disambiguation);
+  if (!timeZoneRec.hasLookedUp('getOffsetNanosecondsFor')) timeZoneRec.lookup('getOffsetNanosecondsFor');
+  const instant = DisambiguatePossibleInstants(possibleInstants, timeZoneRec, dt, disambiguation);
   return GetSlot(instant, EPOCHNANOSECONDS);
 }
 
@@ -1998,6 +2013,10 @@ export function ToTemporalZonedDateTime(
   }
   let offsetNs = 0;
   if (offsetBehaviour === 'option') offsetNs = ParseDateTimeUTCOffset(castExists(offset));
+  const timeZoneRec = new TimeZoneMethodRecord(timeZone);
+  if (offsetBehaviour !== 'exact' && offsetOpt !== 'use') {
+    timeZoneRec.lookup('getPossibleInstantsFor');
+  }
   const epochNanoseconds = InterpretISODateTimeOffset(
     year,
     month,
@@ -2010,7 +2029,7 @@ export function ToTemporalZonedDateTime(
     nanosecond,
     offsetBehaviour,
     offsetNs,
-    timeZone,
+    timeZoneRec,
     disambiguation,
     offsetOpt,
     matchMinute
@@ -2234,6 +2253,7 @@ export function CreateTemporalZonedDateTimeSlots(
 
   if (DEBUG) {
     let repr;
+    const ignored = new TimeZoneMethodRecord('UTC', []);
     if (typeof timeZone === 'string') {
       let offsetNs;
       const offsetMinutes = ParseTimeZoneIdentifier(timeZone).offsetMinutes;
@@ -2242,12 +2262,12 @@ export function CreateTemporalZonedDateTimeSlots(
       } else {
         offsetNs = GetNamedTimeZoneOffsetNanoseconds(timeZone, epochNanoseconds);
       }
-      const dateTime = GetPlainDateTimeFor('ignored', instant, 'iso8601', offsetNs);
+      const dateTime = GetPlainDateTimeFor(ignored, instant, 'iso8601', offsetNs);
       repr = TemporalDateTimeToString(dateTime, 'auto', 'never');
       repr += FormatDateTimeUTCOffsetRounded(offsetNs);
       repr += `[${timeZone}]`;
     } else {
-      const dateTime = GetPlainDateTimeFor('ignored', instant, 'iso8601', 0);
+      const dateTime = GetPlainDateTimeFor(ignored, instant, 'iso8601', 0);
       repr = TemporalDateTimeToString(dateTime, 'auto', 'never') + 'Z[<time zone object>]';
     }
     if (typeof calendar === 'string') {
@@ -2858,18 +2878,11 @@ export function TemporalDateTimeToTime(dateTime: Temporal.PlainDateTime) {
   );
 }
 
-export function GetOffsetNanosecondsFor(
-  timeZone: string | Temporal.TimeZoneProtocol,
-  instant: TimeZoneProtocolParams['getOffsetNanosecondsFor'][0],
-  getOffsetNanosecondsForParam?: Temporal.TimeZoneProtocol['getOffsetNanosecondsFor']
-) {
-  if (typeof timeZone === 'string') {
-    const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-    const timeZoneObject = new TemporalTimeZone(timeZone);
-    return Call(GetIntrinsic('%Temporal.TimeZone.prototype.getOffsetNanosecondsFor%'), timeZoneObject, [instant]);
-  }
-  const getOffsetNanosecondsFor = getOffsetNanosecondsForParam ?? GetMethod(timeZone, 'getOffsetNanosecondsFor');
-  const offsetNs = Call(getOffsetNanosecondsFor, timeZone, [instant]);
+export function GetOffsetNanosecondsFor(timeZoneRec: TimeZoneMethodRecord, instant: Temporal.Instant) {
+  const offsetNs = timeZoneRec.getOffsetNanosecondsFor(instant);
+  // No validation needed for built-in method
+  if (timeZoneRec.isBuiltIn()) return offsetNs;
+
   if (typeof offsetNs !== 'number') {
     throw new TypeError('bad return from getOffsetNanosecondsFor');
   }
@@ -2879,8 +2892,8 @@ export function GetOffsetNanosecondsFor(
   return offsetNs;
 }
 
-export function GetOffsetStringFor(timeZone: string | Temporal.TimeZoneProtocol, instant: Temporal.Instant) {
-  const offsetNs = GetOffsetNanosecondsFor(timeZone, instant);
+export function GetOffsetStringFor(timeZoneRec: TimeZoneMethodRecord, instant: Temporal.Instant) {
+  const offsetNs = GetOffsetNanosecondsFor(timeZoneRec, instant);
   return FormatUTCOffsetNanoseconds(offsetNs);
 }
 
@@ -2897,13 +2910,15 @@ export function FormatUTCOffsetNanoseconds(offsetNs: number): string {
 }
 
 export function GetPlainDateTimeFor(
-  timeZone: string | Temporal.TimeZoneProtocol,
+  timeZoneRec: TimeZoneMethodRecord,
   instant: Temporal.Instant,
   calendar: CalendarSlot,
   precalculatedOffsetNs: number | undefined = undefined
 ) {
+  // Either getOffsetNanosecondsFor must be looked up, or
+  // precalculatedOffsetNs should be supplied
   const ns = GetSlot(instant, EPOCHNANOSECONDS);
-  const offsetNs = precalculatedOffsetNs ?? GetOffsetNanosecondsFor(timeZone, instant);
+  const offsetNs = precalculatedOffsetNs ?? GetOffsetNanosecondsFor(timeZoneRec, instant);
   let { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = GetISOPartsFromEpoch(ns);
   ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = BalanceISODateTime(
     year,
@@ -2920,20 +2935,31 @@ export function GetPlainDateTimeFor(
 }
 
 export function GetInstantFor(
-  timeZone: string | Temporal.TimeZoneProtocol,
+  timeZoneRec: TimeZoneMethodRecord,
   dateTime: Temporal.PlainDateTime,
   disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>
 ) {
-  const possibleInstants = GetPossibleInstantsFor(timeZone, dateTime);
-  return DisambiguatePossibleInstants(possibleInstants, timeZone, dateTime, disambiguation);
+  // getPossibleInstantsFor must be looked up already.
+  // getOffsetNanosecondsFor _may_ be looked up and timeZoneRec may be modified.
+  const possibleInstants = GetPossibleInstantsFor(timeZoneRec, dateTime);
+  if (
+    possibleInstants.length === 0 &&
+    disambiguation !== 'reject' &&
+    !timeZoneRec.hasLookedUp('getOffsetNanosecondsFor')
+  ) {
+    timeZoneRec.lookup('getOffsetNanosecondsFor');
+  }
+  return DisambiguatePossibleInstants(possibleInstants, timeZoneRec, dateTime, disambiguation);
 }
 
 function DisambiguatePossibleInstants(
   possibleInstants: Temporal.Instant[],
-  timeZone: string | Temporal.TimeZoneProtocol,
+  timeZoneRec: TimeZoneMethodRecord,
   dateTime: Temporal.PlainDateTime,
   disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>
 ) {
+  // getPossibleInstantsFor must be looked up already.
+  // getOffsetNanosecondsFor must be be looked up if possibleInstants is empty
   const Instant = GetIntrinsic('%Temporal.Instant%');
   const numInstants = possibleInstants.length;
 
@@ -2969,10 +2995,8 @@ function DisambiguatePossibleInstants(
   const dayBefore = new Instant(JSBI.subtract(utcns, DAY_NANOS));
   const dayAfter = new Instant(JSBI.add(utcns, DAY_NANOS));
 
-  const getOffsetNanosecondsFor =
-    typeof timeZone !== 'string' ? GetMethod(timeZone, 'getOffsetNanosecondsFor') : undefined;
-  const offsetBefore = GetOffsetNanosecondsFor(timeZone, dayBefore, getOffsetNanosecondsFor);
-  const offsetAfter = GetOffsetNanosecondsFor(timeZone, dayAfter, getOffsetNanosecondsFor);
+  const offsetBefore = GetOffsetNanosecondsFor(timeZoneRec, dayBefore);
+  const offsetAfter = GetOffsetNanosecondsFor(timeZoneRec, dayAfter);
   const nanoseconds = offsetAfter - offsetBefore;
   switch (disambiguation) {
     case 'earlier': {
@@ -3002,7 +3026,7 @@ function DisambiguatePossibleInstants(
         earlierTime.microsecond,
         earlierTime.nanosecond
       );
-      return GetPossibleInstantsFor(timeZone, earlierPlainDateTime)[0];
+      return GetPossibleInstantsFor(timeZoneRec, earlierPlainDateTime)[0];
     }
     case 'compatible':
     // fall through because 'compatible' means 'later' for "spring forward" transitions
@@ -3020,24 +3044,17 @@ function DisambiguatePossibleInstants(
         laterTime.microsecond,
         laterTime.nanosecond
       );
-      const possible = GetPossibleInstantsFor(timeZone, laterPlainDateTime);
+      const possible = GetPossibleInstantsFor(timeZoneRec, laterPlainDateTime);
       return possible[possible.length - 1];
     }
   }
 }
 
-function GetPossibleInstantsFor(
-  timeZone: string | Temporal.TimeZoneProtocol,
-  dateTime: TimeZoneProtocolParams['getPossibleInstantsFor'][0],
-  getPossibleInstantsForParam?: Temporal.TimeZoneProtocol['getPossibleInstantsFor']
-) {
-  if (typeof timeZone === 'string') {
-    const TemporalTimeZone = GetIntrinsic('%Temporal.TimeZone%');
-    const timeZoneObject = new TemporalTimeZone(timeZone);
-    return Call(GetIntrinsic('%Temporal.TimeZone.prototype.getPossibleInstantsFor%'), timeZoneObject, [dateTime]);
-  }
-  const getPossibleInstantsFor = getPossibleInstantsForParam ?? GetMethod(timeZone, 'getPossibleInstantsFor');
-  const possibleInstants = Call(getPossibleInstantsFor, timeZone, [dateTime]);
+function GetPossibleInstantsFor(timeZoneRec: TimeZoneMethodRecord, dateTime: Temporal.PlainDateTime) {
+  const possibleInstants = timeZoneRec.getPossibleInstantsFor(dateTime);
+  // No validation needed for built-in method
+  if (timeZoneRec.isBuiltIn()) return possibleInstants;
+
   const result: Temporal.Instant[] = [];
   for (const instant of possibleInstants) {
     if (!IsTemporalInstant(instant)) {
@@ -3104,8 +3121,9 @@ export function TemporalInstantToString(
 ) {
   let outputTimeZone = timeZone;
   if (outputTimeZone === undefined) outputTimeZone = 'UTC';
-  const offsetNs = GetOffsetNanosecondsFor(outputTimeZone, instant);
-  const dateTime = GetPlainDateTimeFor(outputTimeZone, instant, 'iso8601', offsetNs);
+  const timeZoneRec = new TimeZoneMethodRecord(outputTimeZone, ['getOffsetNanosecondsFor']);
+  const offsetNs = GetOffsetNanosecondsFor(timeZoneRec, instant);
+  const dateTime = GetPlainDateTimeFor(timeZoneRec, instant, 'iso8601', offsetNs);
   const dateTimeString = TemporalDateTimeToString(dateTime, precision, 'never');
   let timeZoneString = 'Z';
   if (timeZone !== undefined) {
@@ -3285,8 +3303,9 @@ export function TemporalZonedDateTimeToString(
   }
 
   const tz = GetSlot(zdt, TIME_ZONE);
-  const offsetNs = GetOffsetNanosecondsFor(tz, instant);
-  const dateTime = GetPlainDateTimeFor(tz, instant, 'iso8601', offsetNs);
+  const timeZoneRec = new TimeZoneMethodRecord(tz, ['getOffsetNanosecondsFor']);
+  const offsetNs = GetOffsetNanosecondsFor(timeZoneRec, instant);
+  const dateTime = GetPlainDateTimeFor(timeZoneRec, instant, 'iso8601', offsetNs);
   let dateTimeString = TemporalDateTimeToString(dateTime, precision, 'never');
   if (showOffset !== 'never') {
     dateTimeString += FormatDateTimeUTCOffsetRounded(offsetNs);
@@ -3909,8 +3928,10 @@ export function TotalDurationNanoseconds(
 function NanosecondsToDays(
   nanosecondsParam: JSBI,
   zonedRelativeTo: Temporal.ZonedDateTime,
+  timeZoneRec: TimeZoneMethodRecord,
   precalculatedPlainDateTime?: Temporal.PlainDateTime | undefined
 ) {
+  // getOffsetNanosecondsFor and getPossibleInstantsFor must be looked up
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
   let nanosecondsNumber = JSBI.toNumber(nanosecondsParam);
   const sign = MathSign(nanosecondsNumber);
@@ -3920,13 +3941,12 @@ function NanosecondsToDays(
   const start = GetSlot(zonedRelativeTo, INSTANT);
   const endNs = JSBI.add(startNs, nanosecondsParam);
   const end = new TemporalInstant(endNs);
-  const timeZone = GetSlot(zonedRelativeTo, TIME_ZONE);
   const calendar = GetSlot(zonedRelativeTo, CALENDAR);
 
   // Find the difference in days only. Inline DifferenceISODateTime because we
   // don't need the path that potentially calls calendar methods.
-  const dtStart = precalculatedPlainDateTime ?? GetPlainDateTimeFor(timeZone, start, 'iso8601');
-  const dtEnd = GetPlainDateTimeFor(timeZone, end, 'iso8601');
+  const dtStart = precalculatedPlainDateTime ?? GetPlainDateTimeFor(timeZoneRec, start, 'iso8601');
+  const dtEnd = GetPlainDateTimeFor(timeZoneRec, end, 'iso8601');
   const date1 = TemporalDateTimeToDate(dtStart);
   const date2 = TemporalDateTimeToDate(dtEnd);
   let daysNumber = DaysUntil(date1, date2);
@@ -3952,7 +3972,7 @@ function NanosecondsToDays(
     daysNumber++;
   }
 
-  let relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZone, calendar, daysNumber);
+  let relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZoneRec, calendar, daysNumber);
   // may disambiguate
 
   // If clock time after addition was in the middle of a skipped period, the
@@ -3967,7 +3987,7 @@ function NanosecondsToDays(
   if (sign === 1) {
     while (JSBI.greaterThan(daysBigInt, ZERO) && JSBI.greaterThan(relativeResult.epochNs, endNs)) {
       daysBigInt = JSBI.subtract(daysBigInt, ONE);
-      relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZone, calendar, JSBI.toNumber(daysBigInt));
+      relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZoneRec, calendar, JSBI.toNumber(daysBigInt));
       // may do disambiguation
     }
   }
@@ -3980,7 +4000,7 @@ function NanosecondsToDays(
     const oneDayFarther = AddDaysToZonedDateTime(
       relativeResult.instant,
       relativeResult.dateTime,
-      timeZone,
+      timeZoneRec,
       calendar,
       sign
     );
@@ -4145,6 +4165,7 @@ export function BalanceTimeDurationRelative(
   nanoseconds: number | JSBI,
   largestUnit: Temporal.DateTimeUnit,
   zonedRelativeTo: Temporal.ZonedDateTime,
+  timeZoneRec: TimeZoneMethodRecord,
   precalculatedPlainDateTime: Temporal.PlainDateTime | undefined
 ) {
   let result = BalancePossiblyInfiniteTimeDurationRelative(
@@ -4157,6 +4178,7 @@ export function BalanceTimeDurationRelative(
     nanoseconds,
     largestUnit,
     zonedRelativeTo,
+    timeZoneRec,
     precalculatedPlainDateTime
   );
   if (result === 'positive overflow' || result === 'negative overflow') {
@@ -4175,6 +4197,7 @@ export function BalancePossiblyInfiniteTimeDurationRelative(
   nanosecondsParam: number | JSBI,
   largestUnitParam: Temporal.DateTimeUnit,
   zonedRelativeTo: Temporal.ZonedDateTime,
+  timeZoneRec: TimeZoneMethodRecord,
   precalculatedPlainDateTimeParam?: Temporal.PlainDateTime | undefined
 ) {
   let largestUnit = largestUnitParam;
@@ -4184,15 +4207,14 @@ export function BalancePossiblyInfiniteTimeDurationRelative(
 
   const startNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
   const startInstant = GetSlot(zonedRelativeTo, INSTANT);
-  const timeZone = GetSlot(zonedRelativeTo, TIME_ZONE);
 
   let intermediateNs = startNs;
   if (days !== 0) {
-    precalculatedPlainDateTime ??= GetPlainDateTimeFor(timeZone, startInstant, 'iso8601');
+    precalculatedPlainDateTime ??= GetPlainDateTimeFor(timeZoneRec, startInstant, 'iso8601');
     intermediateNs = AddDaysToZonedDateTime(
       startInstant,
       precalculatedPlainDateTime,
-      timeZone,
+      timeZoneRec,
       'iso8601',
       days
     ).epochNs;
@@ -4205,8 +4227,8 @@ export function BalancePossiblyInfiniteTimeDurationRelative(
   }
 
   if (largestUnit === 'year' || largestUnit === 'month' || largestUnit === 'week' || largestUnit === 'day') {
-    precalculatedPlainDateTime ??= GetPlainDateTimeFor(timeZone, startInstant, 'iso8601');
-    ({ days, nanoseconds } = NanosecondsToDays(nanoseconds, zonedRelativeTo, precalculatedPlainDateTime));
+    precalculatedPlainDateTime ??= GetPlainDateTimeFor(timeZoneRec, startInstant, 'iso8601');
+    ({ days, nanoseconds } = NanosecondsToDays(nanoseconds, zonedRelativeTo, timeZoneRec, precalculatedPlainDateTime));
     largestUnit = 'hour';
   } else {
     days = 0;
@@ -4974,12 +4996,13 @@ function DifferenceISODateTime(
 function DifferenceZonedDateTime(
   ns1: JSBI,
   ns2: JSBI,
-  timeZone: string | Temporal.TimeZoneProtocol,
+  timeZoneRec: TimeZoneMethodRecord,
   calendar: CalendarSlot,
   largestUnit: Temporal.DateTimeUnit,
   options: Temporal.DifferenceOptions<Temporal.DateTimeUnit>,
   precalculatedDtStart?: Temporal.PlainDateTime | undefined
 ) {
+  // getOffsetNanosecondsFor and getPossibleInstantsFor must be looked up
   const nsDiff = JSBI.subtract(ns2, ns1);
   if (JSBI.equal(nsDiff, ZERO)) {
     return {
@@ -5000,8 +5023,8 @@ function DifferenceZonedDateTime(
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
   const start = new TemporalInstant(ns1);
   const end = new TemporalInstant(ns2);
-  const dtStart = precalculatedDtStart ?? GetPlainDateTimeFor(timeZone, start, calendar);
-  const dtEnd = GetPlainDateTimeFor(timeZone, end, calendar);
+  const dtStart = precalculatedDtStart ?? GetPlainDateTimeFor(timeZoneRec, start, calendar);
+  const dtEnd = GetPlainDateTimeFor(timeZoneRec, end, calendar);
   let { years, months, weeks, days } = DifferenceISODateTime(
     GetSlot(dtStart, ISO_YEAR),
     GetSlot(dtStart, ISO_MONTH),
@@ -5027,7 +5050,7 @@ function DifferenceZonedDateTime(
   );
   const intermediateNs = AddZonedDateTime(
     start,
-    timeZone,
+    timeZoneRec,
     calendar,
     years,
     months,
@@ -5043,8 +5066,8 @@ function DifferenceZonedDateTime(
   );
   // may disambiguate
   let timeRemainderNs = JSBI.subtract(ns2, intermediateNs);
-  const intermediate = CreateTemporalZonedDateTime(intermediateNs, timeZone, calendar);
-  ({ nanoseconds: timeRemainderNs, days } = NanosecondsToDays(timeRemainderNs, intermediate));
+  const intermediate = CreateTemporalZonedDateTime(intermediateNs, timeZoneRec.receiver, calendar);
+  ({ nanoseconds: timeRemainderNs, days } = NanosecondsToDays(timeRemainderNs, intermediate, timeZoneRec));
 
   // Finally, merge the date and time durations and return the merged result.
   const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
@@ -5479,8 +5502,10 @@ export function DifferenceTemporalZonedDateTime(
 
     if (JSBI.equal(ns1, ns2)) return new Duration();
 
+    const timeZoneRec = new TimeZoneMethodRecord(timeZone, ['getOffsetNanosecondsFor', 'getPossibleInstantsFor']);
+
     const precalculatedPlainDateTime = GetPlainDateTimeFor(
-      timeZone,
+      timeZoneRec,
       GetSlot(zonedDateTime, INSTANT),
       GetSlot(zonedDateTime, CALENDAR)
     );
@@ -5491,7 +5516,7 @@ export function DifferenceTemporalZonedDateTime(
       DifferenceZonedDateTime(
         ns1,
         ns2,
-        timeZone,
+        timeZoneRec,
         calendar,
         settings.largestUnit,
         resolvedOptions,
@@ -5516,6 +5541,7 @@ export function DifferenceTemporalZonedDateTime(
         settings.roundingMode,
         plainRelativeTo,
         zonedDateTime,
+        timeZoneRec,
         precalculatedPlainDateTime
       ));
       ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
@@ -5534,6 +5560,7 @@ export function DifferenceTemporalZonedDateTime(
           settings.smallestUnit,
           settings.roundingMode,
           zonedDateTime,
+          timeZoneRec,
           precalculatedPlainDateTime
         ));
     }
@@ -5676,6 +5703,7 @@ function AddDuration(
   ns2: number,
   plainRelativeTo: Temporal.PlainDate | undefined,
   zonedRelativeTo: Temporal.ZonedDateTime | undefined,
+  timeZoneRec: TimeZoneMethodRecord | undefined,
   precalculatedPlainDateTime?: Temporal.PlainDateTime | undefined
 ) {
   const largestUnit1 = DefaultTemporalLargestUnit(y1, mon1, w1, d1, h1, min1, s1, ms1, µs1, ns1);
@@ -5732,14 +5760,14 @@ function AddDuration(
     ));
   } else {
     assertExists(zonedRelativeTo);
+    assertExists(timeZoneRec);
     const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-    const timeZone = GetSlot(zonedRelativeTo, TIME_ZONE);
     const calendar = GetSlot(zonedRelativeTo, CALENDAR);
     const startInstant = GetSlot(zonedRelativeTo, INSTANT);
-    const startDateTime = precalculatedPlainDateTime ?? GetPlainDateTimeFor(timeZone, startInstant, calendar);
+    const startDateTime = precalculatedPlainDateTime ?? GetPlainDateTimeFor(timeZoneRec, startInstant, calendar);
     const intermediateNs = AddZonedDateTime(
       startInstant,
-      timeZone,
+      timeZoneRec,
       calendar,
       y1,
       mon1,
@@ -5755,7 +5783,7 @@ function AddDuration(
     );
     const endNs = AddZonedDateTime(
       new TemporalInstant(intermediateNs),
-      timeZone,
+      timeZoneRec,
       calendar,
       y2,
       mon2,
@@ -5787,7 +5815,7 @@ function AddDuration(
         DifferenceZonedDateTime(
           GetSlot(zonedRelativeTo, EPOCHNANOSECONDS),
           endNs,
-          timeZone,
+          timeZoneRec,
           calendar,
           largestUnit,
           ObjectCreate(null) as Temporal.DifferenceOptions<Temporal.DateTimeUnit>,
@@ -5884,7 +5912,7 @@ function AddDateTime(
 
 export function AddZonedDateTime(
   instant: Temporal.Instant,
-  timeZone: string | Temporal.TimeZoneProtocol,
+  timeZoneRec: TimeZoneMethodRecord,
   calendar: CalendarSlot,
   years: number,
   months: number,
@@ -5899,6 +5927,13 @@ export function AddZonedDateTime(
   precalculatedPlainDateTime?: Temporal.PlainDateTime,
   options?: Temporal.ArithmeticOptions
 ) {
+  // getPossibleInstantsFor must be looked up
+  // getOffsetNanosecondsFor must be looked up if precalculatedDateTime is not
+  // supplied
+  // getOffsetNanosecondsFor may be looked up and timeZoneRec modified, if
+  // precalculatedDateTime is supplied but converting to instant requires
+  // disambiguation
+
   // If only time is to be added, then use Instant math. It's not OK to fall
   // through to the date/time code below because compatible disambiguation in
   // the PlainDateTime=>Instant conversion will change the offset of any
@@ -5912,10 +5947,10 @@ export function AddZonedDateTime(
     return AddInstant(GetSlot(instant, EPOCHNANOSECONDS), h, min, s, ms, µs, ns);
   }
 
-  const dt = precalculatedPlainDateTime ?? GetPlainDateTimeFor(timeZone, instant, calendar);
+  const dt = precalculatedPlainDateTime ?? GetPlainDateTimeFor(timeZoneRec, instant, calendar);
   if (DurationSign(years, months, weeks, 0, 0, 0, 0, 0, 0, 0) === 0) {
     const overflow = ToTemporalOverflow(options);
-    const intermediate = AddDaysToZonedDateTime(instant, dt, timeZone, calendar, days, overflow).epochNs;
+    const intermediate = AddDaysToZonedDateTime(instant, dt, timeZoneRec, calendar, days, overflow).epochNs;
     return AddInstant(intermediate, h, min, s, ms, µs, ns);
   }
 
@@ -5939,7 +5974,7 @@ export function AddZonedDateTime(
 
   // Note that 'compatible' is used below because this disambiguation behavior
   // is required by RFC 5545.
-  const instantIntermediate = GetInstantFor(timeZone, dtIntermediate, 'compatible');
+  const instantIntermediate = GetInstantFor(timeZoneRec, dtIntermediate, 'compatible');
   return AddInstant(GetSlot(instantIntermediate, EPOCHNANOSECONDS), h, min, s, ms, µs, ns);
 }
 
@@ -5952,11 +5987,14 @@ type AddDaysRecord = {
 export function AddDaysToZonedDateTime(
   instant: Temporal.Instant,
   dateTime: Temporal.PlainDateTime,
-  timeZone: TimeZoneSlot,
+  timeZoneRec: TimeZoneMethodRecord,
   calendar: CalendarSlot,
   days: number,
   overflow: Temporal.ArithmeticOptions['overflow'] = 'constrain'
 ): AddDaysRecord {
+  // getPossibleInstantsFor must be looked up
+  // getOffsetNanosecondsFor may be looked up for disambiguation, modifying timeZoneRec
+
   // Same as AddZonedDateTime above, but an optimized version with fewer
   // observable calls that only adds a number of days. Returns an object with
   // all three versions of the ZonedDateTime: epoch nanoseconds, Instant, and
@@ -5988,7 +6026,7 @@ export function AddDaysToZonedDateTime(
     calendar
   );
 
-  const instantResult = GetInstantFor(timeZone, dateTimeResult, 'compatible');
+  const instantResult = GetInstantFor(timeZoneRec, dateTimeResult, 'compatible');
   return {
     instant: instantResult,
     dateTime: dateTimeResult,
@@ -6008,7 +6046,7 @@ export function AddDurationToOrSubtractDurationFromDuration(
   let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
     ToTemporalDurationRecord(other);
   const options = GetOptionsObject(optionsParam);
-  const { plainRelativeTo, zonedRelativeTo } = ToRelativeTemporalObject(options);
+  const { plainRelativeTo, zonedRelativeTo, timeZoneRec } = ToRelativeTemporalObject(options);
   ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = AddDuration(
     GetSlot(duration, YEARS),
     GetSlot(duration, MONTHS),
@@ -6031,7 +6069,8 @@ export function AddDurationToOrSubtractDurationFromDuration(
     sign * microseconds,
     sign * nanoseconds,
     plainRelativeTo,
-    zonedRelativeTo
+    zonedRelativeTo,
+    timeZoneRec
   ));
   const Duration = GetIntrinsic('%Temporal.Duration%');
   return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
@@ -6206,11 +6245,14 @@ export function AddDurationToOrSubtractDurationFromZonedDateTime(
   const { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
     ToTemporalDurationRecord(durationLike);
   const options = GetOptionsObject(optionsParam);
-  const timeZone = GetSlot(zonedDateTime, TIME_ZONE);
+  const timeZoneRec = new TimeZoneMethodRecord(GetSlot(zonedDateTime, TIME_ZONE), [
+    'getOffsetNanosecondsFor',
+    'getPossibleInstantsFor'
+  ]);
   const calendar = GetSlot(zonedDateTime, CALENDAR);
   const epochNanoseconds = AddZonedDateTime(
     GetSlot(zonedDateTime, INSTANT),
-    timeZone,
+    timeZoneRec,
     calendar,
     sign * years,
     sign * months,
@@ -6225,7 +6267,7 @@ export function AddDurationToOrSubtractDurationFromZonedDateTime(
     undefined,
     options
   );
-  return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
+  return CreateTemporalZonedDateTime(epochNanoseconds, timeZoneRec.receiver, calendar);
 }
 
 function RoundNumberToIncrement(quantity: JSBI, increment: JSBI, mode: Temporal.RoundingMode) {
@@ -6411,17 +6453,18 @@ function MoveRelativeDate(
 
 export function MoveRelativeZonedDateTime(
   relativeTo: Temporal.ZonedDateTime,
+  timeZoneRec: TimeZoneMethodRecord,
   years: number,
   months: number,
   weeks: number,
   days: number,
   precalculatedPlainDateTime: Temporal.PlainDateTime | undefined
 ) {
-  const timeZone = GetSlot(relativeTo, TIME_ZONE);
+  // getOffsetNanosecondsFor and getPossibleInstantsFor must be looked up
   const calendar = GetSlot(relativeTo, CALENDAR);
   const intermediateNs = AddZonedDateTime(
     GetSlot(relativeTo, INSTANT),
-    timeZone,
+    timeZoneRec,
     calendar,
     years,
     months,
@@ -6435,7 +6478,7 @@ export function MoveRelativeZonedDateTime(
     0,
     precalculatedPlainDateTime
   );
-  return CreateTemporalZonedDateTime(intermediateNs, timeZone, calendar);
+  return CreateTemporalZonedDateTime(intermediateNs, timeZoneRec.receiver, calendar);
 }
 
 export function AdjustRoundedDurationDays(
@@ -6453,6 +6496,7 @@ export function AdjustRoundedDurationDays(
   unit: Temporal.DateTimeUnit,
   roundingMode: Temporal.RoundingMode,
   zonedRelativeTo: Temporal.ZonedDateTime,
+  timeZoneRec: TimeZoneMethodRecord,
   precalculatedPlainDateTime: Temporal.PlainDateTime | undefined
 ) {
   let years = yearsParam;
@@ -6486,11 +6530,10 @@ export function AdjustRoundedDurationDays(
   let timeRemainderNs = TotalDurationNanoseconds(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   const direction = MathSign(JSBI.toNumber(timeRemainderNs));
 
-  const timeZone = GetSlot(zonedRelativeTo, TIME_ZONE);
   const calendar = GetSlot(zonedRelativeTo, CALENDAR);
   const dayStart = AddZonedDateTime(
     GetSlot(zonedRelativeTo, INSTANT),
-    timeZone,
+    timeZoneRec,
     calendar,
     years,
     months,
@@ -6506,8 +6549,8 @@ export function AdjustRoundedDurationDays(
   );
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
   const dayStartInstant = new TemporalInstant(dayStart);
-  const dayStartDateTime = GetPlainDateTimeFor(timeZone, dayStartInstant, calendar);
-  const dayEnd = AddDaysToZonedDateTime(dayStartInstant, dayStartDateTime, timeZone, calendar, direction).epochNs;
+  const dayStartDateTime = GetPlainDateTimeFor(timeZoneRec, dayStartInstant, calendar);
+  const dayEnd = AddDaysToZonedDateTime(dayStartInstant, dayStartDateTime, timeZoneRec, calendar, direction).epochNs;
   const dayLengthNs = JSBI.subtract(dayEnd, dayStart);
 
   const oneDayLess = JSBI.subtract(timeRemainderNs, dayLengthNs);
@@ -6535,6 +6578,7 @@ export function AdjustRoundedDurationDays(
       0,
       /* plainRelativeTo = */ undefined,
       zonedRelativeTo,
+      timeZoneRec,
       precalculatedPlainDateTime
     ));
     ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
@@ -6582,6 +6626,7 @@ export function RoundDuration(
   roundingMode: Temporal.RoundingMode,
   plainRelativeToParam: Temporal.PlainDate | undefined = undefined,
   zonedRelativeTo: Temporal.ZonedDateTime | undefined = undefined,
+  timeZoneRec?: TimeZoneMethodRecord | undefined,
   precalculatedPlainDateTime?: Temporal.PlainDateTime | undefined
 ) {
   let years = yearsParam;
@@ -6610,8 +6655,10 @@ export function RoundDuration(
     nanoseconds = TotalDurationNanoseconds(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
     let deltaDays;
     if (zonedRelativeTo) {
+      assertExists(timeZoneRec);
       const intermediate = MoveRelativeZonedDateTime(
         zonedRelativeTo,
+        timeZoneRec,
         years,
         months,
         weeks,
@@ -6619,7 +6666,11 @@ export function RoundDuration(
         precalculatedPlainDateTime
       );
       let dayLengthNumber;
-      ({ days: deltaDays, nanoseconds, dayLengthNs: dayLengthNumber } = NanosecondsToDays(nanoseconds, intermediate));
+      ({
+        days: deltaDays,
+        nanoseconds,
+        dayLengthNs: dayLengthNumber
+      } = NanosecondsToDays(nanoseconds, intermediate, timeZoneRec));
       dayLengthNs = JSBI.BigInt(dayLengthNumber);
     } else {
       ({ quotient: deltaDays, remainder: nanoseconds } = divmod(nanoseconds, DAY_NANOS));

@@ -8,6 +8,7 @@ import type { InstantParams as Params, InstantReturn as Return } from './interna
 
 import JSBI from 'jsbi';
 import { BILLION, MILLION, THOUSAND } from './ecmascript';
+import { TimeZoneMethodRecord } from './methodrecord';
 
 export class Instant implements Temporal.Instant {
   constructor(epochNanoseconds: bigint | JSBI) {
@@ -23,7 +24,8 @@ export class Instant implements Temporal.Instant {
     SetSlot(this, EPOCHNANOSECONDS, ns);
 
     if (DEBUG) {
-      const dateTime = ES.GetPlainDateTimeFor('ignored', this, 'iso8601', 0);
+      const ignored = new TimeZoneMethodRecord('UTC', []);
+      const dateTime = ES.GetPlainDateTimeFor(ignored, this, 'iso8601', 0);
       const repr = ES.TemporalDateTimeToString(dateTime, 'auto', 'never') + 'Z';
       Object.defineProperty(this, '_repr_', {
         value: `${this[Symbol.toStringTag]} <${repr}>`,

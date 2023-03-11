@@ -43,7 +43,7 @@ type TemporalCalendarIntrinsicRegisteredKeys = {
   [key in keyof TemporalCalendarIntrinsicRegistrations as `%${key}%`]: TemporalCalendarIntrinsicRegistrations[key];
 };
 
-type TimeZonePrototypeKeys = 'getOffsetNanosecondsFor' | 'getPossibleInstantsFor';
+export type TimeZonePrototypeKeys = 'getOffsetNanosecondsFor' | 'getPossibleInstantsFor';
 type TemporalTimeZoneIntrinsicRegistrations = {
   [key in TimeZonePrototypeKeys as `Temporal.TimeZone.prototype.${key}`]: Temporal.TimeZone[key];
 } & {
