@@ -1,6 +1,24 @@
 import { GetIntrinsic } from './intrinsicclass';
 import type { Temporal } from '..';
+import type { CalendarParams } from './internaltypes';
 import type { TimeZonePrototypeKeys } from './intrinsicclass';
+
+// Not all calendar protocol methods need to be able to be cached
+type CalendarRecordMethodNames =
+  | 'dateAdd'
+  | 'dateFromFields'
+  | 'dateUntil'
+  | 'day'
+  | 'fields'
+  | 'mergeFields'
+  | 'monthDayFromFields'
+  | 'yearMonthFromFields';
+
+type CalendarRecordInfo = {
+  Name: 'Calendar';
+  Protocol: Temporal.CalendarProtocol;
+  MethodName: CalendarRecordMethodNames;
+};
 
 type TimeZoneRecordInfo = {
   Name: 'TimeZone';
@@ -12,7 +30,7 @@ type TimeZoneRecordInfo = {
 // It could be expressed properly in the type system, but we're just going to
 // remove this object later down the line in the rebase, so I'm not going to
 // spend a lot of effort on it.
-class MethodRecord<T extends TimeZoneRecordInfo> {
+class MethodRecord<T extends TimeZoneRecordInfo | CalendarRecordInfo> {
   recordType: T['Name'];
   receiver: string | T['Protocol'];
 
@@ -88,5 +106,50 @@ export class TimeZoneMethodRecord extends MethodRecord<TimeZoneRecordInfo> {
 
   getPossibleInstantsFor(dateTime: Temporal.PlainDateTime) {
     return this.call('getPossibleInstantsFor', [dateTime]);
+  }
+}
+
+export class CalendarMethodRecord extends MethodRecord<CalendarRecordInfo> {
+  constructor(calendar: string | Temporal.CalendarProtocol, methodNames: CalendarRecordMethodNames[] = []) {
+    super('Calendar', calendar, methodNames);
+  }
+
+  dateAdd(date: Temporal.PlainDate, duration: Temporal.Duration, options: Temporal.ArithmeticOptions | undefined) {
+    return this.call('dateAdd', [date, duration, options]);
+  }
+
+  dateFromFields(fields: CalendarParams['dateFromFields'][0], options: Temporal.AssignmentOptions | undefined) {
+    return this.call('dateFromFields', [fields, options]);
+  }
+
+  dateUntil(
+    one: Temporal.PlainDate,
+    two: Temporal.PlainDate,
+    options: Temporal.DifferenceOptions<'year' | 'month' | 'week' | 'day'> | undefined
+  ) {
+    return this.call('dateUntil', [one, two, options]);
+  }
+
+  day(date: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainMonthDay) {
+    return this.call('day', [date]);
+  }
+
+  fields(fieldNames: Iterable<string>) {
+    return this.call('fields', [fieldNames]);
+  }
+
+  mergeFields(fields: Record<string, any>, additionalFields: Record<string, any>) {
+    return this.call('mergeFields', [fields, additionalFields]);
+  }
+
+  monthDayFromFields(fields: CalendarParams['monthDayFromFields'][0], options: Temporal.AssignmentOptions | undefined) {
+    return this.call('monthDayFromFields', [fields, options]);
+  }
+
+  yearMonthFromFields(
+    fields: CalendarParams['yearMonthFromFields'][0],
+    options: Temporal.AssignmentOptions | undefined
+  ) {
+    return this.call('yearMonthFromFields', [fields, options]);
   }
 }
