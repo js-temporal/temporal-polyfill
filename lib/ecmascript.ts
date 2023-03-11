@@ -2521,15 +2521,16 @@ export function ConsolidateCalendars(one: CalendarSlot, two: CalendarSlot) {
 export function CalendarDateFromFields(
   calendar: CalendarSlot,
   fields: CalendarProtocolParams['dateFromFields'][0],
-  options?: Partial<CalendarProtocolParams['dateFromFields'][1]>
+  options?: Partial<CalendarProtocolParams['dateFromFields'][1]>,
+  dateFromFieldsParam?: Temporal.CalendarProtocol['dateFromFields']
 ) {
   if (typeof calendar === 'string') {
     const TemporalCalendar = GetIntrinsic('%Temporal.Calendar%');
     const calendarObj = new TemporalCalendar(calendar);
     return Call(GetIntrinsic('%Temporal.Calendar.prototype.dateFromFields%'), calendarObj, [fields, options]);
   }
-  const dateFromFields = GetMethod(calendar, 'dateFromFields');
-  let result = Call(dateFromFields, calendar, [fields, options]);
+  const dateFromFields = dateFromFieldsParam ?? GetMethod(calendar, 'dateFromFields');
+  const result = Call(dateFromFields, calendar, [fields, options]);
   if (!IsTemporalDate(result)) throw new TypeError('invalid result');
   return result;
 }
