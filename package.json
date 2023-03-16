@@ -11,10 +11,12 @@
       {
         "import": {
           "types": "./index.d.ts",
+          "types@<4.7.4": "./index-lt-4.7.4.d.ts",
           "default": "./dist/index.esm.js"
         },
         "require": {
           "types": "./index.d.cts",
+          "types@<4.7.4": "./index-lt-4.7.4.d.cts",
           "default": "./dist/index.cjs"
         },
         "default": "./dist/index.cjs"
