@@ -305,13 +305,11 @@ export function SetSlot<KeyT extends SlotKey>(
 ): void {
   const slots = GetSlots(container);
 
-  if (slots === undefined) {
-    throw new TypeError('Missing slots for the given container');
-  }
+  if (slots === undefined) throw new TypeError('Missing slots for the given container');
 
-  if (id in slots) {
-    throw new TypeError(`${id} already has set`);
-  }
+  const existingSlot = slots[id];
+
+  if (existingSlot) throw new TypeError(`${id} already has set`);
 
   slots[id] = value;
 }
