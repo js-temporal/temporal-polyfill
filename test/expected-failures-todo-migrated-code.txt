@@ -5,22 +5,4 @@ built-ins/Temporal/Calendar/prototype/mergeFields/non-string-properties.js
 built-ins/Temporal/Calendar/prototype/mergeFields/order-of-operations.js
 intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boundaries.js
 intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
-# Failures below here started failing when test262 was advanced to
-# 2df6c7d29a18cd33120e791bdbe2043980a893fd (which was its HEAD as of 2022-04-22).
-# They'll be reduced as we start porting the latest batch of commits from upstream.
-# Failures above here, however, were failing on the previous test262
-# (daefac08146f6a179aa273802878a87b6eca4fb8) and continued to fail after test262
-# was updated. So there's a chance that these are real porting bugs. But none of them
-# are in critical functionality and AFAICT all of them are in codepaths that will
-# be heavily modified in upstream commits. If they're still failing after we catch
-# up with upstream, then we'll investigate and fix them. 
-built-ins/Temporal/Duration/prototype/round/calendar-dateadd-called-with-options-undefined.js
-built-ins/Temporal/Duration/prototype/round/calendar-dateuntil-called-with-singular-largestunit.js
-built-ins/Temporal/Duration/prototype/round/largestunit-correct-rebalancing.js
-built-ins/Temporal/Duration/prototype/round/timezone-getpossibleinstantsfor-iterable.js
-intl402/Temporal/Duration/prototype/round/relativeto-string-datetime.js
-intl402/Temporal/ZonedDateTime/prototype/toLocaleString/options-timeZone.js
-intl402/DateTimeFormat/prototype/format/temporal-zoneddatetime-not-supported.js
-intl402/DateTimeFormat/prototype/formatRange/temporal-zoneddatetime-not-supported.js
-intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-zoneddatetime-not-supported.js
-intl402/DateTimeFormat/prototype/formatToParts/temporal-zoneddatetime-not-supported.js
+

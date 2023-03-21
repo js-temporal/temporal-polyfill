@@ -23,6 +23,9 @@ import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } fro
 import JSBI from 'jsbi';
 import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS } from './ecmascript';
 
+const customResolvedOptions = DateTimeFormat.prototype.resolvedOptions as Intl.DateTimeFormat['resolvedOptions'];
+const ObjectCreate = Object.create;
+
 export class ZonedDateTime implements Temporal.ZonedDateTime {
   constructor(
     epochNanosecondsParam: bigint | JSBI,
@@ -446,10 +449,63 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
   toLocaleString(
     locales: Params['toLocaleString'][0] = undefined,
-    options: Params['toLocaleString'][1] = undefined
+    optionsParam: Params['toLocaleString'][1] = undefined
   ): string {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
-    return new DateTimeFormat(locales, options).format(this);
+    const options = ES.GetOptionsObject(optionsParam);
+
+    const optionsCopy = ObjectCreate(null);
+    // This is not quite per specification, but this polyfill's DateTimeFormat
+    // already doesn't match the InitializeDateTimeFormat operation, and the
+    // access order might change anyway;
+    // see https://github.com/tc39/ecma402/issues/747
+    ES.CopyDataProperties(optionsCopy, options, ['timeZone']);
+
+    if (options.timeZone !== undefined) {
+      throw new TypeError('ZonedDateTime toLocaleString does not accept a timeZone option');
+    }
+
+    if (
+      optionsCopy.year === undefined &&
+      optionsCopy.month === undefined &&
+      optionsCopy.day === undefined &&
+      optionsCopy.weekday === undefined &&
+      optionsCopy.dateStyle === undefined &&
+      optionsCopy.hour === undefined &&
+      optionsCopy.minute === undefined &&
+      optionsCopy.second === undefined &&
+      optionsCopy.timeStyle === undefined &&
+      optionsCopy.dayPeriod === undefined &&
+      optionsCopy.timeZoneName === undefined
+    ) {
+      optionsCopy.timeZoneName = 'short';
+      // The rest of the defaults will be filled in by formatting the Instant
+    }
+
+    let timeZone = ES.ToTemporalTimeZoneIdentifier(GetSlot(this, TIME_ZONE));
+    if (ES.IsTimeZoneOffsetString(timeZone)) {
+      // Note: https://github.com/tc39/ecma402/issues/683 will remove this
+      throw new RangeError('toLocaleString does not support offset string time zones');
+    }
+    timeZone = ES.GetCanonicalTimeZoneIdentifier(timeZone);
+    optionsCopy.timeZone = timeZone;
+
+    const formatter = new DateTimeFormat(locales, optionsCopy);
+
+    const localeCalendarIdentifier = ES.Call(customResolvedOptions, formatter, []).calendar;
+    const calendarIdentifier = ES.ToTemporalCalendarIdentifier(GetSlot(this, CALENDAR));
+    if (
+      calendarIdentifier !== 'iso8601' &&
+      localeCalendarIdentifier !== 'iso8601' &&
+      localeCalendarIdentifier !== calendarIdentifier
+    ) {
+      throw new RangeError(
+        `cannot format ZonedDateTime with calendar ${calendarIdentifier}` +
+          ` in locale with calendar ${localeCalendarIdentifier}`
+      );
+    }
+
+    return formatter.format(GetSlot(this, INSTANT));
   }
   toJSON(): Return['toJSON'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
