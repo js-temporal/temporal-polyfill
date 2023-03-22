@@ -1,0 +1,13 @@
+# Failures in this file are expected to fail for all Test262 tests. To record
+# expected test failures for the transpiled or optimized builds of the polyfill,
+# see expected-failures-es5.txt and expected-failures-opt.txt respectively.
+
+# # A regression in V8 (https://bugs.chromium.org/p/chromium/issues/detail?id=1416538)
+# caused these tests to fail. We don't know when a fix is expected, but when it's fixed then
+# these tests should start passing again.
+staging/Intl402/Temporal/old/date-time-format.js
+staging/Intl402/Temporal/old/datetime-toLocaleString.js
+staging/Intl402/Temporal/old/instant-toLocaleString.js
+staging/Intl402/Temporal/old/time-toLocaleString.js
+staging/Intl402/Temporal/old/zoneddatetime-toLocaleString.js
+intl402/DateTimeFormat/prototype/format/temporal-objects-resolved-time-zone.js
