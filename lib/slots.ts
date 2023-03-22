@@ -150,14 +150,30 @@ interface SlotsToTypes {
 
 type SlotKey = keyof SlotsToTypes;
 
-const slots = new WeakMap();
-export function CreateSlots(container: AnyTemporalType): void {
-  slots.set(container, Object.create(null));
+const globalSlots = new WeakMap<Slots[keyof Slots]['usedBy'], Record<keyof Slots, Slots[keyof Slots]['value']>>();
+
+function _GetSlots(container: Slots[keyof Slots]['usedBy']) {
+  return globalSlots.get(container);
 }
 
-function GetSlots<T extends AnyTemporalType>(container: T) {
-  return slots.get(container);
+const GetSlotsSymbol = Symbol.for('@@Temporal__GetSlots');
+
+// expose GetSlots to avoid dual package hazards
+(globalThis as any)[GetSlotsSymbol] ||= _GetSlots;
+
+const GetSlots = (globalThis as any)[GetSlotsSymbol] as typeof _GetSlots;
+
+function _CreateSlots(container: Slots[keyof Slots]['usedBy']): void {
+  globalSlots.set(container, Object.create(null));
 }
+
+const CreateSlotsSymbol = Symbol.for('@@Temporal__CreateSlots');
+
+// expose CreateSlots to avoid dual package hazards
+(globalThis as any)[CreateSlotsSymbol] ||= _CreateSlots;
+
+export const CreateSlots = (globalThis as any)[CreateSlotsSymbol] as typeof _CreateSlots;
+
 // TODO: is there a better way than 9 overloads to make HasSlot into a type
 // guard that takes a variable number of parameters?
 export function HasSlot<ID1 extends SlotKey>(container: unknown, id1: ID1): container is Slots[ID1]['usedBy'];
@@ -278,7 +294,7 @@ export function GetSlot<KeyT extends keyof Slots>(
   container: Slots[typeof id]['usedBy'],
   id: KeyT
 ): Slots[KeyT]['value'] {
-  const value = GetSlots(container)[id];
+  const value = GetSlots(container)?.[id];
   if (value === undefined) throw new TypeError(`Missing internal slot ${id}`);
   return value;
 }
@@ -287,5 +303,13 @@ export function SetSlot<KeyT extends SlotKey>(
   id: KeyT,
   value: Slots[KeyT]['value']
 ): void {
-  GetSlots(container)[id] = value;
+  const slots = GetSlots(container);
+
+  if (slots === undefined) throw new TypeError('Missing slots for the given container');
+
+  const existingSlot = slots[id];
+
+  if (existingSlot) throw new TypeError(`${id} already has set`);
+
+  slots[id] = value;
 }
