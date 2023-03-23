@@ -98,6 +98,7 @@ overrides:
       sourceType: module
       project:
         - './tsconfig.json'
+        - './tools/tsconfig.json'
     extends:
       - 'plugin:@typescript-eslint/recommended'
       # TODO turn this on - it catches lots of implicit 'any's

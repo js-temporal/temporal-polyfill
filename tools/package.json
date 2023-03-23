@@ -1,0 +1,23 @@
+{
+  "name": "scripts",
+  "version": "0.0.1",
+  "description": "support scripts for Temporal repository",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@colors/colors": "^1.5.0",
+    "prompt": "^1.3.0",
+    "ts-node": "^10.8.1",
+    "typescript": "^4.7.4",
+    "yargs": "^17.5.1"
+  },
+  "devDependencies": {
+    "@types/node": "^18.14.2",
+    "@types/prompt": "^1.1.5",
+    "@types/yargs": "^17.0.10"
+  }
+}
