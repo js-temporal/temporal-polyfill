@@ -100,17 +100,17 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   get epochSeconds(): Return['epochSeconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
-    return JSBI.toNumber(JSBI.divide(value, BILLION));
+    return JSBI.toNumber(ES.BigIntFloorDiv(value, BILLION));
   }
   get epochMilliseconds(): Return['epochMilliseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
-    return JSBI.toNumber(JSBI.divide(value, MILLION));
+    return JSBI.toNumber(ES.BigIntFloorDiv(value, MILLION));
   }
   get epochMicroseconds(): Return['epochMicroseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
-    return ES.ToBigIntExternal(JSBI.divide(value, THOUSAND));
+    return ES.ToBigIntExternal(ES.BigIntFloorDiv(value, THOUSAND));
   }
   get epochNanoseconds(): Return['epochNanoseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
