@@ -5981,10 +5981,6 @@ export function ToBigIntExternal(arg: unknown): ExternalBigInt {
 }
 
 export function ToBigInt(arg: unknown): JSBI {
-  if (arg instanceof JSBI) {
-    return arg;
-  }
-
   let prim = arg;
   if (typeof arg === 'object') {
     const toPrimFn = (arg as { [Symbol.toPrimitive]: unknown })[Symbol.toPrimitive];
@@ -5992,32 +5988,25 @@ export function ToBigInt(arg: unknown): JSBI {
       prim = ReflectApply(toPrimFn, arg, ['number']);
     }
   }
-  switch (typeof prim) {
-    case 'undefined':
-    case 'object':
-    case 'number':
-    case 'symbol':
-    default:
-      throw new TypeError(`cannot convert ${typeof arg} to bigint`);
-    case 'string':
-      if (!prim.match(/^\s*(?:[+-]?\d+\s*)?$/)) {
-        throw new SyntaxError('invalid BigInt syntax');
-      }
-    // eslint: no-fallthrough: false
-    case 'bigint':
-      try {
-        return JSBI.BigInt(prim.toString());
-      } catch (e: unknown) {
-        if (e instanceof Error && e.message.startsWith('Invalid integer')) throw new SyntaxError(e.message);
-        throw e;
-      }
-    case 'boolean':
-      if (prim) {
-        return ONE;
-      } else {
-        return ZERO;
-      }
+
+  // The AO ToBigInt throws on numbers because it does not allow implicit
+  // conversion between number and bigint (unlike the bigint constructor).
+  if (typeof prim === 'number') {
+    throw new TypeError('cannot convert number to bigint');
   }
+  if (typeof prim === 'bigint') {
+    // JSBI doesn't know anything about the bigint type, and intentionally
+    // assumes it doesn't exist. Passing one to the BigInt function will throw
+    // an error.
+    return JSBI.BigInt(prim.toString(10));
+  }
+  // JSBI will properly coerce types into a BigInt the same as the native BigInt
+  // constructor will, with the exception of native bigint which is handled
+  // above.
+  // As of 2023-04-07, the only runtime type that neither of those can handle is
+  // 'symbol', and both native bigint and the JSBI.BigInt function will throw an
+  // error if they are given a Symbol.
+  return JSBI.BigInt(prim as string | boolean | object);
 }
 
 // Note: This method returns values with bogus nanoseconds based on the previous iteration's
