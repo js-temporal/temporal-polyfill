@@ -6268,6 +6268,8 @@ export function CompareISODate(y1: number, m1: number, d1: number, y2: number, m
   return 0;
 }
 
+// Not abstract operations from the spec
+
 function NonNegativeBigIntDivmod(x: JSBI, y: JSBI) {
   let { quotient, remainder } = divmod(x, y);
   if (JSBI.lessThan(remainder, ZERO)) {
@@ -6275,6 +6277,14 @@ function NonNegativeBigIntDivmod(x: JSBI, y: JSBI) {
     remainder = JSBI.add(remainder, y);
   }
   return { quotient, remainder };
+}
+
+export function BigIntFloorDiv(left: JSBI, right: JSBI) {
+  const { quotient, remainder } = divmod(left, right);
+  if (!isZero(remainder) && !isNegativeJSBI(left) != !isNegativeJSBI(right)) {
+    return JSBI.subtract(quotient, ONE);
+  }
+  return quotient;
 }
 
 /** Divide two JSBIs, and return the result as a Number, including the remainder. */

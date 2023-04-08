@@ -51,9 +51,6 @@ built-ins/Temporal/Duration/prototype/subtract/order-of-operations.js
 built-ins/Temporal/Duration/prototype/subtract/relativeto-propertybag-calendar-wrong-type.js
 built-ins/Temporal/Duration/prototype/total/order-of-operations.js
 built-ins/Temporal/Duration/prototype/total/relativeto-propertybag-calendar-wrong-type.js
-built-ins/Temporal/Instant/prototype/epochMicroseconds/basic.js
-built-ins/Temporal/Instant/prototype/epochMilliseconds/basic.js
-built-ins/Temporal/Instant/prototype/epochSeconds/basic.js
 built-ins/Temporal/Instant/prototype/toString/order-of-operations.js
 built-ins/Temporal/Instant/prototype/toString/timezone.js
 built-ins/Temporal/Instant/prototype/toZonedDateTime/calendar-wrong-type.js
@@ -125,16 +122,12 @@ built-ins/Temporal/TimeZone/prototype/getInstantFor/argument-propertybag-calenda
 built-ins/Temporal/TimeZone/prototype/getInstantFor/order-of-operations.js
 built-ins/Temporal/TimeZone/prototype/getPlainDateTimeFor/calendar-wrong-type.js
 built-ins/Temporal/TimeZone/prototype/getPossibleInstantsFor/argument-propertybag-calendar-wrong-type.js
-built-ins/Temporal/TimeZone/prototype/toJSON/returns-identifier-slot.js
 built-ins/Temporal/ZonedDateTime/calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/compare/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/compare/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/from/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/from/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/add/order-of-operations.js
-built-ins/Temporal/ZonedDateTime/prototype/epochMicroseconds/basic.js
-built-ins/Temporal/ZonedDateTime/prototype/epochMilliseconds/basic.js
-built-ins/Temporal/ZonedDateTime/prototype/epochSeconds/basic.js
 built-ins/Temporal/ZonedDateTime/prototype/equals/argument-propertybag-calendar-wrong-type.js
 built-ins/Temporal/ZonedDateTime/prototype/equals/order-of-operations.js
 built-ins/Temporal/ZonedDateTime/prototype/since/argument-propertybag-calendar-wrong-type.js
