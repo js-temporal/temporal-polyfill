@@ -5,6 +5,7 @@ import { hideBin } from 'yargs/helpers';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const isTranspiledBuild = !!process.env.TRANSPILE;
+const timeoutMsecs = process.env.TIMEOUT || undefined;
 
 yargs(hideBin(process.argv))
   .command(
@@ -40,6 +41,7 @@ yargs(hideBin(process.argv))
         polyfillCodeFile: 'dist/script.js',
         expectedFailureFiles,
         testGlobs: parsedArgv._,
+        timeoutMsecs,
         updateExpectedFailureFiles: parsedArgv.updateExpectedFailureFiles
       });
 
