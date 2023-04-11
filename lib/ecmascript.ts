@@ -3302,6 +3302,7 @@ export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSB
   let rightOffsetNs = leftOffsetNs;
   while (leftOffsetNs === rightOffsetNs && JSBI.lessThan(JSBI.BigInt(leftNanos), uppercap)) {
     rightNanos = JSBI.add(leftNanos, TWO_WEEKS_NANOS);
+    if (JSBI.greaterThan(rightNanos, NS_MAX)) return null;
     rightOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, rightNanos);
     if (leftOffsetNs === rightOffsetNs) {
       leftNanos = rightNanos;
@@ -3337,12 +3338,19 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
   const afterLatestRule = afterLatestPossibleTzdbRuleChange();
   const isFarFuture = JSBI.greaterThan(epochNanoseconds, afterLatestRule);
   const lowercap = isFarFuture ? JSBI.subtract(epochNanoseconds, ABOUT_ONE_YEAR_NANOS) : BEFORE_FIRST_OFFSET_TRANSITION;
+
+  // TODO: proposal-temporal polyfill has different code for very similar
+  // optimizations as above, as well as in GetNamedTimeZonePreviousTransition.
+  // We should figure out if we should change one polyfill to match the other.
+
   let rightNanos = JSBI.subtract(epochNanoseconds, ONE);
+  if (JSBI.lessThan(rightNanos, BEFORE_FIRST_OFFSET_TRANSITION)) return null;
   const rightOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, rightNanos);
   let leftNanos = rightNanos;
   let leftOffsetNs = rightOffsetNs;
   while (rightOffsetNs === leftOffsetNs && JSBI.greaterThan(rightNanos, lowercap)) {
     leftNanos = JSBI.subtract(rightNanos, TWO_WEEKS_NANOS);
+    if (JSBI.lessThan(leftNanos, BEFORE_FIRST_OFFSET_TRANSITION)) return null;
     leftOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, leftNanos);
     if (rightOffsetNs === leftOffsetNs) {
       rightNanos = leftNanos;
