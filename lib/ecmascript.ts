@@ -3145,8 +3145,28 @@ export function GetCanonicalTimeZoneIdentifier(timeZoneIdentifier: string): stri
 export function GetNamedTimeZoneOffsetNanoseconds(id: string, epochNanoseconds: JSBI) {
   const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
     GetNamedTimeZoneDateTimeParts(id, epochNanoseconds);
-  const utc = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
-  if (utc === null) throw new RangeError('Date outside of supported range');
+
+  // The pattern of leap years in the ISO 8601 calendar repeats every 400
+  // years. To avoid overflowing at the edges of the range, we reduce the year
+  // to the remainder after dividing by 400, and then add back all the
+  // nanoseconds from the multiples of 400 years at the end.
+  const reducedYear = year % 400;
+  const yearCycles = (year - reducedYear) / 400;
+  const nsIn400YearCycle = JSBI.multiply(JSBI.BigInt(400 * 365 + 97), DAY_NANOS);
+
+  const reducedUTC = GetUTCEpochNanoseconds(
+    reducedYear,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond,
+    microsecond,
+    nanosecond
+  );
+  assertExists(reducedUTC);
+  const utc = JSBI.add(reducedUTC, JSBI.multiply(nsIn400YearCycle, JSBI.BigInt(yearCycles)));
   return JSBI.toNumber(JSBI.subtract(utc, epochNanoseconds));
 }
 
