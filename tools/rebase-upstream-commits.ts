@@ -333,11 +333,26 @@ function usesRepositoryFlag(builder: any) {
 let haveSetRepo = false;
 function setRepository(repo: string | undefined) {
   if (haveSetRepo) throw new Error("Don't change the repo between executions of the tool!");
-  let canonicalizedRepo = path.normalize(repo || './');
-  if (canonicalizedRepo && canonicalizedRepo.length && canonicalizedRepo[canonicalizedRepo.length - 1] !== '/') {
+  let canonicalizedRepo = path.resolve(path.normalize(repo || './'));
+  if (!canonicalizedRepo || canonicalizedRepo === '') {
+    throw new Error('Unable to canonicalize repository. Try setting the repository path explicitly using --repository');
+  }
+  if (canonicalizedRepo[canonicalizedRepo.length - 1] !== '/') {
     canonicalizedRepo += '/';
   }
-  currentExecOpts.repository = canonicalizedRepo || './';
+  try {
+    // Check if there is a .git subdir
+    // Note that even though canonicalizedRepo already ends in a / it is valid for
+    // there to be // as a separator to most fs commands - it will be normalized
+    // first down to /. We include the "extra" / in these commands for
+    // readability.
+    // Eventually we should probably just fix this up to use path.join instead across the
+    // whole tool.
+    fs.statSync(`${canonicalizedRepo}/.git/`);
+  } catch (e) {
+    throw new Error(`Repository ${canonicalizedRepo} does not appear to be a Git repository?`);
+  }
+  currentExecOpts.repository = canonicalizedRepo;
   currentExecOpts.rebaseToolConfigDir = `${currentExecOpts.repository}/.temporal_rebase_tool`;
   fs.mkdirSync(currentExecOpts.rebaseToolConfigDir, { recursive: true });
   console.error(`Repository directory set to ${currentExecOpts.repository}`);
