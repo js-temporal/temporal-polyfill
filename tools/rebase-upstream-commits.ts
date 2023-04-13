@@ -8,6 +8,7 @@
 
 import * as child_process from 'child_process';
 import * as fs from 'fs';
+import * as fsP from 'fs/promises';
 import path from 'path';
 import * as process from 'process';
 import yargs from 'yargs';
@@ -32,6 +33,13 @@ function storeInConfigDir(filename: string, content: string | undefined) {
 
 function readFromConfigDir(filename: string): string {
   return fs.readFileSync(`${currentExecOpts.rebaseToolConfigDir}/${filename}`, UTF8);
+}
+
+function cleanupConfigDir(): void {
+  log('cleaning up tool local storage');
+  return fs.rmSync(currentExecOpts.rebaseToolConfigDir, {
+    recursive: true
+  });
 }
 
 function runInRepository(
@@ -146,8 +154,14 @@ function startRebase(options: StartRebaseOptions) {
   const rebaseStartCmd = `git rebase --interactive --onto ${options.ontoCommit} ${options.startCommit} ${options.endCommit} ${execSuffix}`;
 
   const gitSequenceEditorCmd = `${process.argv[0]} ${process.argv[1]} git-sequence-editor`;
-  console.error(rebaseStartCmd);
-  console.error(gitSequenceEditorCmd);
+  log(`Starting a git rebase using the following invocation:
+
+GIT_SEQUENCE_EDITOR='${gitSequenceEditorCmd}' ${rebaseStartCmd}
+
+For more information about what commands are useful during a rebase,
+try running this tool's "rebasehelp" command.
+`);
+  console.log('\n(git)');
   try {
     runInRepository(rebaseStartCmd, {
       // We want this to show up in the same TTY that this tool was launched in.
@@ -162,6 +176,7 @@ function startRebase(options: StartRebaseOptions) {
     // relevant info will be printed to stdout/stderr and the rebasing loop
     // won't start. This error is likely redundant.
   }
+  console.log('(git done)\n');
 }
 
 function getNewestCommit(commit1: string, commit2: string, repoLocation?: string): string | undefined {
@@ -191,7 +206,6 @@ function isAncestor(potentialAncestorCommit: string, childCommit: string, repoLo
 }
 
 function editSequenceFile(file: string) {
-  console.error(`Editing ${file}`);
   // Read in file
   let existingSequenceFile = String(fs.readFileSync(file));
   // Change all pick to edit
@@ -212,11 +226,13 @@ function getConflictHash() {
 
 function continueRebasing() {
   // Here we go!
-  let currentConflict = getConflictHash();
+  let currentConflict: string | undefined = undefined;
   // eslint-disable-next-line no-constant-condition
   while (true) {
+    currentConflict = getConflictHash();
     if (!currentConflict) {
-      console.log('No conflict - done!');
+      log('No conflict - done!');
+      if (!inRebase()) cleanupConfigDir();
       return;
     }
 
@@ -245,8 +261,8 @@ function continueRebasing() {
       runInRepository('git commit --amend -F .git/rebase-merge/message');
       // We also know that if we are amending we can short-circuit here and
       // move to the next problem.
-      runInRepository('git rebase --continue', { stdio: 'inherit' });
-      currentConflict = getConflictHash();
+      log('Previous commit rebased cleanly.\n');
+      gitContinue();
       continue;
     }
 
@@ -260,49 +276,84 @@ function continueRebasing() {
     if (unresolvedFiles.match(/^spec\.html/gm)) {
       runInRepository('git rm -f spec.html');
     }
-    const currentTest262CommitHash = getTest262Commit('HEAD', 'test262');
-    const upstreamTest262CommitHash = getTest262Commit(currentConflict, 'polyfill/test262');
-    if (currentTest262CommitHash && upstreamTest262CommitHash) {
-      const updated262Commit = getNewestCommit(
-        currentTest262CommitHash,
-        upstreamTest262CommitHash,
-        currentExecOpts.repository + '/test262'
-      );
-      // const upstreamTest262CommitRaw = String(runInRepository(`git
-      // ls-tree ${currentConflict} polyfill/test262`)); if
-      // (!upstreamTest262CommitRaw) {
-      //   throw new Error(`Unable to find Test262 commit for upstream
-      //   ${currentConflict}`);
-      // }
-      // const upstreamTest262CommitHash =
-      // upstreamTest262CommitRaw.split(/\s+/)[2];
-      if (updated262Commit !== currentTest262CommitHash) {
-        runInRepository(`(cd test262 && git checkout ${updated262Commit})`);
+    const filesInUpstreamCommit = runInRepository(
+      `git diff-tree --name-only --no-commit-id -r ${currentConflict}`
+    ).split('\n');
+    if (filesInUpstreamCommit.includes('polyfill/test262')) {
+      const currentTest262CommitHash = getTest262Commit('HEAD', 'test262');
+      const upstreamTest262CommitHash = getTest262Commit(currentConflict, 'polyfill/test262');
+      if (currentTest262CommitHash && upstreamTest262CommitHash) {
+        const updated262Commit = getNewestCommit(
+          currentTest262CommitHash,
+          upstreamTest262CommitHash,
+          currentExecOpts.repository + '/test262'
+        );
+        if (updated262Commit !== currentTest262CommitHash) {
+          runInRepository(`(cd test262 && git checkout ${updated262Commit})`);
+        }
+      }
+      try {
+        runInRepository('git rm -rf polyfill/test262');
+      } catch (e) {
+        // Do nothing - this path might not need resolving according to git
+        // in this commit.
       }
     }
-    try {
-      runInRepository('git rm -rf polyfill/test262');
-    } catch (e) {
-      // Do nothing - this path might not need resolving in this commit.
+
+    if (filesInUpstreamCommit.includes('polyfill/lib/ecmascript.mjs')) {
+      log(`
+Changes to the ecmascript.mjs file in the upstream repository are never
+automatically rebased onto lib/ecmascript.ts, because the files don't
+share history and git doesn't think they are at all similar.
+
+To resolve this conflict you will need to manually inspect and re-apply
+changes from polyfill/lib/ecmascript.mjs over to lib/ecmascript.ts. Once
+done, remove polyfill/lib/ecmascript.mjs (using git rm) and add the new
+changes to lib/ecmascript.ts (using git add).
+
+Tip: to see the changes the upstream commit introduced, try running
+\`<this tool> basediff -U40 polyfill/lib/ecmascript.mjs\`.
+`);
     }
 
     // Try and move to the next conflict
-    try {
-      runInRepository('git rebase --continue', { stdio: 'inherit' });
-    } catch (e) {
-      // We should ignore this as we know it will basically always fail (as
-      // there's likely something else to rebase.)
-    }
+    gitContinue();
     const maybeNewConflict = getConflictHash();
     if (maybeNewConflict === currentConflict) {
-      console.log(`Commit needs manual resolution.
-To resume automatic rebase, run
-${process.argv[0]} ${process.argv[1]} continue
+      log(`Commit needs manual resolution.
+To resume automatic rebase, run this tool's "continue" command.
 `);
       return;
     }
     currentConflict = maybeNewConflict;
   }
+}
+
+function inRebase(): boolean {
+  try {
+    fs.statSync(`${currentExecOpts.repository}/.git/rebase-merge/`);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+// This function de-dupes the logic behind running `git rebase --continue` so all the
+// handling is the same and it will be clear to the user how the repository rebase state is changing over time.
+function gitContinue() {
+  try {
+    log('All automated resolution complete. continuing...\n');
+    console.log('\n(git)');
+    runInRepository('git rebase --continue', { stdio: 'inherit' });
+    console.log('(git done)\n');
+  } catch (e) {
+    // We should ignore this as we know it will basically always fail (as
+    // there's likely something else to rebase.)
+  }
+}
+
+function log(...args: unknown[]) {
+  console.log('[Temporal Rebase Tool] ', ...args);
 }
 
 function getTest262Commit(parentRepoCommit: string, test262Location = 'test262'): string | undefined {
@@ -355,7 +406,7 @@ function setRepository(repo: string | undefined) {
   currentExecOpts.repository = canonicalizedRepo;
   currentExecOpts.rebaseToolConfigDir = `${currentExecOpts.repository}/.temporal_rebase_tool`;
   fs.mkdirSync(currentExecOpts.rebaseToolConfigDir, { recursive: true });
-  console.error(`Repository directory set to ${currentExecOpts.repository}`);
+  log(`Repository directory set to ${currentExecOpts.repository}`);
 }
 
 yargs(hideBin(process.argv))
@@ -398,14 +449,14 @@ yargs(hideBin(process.argv))
     (argv) => {
       setRepository(argv.repository as string);
       // currentExecOpts.repository = argv.repository as string;
-      console.log('Starting rebase');
+      log('Starting rebase');
       startRebase({
         ontoCommit: revParse(argv.onto as string),
         startCommit: revParse(argv.start as string),
         endCommit: revParse(argv.end as string),
         exec: argv.exec as string
       });
-      console.log('rebasing');
+      log('rebasing');
       // At this point, the rebase has started and we are editing the first
       // commit Drop into the continueRebasing looping.
       continueRebasing();
@@ -413,7 +464,7 @@ yargs(hideBin(process.argv))
   )
   .command(
     'git-sequence-editor <file>',
-    false,
+    false /** don't show this in the help output */,
     () => {
       // This command doesn't need the repo flag, but eslint doesn't like empty functions so instead
       // we just comment that there's no need to configure the yargs builder for this command.
@@ -501,6 +552,70 @@ yargs(hideBin(process.argv))
     },
     () => {
       console.log(process.argv[0], process.argv[1]);
+    }
+  )
+  .command(
+    'abort',
+    'Aborts the current rebase, cleaning up any interim state leftover by the tool',
+    (builder) => {
+      usesRepositoryFlag(builder);
+    },
+    (argv) => {
+      setRepository(argv.repository as string);
+      cleanupConfigDir();
+      runInRepository('git rebase --abort');
+    }
+  )
+  .command(
+    'finish',
+    'Finishes out the current rebase by removing all existing to-do rebase operations',
+    (builder) => {
+      usesRepositoryFlag(builder);
+    },
+    async (argv) => {
+      setRepository(argv.repository as string);
+      const rebaseTodoFile = await fsP.open(`${currentExecOpts.repository}/.git/rebase-merge/git-rebase-todo`, 'r+');
+      await rebaseTodoFile.truncate();
+      // runs git rebase --continue and cleans up the local storage space for the tool
+      continueRebasing();
+    }
+  )
+  .command(
+    'rebasehelp',
+    'Prints a large amount of help about what commands are useful during a rebase and how to use them',
+    () => {
+      // This command doesn't need the repo flag, but eslint doesn't like empty functions so instead
+      // we just comment that there's no need to configure the yargs builder for this command.
+    },
+    () => {
+      log(`
+In this help document, we refer to this tool by the alias 'trt'.
+
+At any time during a rebase, you can:
+- continue rebasing a single commit and attempt automatic resolution of
+  remaining commits using the "continue" command
+- view the entire upstream commit object using the "showupstream" command
+- view upstream diffs for a particular file using the "basediff" command
+  Example:
+    \`trt basediff -U40 polyfill/lib/ecmascript.mjs\`
+- perform normal git rebase operations (git status, git add, git rm, git
+  reset, etc), look at files, etc. The tool exists when you need to take
+  action, so you can run any terminal commands you wish.
+
+If you need to stop rebasing for any reason, you have a couple choices:
+- abort this rebase (lose your work) using this tool's "abort" command
+- finish up the current commit you are rebasing and finish rebasing using this
+  tool's "finish" command
+
+Prefer using this tool's commands to finish the rebase (either via "continue",
+"abort" or "finish") so the local file storage this tool uses will be cleaned
+up.
+
+This tool runs any git commands that might have interactivity directly, and so
+lots of the output printed when running tool commands will actually be from git
+, not from this tool. To make it easy to distinguish the two, any output this
+tool prints is prefixed with [Temporal Rebase Tool].
+`);
     }
   )
   .help().argv;
