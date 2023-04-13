@@ -1217,7 +1217,8 @@ export function ToRelativeTemporalObject(options: {
       );
     }
     if (!calendar) calendar = 'iso8601';
-    calendar = ToTemporalCalendarSlotValue(calendar);
+    if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+    calendar = ASCIILowercase(calendar);
   }
   if (timeZone === undefined) return CreateTemporalDate(year, month, day, calendar);
   // If offset is missing here, then offsetBehavior will never be be 'option'.
@@ -1460,10 +1461,12 @@ export function ToTemporalDate(
     return CalendarDateFromFields(calendar, fields, options);
   }
   ToTemporalOverflow(options); // validate and ignore
-  const { year, month, day, calendar, z } = ParseTemporalDateString(ToString(item));
+  let { year, month, day, calendar, z } = ParseTemporalDateString(ToString(item));
   if (z) throw new RangeError('Z designator not supported for PlainDate');
-  const TemporalPlainDate = GetIntrinsic('%Temporal.PlainDate%');
-  return new TemporalPlainDate(year, month, day, calendar); // include validation
+  if (!calendar) calendar = 'iso8601';
+  if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+  calendar = ASCIILowercase(calendar);
+  return CreateTemporalDate(year, month, day, calendar);
 }
 
 export function InterpretTemporalDateTimeFields(
@@ -1548,8 +1551,9 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
       ParseTemporalDateTimeString(ToString(item)));
     if (z) throw new RangeError('Z designator not supported for PlainDateTime');
     RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
-    if (calendar === undefined) calendar = 'iso8601';
-    calendar = ToTemporalCalendarSlotValue(calendar);
+    if (!calendar) calendar = 'iso8601';
+    if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+    calendar = ASCIILowercase(calendar);
   }
   return CreateTemporalDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar);
 }
@@ -1618,7 +1622,8 @@ export function ToTemporalMonthDay(
   ToTemporalOverflow(options); // validate and ignore
   let { month, day, referenceISOYear, calendar } = ParseTemporalMonthDayString(ToString(item));
   if (calendar === undefined) calendar = 'iso8601';
-  calendar = ToTemporalCalendarSlotValue(calendar);
+  if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+  calendar = ASCIILowercase(calendar);
 
   if (referenceISOYear === undefined) {
     RejectISODate(1972, month, day);
@@ -1683,7 +1688,8 @@ export function ToTemporalYearMonth(
   ToTemporalOverflow(options); // validate and ignore
   let { year, month, referenceISODay, calendar } = ParseTemporalYearMonthString(ToString(item));
   if (calendar === undefined) calendar = 'iso8601';
-  calendar = ToTemporalCalendarSlotValue(calendar);
+  if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+  calendar = ASCIILowercase(calendar);
 
   if (referenceISODay === undefined) {
     RejectISODate(year, month, 1);
@@ -1830,7 +1836,8 @@ export function ToTemporalZonedDateTime(
       offsetBehaviour = 'wall';
     }
     if (!calendar) calendar = 'iso8601';
-    calendar = ToTemporalCalendarSlotValue(calendar);
+    if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+    calendar = ASCIILowercase(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
     disambiguation = ToTemporalDisambiguation(options);
     offsetOpt = ToTemporalOffset(options, 'reject');
