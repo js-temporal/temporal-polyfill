@@ -155,8 +155,6 @@ built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-timezone-instan
 built-ins/Temporal/Duration/prototype/add/relativeto-propertybag-timezone-wrong-type.js
 built-ins/Temporal/Duration/prototype/add/relativeto-string-datetime.js
 built-ins/Temporal/Duration/prototype/round/nanoseconds-to-days-loop-indefinitely-2.js
-built-ins/Temporal/Duration/prototype/round/nanoseconds-to-days-precision-exact-mathematical-values-1.js
-built-ins/Temporal/Duration/prototype/round/nanoseconds-to-days-precision-exact-mathematical-values-2.js
 built-ins/Temporal/Duration/prototype/round/order-of-operations.js
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-calendar-fields-undefined.js
 built-ins/Temporal/Duration/prototype/round/relativeto-propertybag-calendar-wrong-type.js
