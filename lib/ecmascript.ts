@@ -3340,7 +3340,7 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
   // Find the difference in days only.
   const dtStart = BuiltinTimeZoneGetPlainDateTimeFor(timeZone, start, calendar);
   const dtEnd = BuiltinTimeZoneGetPlainDateTimeFor(timeZone, end, calendar);
-  let { days } = DifferenceISODateTime(
+  let { days: daysNumber } = DifferenceISODateTime(
     GetSlot(dtStart, ISO_YEAR),
     GetSlot(dtStart, ISO_MONTH),
     GetSlot(dtStart, ISO_DAY),
@@ -3363,7 +3363,7 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
     'day',
     ObjectCreate(null)
   );
-  let intermediateNs = AddZonedDateTime(start, timeZone, calendar, 0, 0, 0, days, 0, 0, 0, 0, 0, 0);
+  let intermediateNs = AddZonedDateTime(start, timeZone, calendar, 0, 0, 0, daysNumber, 0, 0, 0, 0, 0, 0);
   // may disambiguate
 
   // If clock time after addition was in the middle of a skipped period, the
@@ -3374,10 +3374,25 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
   // back inside the period where it belongs. Note that this case only can
   // happen for positive durations because the only direction that
   // `disambiguation: 'compatible'` can change clock time is forwards.
+  let daysBigInt = JSBI.BigInt(daysNumber);
   if (sign === 1) {
-    while (days > 0 && JSBI.greaterThan(intermediateNs, endNs)) {
-      --days;
-      intermediateNs = AddZonedDateTime(start, timeZone, calendar, 0, 0, 0, days, 0, 0, 0, 0, 0, 0);
+    while (JSBI.greaterThan(daysBigInt, ZERO) && JSBI.greaterThan(intermediateNs, endNs)) {
+      daysBigInt = JSBI.subtract(daysBigInt, ONE);
+      intermediateNs = AddZonedDateTime(
+        start,
+        timeZone,
+        calendar,
+        0,
+        0,
+        0,
+        JSBI.toNumber(daysBigInt),
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      );
       // may do disambiguation
     }
   }
@@ -3397,10 +3412,10 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
     if (isOverflow) {
       nanoseconds = JSBI.subtract(nanoseconds, JSBI.BigInt(dayLengthNs));
       relativeInstant = new TemporalInstant(oneDayFartherNs);
-      days += sign;
+      daysBigInt = JSBI.add(daysBigInt, JSBI.BigInt(sign));
     }
   } while (isOverflow);
-  return { days, nanoseconds, dayLengthNs: MathAbs(dayLengthNs) };
+  return { days: JSBI.toNumber(daysBigInt), nanoseconds, dayLengthNs: MathAbs(dayLengthNs) };
 }
 
 export function BalanceDuration(
