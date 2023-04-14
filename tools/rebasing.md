@@ -116,6 +116,7 @@ Rebasing changes from the spec repository into this one follows some general rul
    Consider using `| wc -l` to count the list, and try to create rebase PRs that are no more than 20 or 30 commits long or particularly complex, to make it easier on both your reviewers and yourself.
    Pick a commit hash from this list, now denoted as `TARGET_UPSTREAM_COMMIT`.
    Consider exporting this value in your terminal so you can reference it later in commands: `export TARGET_UPSTREAM_COMMIT=<value>`
+   You can always stop rebasing early using the `trt finish` or `trt abort` commands which will keep or throw away any work you have already done respectively.
  - Decide what sort of automated testing should be done in between commits, and create a temporary script to run to test those things.
    - For example, if you want to validate that the code builds, is lint free, and passes most of the CI tests, an example `test.sh` script might be
      ```sh
@@ -130,7 +131,7 @@ Rebasing changes from the spec repository into this one follows some general rul
    - `trt $LATEST_UPSTREAMED_COMMIT $TARGET_UPSTREAM_COMMIT --onto pub/main`
    - Add `--exec=<command or script>` if you want to run a command after each substantial change to the repo during the rebase.
    To continue the example from above: `--exec=./test.sh` would cause the tool to run that test script after every substantial change to the repo.
- - This will automatically queue up a git interactive rebase with all the relevant commits and start to work through them one by one, using the interactive rebase's 'edit' option on each commit to allow the tool a chance to inspect and edit each commit.
+ - This will automatically start a git interactive rebase with all the relevant commits and start to work through them one by one, using the interactive rebase's 'edit' option on each commit to allow the tool a chance to inspect and edit each commit.
   - The tool will:
     - Automatically resolve rebase conflicts where possible, including
       - removing docs/ and spec/ from upstream which we don't use in this repo
@@ -141,12 +142,10 @@ Rebasing changes from the spec repository into this one follows some general rul
     - `trt showupstream` will show the upstream change in its entirety, including all files changed and the commit description.
     - `trt basediff` will show just file diffs from the upstream change. This can be particularly useful for larger files (like ecmascript.mjs) where the small diffs shown by the `showupstream` command are not enough detail.
       - Example: `trt basediff -U40 -- polyfill/lib/ecmascript.mjs` for the upstream diff in `ecmascript.mjs` with 40 unified diff lines on each side of a change. 
- - You might decide halfway through to finish where you are at with the current rebase and continue later in another Pull Request.
- One way to do this is to finish rebasing the current commit, but before running `trt continue` to instead clear out the git rebase todo list:
-   - `git rebase --edit-todo` and then delete all the lines listed.
-   - Save that file, quit the editor, and then run `trt continue`.
-   - The rebase should now finish, and `git status` will show you in a "detached HEAD" state.
-   - Create a branch at that new commit to save all your hard work! `git checkout -b <my branch name here>`.
+ - You might decide halfway through to finish where you are at with the current rebase and continue later in another Pull Request. The tool has a convenience command for this: `trt finish`.
+   Once this command is run, you will likely end up in a "detached HEAD" state, and should create a branch at that new commit to save all your hard work! `git checkout -b <my branch name here>`.
+ - If code being rebased fixes a Test262 test, then it will start to unexpectedly pass, and `npm run test262` will fail.
+   There is support in the test262 runner to automatically remove tests listed in the expected-failure files that are now passing - this is done by running `npm run test262 -- --update-expected-failure-files`. I would NOT recommend having this run automatically in the `exec` script, and instead running this manually if needed to avoid accidentally cleaning up tests that are supposed to still fail.
 
  ## Code Review
 
