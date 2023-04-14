@@ -612,9 +612,9 @@ Prefer using this tool's commands to finish the rebase (either via "continue",
 up.
 
 This tool runs any git commands that might have interactivity directly, and so
-lots of the output printed when running tool commands will actually be from git
-, not from this tool. To make it easy to distinguish the two, any output this
-tool prints is prefixed with [Temporal Rebase Tool].
+lots of the output printed when running tool commands will actually be from
+git, not from this tool. To make it easy to distinguish the two, any output
+this tool prints is prefixed with [Temporal Rebase Tool].
 `);
     }
   )
