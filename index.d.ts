@@ -184,7 +184,7 @@ export namespace Temporal {
   };
 
   export type ShowCalendarOption = {
-    calendarName?: 'auto' | 'always' | 'never';
+    calendarName?: 'auto' | 'always' | 'never' | 'critical';
   };
 
   export type CalendarTypeToStringOptions = Partial<ToStringPrecisionOptions & ShowCalendarOption>;
