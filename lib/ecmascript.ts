@@ -403,7 +403,8 @@ function MaybeFormatCalendarAnnotation(
 function FormatCalendarAnnotation(id: string, showCalendar: Temporal.ShowCalendarOption['calendarName']) {
   if (showCalendar === 'never') return '';
   if (showCalendar === 'auto' && id === 'iso8601') return '';
-  return `[u-ca=${id}]`;
+  const flag = showCalendar === 'critical' ? '!' : '';
+  return `[${flag}u-ca=${id}]`;
 }
 
 function ParseISODateTime(isoString: string) {
@@ -889,7 +890,7 @@ export function ToTemporalOffset(
 }
 
 export function ToShowCalendarOption(options: Temporal.ShowCalendarOption) {
-  return GetOption(options, 'calendarName', ['auto', 'always', 'never'], 'auto');
+  return GetOption(options, 'calendarName', ['auto', 'always', 'never', 'critical'], 'auto');
 }
 
 export function ToShowTimeZoneNameOption(options: Temporal.ZonedDateTimeToStringOptions) {
@@ -2741,7 +2742,7 @@ export function TemporalMonthDayToString(
   let resultString = `${month}-${day}`;
   const calendar = GetSlot(monthDay, CALENDAR);
   const calendarID = ToString(calendar);
-  if (showCalendar === 'always' || calendarID !== 'iso8601') {
+  if (showCalendar === 'always' || showCalendar === 'critical' || calendarID !== 'iso8601') {
     const year = ISOYearString(GetSlot(monthDay, ISO_YEAR));
     resultString = `${year}-${resultString}`;
   }
@@ -2759,7 +2760,7 @@ export function TemporalYearMonthToString(
   let resultString = `${year}-${month}`;
   const calendar = GetSlot(yearMonth, CALENDAR);
   const calendarID = ToString(calendar);
-  if (showCalendar === 'always' || calendarID !== 'iso8601') {
+  if (showCalendar === 'always' || showCalendar === 'critical' || calendarID !== 'iso8601') {
     const day = ISODateTimePartString(GetSlot(yearMonth, ISO_DAY));
     resultString += `-${day}`;
   }
