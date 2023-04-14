@@ -12,7 +12,7 @@ import { GetSlot, TIMEZONE_ID } from '../lib/slots';
 import { TimeZone } from '../lib/timezone';
 
 describe('ECMAScript', () => {
-  describe('GetIANATimeZoneDateTimeParts', () => {
+  describe('GetNamedTimeZoneDateTimeParts', () => {
     describe('epoch', () => {
       test(0n, GetSlot(TimeZone.from('America/Los_Angeles'), TIMEZONE_ID), {
         year: 1969,
@@ -385,7 +385,8 @@ describe('ECMAScript', () => {
       // Temporal APIs, but since we are directly calling into the ES function
       // we must convert in the test instead.
       const nanosAsBigIntInternal = ES.ToBigInt(nanos);
-      it(`${nanos} @ ${zone}`, () => deepEqual(ES.GetIANATimeZoneDateTimeParts(nanosAsBigIntInternal, zone), expected));
+      it(`${nanos} @ ${zone}`, () =>
+        deepEqual(ES.GetNamedTimeZoneDateTimeParts(zone, nanosAsBigIntInternal), expected));
     }
   });
 
