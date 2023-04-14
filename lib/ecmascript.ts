@@ -4017,8 +4017,11 @@ export function UnbalanceDurationRelative(
         if (!calendar) throw new RangeError('a starting point is required for months balancing');
         assertExists(relativeTo);
         // balance years down to months
-        const dateAdd = GetMethod(calendar, 'dateAdd');
-        const dateUntil = GetMethod(calendar, 'dateUntil');
+        let dateAdd, dateUntil;
+        if (typeof calendar !== 'string') {
+          dateAdd = GetMethod(calendar, 'dateAdd');
+          dateUntil = GetMethod(calendar, 'dateUntil');
+        }
         while (!isZero(abs(years))) {
           const newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, undefined, dateAdd);
           const untilOptions = ObjectCreate(null) as Temporal.DifferenceOptions<typeof largestUnit>;
@@ -4034,8 +4037,7 @@ export function UnbalanceDurationRelative(
     case 'week': {
       if (!calendar) throw new RangeError('a starting point is required for weeks balancing');
       assertExists(relativeTo);
-      const dateAdd = GetMethod(calendar, 'dateAdd');
-      // balance years down to days
+      const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
       // balance years down to days
       while (!isZero(abs(years))) {
         let oneYearDays;
@@ -4057,7 +4059,7 @@ export function UnbalanceDurationRelative(
       // balance years down to days
       if (isZero(years) && isZero(months) && isZero(weeks)) break;
       if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
-      const dateAdd = GetMethod(calendar, 'dateAdd');
+      const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
       while (!isZero(abs(years))) {
         assertExists(relativeTo);
         let oneYearDays;
@@ -4133,7 +4135,7 @@ export function BalanceDurationRelative(
     case 'year': {
       if (!calendar) throw new RangeError('a starting point is required for years balancing');
       assertExists(relativeTo);
-      const dateAdd = GetMethod(calendar, 'dateAdd');
+      const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
       // balance days up to years
       let newRelativeTo, oneYearDays;
       ({ relativeTo: newRelativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear, dateAdd));
@@ -4156,7 +4158,7 @@ export function BalanceDurationRelative(
 
       // balance months up to years
       newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, undefined, dateAdd);
-      const dateUntil = GetMethod(calendar, 'dateUntil');
+      const dateUntil = typeof calendar !== 'string' ? GetMethod(calendar, 'dateUntil') : undefined;
       const untilOptions = ObjectCreate(null) as Temporal.DifferenceOptions<'month'>;
       untilOptions.largestUnit = 'month';
       let untilResult = CalendarDateUntil(calendar, relativeTo, newRelativeTo, untilOptions, dateUntil);
@@ -4176,7 +4178,7 @@ export function BalanceDurationRelative(
     case 'month': {
       if (!calendar) throw new RangeError('a starting point is required for months balancing');
       assertExists(relativeTo);
-      const dateAdd = GetMethod(calendar, 'dateAdd');
+      const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
       // balance days up to months
       let newRelativeTo, oneMonthDays;
       ({ relativeTo: newRelativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
@@ -4191,7 +4193,7 @@ export function BalanceDurationRelative(
     case 'week': {
       if (!calendar) throw new RangeError('a starting point is required for weeks balancing');
       assertExists(relativeTo);
-      const dateAdd = GetMethod(calendar, 'dateAdd');
+      const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
       // balance days up to weeks
       let newRelativeTo, oneWeekDays;
       ({ relativeTo: newRelativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek, dateAdd));
@@ -5284,7 +5286,7 @@ function AddDuration(
 
     const dateDuration1 = new TemporalDuration(y1, mon1, w1, d1, 0, 0, 0, 0, 0, 0);
     const dateDuration2 = new TemporalDuration(y2, mon2, w2, d2, 0, 0, 0, 0, 0, 0);
-    const dateAdd = GetMethod(calendar, 'dateAdd');
+    const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
     const intermediate = CalendarDateAdd(calendar, relativeTo, dateDuration1, undefined, dateAdd);
     const end = CalendarDateAdd(calendar, intermediate, dateDuration2, undefined, dateAdd);
 
@@ -6129,7 +6131,7 @@ export function RoundDuration(
       // convert months and weeks to days by calculating difference(
       // relativeTo + years, relativeTo + { years, months, weeks })
       const yearsDuration = new TemporalDuration(years);
-      const dateAdd = GetMethod(calendar, 'dateAdd');
+      const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
       const yearsLater = CalendarDateAdd(calendar, relativeTo, yearsDuration, undefined, dateAdd);
       const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
       const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, undefined, dateAdd);
@@ -6179,7 +6181,7 @@ export function RoundDuration(
       // convert weeks to days by calculating difference(relativeTo +
       //   { years, months }, relativeTo + { years, months, weeks })
       const yearsMonths = new TemporalDuration(years, months);
-      const dateAdd = GetMethod(calendar, 'dateAdd');
+      const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
       const yearsMonthsLater = CalendarDateAdd(calendar, relativeTo, yearsMonths, undefined, dateAdd);
       const yearsMonthsWeeks = new TemporalDuration(years, months, weeks);
       const yearsMonthsWeeksLater = CalendarDateAdd(calendar, relativeTo, yearsMonthsWeeks, undefined, dateAdd);
@@ -6216,11 +6218,12 @@ export function RoundDuration(
     case 'week': {
       if (!calendar) throw new RangeError('A starting point is required for weeks rounding');
       assertExists(relativeTo);
-      const dateAdd = GetMethod(calendar, 'dateAdd');
+
       // Weeks may be different lengths of days depending on the calendar,
       // convert days to weeks in a loop as described above under 'years'.
       const sign = MathSign(days);
       const oneWeek = new TemporalDuration(0, 0, days < 0 ? -1 : 1);
+      const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
       let oneWeekDays;
       ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek, dateAdd));
       while (MathAbs(days) >= MathAbs(oneWeekDays)) {
