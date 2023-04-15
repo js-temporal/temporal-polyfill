@@ -3343,6 +3343,20 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
   // optimizations as above, as well as in GetNamedTimeZonePreviousTransition.
   // We should figure out if we should change one polyfill to match the other.
 
+  // We assume most time zones either have regular DST rules that extend
+  // indefinitely into the future, or they have no DST transitions between now
+  // and next year. Africa/Casablanca and Africa/El_Aaiun are unique cases
+  // that fit neither of these. Their irregular DST transitions are
+  // precomputed until 2087 in the current time zone database, so requesting
+  // the previous transition for an instant far in the future may take an
+  // extremely long time as it loops backward 2 weeks at a time.
+  if (id === 'Africa/Casablanca' || id === 'Africa/El_Aaiun') {
+    const lastPrecomputed = GetSlot(ToTemporalInstant('2088-01-01T00Z'), EPOCHNANOSECONDS);
+    if (JSBI.lessThan(lastPrecomputed, epochNanoseconds)) {
+      return GetNamedTimeZonePreviousTransition(id, lastPrecomputed);
+    }
+  }
+
   let rightNanos = JSBI.subtract(epochNanoseconds, ONE);
   if (JSBI.lessThan(rightNanos, BEFORE_FIRST_OFFSET_TRANSITION)) return null;
   const rightOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, rightNanos);
