@@ -66,15 +66,15 @@ Date:   Tue Sep 27 16:04:44 2022 -0700
 
 Install the rebase-tools dependencies:
 
- - `cd tools && npm ci`
+ - `cd tools && npm ci && cd ..`
 
 Check that you can run the tool:
 
- - `npx ts-node rebase-upstream-commits.ts` should print out the tool's command-line help.
+ - `npx ts-node tools/rebase-upstream-commits.ts` should print out the tool's command-line help.
 
 Throughout this document, we refer back to this command as `trt`, and we recommend you add an alias to your current terminal window that can run the tool:
 
- - `alias trt="$(npx ts-node rebase-upstream-commits.ts realcmd)"`
+ - `alias trt="$(npx ts-node tools/rebase-upstream-commits.ts realcmd)"`
  - TODO(12wrigja): Determine how likely it is that the live-paths here are a problem in practice.
 
 ## Rebasing Guidelines
