@@ -6500,6 +6500,12 @@ export function IsBuiltinCalendar(id: string): id is BuiltinCalendarId {
 }
 
 export function ASCIILowercase<T extends string>(str: T): T {
+  // The spec defines this operation distinct from String.prototype.lowercase,
+  // so we'll follow the spec here. Note that nasty security issues that can
+  // happen for some use cases if you're comparing case-modified non-ASCII
+  // values. For example, Turkish's "I" character was the source of a security
+  // issue involving "file://" URLs. See
+  // https://haacked.com/archive/2012/07/05/turkish-i-problem-and-why-you-should-care.aspx/.
   return str.replace(/[A-Z]/g, (l) => {
     const code = l.charCodeAt(0);
     return String.fromCharCode(code + 0x20);
