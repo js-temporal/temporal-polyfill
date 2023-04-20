@@ -288,7 +288,7 @@ export function HasSlot<
 export function HasSlot(container: unknown, ...ids: (keyof Slots)[]): boolean {
   if (!container || 'object' !== typeof container) return false;
   const myslots = GetSlots(container as AnyTemporalType);
-  return !!myslots && ids.reduce((all: boolean, id) => all && id in myslots, true);
+  return !!myslots && ids.every((id) => id in myslots);
 }
 export function GetSlot<KeyT extends keyof Slots>(
   container: Slots[typeof id]['usedBy'],
