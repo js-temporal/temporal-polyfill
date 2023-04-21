@@ -4021,7 +4021,7 @@ export function UnbalanceDurationRelative(
           dateAdd = GetMethod(calendar, 'dateAdd');
           dateUntil = GetMethod(calendar, 'dateUntil');
         }
-        while (!isZero(abs(years))) {
+        while (!isZero(years)) {
           const newRelativeTo = CalendarDateAdd(calendar, relativeTo, oneYear, undefined, dateAdd);
           const untilOptions = ObjectCreate(null) as Temporal.DifferenceOptions<typeof largestUnit>;
           untilOptions.largestUnit = 'month';
@@ -4038,7 +4038,7 @@ export function UnbalanceDurationRelative(
       assertExists(relativeTo);
       const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
       // balance years down to days
-      while (!isZero(abs(years))) {
+      while (!isZero(years)) {
         let oneYearDays;
         ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear, dateAdd));
         days = JSBI.add(days, JSBI.BigInt(oneYearDays));
@@ -4046,7 +4046,7 @@ export function UnbalanceDurationRelative(
       }
 
       // balance months down to days
-      while (!isZero(abs(months))) {
+      while (!isZero(months)) {
         let oneMonthDays;
         ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
         days = JSBI.add(days, JSBI.BigInt(oneMonthDays));
@@ -4059,7 +4059,7 @@ export function UnbalanceDurationRelative(
       if (isZero(years) && isZero(months) && isZero(weeks)) break;
       if (!calendar) throw new RangeError('a starting point is required for balancing calendar units');
       const dateAdd = typeof calendar !== 'string' ? GetMethod(calendar, 'dateAdd') : undefined;
-      while (!isZero(abs(years))) {
+      while (!isZero(years)) {
         assertExists(relativeTo);
         let oneYearDays;
         ({ relativeTo, days: oneYearDays } = MoveRelativeDate(calendar, relativeTo, oneYear, dateAdd));
@@ -4068,7 +4068,7 @@ export function UnbalanceDurationRelative(
       }
 
       // balance months down to days
-      while (!isZero(abs(months))) {
+      while (!isZero(months)) {
         assertExists(relativeTo);
         let oneMonthDays;
         ({ relativeTo, days: oneMonthDays } = MoveRelativeDate(calendar, relativeTo, oneMonth, dateAdd));
@@ -4077,7 +4077,7 @@ export function UnbalanceDurationRelative(
       }
 
       // balance weeks down to days
-      while (!isZero(abs(weeks))) {
+      while (!isZero(weeks)) {
         assertExists(relativeTo);
         let oneWeekDays;
         ({ relativeTo, days: oneWeekDays } = MoveRelativeDate(calendar, relativeTo, oneWeek, dateAdd));
