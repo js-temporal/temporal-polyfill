@@ -2496,7 +2496,7 @@ export function CalendarEquals(one: CalendarSlot, two: CalendarSlot) {
 // "If ? CalendarEquals(one, two) is false, throw a RangeError exception."
 // This is so that we can build an informative error message without
 // re-getting the .id properties.
-function CalendarEqualsOrThrow(one: CalendarSlot, two: CalendarSlot, errorMessageAction: string) {
+function ThrowIfCalendarsNotEqual(one: CalendarSlot, two: CalendarSlot, errorMessageAction: string) {
   if (one === two) return;
   const cal1 = ToTemporalCalendarIdentifier(one);
   const cal2 = ToTemporalCalendarIdentifier(two);
@@ -4838,7 +4838,7 @@ export function DifferenceTemporalPlainDate(
   const other = ToTemporalDate(otherParam);
   const calendar = GetSlot(plainDate, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
-  CalendarEqualsOrThrow(calendar, otherCalendar, 'compute difference between dates');
+  ThrowIfCalendarsNotEqual(calendar, otherCalendar, 'compute difference between dates');
 
   const resolvedOptions = ObjectCreate(null) as NonNullable<typeof options>;
   CopyDataProperties(resolvedOptions, GetOptionsObject(options), []);
@@ -4880,7 +4880,7 @@ export function DifferenceTemporalPlainDateTime(
   const other = ToTemporalDateTime(otherParam);
   const calendar = GetSlot(plainDateTime, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
-  CalendarEqualsOrThrow(calendar, otherCalendar, 'compute difference between dates');
+  ThrowIfCalendarsNotEqual(calendar, otherCalendar, 'compute difference between dates');
 
   const resolvedOptions = ObjectCreate(null) as NonNullable<typeof options>;
   CopyDataProperties(resolvedOptions, GetOptionsObject(options), []);
@@ -5031,7 +5031,7 @@ export function DifferenceTemporalPlainYearMonth(
   const other = ToTemporalYearMonth(otherParam);
   const calendar = GetSlot(yearMonth, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
-  CalendarEqualsOrThrow(calendar, otherCalendar, 'compute difference between months');
+  ThrowIfCalendarsNotEqual(calendar, otherCalendar, 'compute difference between months');
 
   const resolvedOptions = ObjectCreate(null) as NonNullable<typeof options>;
   CopyDataProperties(resolvedOptions, GetOptionsObject(options), []);
@@ -5081,7 +5081,7 @@ export function DifferenceTemporalZonedDateTime(
   const other = ToTemporalZonedDateTime(otherParam);
   const calendar = GetSlot(zonedDateTime, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
-  CalendarEqualsOrThrow(calendar, otherCalendar, 'compute difference between dates');
+  ThrowIfCalendarsNotEqual(calendar, otherCalendar, 'compute difference between dates');
 
   const resolvedOptions = ObjectCreate(null) as NonNullable<typeof options>;
   CopyDataProperties(resolvedOptions, GetOptionsObject(options), []);
