@@ -6,14 +6,17 @@
       "request": "launch",
       "type": "node",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "test262"],
+      "runtimeArgs": [
+        "run", 
+        "test262", 
+        // Replace the glob pattern below with tests you want to debug.
+        // Comment out to run all tests, but will be very slow!
+        // "PlainYearMonth/prototype/subtract/*.js"
+      ],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "autoAttachChildProcesses": true,
       "env": {
-        // Replace the glob pattern below with tests you want to debug.
-        // Comment out to run all tests, but will be very slow!
-        "TESTS": "PlainYearMonth/prototype/subtract/*.js",
         // Extends timeouts to 1 hour (from 10 seconds default) so you can
         // debug a test stopped at a breakpoint before the runner kills it.
         "TIMEOUT": "3600000"
@@ -24,13 +27,11 @@
       "request": "launch",
       "type": "node",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "test262"],
+      "runtimeArgs": ["run", "test262", "${file}"],
       "console": "integratedTerminal",
       "internalConsoleOptions": "neverOpen",
       "autoAttachChildProcesses": true,
       "env": {
-        // Only test the currently-opened file in the IDE
-        "TESTS": "${file}",
         // Extends timeouts to 1 hour (from 10 seconds default) so you can
         // debug a test stopped at a breakpoint before the runner kills it.
         "TIMEOUT": "3600000"
