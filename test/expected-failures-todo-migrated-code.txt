@@ -3,6 +3,3 @@
 
 built-ins/Temporal/Calendar/prototype/mergeFields/non-string-properties.js
 built-ins/Temporal/Calendar/prototype/mergeFields/order-of-operations.js
-intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boundaries.js
-intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
-
