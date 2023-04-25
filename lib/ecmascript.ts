@@ -16,6 +16,7 @@ const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
 const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const ReflectApply = Reflect.apply;
+const ReflectOwnKeys = Reflect.ownKeys;
 
 import { DEBUG } from './debug';
 import JSBI from 'jsbi';
@@ -377,7 +378,7 @@ export function ToObject<T>(value: T): T extends Record<string, unknown> ? T : o
 
 // Adapted from https://github.com/ljharb/es-abstract/blob/main/2022/CopyDataProperties.js
 // but simplified (e.g. removed assertions) for this polyfill to reduce bundle size.
-export function CopyDataProperties<K extends string, T extends Record<K, unknown>>(
+export function CopyDataProperties<K extends string | symbol, T extends Record<K, unknown>>(
   target: T,
   source: T | undefined,
   excludedKeys: K[],
@@ -385,7 +386,7 @@ export function CopyDataProperties<K extends string, T extends Record<K, unknown
 ) {
   if (typeof source === 'undefined' || source === null) return;
 
-  const keys = Object.getOwnPropertyNames(source) as (keyof T)[];
+  const keys = ReflectOwnKeys(source) as (keyof T)[];
   for (const nextKey of keys) {
     if (excludedKeys.some((e) => Object.is(e, nextKey))) continue;
     if (Object.prototype.propertyIsEnumerable.call(source, nextKey)) {

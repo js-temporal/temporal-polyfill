@@ -1,5 +1,3 @@
 # Failures in this file will be fixed after migrating the latest polyfill changes
 # from proposal-temporal.
 
-built-ins/Temporal/Calendar/prototype/mergeFields/non-string-properties.js
-built-ins/Temporal/Calendar/prototype/mergeFields/order-of-operations.js
