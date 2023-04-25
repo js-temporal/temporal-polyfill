@@ -355,3 +355,20 @@ intl402/Temporal/Calendar/prototype/era/builtin.js
 intl402/Temporal/Calendar/prototype/era/not-a-constructor.js
 intl402/Temporal/Calendar/prototype/eraYear/builtin.js
 intl402/Temporal/Calendar/prototype/eraYear/not-a-constructor.js
+built-ins/Temporal/Now/timeZoneId/not-a-constructor.js
+built-ins/Temporal/PlainDate/prototype/getCalendar/builtin.js
+built-ins/Temporal/PlainDate/prototype/getCalendar/not-a-constructor.js
+built-ins/Temporal/PlainDateTime/prototype/getCalendar/builtin.js
+built-ins/Temporal/PlainDateTime/prototype/getCalendar/not-a-constructor.js
+built-ins/Temporal/PlainMonthDay/prototype/getCalendar/builtin.js
+built-ins/Temporal/PlainMonthDay/prototype/getCalendar/not-a-constructor.js
+built-ins/Temporal/PlainYearMonth/prototype/getCalendar/builtin.js
+built-ins/Temporal/PlainYearMonth/prototype/getCalendar/not-a-constructor.js
+built-ins/Temporal/ZonedDateTime/prototype/getCalendar/builtin.js
+built-ins/Temporal/ZonedDateTime/prototype/getCalendar/not-a-constructor.js
+built-ins/Temporal/ZonedDateTime/prototype/getTimeZone/builtin.js
+built-ins/Temporal/ZonedDateTime/prototype/getTimeZone/not-a-constructor.js
+
+# These two are too slow in ES5 so they'll time out in CI.
+intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
+intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boundaries.js
