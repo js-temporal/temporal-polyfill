@@ -701,7 +701,7 @@ export namespace Temporal {
    *
    * See https://tc39.es/proposal-temporal/docs/calendar.html for more details.
    */
-  export class Calendar implements Omit<Required<CalendarProtocol>, 'calendar'> {
+  export class Calendar implements CalendarProtocol {
     static from(item: CalendarLike): Temporal.Calendar | CalendarProtocol;
     constructor(calendarIdentifier: string);
     readonly id: string;
@@ -1100,7 +1100,7 @@ export namespace Temporal {
    * A plain object implementing the protocol for a custom time zone.
    */
   export interface TimeZoneProtocol {
-    id?: string;
+    id: string;
     getOffsetNanosecondsFor(instant: Temporal.Instant | string): number;
     getOffsetStringFor?(instant: Temporal.Instant | string): string;
     getPlainDateTimeFor?(instant: Temporal.Instant | string, calendar?: CalendarLike): Temporal.PlainDateTime;
@@ -1111,7 +1111,7 @@ export namespace Temporal {
     getNextTransition?(startingPoint: Temporal.Instant | string): Temporal.Instant | null;
     getPreviousTransition?(startingPoint: Temporal.Instant | string): Temporal.Instant | null;
     getPossibleInstantsFor(dateTime: Temporal.PlainDateTime | PlainDateTimeLike | string): Temporal.Instant[];
-    toString(): string;
+    toString?(): string;
     toJSON?(): string;
   }
 
@@ -1467,10 +1467,10 @@ export namespace Temporal {
     plainTimeISO: (tzLike?: TimeZoneLike) => Temporal.PlainTime;
 
     /**
-     * Get the environment's current time zone.
+     * Get the identifier of the environment's current time zone.
      *
-     * This method gets the current system time zone. This will usually be a
-     * named
+     * This method gets the identifier of the current system time zone. This
+     * will usually be a named
      * {@link https://en.wikipedia.org/wiki/List_of_tz_database_time_zones|IANA time zone}.
      */
     timeZoneId: () => string;
