@@ -14,13 +14,14 @@ const MathSign = Math.sign;
 const MathTrunc = Math.trunc;
 const NumberIsFinite = Number.isFinite;
 const NumberCtor = Number;
+const NumberIsNaN = Number.isNaN;
+const NumberIsSafeInteger = Number.isSafeInteger;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
 const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const ReflectApply = Reflect.apply;
 const ReflectOwnKeys = Reflect.ownKeys;
-const NumberIsNaN = Number.isNaN;
 const StringCtor = String;
 const StringPrototypeSlice = String.prototype.slice;
 
@@ -51,6 +52,7 @@ import type {
   TimeZoneSlot
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
+import { TruncatingDivModByPowerOf10 } from './math';
 import { CalendarMethodRecord, TimeZoneMethodRecord } from './methodrecord';
 import {
   CreateSlots,
@@ -3900,7 +3902,7 @@ function NanosecondsToDays(
   const dtEnd = GetPlainDateTimeFor(timeZoneRec, end, 'iso8601');
   const date1 = TemporalDateTimeToDate(dtStart);
   const date2 = TemporalDateTimeToDate(dtEnd);
-  let daysNumber = DaysUntil(date1, date2);
+  let days = DaysUntil(date1, date2);
 
   const timeSign = CompareTemporalTime(
     GetSlot(dtStart, ISO_HOUR),
@@ -3917,13 +3919,13 @@ function NanosecondsToDays(
     GetSlot(dtEnd, ISO_NANOSECOND)
   );
 
-  if (daysNumber > 0 && timeSign > 0) {
-    daysNumber--;
-  } else if (daysNumber < 0 && timeSign < 0) {
-    daysNumber++;
+  if (days > 0 && timeSign > 0) {
+    days--;
+  } else if (days < 0 && timeSign < 0) {
+    days++;
   }
 
-  let relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZoneRec, calendar, daysNumber);
+  let relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZoneRec, calendar, days);
   // may disambiguate
 
   // If clock time after addition was in the middle of a skipped period, the
@@ -3934,11 +3936,10 @@ function NanosecondsToDays(
   // back inside the period where it belongs. Note that this case only can
   // happen for positive durations because the only direction that
   // `disambiguation: 'compatible'` can change clock time is forwards.
-  let daysBigInt = JSBI.BigInt(daysNumber);
   if (sign === 1) {
-    while (JSBI.greaterThan(daysBigInt, ZERO) && JSBI.greaterThan(relativeResult.epochNs, endNs)) {
-      daysBigInt = JSBI.subtract(daysBigInt, ONE);
-      relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZoneRec, calendar, JSBI.toNumber(daysBigInt));
+    while (days > 0 && JSBI.greaterThan(relativeResult.epochNs, endNs)) {
+      days--;
+      relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZoneRec, calendar, days);
       // may do disambiguation
     }
   }
@@ -3964,10 +3965,10 @@ function NanosecondsToDays(
     if (isOverflow) {
       nanosecondsBigInt = JSBI.subtract(nanosecondsBigInt, JSBI.BigInt(dayLengthNs));
       relativeResult = oneDayFarther;
-      daysBigInt = JSBI.add(daysBigInt, JSBI.BigInt(sign));
+      days += sign;
     }
   } while (isOverflow);
-  if (!isZero(daysBigInt) && signJSBI(daysBigInt) !== sign) {
+  if (days !== 0 && MathSign(days) != sign) {
     throw new RangeError('Time zone or calendar converted nanoseconds into a number of days with the opposite sign');
   }
   if (!isZero(nanosecondsBigInt) && signJSBI(nanosecondsBigInt) !== sign) {
@@ -3979,36 +3980,10 @@ function NanosecondsToDays(
   if (JSBI.greaterThanOrEqual(abs(nanosecondsBigInt), abs(JSBI.BigInt(dayLengthNs)))) {
     throw new Error('assert not reached');
   }
-  return { days: JSBI.toNumber(daysBigInt), nanoseconds: nanosecondsBigInt, dayLengthNs: MathAbs(dayLengthNs) };
+  return { days, nanoseconds: nanosecondsBigInt, dayLengthNs: MathAbs(dayLengthNs) };
 }
 
 export function BalanceTimeDuration(
-  daysParam: number,
-  hoursParam: number | JSBI,
-  minutesParam: number | JSBI,
-  secondsParam: number | JSBI,
-  millisecondsParam: number | JSBI,
-  microsecondsParam: number | JSBI,
-  nanosecondsParam: number | JSBI,
-  largestUnit: Temporal.DateTimeUnit
-) {
-  let result = BalancePossiblyInfiniteTimeDuration(
-    daysParam,
-    hoursParam,
-    minutesParam,
-    secondsParam,
-    millisecondsParam,
-    microsecondsParam,
-    nanosecondsParam,
-    largestUnit
-  );
-  if (result === 'positive overflow' || result === 'negative overflow') {
-    throw new RangeError('Duration out of range');
-  }
-  return result;
-}
-
-export function BalancePossiblyInfiniteTimeDuration(
   daysParam: number,
   hoursParam: number | JSBI,
   minutesParam: number | JSBI,
@@ -4091,54 +4066,11 @@ export function BalancePossiblyInfiniteTimeDuration(
   const microseconds = JSBI.toNumber(microsecondsBigInt) * sign;
   const nanoseconds = JSBI.toNumber(nanosecondsBigInt) * sign;
 
-  const fields = [days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds];
-  for (let index = 0; index < fields.length; index++) {
-    const prop = fields[index];
-    if (!NumberIsFinite(prop)) {
-      if (sign === 1) {
-        return 'positive overflow' as const;
-      } else {
-        return 'negative overflow' as const;
-      }
-    }
-  }
-
+  RejectDuration(0, 0, 0, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   return { days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
 export function BalanceTimeDurationRelative(
-  days: number,
-  hours: number | JSBI,
-  minutes: number | JSBI,
-  seconds: number | JSBI,
-  milliseconds: number | JSBI,
-  microseconds: number | JSBI,
-  nanoseconds: number | JSBI,
-  largestUnit: Temporal.DateTimeUnit,
-  zonedRelativeTo: Temporal.ZonedDateTime,
-  timeZoneRec: TimeZoneMethodRecord,
-  precalculatedPlainDateTime: Temporal.PlainDateTime | undefined
-) {
-  let result = BalancePossiblyInfiniteTimeDurationRelative(
-    days,
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds,
-    largestUnit,
-    zonedRelativeTo,
-    timeZoneRec,
-    precalculatedPlainDateTime
-  );
-  if (result === 'positive overflow' || result === 'negative overflow') {
-    throw new RangeError('Duration out of range');
-  }
-  return result;
-}
-
-export function BalancePossiblyInfiniteTimeDurationRelative(
   daysParam: number,
   hours: number | JSBI,
   minutes: number | JSBI,
@@ -4185,10 +4117,8 @@ export function BalancePossiblyInfiniteTimeDurationRelative(
     days = 0;
   }
 
-  const result = BalancePossiblyInfiniteTimeDuration(0, 0, 0, 0, 0, 0, nanoseconds, largestUnit);
-  if (result === 'positive overflow' || result === 'negative overflow') {
-    return result;
-  }
+  const result = BalanceTimeDuration(0, 0, 0, 0, 0, 0, nanoseconds, largestUnit);
+
   return {
     days,
     hours: result.hours,
@@ -4492,6 +4422,14 @@ export function RejectDuration(
     if (!NumberIsFinite(prop)) throw new RangeError('infinite values not allowed as duration fields');
     const propSign = MathSign(prop);
     if (propSign !== 0 && propSign !== sign) throw new RangeError('mixed-sign values not allowed as duration fields');
+  }
+  const msResult = TruncatingDivModByPowerOf10(ms, 3);
+  const µsResult = TruncatingDivModByPowerOf10(µs, 6);
+  const nsResult = TruncatingDivModByPowerOf10(ns, 9);
+  const remainderSec = TruncatingDivModByPowerOf10(msResult.mod * 1e6 + µsResult.mod * 1e3 + nsResult.mod, 9).div;
+  const totalSec = d * 86400 + h * 3600 + min * 60 + s + msResult.div + µsResult.div + nsResult.div + remainderSec;
+  if (!NumberIsSafeInteger(totalSec)) {
+    throw new RangeError('total of duration time units cannot exceed 9007199254740991.999999999 s');
   }
 }
 
@@ -6814,6 +6752,18 @@ export function RoundDuration(
       break;
     }
   }
+  RejectDuration(
+    years,
+    months,
+    weeks,
+    days,
+    hours,
+    minutes,
+    seconds,
+    milliseconds,
+    microseconds,
+    JSBI.toNumber(nanoseconds)
+  );
   return {
     years,
     months,
