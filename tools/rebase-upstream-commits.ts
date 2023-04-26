@@ -300,26 +300,6 @@ function continueRebasing() {
       }
     }
 
-    if (filesInUpstreamCommit.includes('polyfill/lib/ecmascript.mjs')) {
-      log(`
-Changes to the ecmascript.mjs file in the upstream repository are never
-automatically rebased onto lib/ecmascript.ts, because the files don't
-share history and git doesn't think they are at all similar.
-
-To resolve this conflict you will need to manually inspect and re-apply
-changes from polyfill/lib/ecmascript.mjs over to lib/ecmascript.ts. Once
-done, remove the mjs file from the commit using:
-  git rm polyfill/lib/ecmascript.mjs
-Then stage the TS version of that file using:
-  git add lib/ecmascript.ts 
-At that point, after any other changes are staged too, you can:
-  trt continue
-
-Tip: to see the changes the upstream commit introduced, try running
-\`<this tool> basediff -U40 polyfill/lib/ecmascript.mjs\`.
-`);
-    }
-
     // Try and move to the next conflict
     gitContinue();
     const maybeNewConflict = getConflictHash();
