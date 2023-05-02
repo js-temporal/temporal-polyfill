@@ -5669,8 +5669,7 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   const calendar = GetSlot(yearMonth, CALENDAR);
   const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
   const fields = PrepareTemporalFields(yearMonth, fieldNames, []);
-  const fieldsCopy = ObjectCreate(null);
-  CopyDataProperties(fieldsCopy, fields, []);
+  const fieldsCopy = CopyOptions(fields);
   fields.day = 1;
   // PrepareTemporalFields returns a type where 'day' is potentially undefined,
   // but TS doesn't narrow the type as a result of the assignment above.
