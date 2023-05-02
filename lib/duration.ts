@@ -60,7 +60,18 @@ export class Duration implements Temporal.Duration {
 
     if (DEBUG) {
       Object.defineProperty(this, '_repr_', {
-        value: `${this[Symbol.toStringTag]} <${ES.TemporalDurationToString(this)}>`,
+        value: `${this[Symbol.toStringTag]} <${ES.TemporalDurationToString(
+          years,
+          months,
+          weeks,
+          days,
+          hours,
+          minutes,
+          seconds,
+          milliseconds,
+          microseconds,
+          nanoseconds
+        )}>`,
         writable: false,
         enumerable: false,
         configurable: false
@@ -401,11 +412,50 @@ export class Duration implements Temporal.Duration {
       precision,
       'Precision cannot be "minute" because of RangeError above'
     );
-    return ES.TemporalDurationToString(this, precision, { unit, increment, roundingMode });
+    let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+      ES.RoundDuration(
+        GetSlot(this, YEARS),
+        GetSlot(this, MONTHS),
+        GetSlot(this, WEEKS),
+        GetSlot(this, DAYS),
+        GetSlot(this, HOURS),
+        GetSlot(this, MINUTES),
+        GetSlot(this, SECONDS),
+        GetSlot(this, MILLISECONDS),
+        GetSlot(this, MICROSECONDS),
+        GetSlot(this, NANOSECONDS),
+        increment,
+        unit,
+        roundingMode
+      );
+    return ES.TemporalDurationToString(
+      years,
+      months,
+      weeks,
+      days,
+      hours,
+      minutes,
+      seconds,
+      milliseconds,
+      microseconds,
+      nanoseconds,
+      precision
+    );
   }
   toJSON(): Return['toJSON'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    return ES.TemporalDurationToString(this);
+    return ES.TemporalDurationToString(
+      GetSlot(this, YEARS),
+      GetSlot(this, MONTHS),
+      GetSlot(this, WEEKS),
+      GetSlot(this, DAYS),
+      GetSlot(this, HOURS),
+      GetSlot(this, MINUTES),
+      GetSlot(this, SECONDS),
+      GetSlot(this, MILLISECONDS),
+      GetSlot(this, MICROSECONDS),
+      GetSlot(this, NANOSECONDS)
+    );
   }
   toLocaleString(
     locales: Params['toLocaleString'][0] = undefined,
@@ -416,7 +466,18 @@ export class Duration implements Temporal.Duration {
       return new (Intl as any).DurationFormat(locales, options).format(this);
     }
     console.warn('Temporal.Duration.prototype.toLocaleString() requires Intl.DurationFormat.');
-    return ES.TemporalDurationToString(this);
+    return ES.TemporalDurationToString(
+      GetSlot(this, YEARS),
+      GetSlot(this, MONTHS),
+      GetSlot(this, WEEKS),
+      GetSlot(this, DAYS),
+      GetSlot(this, HOURS),
+      GetSlot(this, MINUTES),
+      GetSlot(this, SECONDS),
+      GetSlot(this, MILLISECONDS),
+      GetSlot(this, MICROSECONDS),
+      GetSlot(this, NANOSECONDS)
+    );
   }
   valueOf(): never {
     throw new TypeError('use compare() to compare Temporal.Duration');
