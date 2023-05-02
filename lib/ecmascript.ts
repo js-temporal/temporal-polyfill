@@ -277,6 +277,16 @@ export function ToIntegerIfIntegral(valueParam: unknown): number {
   return number;
 }
 
+function ToZeroPaddedDecimalString(n: number, minLength: number) {
+  if (DEBUG) {
+    if (!IsIntegralNumber(n) || n < 0) {
+      throw new RangeError('Assertion failed: `${n}` must be a non-negative integer');
+    }
+  }
+  const s = String(n);
+  return s.padStart(minLength, '0');
+}
+
 function divmod(x: JSBI, y: JSBI): { quotient: JSBI; remainder: JSBI } {
   const quotient = JSBI.divide(x, y);
   const remainder = JSBI.remainder(x, y);
@@ -2920,75 +2930,71 @@ interface ToStringOptions {
   roundingMode: ReturnType<typeof ToTemporalRoundingMode>;
 }
 
-export function TemporalDurationToString(
-  duration: Temporal.Duration,
-  precision: Temporal.ToStringPrecisionOptions['fractionalSecondDigits'] = 'auto',
-  options: ToStringOptions | undefined = undefined
-) {
-  function formatNumber(num: number) {
-    if (num <= NumberMaxSafeInteger) return num.toString(10);
-    return JSBI.BigInt(num).toString(10);
-  }
+function formatAsDecimalNumber(num: number) {
+  if (num <= NumberMaxSafeInteger) return num.toString(10);
+  return JSBI.BigInt(num).toString();
+}
 
-  const years = GetSlot(duration, YEARS);
-  const months = GetSlot(duration, MONTHS);
-  const weeks = GetSlot(duration, WEEKS);
-  const days = GetSlot(duration, DAYS);
-  const hours = GetSlot(duration, HOURS);
-  const minutes = GetSlot(duration, MINUTES);
-  let seconds = GetSlot(duration, SECONDS);
-  let ms = GetSlot(duration, MILLISECONDS);
-  let µs = GetSlot(duration, MICROSECONDS);
-  let ns = GetSlot(duration, NANOSECONDS);
+export function TemporalDurationToString(
+  years: number,
+  months: number,
+  weeks: number,
+  days: number,
+  hours: number,
+  minutes: number,
+  seconds: number,
+  ms: number,
+  µs: number,
+  ns: number,
+  precision: number | 'auto' = 'auto'
+) {
   const sign = DurationSign(years, months, weeks, days, hours, minutes, seconds, ms, µs, ns);
 
-  if (options) {
-    const { unit, increment, roundingMode } = options;
-    ({
-      seconds,
-      milliseconds: ms,
-      microseconds: µs,
-      nanoseconds: ns
-    } = RoundDuration(0, 0, 0, 0, 0, 0, seconds, ms, µs, ns, increment, unit, roundingMode));
-  }
-
-  const dateParts: string[] = [];
-  if (years) dateParts.push(`${formatNumber(MathAbs(years))}Y`);
-  if (months) dateParts.push(`${formatNumber(MathAbs(months))}M`);
-  if (weeks) dateParts.push(`${formatNumber(MathAbs(weeks))}W`);
-  if (days) dateParts.push(`${formatNumber(MathAbs(days))}D`);
-
-  const timeParts: string[] = [];
-  if (hours) timeParts.push(`${formatNumber(MathAbs(hours))}H`);
-  if (minutes) timeParts.push(`${formatNumber(MathAbs(minutes))}M`);
-
-  const secondParts: string[] = [];
   let total = TotalDurationNanoseconds(0, 0, 0, seconds, ms, µs, ns, 0);
   let nsBigInt: JSBI, µsBigInt: JSBI, msBigInt: JSBI, secondsBigInt: JSBI;
   ({ quotient: total, remainder: nsBigInt } = divmod(total, THOUSAND));
   ({ quotient: total, remainder: µsBigInt } = divmod(total, THOUSAND));
   ({ quotient: secondsBigInt, remainder: msBigInt } = divmod(total, THOUSAND));
-  const fraction =
-    MathAbs(JSBI.toNumber(msBigInt)) * 1e6 + MathAbs(JSBI.toNumber(µsBigInt)) * 1e3 + MathAbs(JSBI.toNumber(nsBigInt));
-  let decimalPart;
-  if (precision === 'auto') {
-    if (fraction !== 0) {
-      decimalPart = `${fraction}`.padStart(9, '0');
+
+  let datePart = '';
+  if (years !== 0) datePart += `${formatAsDecimalNumber(MathAbs(years))}Y`;
+  if (months !== 0) datePart += `${formatAsDecimalNumber(MathAbs(months))}M`;
+  if (weeks !== 0) datePart += `${formatAsDecimalNumber(MathAbs(weeks))}W`;
+  if (days !== 0) datePart += `${formatAsDecimalNumber(MathAbs(days))}D`;
+
+  let timePart = '';
+  if (hours !== 0) timePart += `${formatAsDecimalNumber(MathAbs(hours))}H`;
+  if (minutes !== 0) timePart += `${formatAsDecimalNumber(MathAbs(minutes))}M`;
+
+  if (
+    !isZero(secondsBigInt) ||
+    !isZero(msBigInt) ||
+    !isZero(µsBigInt) ||
+    !isZero(nsBigInt) ||
+    (years === 0 && months === 0 && weeks === 0 && days === 0 && hours === 0 && minutes === 0) ||
+    precision !== 'auto'
+  ) {
+    const fraction =
+      MathAbs(JSBI.toNumber(msBigInt)) * 1e6 +
+      MathAbs(JSBI.toNumber(µsBigInt)) * 1e3 +
+      MathAbs(JSBI.toNumber(nsBigInt));
+    let decimalPart = ToZeroPaddedDecimalString(fraction, 9);
+    if (precision === 'auto') {
       while (decimalPart[decimalPart.length - 1] === '0') {
         decimalPart = decimalPart.slice(0, -1);
       }
+    } else if (precision === 0) {
+      decimalPart = '';
+    } else {
+      decimalPart = decimalPart.slice(0, precision);
     }
-  } else if (precision !== 0) {
-    decimalPart = `${fraction}`.padStart(9, '0').slice(0, precision);
+    let secondsPart = abs(secondsBigInt).toString();
+    if (decimalPart) secondsPart += `.${decimalPart}`;
+    timePart += `${secondsPart}S`;
   }
-  if (decimalPart) secondParts.unshift('.', decimalPart);
-  if (!JSBI.equal(secondsBigInt, ZERO) || secondParts.length || precision !== 'auto') {
-    secondParts.unshift(abs(secondsBigInt).toString());
-  }
-  if (secondParts.length) timeParts.push(`${secondParts.join('')}S`);
-  if (timeParts.length) timeParts.unshift('T');
-  if (!dateParts.length && !timeParts.length) return 'PT0S';
-  return `${sign < 0 ? '-' : ''}P${dateParts.join('')}${timeParts.join('')}`;
+  let result = `${sign < 0 ? '-' : ''}P${datePart}`;
+  if (timePart) result = `${result}T${timePart}`;
+  return result;
 }
 
 export function TemporalDateToString(
@@ -5674,6 +5680,7 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   // PrepareTemporalFields returns a type where 'day' is potentially undefined,
   // but TS doesn't narrow the type as a result of the assignment above.
   uncheckedAssertNarrowedType<typeof fields & { day: number }>(fields, '`day` is guaranteed to be non-undefined');
+  uncheckedAssertNarrowedType<typeof fields & { day: number }>(fieldsCopy, '`day` is guaranteed to be non-undefined');
   let startDate = CalendarDateFromFields(calendar, fields);
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
   const dateAdd = GetMethod(calendar, 'dateAdd');
