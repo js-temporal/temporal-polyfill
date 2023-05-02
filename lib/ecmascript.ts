@@ -1,13 +1,12 @@
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
-const MathMin = Math.min;
-const MathMax = Math.max;
 const MathAbs = Math.abs;
 const MathFloor = Math.floor;
+const MathMax = Math.max;
+const MathMin = Math.min;
 const MathSign = Math.sign;
 const MathTrunc = Math.trunc;
-const NumberIsNaN = Number.isNaN;
 const NumberIsFinite = Number.isFinite;
 const NumberCtor = Number;
 const StringCtor = String;
@@ -17,6 +16,7 @@ const ObjectDefineProperty = Object.defineProperty;
 const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const ReflectApply = Reflect.apply;
 const ReflectOwnKeys = Reflect.ownKeys;
+const NumberIsNaN = Number.isNaN;
 
 import { DEBUG, ENABLE_ASSERTS } from './debug';
 import JSBI from 'jsbi';
