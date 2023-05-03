@@ -1382,31 +1382,36 @@ export function PrepareTemporalFields<
   bag: Partial<Record<FieldKeys, unknown>>,
   fields: Array<FieldKeys>,
   requiredFields: RequiredFields,
+  duplicateBehaviour: 'throw' | 'ignore' = 'throw',
   { emptySourceErrorMessage }: FieldPrepareOptions = { emptySourceErrorMessage: 'no supported properties found' }
 ): PrepareTemporalFieldsReturn<FieldKeys, RequiredFields, Owner<FieldKeys>> {
   const result: Partial<Record<AnyTemporalKey, unknown>> = ObjectCreate(null);
   let any = false;
   fields.sort();
+  let previousProperty = undefined;
   for (const property of fields) {
-    let value = bag[property];
-    if (value !== undefined) {
-      any = true;
-      if (BUILTIN_CASTS.has(property)) {
-        // We just has-checked this map access, so there will definitely be a
-        // value.
-        // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-        value = BUILTIN_CASTS.get(property)!(value);
-      }
-      result[property] = value;
-    } else if (requiredFields !== 'partial') {
-      // TODO: using .call in this way is not correctly type-checked by tsc.
-      // We might need a type-safe Call wrapper?
-      if (ArrayIncludes.call(requiredFields, property)) {
-        throw new TypeError(`required property '${property}' missing or undefined`);
-      }
-      value = BUILTIN_DEFAULTS.get(property);
-      result[property] = value;
+    if ((property as string) === 'constructor' || (property as string) === '__proto__') {
+      throw new RangeError(`Calendar fields cannot be named ${property}`);
     }
+    if (property !== previousProperty) {
+      let value = bag[property];
+      if (value !== undefined) {
+        any = true;
+        if (BUILTIN_CASTS.has(property)) {
+          value = castExists(BUILTIN_CASTS.get(property))(value);
+        }
+        result[property] = value;
+      } else if (requiredFields !== 'partial') {
+        if (Call(ArrayIncludes, requiredFields, [property])) {
+          throw new TypeError(`required property '${property}' missing or undefined`);
+        }
+        value = BUILTIN_DEFAULTS.get(property);
+        result[property] = value;
+      }
+    } else if (duplicateBehaviour === 'throw') {
+      throw new RangeError('Duplicate calendar fields');
+    }
+    previousProperty = property;
   }
   if (requiredFields === 'partial' && !any) {
     throw new TypeError(emptySourceErrorMessage);
@@ -1437,7 +1442,9 @@ export function ToTemporalTimeRecord(
 ): Partial<TimeRecord> {
   // NOTE: Field order is sorted to make the sort in PrepareTemporalFields more efficient.
   const fields: (keyof TimeRecord)[] = ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second'];
-  const partial = PrepareTemporalFields(bag, fields, 'partial', { emptySourceErrorMessage: 'invalid time-like' });
+  const partial = PrepareTemporalFields(bag, fields, 'partial', undefined, {
+    emptySourceErrorMessage: 'invalid time-like'
+  });
   const result: Partial<TimeRecord> = {};
   for (const field of fields) {
     const valueDesc = ObjectGetOwnPropertyDescriptor(partial, field);
