@@ -413,6 +413,7 @@ export class Duration implements Temporal.Duration {
       weeks,
       days,
       largestUnit,
+      smallestUnit,
       plainRelativeTo,
       calendarRec
     ));
