@@ -23,11 +23,17 @@ function withPlugins(
   options = {
     babelConfig: undefined,
     optimize: false,
-    debugBuild: true
+    debugBuild: true,
+    enableAssertions: true
   }
 ) {
   const basePlugins = [
     replace({ exclude: 'node_modules/**', 'globalThis.__debug__': options.debugBuild, preventAssignment: true }),
+    replace({
+      exclude: 'node_modules/**',
+      'globalThis.__enableAsserts__': options.enableAssertions,
+      preventAssignment: true
+    }),
     commonjs(),
     nodeResolve({ preferBuiltins: false }),
     sourcemaps()
@@ -103,7 +109,8 @@ if (isTest262Build) {
         sourcemap: true
       },
       plugins: withPlugins({
-        debugBuild: false, // Test262 tests don't pass in debug builds
+        debugBuild: false, // Disable other debug features that can break test262 tests
+        enableAssertions: true, // But enable assertions
         optimize: isProduction,
         babelConfig: isTranspiledBuild ? es5BundleBabelConfig : undefined
       })
@@ -120,9 +127,7 @@ if (isTest262Build) {
         exports: 'named',
         sourcemap: true
       },
-      plugins: withPlugins({
-        debugBuild: true
-      })
+      plugins: withPlugins({})
     }
   ];
 } else {
@@ -145,6 +150,7 @@ if (isTest262Build) {
     ],
     plugins: withPlugins({
       debugBuild: !isProduction,
+      enableAssertions: !isProduction,
       optimize: isProduction
       // Here is where we could insert the JSBI -> native BigInt plugin if we
       // could find a way to provide a separate bundle for modern browsers
@@ -164,6 +170,7 @@ if (isTest262Build) {
     output: [outputEntry(pkg.browser, 'umd')],
     plugins: withPlugins({
       debugBuild: !isProduction,
+      enableAssertions: !isProduction,
       optimize: isProduction,
       babelConfig: es5BundleBabelConfig
     })
