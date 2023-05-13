@@ -4610,7 +4610,7 @@ function DifferenceISODateTime(
   ns2: number,
   calendar: CalendarSlot,
   largestUnit: Temporal.DateTimeUnit,
-  options: Temporal.DifferenceOptions<Temporal.DateTimeUnit> | undefined
+  options: Temporal.DifferenceOptions<Temporal.DateTimeUnit>
 ) {
   let y1 = y1Param;
   let mon1 = mon1Param;
@@ -4652,12 +4652,15 @@ function DifferenceISODateTime(
   const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit);
   const untilOptions = CopyOptions(options);
   untilOptions.largestUnit = dateLargestUnit;
-  // TODO untilOptions doesn't want to compile as it seems that smallestUnit is not clamped?
-  // Type 'SmallestUnit<DateTimeUnit> | undefined' is not assignable to type
-  //      'SmallestUnit<"year" | "month" | "day" | "week"> | undefined'.
-  // Type '"hour"' is not assignable to type
-  //      'SmallestUnit<"year" | "month" | "day" | "week"> | undefined'.ts(2345)
-  let { years, months, weeks, days } = CalendarDateUntil(calendar, date1, date2, untilOptions as any);
+  uncheckedAssertNarrowedType<Temporal.DifferenceOptions<Temporal.DateUnit>>(
+    untilOptions,
+    '`largestUnit` is already a date unit, and `smallestUnit` is ignored by CalendarDateUntil'
+  );
+  const untilResult = CalendarDateUntil(calendar, date1, date2, untilOptions);
+  const years = GetSlot(untilResult, YEARS);
+  const months = GetSlot(untilResult, MONTHS);
+  const weeks = GetSlot(untilResult, WEEKS);
+  let days = GetSlot(untilResult, DAYS);
   // Signs of date part and time part may not agree; balance them together
   ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
     days,
@@ -4852,7 +4855,11 @@ export function DifferenceTemporalPlainDate(
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'date', [], 'day', 'day');
   resolvedOptions.largestUnit = settings.largestUnit;
 
-  let { years, months, weeks, days } = CalendarDateUntil(calendar, plainDate, other, resolvedOptions);
+  const untilResult = CalendarDateUntil(calendar, plainDate, other, resolvedOptions);
+  let years = GetSlot(untilResult, YEARS);
+  let months = GetSlot(untilResult, MONTHS);
+  let weeks = GetSlot(untilResult, WEEKS);
+  let days = GetSlot(untilResult, DAYS);
 
   if (settings.smallestUnit !== 'day' || settings.roundingIncrement !== 1) {
     ({ years, months, weeks, days } = RoundDuration(
@@ -5296,7 +5303,11 @@ function AddDuration(
     const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit) as Temporal.DateUnit;
     const differenceOptions = ObjectCreate(null) as Temporal.DifferenceOptions<Temporal.DateUnit>;
     differenceOptions.largestUnit = dateLargestUnit;
-    ({ years, months, weeks, days } = CalendarDateUntil(calendar, relativeTo, end, differenceOptions));
+    const untilResult = CalendarDateUntil(calendar, relativeTo, end, differenceOptions);
+    years = GetSlot(untilResult, YEARS);
+    months = GetSlot(untilResult, MONTHS);
+    weeks = GetSlot(untilResult, WEEKS);
+    days = GetSlot(untilResult, DAYS);
     // Signs of date part and time part may not agree; balance them together
     ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceDuration(
       days,
@@ -6156,7 +6167,7 @@ export function RoundDuration(
       const wholeDaysLater = CalendarDateAdd(calendar, relativeTo, wholeDays, undefined, dateAdd);
       const untilOptions = ObjectCreate(null) as Temporal.DifferenceOptions<typeof unit>;
       untilOptions.largestUnit = 'year';
-      const yearsPassed = CalendarDateUntil(calendar, relativeTo, wholeDaysLater, untilOptions).years;
+      const yearsPassed = GetSlot(CalendarDateUntil(calendar, relativeTo, wholeDaysLater, untilOptions), YEARS);
       years += yearsPassed;
       const oldRelativeTo = relativeTo;
       const yearsPassedDuration = new TemporalDuration(yearsPassed);
@@ -6471,7 +6482,7 @@ export function CreateOnePropObject<K extends string, V>(propName: K, propValue:
 }
 
 function CopyOptions<T extends { [s in K]?: unknown }, K extends string & keyof T>(options: T | undefined) {
-  const optionsCopy = ObjectCreate(null) as T;
+  const optionsCopy = ObjectCreate(null) as NonNullable<T>;
   CopyDataProperties(optionsCopy, GetOptionsObject(options), []);
   return optionsCopy;
 }
