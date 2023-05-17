@@ -139,7 +139,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     const inputFields = ES.PrepareTemporalFields(item, inputFieldNames, []);
     let mergedFields = ES.CalendarMergeFields(calendar, fields, inputFields);
     const mergedFieldNames = [...receiverFieldNames, ...inputFieldNames];
-    mergedFields = ES.PrepareTemporalFields(mergedFields, mergedFieldNames, [], 'ignore');
+    mergedFields = ES.PrepareTemporalFields(mergedFields, mergedFieldNames, [], [], 'ignore');
     const options = ObjectCreate(null);
     options.overflow = 'reject';
     return ES.CalendarDateFromFields(calendar, mergedFields, options);

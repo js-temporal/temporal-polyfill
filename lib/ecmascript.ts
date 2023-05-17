@@ -1,5 +1,6 @@
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
+const ArrayPrototypeFind = Array.prototype.find;
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
 const IntlSupportedValuesOf: typeof globalThis.Intl.supportedValuesOf | undefined = globalThis.Intl.supportedValuesOf;
 const MathAbs = Math.abs;
@@ -216,7 +217,7 @@ export function ToNumber(value: unknown): number {
   return NumberCtor(value);
 }
 
-function ToIntegerOrInfinity(value: unknown) {
+export function ToIntegerOrInfinity(value: unknown) {
   const number = ToNumber(value);
   if (NumberIsNaN(number) || number === 0) {
     return 0;
@@ -356,8 +357,6 @@ const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
   ['milliseconds', ToIntegerIfIntegral],
   ['microseconds', ToIntegerIfIntegral],
   ['nanoseconds', ToIntegerIfIntegral],
-  ['era', ToPrimitiveAndRequireString],
-  ['eraYear', ToIntegerOrInfinity],
   ['offset', ToPrimitiveAndRequireString]
 ]);
 
@@ -1413,6 +1412,12 @@ type FieldObjectFromOwners<OwnerT, FieldKeys extends AnyTemporalKey> = Resolve<
   }
 >;
 
+export interface CalendarFieldDescriptor {
+  property: string;
+  conversion: (value: unknown) => unknown;
+  required: boolean;
+}
+
 type PrepareTemporalFieldsReturn<
   FieldKeys extends AnyTemporalKey,
   RequiredFieldsOpt extends ReadonlyArray<FieldKeys> | FieldCompleteness,
@@ -1430,11 +1435,21 @@ export function PrepareTemporalFields<
   bag: Partial<Record<FieldKeys, unknown>>,
   fields: Array<FieldKeys>,
   requiredFields: RequiredFields,
+  extraFieldDescriptors: CalendarFieldDescriptor[] = [],
   duplicateBehaviour: 'throw' | 'ignore' = 'throw',
   { emptySourceErrorMessage }: FieldPrepareOptions = { emptySourceErrorMessage: 'no supported properties found' }
 ): PrepareTemporalFieldsReturn<FieldKeys, RequiredFields, Owner<FieldKeys>> {
   const result: Partial<Record<AnyTemporalKey, unknown>> = ObjectCreate(null);
   let any = false;
+  if (extraFieldDescriptors) {
+    for (let index = 0; index < extraFieldDescriptors.length; index++) {
+      let desc = extraFieldDescriptors[index];
+      Call(ArrayPrototypePush, fields, [desc.property]);
+      if (desc.required === true && requiredFields !== 'partial') {
+        Call(ArrayPrototypePush, requiredFields, [desc.property]);
+      }
+    }
+  }
   fields.sort();
   let previousProperty = undefined;
   for (const property of fields) {
@@ -1447,6 +1462,14 @@ export function PrepareTemporalFields<
         any = true;
         if (BUILTIN_CASTS.has(property)) {
           value = castExists(BUILTIN_CASTS.get(property))(value);
+        } else if (extraFieldDescriptors) {
+          const matchingDescriptor = Call(ArrayPrototypeFind, extraFieldDescriptors, [
+            (desc) => desc.property === property
+          ]);
+          if (matchingDescriptor) {
+            const convertor = matchingDescriptor.conversion;
+            value = convertor(value);
+          }
         }
         result[property] = value;
       } else if (requiredFields !== 'partial') {
@@ -1490,11 +1513,12 @@ export function ToTemporalTimeRecord(
 ): Partial<TimeRecord> {
   // NOTE: Field order is sorted to make the sort in PrepareTemporalFields more efficient.
   const fields: (keyof TimeRecord)[] = ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second'];
-  const partial = PrepareTemporalFields(bag, fields, 'partial', undefined, {
+  const partial = PrepareTemporalFields(bag, fields, 'partial', undefined, undefined, {
     emptySourceErrorMessage: 'invalid time-like'
   });
   const result: Partial<TimeRecord> = {};
-  for (const field of fields) {
+  for (let index = 0; index < fields.length; index++) {
+    const field = fields[index];
     const valueDesc = ObjectGetOwnPropertyDescriptor(partial, field);
     if (valueDesc !== undefined) {
       result[field] = valueDesc.value;

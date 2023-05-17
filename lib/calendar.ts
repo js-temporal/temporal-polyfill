@@ -29,6 +29,7 @@ import type {
   AnyTemporalKey,
   CalendarSlot
 } from './internaltypes';
+import type { CalendarFieldDescriptor } from './ecmascript';
 
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
@@ -409,11 +410,10 @@ impl['iso8601'] = {
     if (fields.month !== undefined && fields.year === undefined && fields.monthCode === undefined) {
       throw new TypeError('either year or monthCode required with month');
     }
-    const useYear = fields.monthCode === undefined;
     const referenceISOYear = 1972;
     fields = resolveNonLunisolarMonth(fields);
     let { month, day, year } = fields;
-    ({ month, day } = ES.RegulateISODate(useYear ? year : referenceISOYear, month, day, overflow));
+    ({ month, day } = ES.RegulateISODate(year !== undefined ? year : referenceISOYear, month, day, overflow));
     return ES.CreateTemporalMonthDay(month, day, calendarSlotValue, referenceISOYear);
   },
   fields(fields) {
@@ -2310,14 +2310,25 @@ class DangiHelper extends ChineseBaseHelper {
  */
 class NonIsoCalendar implements CalendarImpl {
   constructor(private readonly helper: HelperBase) {}
+  CalendarFieldDescriptors(type: 'date' | 'month-day' | 'year-month'): CalendarFieldDescriptor[] {
+    let fieldDescriptors = [] as CalendarFieldDescriptor[];
+    if (type !== 'month-day') {
+      fieldDescriptors = [
+        { property: 'era', conversion: ES.ToString, required: false },
+        { property: 'eraYear', conversion: ES.ToIntegerOrInfinity, required: false }
+      ];
+    }
+    return fieldDescriptors;
+  }
   dateFromFields(
     fieldsParam: Params['dateFromFields'][0],
     options: NonNullable<Params['dateFromFields'][1]>,
     calendarSlotValue: string
   ): Temporal.PlainDate {
     const cache = new OneObjectCache();
-    const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as AnyTemporalKey[];
-    const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
+    const fieldNames = ['day', 'month', 'monthCode', 'year'] as AnyTemporalKey[];
+    const extraFieldDescriptors = this.CalendarFieldDescriptors('date');
+    const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, [], extraFieldDescriptors);
     const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.calendarToIsoDate(fields, overflow, cache);
     const result = ES.CreateTemporalDate(year, month, day, calendarSlotValue);
@@ -2330,8 +2341,9 @@ class NonIsoCalendar implements CalendarImpl {
     calendarSlotValue: CalendarSlot
   ): Temporal.PlainYearMonth {
     const cache = new OneObjectCache();
-    const fieldNames = this.fields(['month', 'monthCode', 'year']) as AnyTemporalKey[];
-    const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
+    const fieldNames = ['month', 'monthCode', 'year'] as AnyTemporalKey[];
+    const extraFieldDescriptors = this.CalendarFieldDescriptors('year-month');
+    const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, [], extraFieldDescriptors);
     const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.calendarToIsoDate({ ...fields, day: 1 }, overflow, cache);
     const result = ES.CreateTemporalYearMonth(year, month, calendarSlotValue, /* referenceISODay = */ day);
@@ -2346,8 +2358,9 @@ class NonIsoCalendar implements CalendarImpl {
     const cache = new OneObjectCache();
     // For lunisolar calendars, either `monthCode` or `year` must be provided
     // because `month` is ambiguous without a year or a code.
-    const fieldNames = this.fields(['day', 'month', 'monthCode', 'year']) as AnyTemporalKey[];
-    const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, []);
+    const fieldNames = ['day', 'month', 'monthCode', 'year'] as AnyTemporalKey[];
+    const extraFieldDescriptors = this.CalendarFieldDescriptors('date');
+    const fields = ES.PrepareTemporalFields(fieldsParam, fieldNames, [], extraFieldDescriptors);
     const overflow = ES.ToTemporalOverflow(options);
     const { year, month, day } = this.helper.monthDayFromFields(fields, overflow, cache);
     // `year` is a reference year where this month/day exists in this calendar
