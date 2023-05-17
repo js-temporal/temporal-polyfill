@@ -1,3 +1,110 @@
+# 0.4.4
+
+Breaking changes:
+
+- `Temporal.ZonedDateTime` objects are no longer supported as parameters to `Intl.DateTimeFormat` formatting methods. ([12071fb0], see also [Upstream PR](https://github.com/tc39/proposal-temporal/pull/2479), [Upstream PR 2](https://github.com/tc39/proposal-temporal/pull/2522))
+  - To format using `Temporal.ZonedDateTime`'s time zone, use `Temporal.ZonedDateTime.prototype.toLocaleString`. This method:
+    1. Creates a new `Intl.DateTimeFormat` instance in the same time zone and calendar as the `Temporal.ZonedDateTime` instance
+    1. Creates a `Temporal.Instant` from the `Temporal.ZonedDateTime` instance.
+    1. Formats that `Temporal.Instant` instance using the created `Intl.DateTimeFormat` instance.
+  - To format in a time zone that does not match the time zone of the `Temporal.ZonedDateTime` instance:
+    1. Create a new `Temporal.ZonedDateTime` instance in the right time zone using `Temporal.ZonedDateTime.prototype.withTimeZone`.
+       - To get the current system time zone, use `Temporal.Now.timeZoneId()`.
+         Be careful when caching the current system time zone (or an `Intl.DateTimeFormat` instance using that time zone), because the system time zone can change during the lifetime of your program (e.g. when a user on a mobile device crosses a time zone boundary or when a user manually edits time zone settings).
+    1. Follow the steps above.
+  - Generally, try to always include the `timeZone` property when creating an `Intl.DateTimeFormat` instance to avoid an ambiguity about which time zone the formatted results will be in.
+  - `Intl.DateTimeFormat` instances can be expensive to create. For performance-sensitive code where the same calendar and time zone are used repeatedly for formatting, we recommend creating and reusing an `Intl.DateTimeFormat` instance with the desired `timeZone` and `calendar` options, and then formatting using the value of `Temporal.ZonedDateTime.prototype.epochMilliseconds`.
+    `Intl.DateTimeFormat` instances may also require a lot of RAM, so indefinitely caching large numbers of them is not recommended for memory-constrained environments.
+- The `.calendar` property on Temporal types has been replaced with a `.calendarId` property that returns the string calendar identifier and a `.getCalendar()` method that returns an object that implements `Temporal.CalendarProtocol`.
+  - `getCalendar()` will always return a new object if the containing instance was constructed using a built-in calendar identifier string. However, if the containing instance was constructed using a calendar object (either a built-in calendar or custom calendar), then the same object is returned. ([cc701b45], see also [Upstream issue](https://github.com/tc39/proposal-temporal/issues/1808))
+  - Temporal will compare calendars by testing for string equality between calendar identifiers.
+    When a calendar is an object, its `id` property will be used for comparison. ([3916e547], see also [Upstream issue](https://github.com/tc39/proposal-temporal/issues/1808))
+  - The `.calendar` property has been entirely removed from `Temporal.PlainTime`. ([0727d86e], see also [Issue 1](https://github.com/tc39/proposal-temporal/issues/1808), [Issue 2](https://github.com/tc39/proposal-temporal/issues/1588))
+- The `.timeZone` property on `Temporal.ZonedDateTime` has been replaced with a `.timeZoneId` property that returns the string time zone identifier and a `.getTimeZone()` method that returns an object that implements `Temporal.TimeZoneProtocol`. ([d3263f0], see also Upstream issue)
+  - `getTimeZone()` will always return a new object if the `Temporal.ZonedDateTime` instance was constructed using a built-in time zone identifier string.
+    However, if the instance was constructed using a time zone object (either a built-in time zone or custom time zone), then the same object is returned.
+  - `Termporal.Now.timeZone()` is replaced by `Temporal.Now.timeZoneId()`, which returns a time zone identifier string, not a `Temporal.TimeZone` instance. ([600f0cc7], see also [Upstream issue](https://github.com/tc39/proposal-temporal/issues/1808))
+  - Temporal will compare time zones by testing for string equality between calendar identifiers.
+    When a calendar is an object, its `id` property will be used for comparison. ([d6cb2862], see also [Upstream issue](https://github.com/tc39/proposal-temporal/issues/1808))
+- Require the `id` property and make overriding `toString` optional (but recommended!) for `Temporal.TimeZoneProtocol`. ([97637bbc])
+- Remove support for nested time zone and calendar property bags. ([9b7f61ae], [0c38267b], see also [Discussion](https://github.com/tc39/proposal-temporal/issues/2104#issuecomment-140))
+- Require the remainder returned by the `NanosecondsToDays` internal operation to be less than the length of one calendar day.
+  This could happen due to shenanigans in a custom time zone's `getOffsetNanosecondsFor` or `getPossibleInstantsFor` methods, or a custom calendar's `dateAdd` method.
+  ([44b00a38], see also [Upstream issue](https://github.com/tc39/proposal-temporal/issues/2357)
+- Set an upper limit of 1e9 on rounding increments. ([5d78c815])
+- Require `fields` and `mergeFields` methods for `Temporal.CalendarProtocol` (custom calendar) objects. ([5ad63274])
+- Reject Z designators when parsing `Temporal.PlainTime` strings.
+
+Bug fixes:
+
+- Read field identifiers from a calendar's `fields()` method during `dateFromFields()`, `yearMonthFromFields()`, and `monthDayFromFields()`.
+  Previously, these methods only referenced hardcoded `'era'` and `'eraYear'` field identifiers. ([375a4ad9])
+- Avoid precision loss in AddDuration operations. ([c0f7349a])
+- Fix an infinite-loop bug and a RangeError during non-ISO calendar calculations. ([d94c1cd9], see also [proposal-temporal PR](https://github.com/tc39/proposal-temporal/pull/2539), [Issue 1](https://github.com/tc39/proposal-temporal/issues/2383), [Issue 2](https://github.com/tc39/proposal-temporal/issues/2537))
+- Avoid rounding errors in `BalanceTime` operations. ([9260a8a0])
+- Avoid precision loss in `NanosecondsToDays` operations. ([e02f0626])
+- Require that results from `NanosecondsToDays` calls don't flip sign. ([0b238ccf])
+- Fix bugs introduced while restricting the creation of `Temporal.Duration` using non-numeric inputs. ([46c4132d], see also [Upstream issue](https://github.com/tc39/proposal-temporal/issues/2112))
+- Fix bugs when passing fractional numbers to `CreateTemporalDuration`. ([856a5460], see also [Upstream issue](https://github.com/tc39/proposal-temporal/issues/2246))
+- Always return a Number of nanoseconds from `RoundDuration`. ([8d3c1f1b])
+- Use BigInt math in `RoundDuration` to avoid problems when the values are larger than `Number.MAX_SAFE_INTEGER`. ([955323f8])
+- Always start at the end of 1972 when computing a `Temporal.PlainMonthDay` from fields, preventing the reference year from accidentally being in 1971. ([ef4a0c4b])
+- Apply the overflow behaviour to year/month/day values in `monthDayFromFields`. ([7ebd0f96])
+- Preserve the day of month when constraining a nonexistent leap month, instead of defaulting to the end of the closest corresponding regular month. ([996f8fa1])
+- Allow month codes `'M01L'` and `'M12L'` in the Chinese calendar. ([696f2c7e])
+- Avoid overflows in `GetNamedTimeZoneOffsetNanoseconds`. ([c42570b8])
+- Fix calendar validation in various ToTemporal\_\_\_ operations. ([e3913974], see also [Upstream issue](https://github.com/tc39/proposal-temporal/issues/2546))
+- Don't call `GetMethod` on a string calendar. ([fe698d8d], see also [Upstream issue](https://github.com/tc39/proposal-temporal/pull/2547))
+- Avoid rounding errors in `BalanceDurationRelative` and `UnbalanceDurationRelative`. ([a907acf0])
+- Check for negative day length in `Temporal.ZonedDateTime.prototype.round`. ([0d2d60ec], see also [Spec PR](https://github.com/tc39/proposal-temporal/pull/2261))
+  This change avoids a common bug where a UTC timestamp is accidentally interpreted as if it were a local time in a real time zone.
+  If you do want to parse the time portion of a UTC timestamp string, use: `Temporal.Instant.from(s).toZonedDateTimeISO('UTC').toPlainTime()`. ([a7a50eac])
+- Reject 0-value components when parsing `Temporal.Duration` strings, and avoid rounding errors when nanoseconds components are present. ([58b5601a])
+- Reject `relativeTo` string options that are neither valid `Temporal.PlainDate` nor `Temporal.ZonedDateTime` strings, such as `'2022-08-18T17:01Z'`. ([4db15c41])
+- Add validation for the return values from calendar operations. ([d88cfa4d])
+- Validate required methods of `Temporal.TimeZoneProtocol` and `Temporal.CalendarProtocol`. ([84563cea], [755c7620], see also [Discussion](https://github.com/tc39/proposal-temporal/issues/2104#issuecomment-140))
+- Throw earlier when users might mix up positional `Temporal.TimeZone` and `Temporal.Calendar` arguments with each other, to prevent bugs like `new Temporal.ZonedDateTime(0n, cal, tz)` where the switched calendar and time zone arguments would cause exceptions to be thrown later. ([7922f1f9])
+
+Non-breaking changes:
+
+- Implement `yearOfWeek` methods that complement existing `weekOfYear` methods.
+  The new method returns the year associated with `weekOfYear`, which may (see https://en.wikipedia.org/wiki/ISO_week_date) vary from `year` in some calendars like `'iso8601'`.
+  This new method can be useful for formatting IS0 8601 strings using the year-week-day format like `1981-W53-7`. ([bf08ca56])
+- Support new Internet Extended Date-Time (IXDTF) Annotations
+  - See the [Temporal + IXDTF tracking issue](https://github.com/tc39/proposal-temporal/issues/1450).
+  - Align ISO 8601 grammar with annotations from IXDTF specification.
+    Calendar and time zone annotations are now allowed to contain a "critical" flag (`'!'`) prefix.
+    Critical flags have no effect when parsing input strings because Temporal already treats unknown or inconsistent inputs as errors by default. ([e8b2e71c])
+    - There can be multiple types of annotations in an IXDTF string.
+      Temporal only recognizes time zone and calendar annotations.
+      Unrecognized non-critical annotations will be ignored.
+      Unrecognized critical annotations will cause the parsing method to throw an exception.
+  - Allow `toString()` methods for `Temporal.PlainDate`, `Temporal.PlainDateTime`, `Temporal.PlainYearMonth`, `Temporal.PlainMonthDay`, and `Temporal.ZonedDateTime` to emit critical IXDTF annotations using the `'critical'` option.
+    Use this option with care, because the platform that you're communicating with may not understand this syntax.
+    `calendarName: 'critical'` behaves like `calendarName: 'always'` and `timeZoneName: 'critical'` behaves like `timeZoneName: 'always'`, but they also output a `'!'` prefix in the corresponding annotation. ([50a64f16])
+    Critical flags are never used by Temporal, but could be consumed by other programs.
+  - Ignore calendar annotations when parsing `Temporal.Instant` strings. ([b86b87f0])
+  - Allow calendar and/or time zone annotations after strings without a time part: YYYY-MM-DD, YYYY-MM, and MM-DD. ([acd6464f])
+  - Disallow UTC offsets in YYYY-MM and MM-DD strings because they could cause ambiguity between an offset and the day of a YYYY-MM-DD string. ([acd6464f])
+  - Reject ambiguous time strings even with calendar annotations. ([af875275])
+- Implement the full set of rounding modes.
+  New modes include `'expand'`, `'halfCeil'`, `'halfFloor'`, `'halfTrunc'`, and `'halfEven'`.
+  ([eb5404d1])
+- Treat calendar names as case-insensitive. ([9e730d68])
+- Improve cross-binary compatibility of polyfill objects by storing internals on `globalThis`. ([73a0bf36], see also [GitHub Issue](https://github.com/js-temporal/temporal-polyfill/issues/164))
+- Allow various `Temporal.Calendar` methods to return 0. ([8a49023b])
+- Improve error messages when converting fields to a `Temporal.PlainMonthDay`. ([e1cd4170])
+- Round towards the Big Bang in epoch time getters. ([6d124a56], see also [Upstream issue](https://github.com/tc39/proposal-temporal/issues/2423), [Spec change](https://github.com/tc39/proposal-temporal/issues/2424))
+- Improve performance when operating on large numbers in `BalanceISODate`. ([d2a23dd5])
+- Optimize `Temporal.TimeZone.prototype.getNextTransition()` for dates that predate 1847, which is the earliest data in the IANA time zone database. ([9591af3b])
+- Improve performance when out-of-range finding transition points for named time zones. ([3b61abfe])
+- Special-case zones with precomputed DST transition points in `GetPreviousTransition`. ([5922bdf1])
+
+Other:
+
+- Bump required dependency versions. ([c65455a5])
+- Fix sourcemaps so they point directly to TS source files. ([6b462d49], see also [GitHub PR](https://github.com/js-temporal/temporal-polyfill/pull/194))
+
 # 0.4.3
 
 Bug fixes:
@@ -132,6 +239,62 @@ Other:
 - The polyfill's source was ported to TypeScript ([12e4d529], [ac78fd9d], [53f32e0f], [06b806c9], [66fdc765], [50b1c34b], [4724b017], [947a8a5e], [fdbf7e01], [fa60af6a], [da753f2f], [f4db8b0b], [4a38420d])
 - Document the release process for this polyfill ([c55818b6])
 
+[12071fb0]: https://github.com/js-temporal/temporal-polyfill/commit/12071fb08903bdf8f73bae4b628ca91e469e8085
+[cc701b45]: https://github.com/js-temporal/temporal-polyfill/commit/cc701b45afc2438f76cbbafe30c29a4485ad556c
+[3916e547]: https://github.com/js-temporal/temporal-polyfill/commit/3916e547fa33eed8342f7845146135aae30696fd
+[0727d86e]: https://github.com/js-temporal/temporal-polyfill/commit/0727d86ec364749f36cb7e5fb53f10db9b404da2
+[600f0cc7]: https://github.com/js-temporal/temporal-polyfill/commit/600f0cc7cdd540bb55d738ed7c934bb7a7e01e17
+[d6cb2862]: https://github.com/js-temporal/temporal-polyfill/commit/d6cb2862d624580f6210d849bdd424f3e9cebb4d
+[97637bbc]: https://github.com/js-temporal/temporal-polyfill/commit/97637bbc3d7d1546ea67586534efc87b84c12359
+[9b7f61ae]: https://github.com/js-temporal/temporal-polyfill/commit/9b7f61ae616c512df3c681d00cd59f86718d6a02
+[0c38267b]: https://github.com/js-temporal/temporal-polyfill/commit/0c38267bfe56b5215ddaa14765a6a77275285569
+[44b00a38]: https://github.com/js-temporal/temporal-polyfill/commit/44b00a38525a0e9607856d64909475c083476999
+[5d78c815]: https://github.com/js-temporal/temporal-polyfill/commit/5d78c815bb561218c262714a6becc879cc9d66af
+[5ad63274]: https://github.com/js-temporal/temporal-polyfill/commit/5ad63274fed03f9606bb827a5ccb49fcbfe33d3e
+[375a4ad9]: https://github.com/js-temporal/temporal-polyfill/commit/375a4ad9bd527e002a0aa499b09c539ad8ded35b
+[c0f7349a]: https://github.com/js-temporal/temporal-polyfill/commit/c0f7349a327b68543797d38e045b1fd8c1e0949b
+[d94c1cd9]: https://github.com/js-temporal/temporal-polyfill/commit/d94c1cd9a853a6c9cd1212de9db46d4c4b695957
+[9260a8a0]: https://github.com/js-temporal/temporal-polyfill/commit/9260a8a0f58db2c4606a09ae54b711f0c4a1d892
+[e02f0626]: https://github.com/js-temporal/temporal-polyfill/commit/e02f0626ce89945c791ad4443f502738e0de3779
+[0b238ccf]: https://github.com/js-temporal/temporal-polyfill/commit/0b238ccf338cd9b185d4df87433d7f65debc6347
+[46c4132d]: https://github.com/js-temporal/temporal-polyfill/commit/46c4132d4cdcb923ec09eb0674873ce0a875fdd8
+[856a5460]: https://github.com/js-temporal/temporal-polyfill/commit/856a54605b542a7d049bc1da58dee570367d7c6a
+[8d3c1f1b]: https://github.com/js-temporal/temporal-polyfill/commit/8d3c1f1bd2533e69ef42368e8dbd4a097433dfbb
+[955323f8]: https://github.com/js-temporal/temporal-polyfill/commit/955323f8e863f18c6691427bb1c3bbfc7c6a1403
+[ef4a0c4b]: https://github.com/js-temporal/temporal-polyfill/commit/ef4a0c4bc143f3c8b28a19aec2a6ea5e588f4b9c
+[7ebd0f96]: https://github.com/js-temporal/temporal-polyfill/commit/7ebd0f962589fe9885f7eaa35fd0a001a5075499
+[996f8fa1]: https://github.com/js-temporal/temporal-polyfill/commit/996f8fa1084175f7c6fa11af393f5974d3364f26
+[696f2c7e]: https://github.com/js-temporal/temporal-polyfill/commit/696f2c7eb1c37b6fe4a4696fbe6073e182cfa4a4
+[c42570b8]: https://github.com/js-temporal/temporal-polyfill/commit/c42570b8aee0482e84f061afd75379c03cd11c8e
+[e3913974]: https://github.com/js-temporal/temporal-polyfill/commit/e39139743a43a6fb5702036fa7e2989f8a91ad02
+[fe698d8d]: https://github.com/js-temporal/temporal-polyfill/commit/fe698d8d9357633520e3b22c5a48d84db84bb400
+[a907acf0]: https://github.com/js-temporal/temporal-polyfill/commit/a907acf0031e3ce80a3e9b2897240a61b6c34b23
+[0d2d60ec]: https://github.com/js-temporal/temporal-polyfill/commit/0d2d60eca7a0293a4c3c4e4741e1674a2d24c7f7
+[a7a50eac]: https://github.com/js-temporal/temporal-polyfill/commit/a7a50eac6d0413b8b222d8cecef00dcc949a58b7
+[58b5601a]: https://github.com/js-temporal/temporal-polyfill/commit/58b5601a921296754c402aaf01c81fcf5418235b
+[4db15c41]: https://github.com/js-temporal/temporal-polyfill/commit/4db15c41bde82f14416daf9a1990d4e82b4104af
+[d88cfa4d]: https://github.com/js-temporal/temporal-polyfill/commit/d88cfa4d4968dde600f0a99fe79496d65109589f
+[84563cea]: https://github.com/js-temporal/temporal-polyfill/commit/84563cea6f1b380ea6dd8366bab65023756161c2
+[755c7620]: https://github.com/js-temporal/temporal-polyfill/commit/755c762014b196c8c3ff16325bc8a6df836ec69e
+[7922f1f9]: https://github.com/js-temporal/temporal-polyfill/commit/7922f1f9f4eb154573f695d19f980d66401e4d82
+[e8b2e71c]: https://github.com/js-temporal/temporal-polyfill/commit/e8b2e71c8c558a849b487f43785e46337ef3e837
+[50a64f16]: https://github.com/js-temporal/temporal-polyfill/commit/50a64f163cb3abefdf7ef956c10f0197f4e46faf
+[b86b87f0]: https://github.com/js-temporal/temporal-polyfill/commit/b86b87f048937caee6d00243af69eb6604d853f0
+[acd6464f]: https://github.com/js-temporal/temporal-polyfill/commit/acd6464fac951c13cd1f0ad268c2d485be76b872
+[af875275]: https://github.com/js-temporal/temporal-polyfill/commit/af875275902e18eb6a230c5f5541ed9c286eb955
+[eb5404d1]: https://github.com/js-temporal/temporal-polyfill/commit/eb5404d182a94574c4aa183fcbf6907c54874657
+[9e730d68]: https://github.com/js-temporal/temporal-polyfill/commit/9e730d68ef2e7d2bf9a568a67ac1f22aa91a1d6d
+[bf08ca56]: https://github.com/js-temporal/temporal-polyfill/commit/bf08ca5606a9392635e70cd888f5686f6ecf4aa0
+[73a0bf36]: https://github.com/js-temporal/temporal-polyfill/commit/73a0bf36b6d8aa4feb31d91c14688ca43c5822db
+[8a49023b]: https://github.com/js-temporal/temporal-polyfill/commit/8a49023b1b8857c01aadbe71dc8d53481dd4c10b
+[e1cd4170]: https://github.com/js-temporal/temporal-polyfill/commit/e1cd4170f12da0790faf3adcb99848e6cb6789c4
+[6d124a56]: https://github.com/js-temporal/temporal-polyfill/commit/6d124a5676f608f3ff6b971588325ae134ff507b
+[d2a23dd5]: https://github.com/js-temporal/temporal-polyfill/commit/d2a23dd500d97b37364d0e655d2408a88a35d424
+[9591af3b]: https://github.com/js-temporal/temporal-polyfill/commit/9591af3b160b5db53d3d56fe60bc59aaf023eec1
+[3b61abfe]: https://github.com/js-temporal/temporal-polyfill/commit/3b61abfee69a0c41dee334e901c43fb6829108b6
+[5922bdf1]: https://github.com/js-temporal/temporal-polyfill/commit/5922bdf16c1af1209020ab20f60d5f525308e16d
+[c65455a5]: https://github.com/js-temporal/temporal-polyfill/commit/c65455a531bdeceedca1aaa0372747263b799942
+[6b462d49]: https://github.com/js-temporal/temporal-polyfill/commit/6b462d498634f3641bd5fdafe894b536413aa3bb
 [f3d0ca9f]: https://github.com/js-temporal/temporal-polyfill/commit/f3d0ca9f2f32beb071a7d25c9732bd38784b3e6d
 [4f8b04c1]: https://github.com/js-temporal/temporal-polyfill/commit/4f8b04c1caba0360a527cbe8c8d95e2a8642ab6e
 [b251dc0e]: https://github.com/js-temporal/temporal-polyfill/commit/b251dc0ef48cd7b2edee2f6541ce0cfb6d019e08
