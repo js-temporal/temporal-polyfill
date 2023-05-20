@@ -18,7 +18,7 @@ This polyfill is compatible with Node.js 14 or later.
 - [x] Sync the code in this repo with the handful of polyfill changes that have recently been made in the [tc39/proposal-temporal](https://github.com/tc39/proposal-temporal) repo
 - [x] Release alpha version to NPM
 - [x] Deprecate all other earlier Temporal polyfills
-- [x] Optimize slow operations by reducing calls to Intl.DateTimeFormat constructor (see #7, #8, #10, #12)
+- [x] Optimize slow operations by reducing calls to Intl.DateTimeFormat constructor (see [#7](https://github.com/js-temporal/temporal-polyfill/issues/7), [#8](https://github.com/js-temporal/temporal-polyfill/pull/8), [#10](https://github.com/js-temporal/temporal-polyfill/pull/10), [#12](https://github.com/js-temporal/temporal-polyfill/pull/12))
 - [x] Convert to TypeScript for better maintainability
 - [x] Improve typing of sources for better maintainability
 - [x] Migrate to JSBI for improved compile-time safety around BigInt operations.
