@@ -277,7 +277,7 @@ export class Duration implements Temporal.Duration {
     const maximum = maximumIncrements[smallestUnit];
     if (maximum !== undefined) ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximum, false);
 
-    ({ years, months, weeks, days } = ES.UnbalanceDurationRelative(
+    ({ years, months, weeks, days } = ES.UnbalanceDateDurationRelative(
       years,
       months,
       weeks,
@@ -319,7 +319,7 @@ export class Duration implements Temporal.Duration {
         roundingMode,
         relativeTo
       ));
-    ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceDuration(
+    ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDuration(
       days,
       hours,
       minutes,
@@ -330,7 +330,14 @@ export class Duration implements Temporal.Duration {
       largestUnit,
       relativeTo
     ));
-    ({ years, months, weeks, days } = ES.BalanceDurationRelative(years, months, weeks, days, largestUnit, relativeTo));
+    ({ years, months, weeks, days } = ES.BalanceDateDurationRelative(
+      years,
+      months,
+      weeks,
+      days,
+      largestUnit,
+      relativeTo
+    ));
 
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
@@ -356,13 +363,13 @@ export class Duration implements Temporal.Duration {
     const unit = ES.GetTemporalUnit(options, 'unit', 'datetime', ES.REQUIRED);
 
     // Convert larger units down to days
-    ({ years, months, weeks, days } = ES.UnbalanceDurationRelative(years, months, weeks, days, unit, relativeTo));
+    ({ years, months, weeks, days } = ES.UnbalanceDateDurationRelative(years, months, weeks, days, unit, relativeTo));
     // If the unit we're totalling is smaller than `days`, convert days down to that unit.
     let intermediate;
     if (ES.IsTemporalZonedDateTime(relativeTo)) {
       intermediate = ES.MoveRelativeZonedDateTime(relativeTo, years, months, weeks, 0);
     }
-    let balanceResult = ES.BalancePossiblyInfiniteDuration(
+    let balanceResult = ES.BalancePossiblyInfiniteTimeDuration(
       days,
       hours,
       minutes,
@@ -531,8 +538,8 @@ export class Duration implements Temporal.Duration {
     const shift1 = ES.CalculateOffsetShift(relativeTo, y1, mon1, w1, d1);
     const shift2 = ES.CalculateOffsetShift(relativeTo, y2, mon2, w2, d2);
     if (y1 !== 0 || y2 !== 0 || mon1 !== 0 || mon2 !== 0 || w1 !== 0 || w2 !== 0) {
-      ({ days: d1 } = ES.UnbalanceDurationRelative(y1, mon1, w1, d1, 'day', relativeTo));
-      ({ days: d2 } = ES.UnbalanceDurationRelative(y2, mon2, w2, d2, 'day', relativeTo));
+      ({ days: d1 } = ES.UnbalanceDateDurationRelative(y1, mon1, w1, d1, 'day', relativeTo));
+      ({ days: d2 } = ES.UnbalanceDateDurationRelative(y2, mon2, w2, d2, 'day', relativeTo));
     }
     const totalNs1 = ES.TotalDurationNanoseconds(d1, h1, min1, s1, ms1, µs1, ns1, shift1);
     const totalNs2 = ES.TotalDurationNanoseconds(d2, h2, min2, s2, ms2, µs2, ns2, shift2);
