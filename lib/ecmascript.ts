@@ -6098,8 +6098,9 @@ export function AdjustRoundedDurationDays(
   );
   const dayLengthNs = JSBI.subtract(dayEnd, dayStart);
 
+  const oneDayLess = JSBI.subtract(timeRemainderNs, dayLengthNs);
   if (
-    JSBI.greaterThanOrEqual(JSBI.multiply(JSBI.subtract(timeRemainderNs, dayLengthNs), JSBI.BigInt(direction)), ZERO)
+    JSBI.greaterThanOrEqual(JSBI.multiply(oneDayLess, JSBI.BigInt(direction)), ZERO)
   ) {
     ({ years, months, weeks, days } = AddDuration(
       years,
@@ -6124,7 +6125,7 @@ export function AdjustRoundedDurationDays(
       0,
       relativeTo
     ));
-    timeRemainderNs = RoundInstant(JSBI.subtract(timeRemainderNs, dayLengthNs), increment, unit, roundingMode);
+    timeRemainderNs = RoundInstant(oneDayLess, increment, unit, roundingMode);
     ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
       0,
       0,
