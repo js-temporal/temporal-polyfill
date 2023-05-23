@@ -233,7 +233,7 @@ export class Calendar implements Temporal.Calendar {
     const duration = ES.ToTemporalDuration(durationParam);
     const options = ES.GetOptionsObject(optionsParam);
     const overflow = ES.ToTemporalOverflow(options);
-    const { days } = ES.BalanceDuration(
+    const { days } = ES.BalanceTimeDuration(
       GetSlot(duration, DAYS),
       GetSlot(duration, HOURS),
       GetSlot(duration, MINUTES),
