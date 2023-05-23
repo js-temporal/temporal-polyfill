@@ -302,11 +302,25 @@ export class Duration implements Temporal.Duration {
         roundingMode,
         relativeTo
       ));
-    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-      ES.AdjustRoundedDurationDays(
-        years,
-        months,
-        weeks,
+    if (ES.IsTemporalZonedDateTime(relativeTo)) {
+      ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+        ES.AdjustRoundedDurationDays(
+          years,
+          months,
+          weeks,
+          days,
+          hours,
+          minutes,
+          seconds,
+          milliseconds,
+          microseconds,
+          nanoseconds,
+          roundingIncrement,
+          smallestUnit,
+          roundingMode,
+          relativeTo
+        ));
+      ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDurationRelative(
         days,
         hours,
         minutes,
@@ -314,22 +328,21 @@ export class Duration implements Temporal.Duration {
         milliseconds,
         microseconds,
         nanoseconds,
-        roundingIncrement,
-        smallestUnit,
-        roundingMode,
+        largestUnit,
         relativeTo
       ));
-    ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDuration(
-      days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      largestUnit,
-      relativeTo
-    ));
+    } else {
+      ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDuration(
+        days,
+        hours,
+        minutes,
+        seconds,
+        milliseconds,
+        microseconds,
+        nanoseconds,
+        largestUnit
+      ));
+    }
     ({ years, months, weeks, days } = ES.BalanceDateDurationRelative(
       years,
       months,
@@ -365,21 +378,32 @@ export class Duration implements Temporal.Duration {
     // Convert larger units down to days
     ({ years, months, weeks, days } = ES.UnbalanceDateDurationRelative(years, months, weeks, days, unit, relativeTo));
     // If the unit we're totalling is smaller than `days`, convert days down to that unit.
-    let intermediate;
+    let balanceResult;
     if (ES.IsTemporalZonedDateTime(relativeTo)) {
-      intermediate = ES.MoveRelativeZonedDateTime(relativeTo, years, months, weeks, 0);
+      const intermediate = ES.MoveRelativeZonedDateTime(relativeTo, years, months, weeks, 0);
+      balanceResult = ES.BalancePossiblyInfiniteTimeDurationRelative(
+        days,
+        hours,
+        minutes,
+        seconds,
+        milliseconds,
+        microseconds,
+        nanoseconds,
+        unit,
+        intermediate
+      );
+    } else {
+      balanceResult = ES.BalancePossiblyInfiniteTimeDuration(
+        days,
+        hours,
+        minutes,
+        seconds,
+        milliseconds,
+        microseconds,
+        nanoseconds,
+        unit
+      );
     }
-    let balanceResult = ES.BalancePossiblyInfiniteTimeDuration(
-      days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      unit,
-      intermediate
-    );
     if (balanceResult === 'positive overflow') {
       return Infinity;
     } else if (balanceResult === 'negative overflow') {
