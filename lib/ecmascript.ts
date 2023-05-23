@@ -3735,24 +3735,18 @@ export function TotalDurationNanoseconds(
   return JSBI.add(JSBI.BigInt(nanoseconds), JSBI.multiply(microseconds, THOUSAND));
 }
 
-function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof ToRelativeTemporalObject>) {
+function NanosecondsToDays(nanosecondsParam: JSBI, zonedRelativeTo: Temporal.ZonedDateTime) {
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
   const sign = MathSign(JSBI.toNumber(nanosecondsParam));
   let nanoseconds = JSBI.BigInt(nanosecondsParam);
-  let dayLengthNs = 86400e9;
-  if (sign === 0) return { days: 0, nanoseconds: ZERO, dayLengthNs };
-  if (!IsTemporalZonedDateTime(relativeTo)) {
-    let days: JSBI;
-    ({ quotient: days, remainder: nanoseconds } = divmod(nanoseconds, JSBI.BigInt(dayLengthNs)));
-    return { days: JSBI.toNumber(days), nanoseconds, dayLengthNs };
-  }
+  if (sign === 0) return { days: 0, nanoseconds: ZERO, dayLengthNs: JSBI.toNumber(DAY_NANOS) };
 
-  const startNs = GetSlot(relativeTo, EPOCHNANOSECONDS);
-  const start = GetSlot(relativeTo, INSTANT);
+  const startNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
+  const start = GetSlot(zonedRelativeTo, INSTANT);
   const endNs = JSBI.add(startNs, nanoseconds);
   const end = new TemporalInstant(endNs);
-  const timeZone = GetSlot(relativeTo, TIME_ZONE);
-  const calendar = GetSlot(relativeTo, CALENDAR);
+  const timeZone = GetSlot(zonedRelativeTo, TIME_ZONE);
+  const calendar = GetSlot(zonedRelativeTo, CALENDAR);
 
   // Find the difference in days only.
   const dtStart = GetPlainDateTimeFor(timeZone, start, calendar);
@@ -3817,6 +3811,7 @@ function NanosecondsToDays(nanosecondsParam: JSBI, relativeTo: ReturnType<typeof
 
   let isOverflow = false;
   let relativeInstant = new TemporalInstant(intermediateNs);
+  let dayLengthNs;
   do {
     // calculate length of the next day (day that contains the time remainder)
     const oneDayFartherNs = AddZonedDateTime(relativeInstant, timeZone, calendar, 0, 0, 0, sign, 0, 0, 0, 0, 0, 0);
@@ -6193,15 +6188,18 @@ export function RoundDuration(
   // larger. We'll cast away `undefined` when it's used lower down below.
   let dayLengthNs: JSBI | undefined;
   if (unit === 'year' || unit === 'month' || unit === 'week' || unit === 'day') {
-    nanoseconds = TotalDurationNanoseconds(0, hours, minutes, seconds, milliseconds, microseconds, nanosecondsParam, 0);
-    let intermediate;
-    if (zdtRelative) {
-      intermediate = MoveRelativeZonedDateTime(zdtRelative, years, months, weeks, days);
-    }
+    nanoseconds = TotalDurationNanoseconds(0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, 0);
     let deltaDays;
-    let dayLength: number;
-    ({ days: deltaDays, nanoseconds, dayLengthNs: dayLength } = NanosecondsToDays(nanoseconds, intermediate));
-    dayLengthNs = JSBI.BigInt(dayLength);
+    if (zdtRelative) {
+      const intermediate = MoveRelativeZonedDateTime(zdtRelative, years, months, weeks, days);
+      let dayLengthNumber;
+      ({ days: deltaDays, nanoseconds, dayLengthNs: dayLengthNumber } = NanosecondsToDays(nanoseconds, intermediate));
+      dayLengthNs = JSBI.BigInt(dayLengthNumber);
+    } else {
+      ({ quotient: deltaDays, remainder: nanoseconds } = divmod(nanoseconds, DAY_NANOS));
+      deltaDays = JSBI.toNumber(deltaDays);
+      dayLengthNs = DAY_NANOS;
+    }
     days += deltaDays;
     hours = minutes = seconds = milliseconds = microseconds = 0;
   }
