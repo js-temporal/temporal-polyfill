@@ -367,10 +367,11 @@ import * as PARSE from './regex';
 const IntlDateTimeFormatEnUsCache = new Map<string, Intl.DateTimeFormat>();
 
 function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier: string) {
-  let instance = IntlDateTimeFormatEnUsCache.get(timeZoneIdentifier);
+  const lowercaseIdentifier = ASCIILowercase(timeZoneIdentifier);
+  let instance = IntlDateTimeFormatEnUsCache.get(lowercaseIdentifier);
   if (instance === undefined) {
     instance = new IntlDateTimeFormat('en-us', {
-      timeZone: StringCtor(timeZoneIdentifier),
+      timeZone: lowercaseIdentifier,
       hour12: false,
       era: 'short',
       year: 'numeric',
@@ -380,7 +381,7 @@ function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier: string) {
       minute: 'numeric',
       second: 'numeric'
     });
-    IntlDateTimeFormatEnUsCache.set(timeZoneIdentifier, instance);
+    IntlDateTimeFormatEnUsCache.set(lowercaseIdentifier, instance);
   }
   return instance;
 }
@@ -473,14 +474,22 @@ export function RejectTemporalLikeObject(item: AnyTemporalLikeType) {
     throw new TypeError('with() does not support a timeZone property');
   }
 }
-function ParseTemporalTimeZone(stringIdent: string) {
-  const { ianaName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
-  if (ianaName) return GetCanonicalTimeZoneIdentifier(ianaName);
-  if (z) return 'UTC';
-  // if !ianaName && !z then offset must be present
-  assertExists(offset);
-  const offsetNs = ParseTimeZoneOffsetString(offset);
+
+export function CanonicalizeTimeZoneOffsetString(offsetString: string) {
+  const offsetNs = ParseTimeZoneOffsetString(offsetString);
   return FormatTimeZoneOffsetString(offsetNs);
+}
+
+export function ParseTemporalTimeZone(stringIdent: string) {
+  const { tzName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
+  if (tzName) {
+    if (IsTimeZoneOffsetString(tzName)) return CanonicalizeTimeZoneOffsetString(tzName);
+    return GetCanonicalTimeZoneIdentifier(tzName);
+  }
+  if (z) return 'UTC';
+  // if !tzName && !z then offset must be present
+  uncheckedAssertNarrowedType<string>(offset, 'if !tzName && !z then offset must be present');
+  return CanonicalizeTimeZoneOffsetString(offset);
 }
 
 function MaybeFormatCalendarAnnotation(
@@ -559,7 +568,7 @@ export function ParseISODateTime(isoString: string) {
     }
     if (offset === '-00:00') offset = '+00:00';
   }
-  const ianaName = match[19];
+  const tzName = match[19];
   const calendar = processAnnotations(match[20]);
   RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   return {
@@ -573,7 +582,7 @@ export function ParseISODateTime(isoString: string) {
     millisecond,
     microsecond,
     nanosecond,
-    ianaName,
+    tzName,
     offset,
     z,
     calendar
@@ -590,7 +599,7 @@ export function ParseTemporalInstantString(isoString: string) {
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalZonedDateTimeString(isoString: string) {
   const result = ParseISODateTime(isoString);
-  if (!result.ianaName) throw new RangeError('Temporal.ZonedDateTime requires a time zone ID in brackets');
+  if (!result.tzName) throw new RangeError('Temporal.ZonedDateTime requires a time zone ID in brackets');
   return result;
 }
 
@@ -686,16 +695,16 @@ export function ParseTemporalMonthDayString(isoString: string) {
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalTimeZoneString(stringIdent: string): Partial<{
-  ianaName: string | undefined;
+  tzName: string | undefined;
   offset: string | undefined;
   z: boolean | undefined;
 }> {
   const bareID = new RegExp(`^${PARSE.timeZoneID.source}$`, 'i');
-  if (bareID.test(stringIdent)) return { ianaName: stringIdent };
+  if (bareID.test(stringIdent)) return { tzName: stringIdent };
   try {
     // Try parsing ISO string instead
     const result = ParseISODateTime(stringIdent);
-    if (result.z || result.offset || result.ianaName) {
+    if (result.z || result.offset || result.tzName) {
       return result;
     }
   } catch {
@@ -1211,11 +1220,11 @@ export function ToRelativeTemporalObject(options: {
     timeZone = fields.timeZone;
     if (timeZone !== undefined) timeZone = ToTemporalTimeZoneSlotValue(timeZone);
   } else {
-    let ianaName, z;
-    ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, ianaName, offset, z } =
+    let tzName, z;
+    ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, tzName, offset, z } =
       ParseISODateTime(ToString(relativeTo)));
-    if (ianaName) {
-      timeZone = ToTemporalTimeZoneSlotValue(ianaName);
+    if (tzName) {
+      timeZone = ToTemporalTimeZoneSlotValue(tzName);
       if (z) {
         offsetBehaviour = 'exact';
       } else if (!offset) {
@@ -1836,10 +1845,10 @@ export function ToTemporalZonedDateTime(
       options
     ));
   } else {
-    let ianaName, z;
-    ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, ianaName, offset, z, calendar } =
+    let tzName, z;
+    ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, tzName, offset, z, calendar } =
       ParseTemporalZonedDateTimeString(ToString(item)));
-    timeZone = ToTemporalTimeZoneSlotValue(ianaName);
+    timeZone = ToTemporalTimeZoneSlotValue(tzName);
     if (z) {
       offsetBehaviour = 'exact';
     } else if (!offset) {
@@ -3130,11 +3139,11 @@ export function TemporalZonedDateTimeToString(
 }
 
 export function IsTimeZoneOffsetString(string: string) {
-  return OFFSET.test(StringCtor(string));
+  return OFFSET.test(string);
 }
 
-export function ParseTimeZoneOffsetString(string: string): number {
-  const match = OFFSET.exec(StringCtor(string));
+export function ParseTimeZoneOffsetString(string: string) {
+  const match = OFFSET.exec(string);
   if (!match) {
     throw new RangeError(`invalid time zone offset: ${string}`);
   }
@@ -3146,12 +3155,14 @@ export function ParseTimeZoneOffsetString(string: string): number {
   return sign * (((hours * 60 + minutes) * 60 + seconds) * 1e9 + nanoseconds);
 }
 
+// In the spec, GetCanonicalTimeZoneIdentifier is infallible and is always
+// preceded by a call to IsAvailableTimeZoneName. However in the polyfill,
+// we don't (yet) have a way to check if a time zone ID is valid without
+// also canonicalizing it. So we combine both operations into one function,
+// which will return the canonical ID if the ID is valid, and will throw
+// if it's not.
 export function GetCanonicalTimeZoneIdentifier(timeZoneIdentifier: string): string {
-  if (IsTimeZoneOffsetString(timeZoneIdentifier)) {
-    const offsetNs = ParseTimeZoneOffsetString(timeZoneIdentifier);
-    return FormatTimeZoneOffsetString(offsetNs);
-  }
-  const formatter = getIntlDateTimeFormatEnUsForTimeZone(StringCtor(timeZoneIdentifier));
+  const formatter = getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier);
   return formatter.resolvedOptions().timeZone;
 }
 

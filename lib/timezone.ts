@@ -22,20 +22,25 @@ import type { Temporal } from '..';
 import type { TimeZoneParams as Params, TimeZoneReturn as Return } from './internaltypes';
 
 export class TimeZone implements Temporal.TimeZone {
-  constructor(timeZoneIdentifierParam: string) {
+  constructor(identifier: string) {
     // Note: if the argument is not passed, GetCanonicalTimeZoneIdentifier(undefined) will throw.
     //       This check exists only to improve the error message.
     if (arguments.length < 1) {
       throw new RangeError('missing argument: identifier is required');
     }
 
-    const timeZoneIdentifier = ES.GetCanonicalTimeZoneIdentifier(timeZoneIdentifierParam);
+    let stringIdentifier = ES.ToString(identifier);
+    if (ES.IsTimeZoneOffsetString(stringIdentifier)) {
+      stringIdentifier = ES.CanonicalizeTimeZoneOffsetString(stringIdentifier);
+    } else {
+      stringIdentifier = ES.GetCanonicalTimeZoneIdentifier(stringIdentifier);
+    }
     CreateSlots(this);
-    SetSlot(this, TIMEZONE_ID, timeZoneIdentifier);
+    SetSlot(this, TIMEZONE_ID, stringIdentifier);
 
     if (DEBUG) {
       Object.defineProperty(this, '_repr_', {
-        value: `${this[Symbol.toStringTag]} <${timeZoneIdentifier}>`,
+        value: `${this[Symbol.toStringTag]} <${stringIdentifier}>`,
         writable: false,
         enumerable: false,
         configurable: false
