@@ -24,7 +24,6 @@ import JSBI from 'jsbi';
 import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS } from './ecmascript';
 
 const customResolvedOptions = DateTimeFormat.prototype.resolvedOptions as Intl.DateTimeFormat['resolvedOptions'];
-const ObjectCreate = Object.create;
 
 export class ZonedDateTime implements Temporal.ZonedDateTime {
   constructor(
@@ -454,12 +453,11 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
 
-    const optionsCopy = ObjectCreate(null);
     // This is not quite per specification, but this polyfill's DateTimeFormat
     // already doesn't match the InitializeDateTimeFormat operation, and the
     // access order might change anyway;
     // see https://github.com/tc39/ecma402/issues/747
-    ES.CopyDataProperties(optionsCopy, options, ['timeZone']);
+    const optionsCopy = ES.SnapshotOwnProperties(options, null, ['timeZone']);
 
     if (options.timeZone !== undefined) {
       throw new TypeError('ZonedDateTime toLocaleString does not accept a timeZone option');
