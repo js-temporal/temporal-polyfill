@@ -386,7 +386,7 @@ function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier: string) {
   return instance;
 }
 
-export function ToObject<T>(value: T): T extends Record<string, unknown> ? T : object {
+function ToObject<T>(value: T): T extends Record<string, unknown> ? T : Record<PropertyKey, unknown> {
   if (typeof value === 'undefined' || value === null) {
     throw new TypeError(`Expected object not ${value}`);
   }
@@ -395,7 +395,7 @@ export function ToObject<T>(value: T): T extends Record<string, unknown> ? T : o
 
 // Adapted from https://github.com/ljharb/es-abstract/blob/main/2022/CopyDataProperties.js
 // but simplified (e.g. removed assertions) for this polyfill to reduce bundle size.
-export function CopyDataProperties<K extends string | symbol, T extends Record<K, unknown>>(
+export function CopyDataProperties<K extends PropertyKey, T extends Record<K, unknown>>(
   target: T,
   source: T | undefined,
   excludedKeys: K[],
@@ -480,7 +480,7 @@ export function CanonicalizeTimeZoneOffsetString(offsetString: string) {
   return FormatTimeZoneOffsetString(offsetNs);
 }
 
-export function ParseTemporalTimeZone(stringIdent: string) {
+function ParseTemporalTimeZone(stringIdent: string) {
   const { tzName, offset, z } = ParseTemporalTimeZoneString(stringIdent);
   if (tzName) {
     if (IsTimeZoneOffsetString(tzName)) return CanonicalizeTimeZoneOffsetString(tzName);
@@ -529,7 +529,7 @@ function processAnnotations(annotations: string) {
   return calendar;
 }
 
-export function ParseISODateTime(isoString: string) {
+function ParseISODateTime(isoString: string) {
   // ZDT is the superset of fields for every other Temporal type
   const match = PARSE.zoneddatetime.exec(isoString);
   if (!match) throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
@@ -4656,7 +4656,7 @@ function DifferenceISODateTime(
   const date1 = CreateTemporalDate(y1, mon1, d1, calendar);
   const date2 = CreateTemporalDate(y2, mon2, d2, calendar);
   const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit);
-  const untilOptions = CopyOptions(options);
+  const untilOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
   untilOptions.largestUnit = dateLargestUnit;
   uncheckedAssertNarrowedType<Temporal.DifferenceOptions<Temporal.DateUnit>>(
     untilOptions,
@@ -4817,7 +4817,7 @@ export function DifferenceTemporalInstant(
   const sign = operation === 'since' ? -1 : 1;
   const other = ToTemporalInstant(otherParam);
 
-  const resolvedOptions = CopyOptions(options);
+  const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'time', [], 'nanosecond', 'second');
 
   const onens = GetSlot(instant, EPOCHNANOSECONDS);
@@ -4857,7 +4857,7 @@ export function DifferenceTemporalPlainDate(
   const otherCalendar = GetSlot(other, CALENDAR);
   ThrowIfCalendarsNotEqual(calendar, otherCalendar, 'compute difference between dates');
 
-  const resolvedOptions = CopyOptions(options);
+  const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'date', [], 'day', 'day');
   resolvedOptions.largestUnit = settings.largestUnit;
 
@@ -4902,7 +4902,7 @@ export function DifferenceTemporalPlainDateTime(
   const otherCalendar = GetSlot(other, CALENDAR);
   ThrowIfCalendarsNotEqual(calendar, otherCalendar, 'compute difference between dates');
 
-  const resolvedOptions = CopyOptions(options);
+  const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'datetime', [], 'nanosecond', 'day');
 
   let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
@@ -4982,7 +4982,7 @@ export function DifferenceTemporalPlainTime(
   const sign = operation === 'since' ? -1 : 1;
   const other = ToTemporalTime(otherParam);
 
-  const resolvedOptions = CopyOptions(options);
+  const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'time', [], 'nanosecond', 'hour');
 
   let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceTime(
@@ -5051,7 +5051,7 @@ export function DifferenceTemporalPlainYearMonth(
   const otherCalendar = GetSlot(other, CALENDAR);
   ThrowIfCalendarsNotEqual(calendar, otherCalendar, 'compute difference between months');
 
-  const resolvedOptions = CopyOptions(options);
+  const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'date', ['week', 'day'], 'month', 'year');
   resolvedOptions.largestUnit = settings.largestUnit;
 
@@ -5100,7 +5100,7 @@ export function DifferenceTemporalZonedDateTime(
   const otherCalendar = GetSlot(other, CALENDAR);
   ThrowIfCalendarsNotEqual(calendar, otherCalendar, 'compute difference between dates');
 
-  const resolvedOptions = CopyOptions(options);
+  const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'datetime', [], 'nanosecond', 'hour');
   resolvedOptions.largestUnit = settings.largestUnit;
 
@@ -5692,7 +5692,7 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   const calendar = GetSlot(yearMonth, CALENDAR);
   const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
   const fields = PrepareTemporalFields(yearMonth, fieldNames, []);
-  const fieldsCopy = CopyOptions(fields);
+  const fieldsCopy = SnapshotOwnProperties(GetOptionsObject(fields), null);
   fields.day = 1;
   // PrepareTemporalFields returns a type where 'day' is potentially undefined,
   // but TS doesn't narrow the type as a result of the assignment above.
@@ -5711,7 +5711,7 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
     startDate = CalendarDateFromFields(calendar, fieldsCopy);
   }
   const durationToAdd = new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
-  const optionsCopy = CopyOptions(options);
+  const optionsCopy = SnapshotOwnProperties(GetOptionsObject(options), null);
   const addedDate = CalendarDateAdd(calendar, startDate, durationToAdd, options, dateAdd);
   const addedDateFields = PrepareTemporalFields(addedDate, fieldNames, []);
 
@@ -6486,10 +6486,15 @@ export function CreateOnePropObject<K extends string, V>(propName: K, propValue:
   return o;
 }
 
-function CopyOptions<T extends { [s in K]?: unknown }, K extends string & keyof T>(options: T | undefined) {
-  const optionsCopy = ObjectCreate(null) as NonNullable<T>;
-  CopyDataProperties(optionsCopy, GetOptionsObject(options), []);
-  return optionsCopy;
+export function SnapshotOwnProperties<T extends { [s in K]?: unknown }, K extends PropertyKey & keyof T>(
+  source: T | undefined,
+  proto: Record<PropertyKey, unknown> | null,
+  excludedKeys: (keyof T)[] = [],
+  excludedValues: unknown[] = []
+) {
+  const copy = ObjectCreate(proto) as NonNullable<T>;
+  CopyDataProperties(copy, ToObject(source), excludedKeys, excludedValues);
+  return copy;
 }
 
 type StringlyTypedKeys<T> = Exclude<keyof T, symbol | number>;

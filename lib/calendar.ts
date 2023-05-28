@@ -205,21 +205,15 @@ export class Calendar implements Temporal.Calendar {
     }
     return impl[GetSlot(this, CALENDAR_ID)].fields(fieldsArray);
   }
-  mergeFields(
-    fieldsParam: Params['mergeFields'][0],
-    additionalFieldsParam: Params['mergeFields'][1]
-  ): Return['mergeFields'] {
+  mergeFields(fields: Params['mergeFields'][0], additionalFields: Params['mergeFields'][1]): Return['mergeFields'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
-    const fields = ES.ToObject(fieldsParam);
-    const fieldsCopy = ObjectCreate(null);
-    ES.CopyDataProperties(fieldsCopy, fields, [], [undefined]);
-    const additionalFields = ES.ToObject(additionalFieldsParam);
-    const additionalFieldsCopy = ObjectCreate(null);
-    ES.CopyDataProperties(additionalFieldsCopy, additionalFields, [], [undefined]);
+    const fieldsCopy = ES.SnapshotOwnProperties(fields, null, [], [undefined]);
+    const additionalFieldsCopy = ES.SnapshotOwnProperties(additionalFields, null, [], [undefined]);
     const additionalKeys = ReflectOwnKeys(additionalFieldsCopy) as (keyof typeof additionalFields)[];
     const overriddenKeys = impl[GetSlot(this, CALENDAR_ID)].fieldKeysToIgnore(additionalKeys);
     const merged = ObjectCreate(null);
     const fieldsKeys = ReflectOwnKeys(fieldsCopy);
+    ES.uncheckedAssertNarrowedType<string[]>(fieldsKeys, 'Reflect.ownKeys does not respect the type of its input');
     for (const key of fieldsKeys) {
       let propValue = undefined;
       if (ES.Call(ArrayIncludes, overriddenKeys, [key])) propValue = additionalFieldsCopy[key];
