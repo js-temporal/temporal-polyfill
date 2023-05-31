@@ -18,7 +18,7 @@ const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const ReflectApply = Reflect.apply;
 const ReflectOwnKeys = Reflect.ownKeys;
 
-import { DEBUG } from './debug';
+import { DEBUG, ENABLE_ASSERTS } from './debug';
 import JSBI from 'jsbi';
 
 import type { Temporal } from '..';
@@ -145,11 +145,17 @@ type ArrayWithNewKeys<T, Keys> = Array<ArrayElement<T> | Keys>;
  * @param arg
  */
 export function assertExists<A>(arg: A): asserts arg is NonNullable<A> {
-  if (DEBUG) {
-    if (arg != null) {
+  if (ENABLE_ASSERTS) {
+    if (arg == null) {
       throw new Error('Expected arg to be set.');
     }
   }
+}
+
+/** Similar to assertExists, but returns the argument. */
+function castExists<A>(arg: A): NonNullable<A> {
+  assertExists(arg);
+  return arg;
 }
 
 function isZero(value: JSBI): boolean {
@@ -172,7 +178,7 @@ function GetMethod<
 >(obj: T, methodName: M): T[M] | undefined {
   const result = obj[methodName];
   if (result === undefined) return undefined;
-  if (DEBUG) {
+  if (ENABLE_ASSERTS) {
     if (typeof result !== 'function') throw new TypeError(`'${methodName}' must be a function`);
   }
   return result;
@@ -184,7 +190,7 @@ export function Call<T, A extends readonly any[], R>(
   argumentsList: Readonly<A>
 ): R {
   const args = arguments.length > 2 ? argumentsList : [];
-  if (DEBUG) {
+  if (ENABLE_ASSERTS) {
     if (!Array.isArray(argumentsList)) {
       throw new TypeError('Assertion failed: optional `argumentsList`, if provided, must be an array');
     }
@@ -1222,8 +1228,7 @@ export function ToRelativeTemporalObject(options: {
   }
   if (timeZone === undefined) return CreateTemporalDate(year, month, day, calendar);
   // If offset is missing here, then offsetBehavior will never be be 'option'.
-  assertExists(offset);
-  const offsetNs = offsetBehaviour === 'option' ? ParseTimeZoneOffsetString(offset) : 0;
+  const offsetNs = offsetBehaviour === 'option' ? ParseTimeZoneOffsetString(castExists(offset)) : 0;
   const epochNanoseconds = InterpretISODateTimeOffset(
     year,
     month,
