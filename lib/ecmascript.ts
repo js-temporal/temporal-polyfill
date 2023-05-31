@@ -6179,7 +6179,7 @@ export function RoundDuration(
   let microseconds = microsecondsParam;
   let nanoseconds = JSBI.BigInt(nanosecondsParam);
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
-  let calendar, zdtRelative;
+  let calendar, zonedRelativeTo;
   // A cast is used below because relativeTo will be either PlainDate or
   // undefined for the rest of this long method (after any ZDT=>PlainDate
   // conversion below), and TS isn't smart enough to know that the type has
@@ -6187,7 +6187,7 @@ export function RoundDuration(
   let relativeTo = relativeToParam as Temporal.PlainDate | undefined;
   if (relativeTo) {
     if (IsTemporalZonedDateTime(relativeTo)) {
-      zdtRelative = relativeTo;
+      zonedRelativeTo = relativeTo;
       relativeTo = ToTemporalDate(relativeTo);
     } else if (!IsTemporalDate(relativeTo)) {
       throw new TypeError('starting point must be PlainDate or ZonedDateTime');
@@ -6203,8 +6203,8 @@ export function RoundDuration(
   if (unit === 'year' || unit === 'month' || unit === 'week' || unit === 'day') {
     nanoseconds = TotalDurationNanoseconds(0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, 0);
     let deltaDays;
-    if (zdtRelative) {
-      const intermediate = MoveRelativeZonedDateTime(zdtRelative, years, months, weeks, days);
+    if (zonedRelativeTo) {
+      const intermediate = MoveRelativeZonedDateTime(zonedRelativeTo, years, months, weeks, days);
       let dayLengthNumber;
       ({ days: deltaDays, nanoseconds, dayLengthNs: dayLengthNumber } = NanosecondsToDays(nanoseconds, intermediate));
       dayLengthNs = JSBI.BigInt(dayLengthNumber);
