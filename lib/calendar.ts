@@ -207,8 +207,8 @@ export class Calendar implements Temporal.Calendar {
   }
   mergeFields(fields: Params['mergeFields'][0], additionalFields: Params['mergeFields'][1]): Return['mergeFields'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
-    const fieldsCopy = ES.SnapshotOwnProperties(fields, null, [], [undefined]);
-    const additionalFieldsCopy = ES.SnapshotOwnProperties(additionalFields, null, [], [undefined]);
+    const fieldsCopy = ES.SnapshotOwnProperties(ES.ToObject(fields), null, [], [undefined]);
+    const additionalFieldsCopy = ES.SnapshotOwnProperties(ES.ToObject(additionalFields), null, [], [undefined]);
     const additionalKeys = ReflectOwnKeys(additionalFieldsCopy) as (keyof typeof additionalFields)[];
     const overriddenKeys = impl[GetSlot(this, CALENDAR_ID)].fieldKeysToIgnore(additionalKeys);
     const merged = ObjectCreate(null);

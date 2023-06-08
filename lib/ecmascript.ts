@@ -386,7 +386,7 @@ function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier: string) {
   return instance;
 }
 
-function ToObject<T>(value: T): T extends Record<string, unknown> ? T : Record<PropertyKey, unknown> {
+export function ToObject<T>(value: T): T extends Record<string, unknown> ? T : Record<PropertyKey, unknown> {
   if (typeof value === 'undefined' || value === null) {
     throw new TypeError(`Expected object not ${value}`);
   }
@@ -6493,7 +6493,7 @@ export function SnapshotOwnProperties<T extends { [s in K]?: unknown }, K extend
   excludedValues: unknown[] = []
 ) {
   const copy = ObjectCreate(proto) as NonNullable<T>;
-  CopyDataProperties(copy, ToObject(source), excludedKeys, excludedValues);
+  CopyDataProperties(copy, source, excludedKeys, excludedValues);
   return copy;
 }
 
