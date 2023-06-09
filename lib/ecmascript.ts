@@ -912,7 +912,7 @@ function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.Duration
   if (!IsObject(temporalDurationLike)) {
     throw new TypeError('invalid duration-like');
   }
-  const result: Record<typeof DURATION_FIELDS[number], number | undefined> = {
+  const result: Record<(typeof DURATION_FIELDS)[number], number | undefined> = {
     years: undefined,
     months: undefined,
     weeks: undefined,

@@ -160,6 +160,6 @@ export function DefineIntrinsic<KeyT extends IntrinsicDefinitionKeys>(name: KeyT
   if (INTRINSICS[key] !== undefined) throw new Error(`intrinsic ${name} already exists`);
   INTRINSICS[key] = value;
 }
-export function GetIntrinsic<KeyT extends keyof typeof INTRINSICS>(intrinsic: KeyT): typeof INTRINSICS[KeyT] {
+export function GetIntrinsic<KeyT extends keyof typeof INTRINSICS>(intrinsic: KeyT): (typeof INTRINSICS)[KeyT] {
   return INTRINSICS[intrinsic];
 }

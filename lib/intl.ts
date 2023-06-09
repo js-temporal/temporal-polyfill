@@ -273,7 +273,7 @@ function amend(optionsParam: Intl.DateTimeFormatOptions = {}, amended: MaybeFals
     'timeStyle'
   ] as const) {
     // TODO: can this be typed more cleanly?
-    type OptionMaybeFalse = typeof options[typeof opt] | false;
+    type OptionMaybeFalse = (typeof options)[typeof opt] | false;
     (options[opt] as OptionMaybeFalse) = opt in amended ? amended[opt] : options[opt];
     if ((options[opt] as OptionMaybeFalse) === false || options[opt] === undefined) delete options[opt];
   }
