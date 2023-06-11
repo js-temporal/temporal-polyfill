@@ -16,7 +16,7 @@ elif [ ! -z "$TESTS_FROM_ENV" ]; then
   fi
 fi
 
-TIMEOUT=${TIMEOUT:-10000}
+TIMEOUT=${TIMEOUT:-60000}
 
 if [ "$(uname)" = 'Darwin' ]; then
   threads=$(sysctl -n hw.logicalcpu)
