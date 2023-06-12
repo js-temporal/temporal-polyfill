@@ -15,10 +15,12 @@ import {
   NANOSECONDS,
   CALENDAR,
   INSTANT,
+  EPOCHNANOSECONDS,
   CreateSlots,
   GetSlot,
   SetSlot
 } from './slots';
+import { TimeDuration } from './timeduration';
 import type { Temporal } from '..';
 import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
 import JSBI from 'jsbi';
@@ -64,6 +66,7 @@ export class Duration implements Temporal.Duration {
     SetSlot(this, NANOSECONDS, nanoseconds);
 
     if (DEBUG) {
+      const normSeconds = TimeDuration.normalize(0, 0, seconds, milliseconds, microseconds, nanoseconds);
       Object.defineProperty(this, '_repr_', {
         value: `Temporal.Duration <${ES.TemporalDurationToString(
           years,
@@ -72,10 +75,7 @@ export class Duration implements Temporal.Duration {
           days,
           hours,
           minutes,
-          seconds,
-          milliseconds,
-          microseconds,
-          nanoseconds
+          normSeconds
         )}>`,
         writable: false,
         enumerable: false,
@@ -338,58 +338,42 @@ export class Duration implements Temporal.Duration {
       plainRelativeTo,
       calendarRec
     ));
-    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-      ES.RoundDuration(
+    let norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+    ({ years, months, weeks, days, norm } = ES.RoundDuration(
+      years,
+      months,
+      weeks,
+      days,
+      norm,
+      roundingIncrement,
+      smallestUnit,
+      roundingMode,
+      plainRelativeTo,
+      calendarRec,
+      zonedRelativeTo,
+      timeZoneRec,
+      precalculatedPlainDateTime
+    ));
+    if (zonedRelativeTo) {
+      ES.assertExists(calendarRec);
+      ES.assertExists(timeZoneRec);
+      ({ years, months, weeks, days, norm } = ES.AdjustRoundedDurationDays(
         years,
         months,
         weeks,
         days,
-        hours,
-        minutes,
-        seconds,
-        milliseconds,
-        microseconds,
-        nanoseconds,
+        norm,
         roundingIncrement,
         smallestUnit,
         roundingMode,
-        plainRelativeTo,
-        calendarRec,
         zonedRelativeTo,
+        calendarRec,
         timeZoneRec,
         precalculatedPlainDateTime
       ));
-    if (zonedRelativeTo) {
-      ES.assertExists(calendarRec);
-      ES.assertExists(timeZoneRec);
-      ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-        ES.AdjustRoundedDurationDays(
-          years,
-          months,
-          weeks,
-          days,
-          hours,
-          minutes,
-          seconds,
-          milliseconds,
-          microseconds,
-          nanoseconds,
-          roundingIncrement,
-          smallestUnit,
-          roundingMode,
-          zonedRelativeTo,
-          calendarRec,
-          timeZoneRec,
-          precalculatedPlainDateTime
-        ));
       ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDurationRelative(
         days,
-        hours,
-        minutes,
-        seconds,
-        milliseconds,
-        microseconds,
-        nanoseconds,
+        norm,
         largestUnit,
         zonedRelativeTo,
         timeZoneRec,
@@ -397,13 +381,7 @@ export class Duration implements Temporal.Duration {
       ));
     } else {
       ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDuration(
-        days,
-        hours,
-        minutes,
-        seconds,
-        milliseconds,
-        microseconds,
-        nanoseconds,
+        norm.add24HourDays(days),
         largestUnit
       ));
     }
@@ -478,6 +456,7 @@ export class Duration implements Temporal.Duration {
       plainRelativeTo,
       calendarRec
     ));
+    let norm;
     // If the unit we're totalling is smaller than `days`, convert days down to that unit.
     if (zonedRelativeTo) {
       ES.assertExists(calendarRec);
@@ -492,29 +471,29 @@ export class Duration implements Temporal.Duration {
         0,
         precalculatedPlainDateTime
       );
-      ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDurationRelative(
-        days,
-        hours,
-        minutes,
-        seconds,
-        milliseconds,
-        microseconds,
-        nanoseconds,
-        unit,
-        intermediate,
-        timeZoneRec
-      ));
+      norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+
+      // Inline BalanceTimeDurationRelative, without the final balance step
+      const start = GetSlot(intermediate, INSTANT);
+      const startNs = GetSlot(intermediate, EPOCHNANOSECONDS);
+      let intermediateNs = startNs;
+      let startDt;
+      if (days !== 0) {
+        startDt = ES.GetPlainDateTimeFor(timeZoneRec, start, 'iso8601');
+        intermediateNs = ES.AddDaysToZonedDateTime(start, startDt, timeZoneRec, 'iso8601', days).epochNs;
+      }
+      const endNs = ES.AddInstant(intermediateNs, norm);
+      norm = TimeDuration.fromEpochNsDiff(endNs, startNs);
+      if (unit === 'year' || unit === 'month' || unit === 'week' || unit === 'day') {
+        if (!norm.isZero()) startDt ??= ES.GetPlainDateTimeFor(timeZoneRec, start, 'iso8601');
+        ({ days, norm } = ES.NormalizedTimeDurationToDays(norm, intermediate, timeZoneRec, startDt));
+      } else {
+        days = 0;
+      }
     } else {
-      ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDuration(
-        days,
-        hours,
-        minutes,
-        seconds,
-        milliseconds,
-        microseconds,
-        nanoseconds,
-        unit
-      ));
+      norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+      norm = norm.add24HourDays(days);
+      days = 0;
     }
     // Finally, truncate to the correct unit and calculate remainder
     const { total } = ES.RoundDuration(
@@ -522,12 +501,7 @@ export class Duration implements Temporal.Duration {
       months,
       weeks,
       days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
+      norm,
       1,
       unit,
       'trunc',
@@ -566,6 +540,7 @@ export class Duration implements Temporal.Duration {
     let nanoseconds = GetSlot(this, NANOSECONDS);
 
     if (unit !== 'nanosecond' || increment !== 1) {
+      let norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
       const largestUnit = ES.DefaultTemporalLargestUnit(
         years,
         months,
@@ -578,49 +553,35 @@ export class Duration implements Temporal.Duration {
         microseconds,
         nanoseconds
       );
-      ({ seconds, milliseconds, microseconds, nanoseconds } = ES.RoundDuration(
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        seconds,
-        milliseconds,
-        microseconds,
-        nanoseconds,
-        increment,
-        unit,
-        roundingMode
-      ));
-      ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDuration(
-        days,
+      ({ norm } = ES.RoundDuration(0, 0, 0, 0, norm, increment, unit, roundingMode));
+      let deltaDays;
+      ({
+        days: deltaDays,
         hours,
         minutes,
         seconds,
         milliseconds,
         microseconds,
-        nanoseconds,
-        largestUnit
-      ));
+        nanoseconds
+      } = ES.BalanceTimeDuration(norm, ES.LargerOfTwoTemporalUnits(largestUnit, 'second')));
+      // Keeping sub-second units separate avoids losing precision after
+      // resolving any overflows from rounding
+      days += deltaDays;
     }
 
-    return ES.TemporalDurationToString(
-      years,
-      months,
-      weeks,
-      days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      precision
-    );
+    const normSeconds = TimeDuration.normalize(0, 0, seconds, milliseconds, microseconds, nanoseconds);
+    return ES.TemporalDurationToString(years, months, weeks, days, hours, minutes, normSeconds, precision);
   }
   toJSON(): Return['toJSON'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
+    const normSeconds = TimeDuration.normalize(
+      0,
+      0,
+      GetSlot(this, SECONDS),
+      GetSlot(this, MILLISECONDS),
+      GetSlot(this, MICROSECONDS),
+      GetSlot(this, NANOSECONDS)
+    );
     return ES.TemporalDurationToString(
       GetSlot(this, YEARS),
       GetSlot(this, MONTHS),
@@ -628,10 +589,7 @@ export class Duration implements Temporal.Duration {
       GetSlot(this, DAYS),
       GetSlot(this, HOURS),
       GetSlot(this, MINUTES),
-      GetSlot(this, SECONDS),
-      GetSlot(this, MILLISECONDS),
-      GetSlot(this, MICROSECONDS),
-      GetSlot(this, NANOSECONDS)
+      normSeconds
     );
   }
   toLocaleString(
@@ -643,6 +601,14 @@ export class Duration implements Temporal.Duration {
       return new (Intl as any).DurationFormat(locales, options).format(this);
     }
     console.warn('Temporal.Duration.prototype.toLocaleString() requires Intl.DurationFormat.');
+    const normSeconds = TimeDuration.normalize(
+      0,
+      0,
+      GetSlot(this, SECONDS),
+      GetSlot(this, MILLISECONDS),
+      GetSlot(this, MICROSECONDS),
+      GetSlot(this, NANOSECONDS)
+    );
     return ES.TemporalDurationToString(
       GetSlot(this, YEARS),
       GetSlot(this, MONTHS),
@@ -650,10 +616,7 @@ export class Duration implements Temporal.Duration {
       GetSlot(this, DAYS),
       GetSlot(this, HOURS),
       GetSlot(this, MINUTES),
-      GetSlot(this, SECONDS),
-      GetSlot(this, MILLISECONDS),
-      GetSlot(this, MICROSECONDS),
-      GetSlot(this, NANOSECONDS)
+      normSeconds
     );
   }
   valueOf(): never {
@@ -731,6 +694,8 @@ export class Duration implements Temporal.Duration {
       const instant = GetSlot(zonedRelativeTo, INSTANT);
       const precalculatedPlainDateTime = ES.GetPlainDateTimeFor(timeZoneRec, instant, calendarRec.receiver);
 
+      const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
+      const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
       const after1 = ES.AddZonedDateTime(
         instant,
         timeZoneRec,
@@ -739,12 +704,7 @@ export class Duration implements Temporal.Duration {
         mon1,
         w1,
         d1,
-        h1,
-        min1,
-        s1,
-        ms1,
-        µs1,
-        ns1,
+        norm1,
         precalculatedPlainDateTime
       );
       const after2 = ES.AddZonedDateTime(
@@ -755,12 +715,7 @@ export class Duration implements Temporal.Duration {
         mon2,
         w2,
         d2,
-        h2,
-        min2,
-        s2,
-        ms2,
-        µs2,
-        ns2,
+        norm2,
         precalculatedPlainDateTime
       );
       return ES.ComparisonResult(JSBI.toNumber(JSBI.subtract(after1, after2)));
@@ -771,11 +726,9 @@ export class Duration implements Temporal.Duration {
       ({ days: d1 } = ES.UnbalanceDateDurationRelative(y1, mon1, w1, d1, 'day', plainRelativeTo, calendarRec));
       ({ days: d2 } = ES.UnbalanceDateDurationRelative(y2, mon2, w2, d2, 'day', plainRelativeTo, calendarRec));
     }
-    const h1Adjusted = JSBI.add(JSBI.BigInt(h1), JSBI.multiply(JSBI.BigInt(d1), ES.TWENTY_FOUR));
-    const h2Adjusted = JSBI.add(JSBI.BigInt(h2), JSBI.multiply(JSBI.BigInt(d2), ES.TWENTY_FOUR));
-    const totalNs1 = ES.TotalDurationNanoseconds(h1Adjusted, min1, s1, ms1, µs1, ns1);
-    const totalNs2 = ES.TotalDurationNanoseconds(h2Adjusted, min2, s2, ms2, µs2, ns2);
-    return ES.ComparisonResult(JSBI.toNumber(JSBI.subtract(totalNs1, totalNs2)));
+    const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1).add24HourDays(d1);
+    const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2).add24HourDays(d2);
+    return norm1.cmp(norm2);
   }
   [Symbol.toStringTag]!: 'Temporal.Duration';
 }

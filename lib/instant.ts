@@ -7,7 +7,7 @@ import { DateTimeFormat } from './intl';
 import type { InstantParams as Params, InstantReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { BILLION, MILLION, THOUSAND } from './ecmascript';
+import { BigIntFloorDiv, BILLION, MILLION, THOUSAND } from './bigintmath';
 import { TimeZoneMethodRecord } from './methodrecord';
 
 export class Instant implements Temporal.Instant {
@@ -39,17 +39,17 @@ export class Instant implements Temporal.Instant {
   get epochSeconds(): Return['epochSeconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
-    return JSBI.toNumber(ES.BigIntFloorDiv(value, BILLION));
+    return JSBI.toNumber(BigIntFloorDiv(value, BILLION));
   }
   get epochMilliseconds(): Return['epochMilliseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const value = JSBI.BigInt(GetSlot(this, EPOCHNANOSECONDS));
-    return JSBI.toNumber(ES.BigIntFloorDiv(value, MILLION));
+    return JSBI.toNumber(BigIntFloorDiv(value, MILLION));
   }
   get epochMicroseconds(): Return['epochMicroseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const value = JSBI.BigInt(GetSlot(this, EPOCHNANOSECONDS));
-    return ES.ToBigIntExternal(ES.BigIntFloorDiv(value, THOUSAND));
+    return ES.ToBigIntExternal(BigIntFloorDiv(value, THOUSAND));
   }
   get epochNanoseconds(): Return['epochNanoseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');

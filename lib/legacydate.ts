@@ -1,7 +1,7 @@
 import { Instant } from './instant';
 
 import JSBI from 'jsbi';
-import { MILLION } from './ecmascript';
+import { MILLION } from './bigintmath';
 
 export function toTemporalInstant(this: Date) {
   // Observable access to valueOf is not correct here, but unavoidable
