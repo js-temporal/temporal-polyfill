@@ -17,12 +17,13 @@ import {
   TIME_ZONE,
   GetSlot
 } from './slots';
+import { TimeDuration } from './timeduration';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS } from './ecmascript';
+import { BILLION, MILLION, THOUSAND, ZERO, HOUR_NANOS, BigIntFloorDiv } from './bigintmath';
 
 const ArrayPrototypePush = Array.prototype.push;
 const customResolvedOptions = DateTimeFormat.prototype.resolvedOptions as Intl.DateTimeFormat['resolvedOptions'];
@@ -105,17 +106,17 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   get epochSeconds(): Return['epochSeconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
-    return JSBI.toNumber(ES.BigIntFloorDiv(value, BILLION));
+    return JSBI.toNumber(BigIntFloorDiv(value, BILLION));
   }
   get epochMilliseconds(): Return['epochMilliseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
-    return JSBI.toNumber(ES.BigIntFloorDiv(value, MILLION));
+    return JSBI.toNumber(BigIntFloorDiv(value, MILLION));
   }
   get epochMicroseconds(): Return['epochMicroseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
-    return ES.ToBigIntExternal(ES.BigIntFloorDiv(value, THOUSAND));
+    return ES.ToBigIntExternal(BigIntFloorDiv(value, THOUSAND));
   }
   get epochNanoseconds(): Return['epochNanoseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
@@ -163,8 +164,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     );
     const todayNs = GetSlot(ES.GetInstantFor(timeZoneRec, today, 'compatible'), EPOCHNANOSECONDS);
     const tomorrowNs = GetSlot(ES.GetInstantFor(timeZoneRec, tomorrow, 'compatible'), EPOCHNANOSECONDS);
-    const diffNs = JSBI.subtract(tomorrowNs, todayNs);
-    return ES.BigIntDivideToNumber(diffNs, HOUR_NANOS);
+    const diff = TimeDuration.fromEpochNsDiff(tomorrowNs, todayNs);
+    return diff.fdiv(JSBI.toNumber(HOUR_NANOS));
   }
   get daysInWeek(): Return['daysInWeek'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');

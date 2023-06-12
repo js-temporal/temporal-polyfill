@@ -4,6 +4,8 @@ const MathSign = Math.sign;
 const MathTrunc = Math.trunc;
 const NumberParseInt = Number.parseInt;
 const NumberPrototypeToPrecision = Number.prototype.toPrecision;
+const StringPrototypePadStart = String.prototype.padStart;
+const StringPrototypeRepeat = String.prototype.repeat;
 const StringPrototypeSlice = String.prototype.slice;
 const ReflectApply = Reflect.apply;
 
@@ -29,4 +31,27 @@ export function TruncatingDivModByPowerOf10(xParam: number, p: number) {
   const mod = sign * NumberParseInt(ReflectApply(StringPrototypeSlice, xStr, [xDigits - p]), 10);
 
   return { div, mod };
+}
+
+// Computes x * 10**p + z with precision loss only at the end, by string
+// manipulation. If the result is a safe integer, then it is exact. x must be
+// an integer. p must be a non-negative integer. z must have the same sign as
+// x and be less than 10**p.
+export function FMAPowerOf10(xParam: number, p: number, zParam: number) {
+  let x = xParam;
+  let z = zParam;
+  if (x === 0) return z;
+
+  const sign = MathSign(x) || MathSign(z);
+  x = MathAbs(x);
+  z = MathAbs(z);
+
+  const xStr = ReflectApply(NumberPrototypeToPrecision, x, [MathTrunc(1 + MathLog10(x))]);
+
+  if (z === 0) return sign * NumberParseInt(xStr + ReflectApply(StringPrototypeRepeat, '0', [p]), 10);
+
+  const zStr = ReflectApply(NumberPrototypeToPrecision, z, [MathTrunc(1 + MathLog10(z))]);
+
+  const resStr = xStr + ReflectApply(StringPrototypePadStart, zStr, [p, '0']);
+  return sign * NumberParseInt(resStr, 10);
 }

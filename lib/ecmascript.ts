@@ -29,6 +29,20 @@ import { DEBUG, ENABLE_ASSERTS } from './debug';
 import JSBI from 'jsbi';
 
 import type { Temporal } from '..';
+import {
+  abs,
+  BigIntDivideToNumber,
+  DAY_NANOS,
+  divmod,
+  MILLION,
+  MINUTE_NANOS,
+  NonNegativeBigIntDivmod,
+  ONE,
+  SIXTY,
+  THOUSAND,
+  TWENTY_FOUR,
+  ZERO
+} from './bigintmath';
 import type {
   AnyTemporalLikeType,
   UnitSmallerThanOrEqualTo,
@@ -52,8 +66,9 @@ import type {
   TimeZoneSlot
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
-import { TruncatingDivModByPowerOf10 } from './math';
+import { FMAPowerOf10, TruncatingDivModByPowerOf10 } from './math';
 import { CalendarMethodRecord, TimeZoneMethodRecord } from './methodrecord';
+import { TimeDuration } from './timeduration';
 import {
   CreateSlots,
   GetSlot,
@@ -89,18 +104,6 @@ import {
   NANOSECONDS
 } from './slots';
 
-export const ZERO = JSBI.BigInt(0);
-const ONE = JSBI.BigInt(1);
-const SIXTY = JSBI.BigInt(60);
-export const TWENTY_FOUR = JSBI.BigInt(24);
-export const THOUSAND = JSBI.BigInt(1e3);
-export const MILLION = JSBI.BigInt(1e6);
-export const BILLION = JSBI.BigInt(1e9);
-const NEGATIVE_ONE = JSBI.BigInt(-1);
-const HOUR_SECONDS = 3600;
-export const HOUR_NANOS = JSBI.multiply(JSBI.BigInt(HOUR_SECONDS), BILLION);
-const MINUTE_NANOS = JSBI.multiply(SIXTY, BILLION);
-const DAY_NANOS = JSBI.multiply(HOUR_NANOS, TWENTY_FOUR);
 // Instant range is 100 million days (inclusive) before or after epoch.
 const NS_MIN = JSBI.multiply(DAY_NANOS, JSBI.BigInt(-1e8));
 const NS_MAX = JSBI.multiply(DAY_NANOS, JSBI.BigInt(1e8));
@@ -171,10 +174,6 @@ export function assertExists<A>(arg: A): asserts arg is NonNullable<A> {
 function castExists<A>(arg: A): NonNullable<A> {
   assertExists(arg);
   return arg;
-}
-
-function isZero(value: JSBI): boolean {
-  return JSBI.equal(value, ZERO);
 }
 
 type Stringless<T> = Exclude<T, string>;
@@ -302,25 +301,6 @@ function ToZeroPaddedDecimalString(n: number, minLength: number) {
   return s.padStart(minLength, '0');
 }
 
-function divmod(x: JSBI, y: JSBI): { quotient: JSBI; remainder: JSBI } {
-  const quotient = JSBI.divide(x, y);
-  const remainder = JSBI.remainder(x, y);
-  return { quotient, remainder };
-}
-
-function isNegativeJSBI(value: JSBI): boolean {
-  return JSBI.lessThan(value, ZERO);
-}
-
-function signJSBI(value: JSBI): 1 | 0 | -1 {
-  if (isZero(value)) return 0;
-  if (isNegativeJSBI(value)) return -1;
-  return 1;
-}
-function abs(x: JSBI): JSBI {
-  if (JSBI.lessThan(x, ZERO)) return JSBI.multiply(x, NEGATIVE_ONE);
-  return x;
-}
 // This convenience function isn't in the spec, but is useful in the polyfill
 // for DRY and better error messages.
 export function RequireString(value: unknown): string {
@@ -2953,20 +2933,8 @@ function DisambiguatePossibleInstants(
   const nanoseconds = offsetAfter - offsetBefore;
   switch (disambiguation) {
     case 'earlier': {
-      const earlierTime = AddTime(
-        hour,
-        minute,
-        second,
-        millisecond,
-        microsecond,
-        nanosecond,
-        0,
-        0,
-        0,
-        0,
-        0,
-        -nanoseconds
-      );
+      const norm = TimeDuration.normalize(0, 0, 0, 0, 0, -nanoseconds);
+      const earlierTime = AddTime(hour, minute, second, millisecond, microsecond, nanosecond, norm);
       const earlierDate = AddISODate(year, month, day, 0, 0, 0, earlierTime.deltaDays, 'constrain');
       const earlierPlainDateTime = CreateTemporalDateTime(
         earlierDate.year,
@@ -2984,7 +2952,8 @@ function DisambiguatePossibleInstants(
     case 'compatible':
     // fall through because 'compatible' means 'later' for "spring forward" transitions
     case 'later': {
-      const laterTime = AddTime(hour, minute, second, millisecond, microsecond, nanosecond, 0, 0, 0, 0, 0, nanoseconds);
+      const norm = TimeDuration.normalize(0, 0, 0, 0, 0, nanoseconds);
+      const laterTime = AddTime(hour, minute, second, millisecond, microsecond, nanosecond, norm);
       const laterDate = AddISODate(year, month, day, 0, 0, 0, laterTime.deltaDays, 'constrain');
       const laterPlainDateTime = CreateTemporalDateTime(
         laterDate.year,
@@ -3103,19 +3072,10 @@ export function TemporalDurationToString(
   days: number,
   hours: number,
   minutes: number,
-  seconds: number,
-  ms: number,
-  µs: number,
-  ns: number,
+  normSeconds: TimeDuration,
   precision: Exclude<SecondsStringPrecisionRecord['precision'], 'minute'> = 'auto'
 ) {
-  const sign = DurationSign(years, months, weeks, days, hours, minutes, seconds, ms, µs, ns);
-
-  let total = TotalDurationNanoseconds(0, 0, seconds, ms, µs, ns);
-  let nsBigInt: JSBI, µsBigInt: JSBI, msBigInt: JSBI, secondsBigInt: JSBI;
-  ({ quotient: total, remainder: nsBigInt } = divmod(total, THOUSAND));
-  ({ quotient: total, remainder: µsBigInt } = divmod(total, THOUSAND));
-  ({ quotient: secondsBigInt, remainder: msBigInt } = divmod(total, THOUSAND));
+  const sign = DurationSign(years, months, weeks, days, hours, minutes, normSeconds.sec, 0, 0, normSeconds.subsec);
 
   let datePart = '';
   if (years !== 0) datePart += `${formatAsDecimalNumber(MathAbs(years))}Y`;
@@ -3128,19 +3088,12 @@ export function TemporalDurationToString(
   if (minutes !== 0) timePart += `${formatAsDecimalNumber(MathAbs(minutes))}M`;
 
   if (
-    !isZero(secondsBigInt) ||
-    !isZero(msBigInt) ||
-    !isZero(µsBigInt) ||
-    !isZero(nsBigInt) ||
+    !normSeconds.isZero() ||
     (years === 0 && months === 0 && weeks === 0 && days === 0 && hours === 0 && minutes === 0) ||
     precision !== 'auto'
   ) {
-    const secondsPart = formatAsDecimalNumber(abs(secondsBigInt));
-    const subSecondNanoseconds =
-      MathAbs(JSBI.toNumber(msBigInt)) * 1e6 +
-      MathAbs(JSBI.toNumber(µsBigInt)) * 1e3 +
-      MathAbs(JSBI.toNumber(nsBigInt));
-    const subSecondsPart = FormatFractionalSeconds(subSecondNanoseconds, precision);
+    const secondsPart = formatAsDecimalNumber(MathAbs(normSeconds.sec));
+    const subSecondsPart = FormatFractionalSeconds(MathAbs(normSeconds.subsec), precision);
     timePart += `${secondsPart}${subSecondsPart}S`;
   }
   let result = `${sign < 0 ? '-' : ''}P${datePart}`;
@@ -3863,36 +3816,22 @@ function BalanceTime(
   };
 }
 
-export function TotalDurationNanoseconds(
-  hoursParam: number | JSBI,
-  minutesParam: number | JSBI,
-  secondsParam: number | JSBI,
-  millisecondsParam: number | JSBI,
-  microsecondsParam: number | JSBI,
-  nanosecondsParam: number | JSBI
-) {
-  const minutes = JSBI.add(JSBI.BigInt(minutesParam), JSBI.multiply(JSBI.BigInt(hoursParam), SIXTY));
-  const seconds = JSBI.add(JSBI.BigInt(secondsParam), JSBI.multiply(minutes, SIXTY));
-  const milliseconds = JSBI.add(JSBI.BigInt(millisecondsParam), JSBI.multiply(seconds, THOUSAND));
-  const microseconds = JSBI.add(JSBI.BigInt(microsecondsParam), JSBI.multiply(milliseconds, THOUSAND));
-  return JSBI.add(JSBI.BigInt(nanosecondsParam), JSBI.multiply(microseconds, THOUSAND));
-}
-
-function NanosecondsToDays(
-  nanosecondsParam: JSBI,
+export function NormalizedTimeDurationToDays(
+  normParam: TimeDuration,
   zonedRelativeTo: Temporal.ZonedDateTime,
   timeZoneRec: TimeZoneMethodRecord,
   precalculatedPlainDateTime?: Temporal.PlainDateTime | undefined
 ) {
   // getOffsetNanosecondsFor and getPossibleInstantsFor must be looked up
+  let norm = normParam;
+
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-  let nanosecondsNumber = JSBI.toNumber(nanosecondsParam);
-  const sign = MathSign(nanosecondsNumber);
-  if (sign === 0) return { days: 0, nanoseconds: ZERO, dayLengthNs: JSBI.toNumber(DAY_NANOS) };
+  const sign = norm.sign();
+  if (sign === 0) return { days: 0, norm, dayLengthNs: DAY_NANOS };
 
   const startNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
   const start = GetSlot(zonedRelativeTo, INSTANT);
-  const endNs = JSBI.add(startNs, nanosecondsParam);
+  const endNs = norm.addToEpochNs(startNs);
   const end = new TemporalInstant(endNs);
   const calendar = GetSlot(zonedRelativeTo, CALENDAR);
 
@@ -3943,7 +3882,7 @@ function NanosecondsToDays(
       // may do disambiguation
     }
   }
-  let nanosecondsBigInt = JSBI.subtract(endNs, relativeResult.epochNs);
+  norm = TimeDuration.fromEpochNsDiff(endNs, relativeResult.epochNs);
 
   let isOverflow = false;
   let dayLengthNs;
@@ -3957,13 +3896,11 @@ function NanosecondsToDays(
       sign
     );
 
-    dayLengthNs = JSBI.toNumber(JSBI.subtract(oneDayFarther.epochNs, relativeResult.epochNs));
-    isOverflow = JSBI.greaterThanOrEqual(
-      JSBI.multiply(JSBI.subtract(nanosecondsBigInt, JSBI.BigInt(dayLengthNs)), JSBI.BigInt(sign)),
-      ZERO
-    );
+    dayLengthNs = TimeDuration.fromEpochNsDiff(oneDayFarther.epochNs, relativeResult.epochNs);
+    const oneDayLess = norm.subtract(dayLengthNs);
+    isOverflow = oneDayLess.sign() * sign >= 0;
     if (isOverflow) {
-      nanosecondsBigInt = JSBI.subtract(nanosecondsBigInt, JSBI.BigInt(dayLengthNs));
+      norm = oneDayLess;
       relativeResult = oneDayFarther;
       days += sign;
     }
@@ -3971,100 +3908,103 @@ function NanosecondsToDays(
   if (days !== 0 && MathSign(days) != sign) {
     throw new RangeError('Time zone or calendar converted nanoseconds into a number of days with the opposite sign');
   }
-  if (!isZero(nanosecondsBigInt) && signJSBI(nanosecondsBigInt) !== sign) {
-    if (isNegativeJSBI(nanosecondsBigInt) && sign === 1) {
+  if (!norm.isZero() && norm.sign() !== sign) {
+    if (norm.sign() === -1 && sign === 1) {
       throw new Error('assert not reached');
     }
     throw new RangeError('Time zone or calendar ended up with a remainder of nanoseconds with the opposite sign');
   }
-  if (JSBI.greaterThanOrEqual(abs(nanosecondsBigInt), abs(JSBI.BigInt(dayLengthNs)))) {
+  if (norm.abs().cmp(dayLengthNs.abs()) >= 0) {
     throw new Error('assert not reached');
   }
-  return { days, nanoseconds: nanosecondsBigInt, dayLengthNs: MathAbs(dayLengthNs) };
+  return { days, norm, dayLengthNs: dayLengthNs.abs().totalNs };
 }
 
-export function BalanceTimeDuration(
-  daysParam: number,
-  hoursParam: number | JSBI,
-  minutesParam: number | JSBI,
-  secondsParam: number | JSBI,
-  millisecondsParam: number | JSBI,
-  microsecondsParam: number | JSBI,
-  nanosecondsParam: number | JSBI,
-  largestUnit: Temporal.DateTimeUnit
-) {
-  let nanosecondsBigInt: JSBI,
-    microsecondsBigInt: JSBI,
-    millisecondsBigInt: JSBI,
-    secondsBigInt: JSBI,
-    minutesBigInt: JSBI,
-    hoursBigInt: JSBI,
-    daysBigInt: JSBI;
-  daysBigInt = JSBI.BigInt(daysParam);
-  hoursBigInt = JSBI.add(JSBI.BigInt(hoursParam), JSBI.multiply(daysBigInt, TWENTY_FOUR));
-  nanosecondsBigInt = TotalDurationNanoseconds(
-    hoursBigInt,
-    minutesParam,
-    secondsParam,
-    millisecondsParam,
-    microsecondsParam,
-    nanosecondsParam
-  );
-
-  const sign = JSBI.lessThan(nanosecondsBigInt, ZERO) ? -1 : 1;
-  nanosecondsBigInt = abs(nanosecondsBigInt);
-  microsecondsBigInt = millisecondsBigInt = secondsBigInt = minutesBigInt = hoursBigInt = daysBigInt = ZERO;
+export function BalanceTimeDuration(norm: TimeDuration, largestUnit: Temporal.DateTimeUnit) {
+  const sign = norm.sign();
+  let nanoseconds = norm.abs().subsec;
+  let microseconds = 0;
+  let milliseconds = 0;
+  let seconds = norm.abs().sec;
+  let minutes = 0;
+  let hours = 0;
+  let days = 0;
 
   switch (largestUnit) {
     case 'year':
     case 'month':
     case 'week':
     case 'day':
-      ({ quotient: microsecondsBigInt, remainder: nanosecondsBigInt } = divmod(nanosecondsBigInt, THOUSAND));
-      ({ quotient: millisecondsBigInt, remainder: microsecondsBigInt } = divmod(microsecondsBigInt, THOUSAND));
-      ({ quotient: secondsBigInt, remainder: millisecondsBigInt } = divmod(millisecondsBigInt, THOUSAND));
-      ({ quotient: minutesBigInt, remainder: secondsBigInt } = divmod(secondsBigInt, SIXTY));
-      ({ quotient: hoursBigInt, remainder: minutesBigInt } = divmod(minutesBigInt, SIXTY));
-      ({ quotient: daysBigInt, remainder: hoursBigInt } = divmod(hoursBigInt, TWENTY_FOUR));
+      microseconds = MathTrunc(nanoseconds / 1000);
+      nanoseconds %= 1000;
+      milliseconds = MathTrunc(microseconds / 1000);
+      microseconds %= 1000;
+      seconds += MathTrunc(milliseconds / 1000);
+      milliseconds %= 1000;
+      minutes = MathTrunc(seconds / 60);
+      seconds %= 60;
+      hours = MathTrunc(minutes / 60);
+      minutes %= 60;
+      days = MathTrunc(hours / 24);
+      hours %= 24;
       break;
     case 'hour':
-      ({ quotient: microsecondsBigInt, remainder: nanosecondsBigInt } = divmod(nanosecondsBigInt, THOUSAND));
-      ({ quotient: millisecondsBigInt, remainder: microsecondsBigInt } = divmod(microsecondsBigInt, THOUSAND));
-      ({ quotient: secondsBigInt, remainder: millisecondsBigInt } = divmod(millisecondsBigInt, THOUSAND));
-      ({ quotient: minutesBigInt, remainder: secondsBigInt } = divmod(secondsBigInt, SIXTY));
-      ({ quotient: hoursBigInt, remainder: minutesBigInt } = divmod(minutesBigInt, SIXTY));
+      microseconds = MathTrunc(nanoseconds / 1000);
+      nanoseconds %= 1000;
+      milliseconds = MathTrunc(microseconds / 1000);
+      microseconds %= 1000;
+      seconds += MathTrunc(milliseconds / 1000);
+      milliseconds %= 1000;
+      minutes = MathTrunc(seconds / 60);
+      seconds %= 60;
+      hours = MathTrunc(minutes / 60);
+      minutes %= 60;
       break;
     case 'minute':
-      ({ quotient: microsecondsBigInt, remainder: nanosecondsBigInt } = divmod(nanosecondsBigInt, THOUSAND));
-      ({ quotient: millisecondsBigInt, remainder: microsecondsBigInt } = divmod(microsecondsBigInt, THOUSAND));
-      ({ quotient: secondsBigInt, remainder: millisecondsBigInt } = divmod(millisecondsBigInt, THOUSAND));
-      ({ quotient: minutesBigInt, remainder: secondsBigInt } = divmod(secondsBigInt, SIXTY));
+      microseconds = MathTrunc(nanoseconds / 1000);
+      nanoseconds %= 1000;
+      milliseconds = MathTrunc(microseconds / 1000);
+      microseconds %= 1000;
+      seconds += MathTrunc(milliseconds / 1000);
+      milliseconds %= 1000;
+      minutes = MathTrunc(seconds / 60);
+      seconds %= 60;
       break;
     case 'second':
-      ({ quotient: microsecondsBigInt, remainder: nanosecondsBigInt } = divmod(nanosecondsBigInt, THOUSAND));
-      ({ quotient: millisecondsBigInt, remainder: microsecondsBigInt } = divmod(microsecondsBigInt, THOUSAND));
-      ({ quotient: secondsBigInt, remainder: millisecondsBigInt } = divmod(millisecondsBigInt, THOUSAND));
+      microseconds = MathTrunc(nanoseconds / 1000);
+      nanoseconds %= 1000;
+      milliseconds = MathTrunc(microseconds / 1000);
+      microseconds %= 1000;
+      seconds += MathTrunc(milliseconds / 1000);
+      milliseconds %= 1000;
       break;
     case 'millisecond':
-      ({ quotient: microsecondsBigInt, remainder: nanosecondsBigInt } = divmod(nanosecondsBigInt, THOUSAND));
-      ({ quotient: millisecondsBigInt, remainder: microsecondsBigInt } = divmod(microsecondsBigInt, THOUSAND));
+      microseconds = MathTrunc(nanoseconds / 1000);
+      nanoseconds %= 1000;
+      milliseconds = FMAPowerOf10(seconds, 3, MathTrunc(microseconds / 1000));
+      microseconds %= 1000;
+      seconds = 0;
       break;
     case 'microsecond':
-      ({ quotient: microsecondsBigInt, remainder: nanosecondsBigInt } = divmod(nanosecondsBigInt, THOUSAND));
+      microseconds = FMAPowerOf10(seconds, 6, MathTrunc(nanoseconds / 1000));
+      nanoseconds %= 1000;
+      seconds = 0;
       break;
     case 'nanosecond':
+      nanoseconds = FMAPowerOf10(seconds, 9, nanoseconds);
+      seconds = 0;
       break;
     default:
       throw new Error('assert not reached');
   }
 
-  const days = JSBI.toNumber(daysBigInt) * sign;
-  const hours = JSBI.toNumber(hoursBigInt) * sign;
-  const minutes = JSBI.toNumber(minutesBigInt) * sign;
-  const seconds = JSBI.toNumber(secondsBigInt) * sign;
-  const milliseconds = JSBI.toNumber(millisecondsBigInt) * sign;
-  const microseconds = JSBI.toNumber(microsecondsBigInt) * sign;
-  const nanoseconds = JSBI.toNumber(nanosecondsBigInt) * sign;
+  days *= sign;
+  hours *= sign;
+  minutes *= sign;
+  seconds *= sign;
+  milliseconds *= sign;
+  microseconds *= sign;
+  nanoseconds *= sign;
 
   RejectDuration(0, 0, 0, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   return { days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
@@ -4072,12 +4012,7 @@ export function BalanceTimeDuration(
 
 export function BalanceTimeDurationRelative(
   daysParam: number,
-  hours: number | JSBI,
-  minutes: number | JSBI,
-  seconds: number | JSBI,
-  milliseconds: number | JSBI,
-  microseconds: number | JSBI,
-  nanosecondsParam: number | JSBI,
+  normParam: TimeDuration,
   largestUnitParam: Temporal.DateTimeUnit,
   zonedRelativeTo: Temporal.ZonedDateTime,
   timeZoneRec: TimeZoneMethodRecord,
@@ -4085,7 +4020,7 @@ export function BalanceTimeDurationRelative(
 ) {
   let largestUnit = largestUnitParam;
   let days = daysParam;
-  let nanoseconds = JSBI.BigInt(nanosecondsParam);
+  let norm = normParam;
   let precalculatedPlainDateTime = precalculatedPlainDateTimeParam;
 
   const startNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
@@ -4103,31 +4038,22 @@ export function BalanceTimeDurationRelative(
     ).epochNs;
   }
 
-  const endNs = AddInstant(intermediateNs, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-  nanoseconds = JSBI.subtract(endNs, startNs);
-  if (JSBI.equal(nanoseconds, ZERO)) {
+  const endNs = AddInstant(intermediateNs, norm);
+  norm = TimeDuration.fromEpochNsDiff(endNs, startNs);
+  if (norm.isZero()) {
     return { days: 0, hours: 0, minutes: 0, seconds: 0, milliseconds: 0, microseconds: 0, nanoseconds: 0 };
   }
 
   if (largestUnit === 'year' || largestUnit === 'month' || largestUnit === 'week' || largestUnit === 'day') {
     precalculatedPlainDateTime ??= GetPlainDateTimeFor(timeZoneRec, startInstant, 'iso8601');
-    ({ days, nanoseconds } = NanosecondsToDays(nanoseconds, zonedRelativeTo, timeZoneRec, precalculatedPlainDateTime));
+    ({ days, norm } = NormalizedTimeDurationToDays(norm, zonedRelativeTo, timeZoneRec, precalculatedPlainDateTime));
     largestUnit = 'hour';
   } else {
     days = 0;
   }
 
-  const result = BalanceTimeDuration(0, 0, 0, 0, 0, 0, nanoseconds, largestUnit);
-
-  return {
-    days,
-    hours: result.hours,
-    minutes: result.minutes,
-    seconds: result.seconds,
-    milliseconds: result.milliseconds,
-    microseconds: result.microseconds,
-    nanoseconds: result.nanoseconds
-  };
+  const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(norm, largestUnit);
+  return { days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
 export function UnbalanceDateDurationRelative(
@@ -4439,6 +4365,14 @@ function ISODateSurpasses(sign: -1 | 1, y1: number, m1: number, d1: number, y2: 
   return sign * cmp === 1;
 }
 
+function CombineDateAndNormalizedTimeDuration(y: number, m: number, w: number, d: number, norm: TimeDuration) {
+  const dateSign = DurationSign(y, m, w, d, 0, 0, 0, 0, 0, 0);
+  const timeSign = norm.sign();
+  if (dateSign !== 0 && timeSign !== 0 && dateSign !== timeSign) {
+    throw new RangeError('mixed-sign values not allowed as duration fields');
+  }
+}
+
 function ISODateToEpochDays(y: number, m: number, d: number) {
   // This is inefficient, but we use GetUTCEpochNanoseconds to avoid duplicating
   // the workarounds for legacy Date. (see that function for explanation)
@@ -4515,41 +4449,17 @@ function DifferenceTime(
   µs2: number,
   ns2: number
 ) {
-  let hours = h2 - h1;
-  let minutes = min2 - min1;
-  let seconds = s2 - s1;
-  let milliseconds = ms2 - ms1;
-  let microseconds = µs2 - µs1;
-  let nanoseconds = ns2 - ns1;
+  const hours = h2 - h1;
+  const minutes = min2 - min1;
+  const seconds = s2 - s1;
+  const milliseconds = ms2 - ms1;
+  const microseconds = µs2 - µs1;
+  const nanoseconds = ns2 - ns1;
+  const norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
 
-  const sign = DurationSign(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-  hours *= sign;
-  minutes *= sign;
-  seconds *= sign;
-  milliseconds *= sign;
-  microseconds *= sign;
-  nanoseconds *= sign;
+  if (norm.abs().sec >= 86400) throw new Error('assertion failure in DifferenceTime: _bt_.[[Days]] should be 0');
 
-  let deltaDays = 0;
-  ({
-    deltaDays,
-    hour: hours,
-    minute: minutes,
-    second: seconds,
-    millisecond: milliseconds,
-    microsecond: microseconds,
-    nanosecond: nanoseconds
-  } = BalanceTime(hours, minutes, seconds, milliseconds, microseconds, nanoseconds));
-
-  if (deltaDays != 0) throw new Error('assertion failure in DifferenceTime: _bt_.[[Days]] should be 0');
-  hours *= sign;
-  minutes *= sign;
-  seconds *= sign;
-  milliseconds *= sign;
-  microseconds *= sign;
-  nanoseconds *= sign;
-
-  return { hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
+  return norm;
 }
 
 function DifferenceInstant(
@@ -4557,36 +4467,12 @@ function DifferenceInstant(
   ns2: JSBI,
   increment: number,
   smallestUnit: keyof typeof nsPerTimeUnit,
-  largestUnit: keyof typeof nsPerTimeUnit,
   roundingMode: Temporal.RoundingMode
 ) {
-  const diff = JSBI.subtract(ns2, ns1);
+  const diff = TimeDuration.fromEpochNsDiff(ns2, ns1);
+  if (smallestUnit === 'nanosecond' && increment === 1) return diff;
 
-  let hours = 0;
-  let minutes = 0;
-  let nanoseconds = JSBI.toNumber(JSBI.remainder(diff, THOUSAND));
-  let microseconds = JSBI.toNumber(JSBI.remainder(JSBI.divide(diff, THOUSAND), THOUSAND));
-  let milliseconds = JSBI.toNumber(JSBI.remainder(JSBI.divide(diff, MILLION), THOUSAND));
-  let seconds = JSBI.toNumber(JSBI.divide(diff, BILLION));
-
-  if (smallestUnit !== 'nanosecond' || increment !== 1) {
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      increment,
-      smallestUnit,
-      roundingMode
-    ));
-  }
-  return BalanceTimeDuration(0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, largestUnit);
+  return RoundDuration(0, 0, 0, 0, diff, increment, smallestUnit, roundingMode).norm;
 }
 
 function DifferenceDate(
@@ -4638,35 +4524,13 @@ function DifferenceISODateTime(
   let mon1 = mon1Param;
   let d1 = d1Param;
 
-  let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceTime(
-    h1,
-    min1,
-    s1,
-    ms1,
-    µs1,
-    ns1,
-    h2,
-    min2,
-    s2,
-    ms2,
-    µs2,
-    ns2
-  );
+  let timeDuration = DifferenceTime(h1, min1, s1, ms1, µs1, ns1, h2, min2, s2, ms2, µs2, ns2);
 
-  const timeSign = DurationSign(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+  const timeSign = timeDuration.sign();
   const dateSign = CompareISODate(y2, mon2, d2, y1, mon1, d1);
   if (dateSign === -timeSign) {
     ({ year: y1, month: mon1, day: d1 } = BalanceISODate(y1, mon1, d1 - timeSign));
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-      -timeSign,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      largestUnit
-    ));
+    timeDuration = timeDuration.add24HourDays(-timeSign);
   }
 
   const date1 = CreateTemporalDate(y1, mon1, d1, calendarRec.receiver);
@@ -4682,19 +4546,8 @@ function DifferenceISODateTime(
   const years = GetSlot(untilResult, YEARS);
   const months = GetSlot(untilResult, MONTHS);
   const weeks = GetSlot(untilResult, WEEKS);
-  let days = GetSlot(untilResult, DAYS);
-  // Signs of date part and time part may not agree; balance them together
-  ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-    days,
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds,
-    largestUnit
-  ));
-  return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
+  const days = GetSlot(untilResult, DAYS);
+  return { years, months, weeks, days, norm: timeDuration };
 }
 
 function DifferenceZonedDateTime(
@@ -4718,12 +4571,7 @@ function DifferenceZonedDateTime(
       months: 0,
       weeks: 0,
       days: 0,
-      hours: 0,
-      minutes: 0,
-      seconds: 0,
-      milliseconds: 0,
-      microseconds: 0,
-      nanoseconds: 0
+      norm: TimeDuration.ZERO
     };
   }
 
@@ -4734,7 +4582,7 @@ function DifferenceZonedDateTime(
   const dtStart = precalculatedDtStart ?? GetPlainDateTimeFor(timeZoneRec, start, calendarRec.receiver);
   const dtEnd = GetPlainDateTimeFor(timeZoneRec, end, calendarRec.receiver);
 
-  let { years, months, weeks, days } = DifferenceISODateTime(
+  let { years, months, weeks } = DifferenceISODateTime(
     GetSlot(dtStart, ISO_YEAR),
     GetSlot(dtStart, ISO_MONTH),
     GetSlot(dtStart, ISO_DAY),
@@ -4765,31 +4613,18 @@ function DifferenceZonedDateTime(
     months,
     weeks,
     0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
+    TimeDuration.ZERO,
     dtStart
   );
   // may disambiguate
-  let timeRemainderNs = JSBI.subtract(ns2, intermediateNs);
-  const intermediate = CreateTemporalZonedDateTime(intermediateNs, timeZoneRec.receiver, calendarRec.receiver);
-  ({ nanoseconds: timeRemainderNs, days } = NanosecondsToDays(timeRemainderNs, intermediate, timeZoneRec));
 
-  // Finally, merge the date and time durations and return the merged result.
-  const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
-    JSBI.toNumber(timeRemainderNs),
-    'hour'
-  );
-  return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
+  let norm = TimeDuration.fromEpochNsDiff(ns2, intermediateNs);
+  const intermediate = CreateTemporalZonedDateTime(intermediateNs, timeZoneRec.receiver, calendarRec.receiver);
+  let days;
+  ({ norm, days } = NormalizedTimeDurationToDays(norm, intermediate, timeZoneRec));
+
+  CombineDateAndNormalizedTimeDuration(years, months, weeks, days, norm);
+  return { years, months, weeks, days, norm };
 }
 
 type DifferenceOperation = 'since' | 'until';
@@ -4860,13 +4695,16 @@ export function DifferenceTemporalInstant(
 
   const onens = GetSlot(instant, EPOCHNANOSECONDS);
   const twons = GetSlot(other, EPOCHNANOSECONDS);
-  let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
+  const norm = DifferenceInstant(
     onens,
     twons,
     settings.roundingIncrement,
     settings.smallestUnit,
-    settings.largestUnit,
     settings.roundingMode
+  );
+  const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
+    norm,
+    settings.largestUnit
   );
   const Duration = GetIntrinsic('%Temporal.Duration%');
   return new Duration(
@@ -4923,12 +4761,7 @@ export function DifferenceTemporalPlainDate(
       months,
       weeks,
       days,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
+      TimeDuration.ZERO,
       settings.roundingIncrement,
       settings.smallestUnit,
       settings.roundingMode,
@@ -4984,45 +4817,40 @@ export function DifferenceTemporalPlainDateTime(
 
   const calendarRec = new CalendarMethodRecord(calendar, ['dateAdd', 'dateUntil']);
 
-  let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-    DifferenceISODateTime(
-      GetSlot(plainDateTime, ISO_YEAR),
-      GetSlot(plainDateTime, ISO_MONTH),
-      GetSlot(plainDateTime, ISO_DAY),
-      GetSlot(plainDateTime, ISO_HOUR),
-      GetSlot(plainDateTime, ISO_MINUTE),
-      GetSlot(plainDateTime, ISO_SECOND),
-      GetSlot(plainDateTime, ISO_MILLISECOND),
-      GetSlot(plainDateTime, ISO_MICROSECOND),
-      GetSlot(plainDateTime, ISO_NANOSECOND),
-      GetSlot(other, ISO_YEAR),
-      GetSlot(other, ISO_MONTH),
-      GetSlot(other, ISO_DAY),
-      GetSlot(other, ISO_HOUR),
-      GetSlot(other, ISO_MINUTE),
-      GetSlot(other, ISO_SECOND),
-      GetSlot(other, ISO_MILLISECOND),
-      GetSlot(other, ISO_MICROSECOND),
-      GetSlot(other, ISO_NANOSECOND),
-      calendarRec,
-      settings.largestUnit,
-      resolvedOptions
-    );
+  let { years, months, weeks, days, norm } = DifferenceISODateTime(
+    GetSlot(plainDateTime, ISO_YEAR),
+    GetSlot(plainDateTime, ISO_MONTH),
+    GetSlot(plainDateTime, ISO_DAY),
+    GetSlot(plainDateTime, ISO_HOUR),
+    GetSlot(plainDateTime, ISO_MINUTE),
+    GetSlot(plainDateTime, ISO_SECOND),
+    GetSlot(plainDateTime, ISO_MILLISECOND),
+    GetSlot(plainDateTime, ISO_MICROSECOND),
+    GetSlot(plainDateTime, ISO_NANOSECOND),
+    GetSlot(other, ISO_YEAR),
+    GetSlot(other, ISO_MONTH),
+    GetSlot(other, ISO_DAY),
+    GetSlot(other, ISO_HOUR),
+    GetSlot(other, ISO_MINUTE),
+    GetSlot(other, ISO_SECOND),
+    GetSlot(other, ISO_MILLISECOND),
+    GetSlot(other, ISO_MICROSECOND),
+    GetSlot(other, ISO_NANOSECOND),
+    calendarRec,
+    settings.largestUnit,
+    resolvedOptions
+  );
 
+  let hours, minutes, seconds, milliseconds, microseconds, nanoseconds;
   const roundingIsNoop = settings.smallestUnit === 'nanosecond' && settings.roundingIncrement === 1;
   if (!roundingIsNoop) {
     const relativeTo = TemporalDateTimeToDate(plainDateTime);
-    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
+    ({ years, months, weeks, days, norm } = RoundDuration(
       years,
       months,
       weeks,
       days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
+      norm,
       settings.roundingIncrement,
       settings.smallestUnit,
       settings.roundingMode,
@@ -5030,13 +4858,7 @@ export function DifferenceTemporalPlainDateTime(
       calendarRec
     ));
     ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-      days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
+      norm.add24HourDays(days),
       settings.largestUnit
     ));
     ({ years, months, weeks, days } = BalanceDateDurationRelative(
@@ -5048,6 +4870,11 @@ export function DifferenceTemporalPlainDateTime(
       settings.smallestUnit,
       relativeTo,
       calendarRec
+    ));
+  } else {
+    ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
+      norm.add24HourDays(days),
+      settings.largestUnit
     ));
   }
 
@@ -5077,7 +4904,7 @@ export function DifferenceTemporalPlainTime(
   const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'time', [], 'nanosecond', 'hour');
 
-  let { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceTime(
+  let norm = DifferenceTime(
     GetSlot(plainTime, ISO_HOUR),
     GetSlot(plainTime, ISO_MINUTE),
     GetSlot(plainTime, ISO_SECOND),
@@ -5092,32 +4919,21 @@ export function DifferenceTemporalPlainTime(
     GetSlot(other, ISO_NANOSECOND)
   );
   if (settings.smallestUnit !== 'nanosecond' || settings.roundingIncrement !== 1) {
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
+    ({ norm } = RoundDuration(
       0,
       0,
       0,
       0,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
+      norm,
       settings.roundingIncrement,
       settings.smallestUnit,
       settings.roundingMode
     ));
   }
-  ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-    0,
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds,
+  const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
+    norm,
     settings.largestUnit
-  ));
+  );
   const Duration = GetIntrinsic('%Temporal.Duration%');
   return new Duration(
     0,
@@ -5177,12 +4993,7 @@ export function DifferenceTemporalPlainYearMonth(
       months,
       0,
       0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
+      TimeDuration.ZERO,
       settings.roundingIncrement,
       settings.smallestUnit,
       settings.roundingMode,
@@ -5236,13 +5047,16 @@ export function DifferenceTemporalZonedDateTime(
     months = 0;
     weeks = 0;
     days = 0;
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
+    const norm = DifferenceInstant(
       ns1,
       ns2,
       settings.roundingIncrement,
       settings.smallestUnit as Temporal.TimeUnit,
-      settings.largestUnit as Temporal.TimeUnit,
       settings.roundingMode
+    );
+    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
+      norm,
+      settings.largestUnit as Temporal.TimeUnit
     ));
   } else {
     const timeZone = GetSlot(zonedDateTime, TIME_ZONE);
@@ -5269,30 +5083,25 @@ export function DifferenceTemporalZonedDateTime(
     const plainRelativeTo = TemporalDateTimeToDate(precalculatedPlainDateTime);
 
     resolvedOptions.largestUnit = settings.largestUnit;
-    ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-      DifferenceZonedDateTime(
-        ns1,
-        ns2,
-        timeZoneRec,
-        calendarRec,
-        settings.largestUnit,
-        resolvedOptions,
-        precalculatedPlainDateTime
-      ));
+    let norm;
+    ({ years, months, weeks, days, norm } = DifferenceZonedDateTime(
+      ns1,
+      ns2,
+      timeZoneRec,
+      calendarRec,
+      settings.largestUnit,
+      resolvedOptions,
+      precalculatedPlainDateTime
+    ));
 
     const roundingIsNoop = settings.smallestUnit === 'nanosecond' && settings.roundingIncrement === 1;
     if (!roundingIsNoop) {
-      ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
+      ({ years, months, weeks, days, norm } = RoundDuration(
         years,
         months,
         weeks,
         days,
-        hours,
-        minutes,
-        seconds,
-        milliseconds,
-        microseconds,
-        nanoseconds,
+        norm,
         settings.roundingIncrement,
         settings.smallestUnit,
         settings.roundingMode,
@@ -5302,26 +5111,23 @@ export function DifferenceTemporalZonedDateTime(
         timeZoneRec,
         precalculatedPlainDateTime
       ));
-      ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-        AdjustRoundedDurationDays(
-          years,
-          months,
-          weeks,
-          days,
-          hours,
-          minutes,
-          seconds,
-          milliseconds,
-          microseconds,
-          nanoseconds,
-          settings.roundingIncrement,
-          settings.smallestUnit,
-          settings.roundingMode,
-          zonedDateTime,
-          calendarRec,
-          timeZoneRec,
-          precalculatedPlainDateTime
-        ));
+      let deltaDays;
+      ({ days: deltaDays, norm } = NormalizedTimeDurationToDays(norm, zonedDateTime, timeZoneRec));
+      days += deltaDays;
+      ({ years, months, weeks, days, norm } = AdjustRoundedDurationDays(
+        years,
+        months,
+        weeks,
+        days,
+        norm,
+        settings.roundingIncrement,
+        settings.smallestUnit,
+        settings.roundingMode,
+        zonedDateTime,
+        calendarRec,
+        timeZoneRec,
+        precalculatedPlainDateTime
+      ));
       // BalanceTimeDuration already performed in AdjustRoundedDurationDays
       ({ years, months, weeks, days } = BalanceDateDurationRelative(
         years,
@@ -5333,7 +5139,9 @@ export function DifferenceTemporalZonedDateTime(
         plainRelativeTo,
         calendarRec
       ));
+      CombineDateAndNormalizedTimeDuration(years, months, weeks, days, norm);
     }
+    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(norm, 'hour'));
   }
 
   return new Duration(
@@ -5397,57 +5205,34 @@ export function AddDate(
   let month = GetSlot(plainDate, ISO_MONTH);
   let day = GetSlot(plainDate, ISO_DAY);
   const overflow = ToTemporalOverflow(options);
-  const { days } = BalanceTimeDuration(
-    GetSlot(duration, DAYS),
+  const norm = TimeDuration.normalize(
     GetSlot(duration, HOURS),
     GetSlot(duration, MINUTES),
     GetSlot(duration, SECONDS),
     GetSlot(duration, MILLISECONDS),
     GetSlot(duration, MICROSECONDS),
-    GetSlot(duration, NANOSECONDS),
-    'day'
+    GetSlot(duration, NANOSECONDS)
   );
+  const days = GetSlot(duration, DAYS) + BalanceTimeDuration(norm, 'day').days;
   ({ year, month, day } = AddISODate(year, month, day, 0, 0, 0, days, overflow));
   return CreateTemporalDate(year, month, day, calendarRec.receiver);
 }
 
 function AddTime(
-  hourParam: number,
-  minuteParam: number,
+  hour: number,
+  minute: number,
   secondParam: number,
-  millisecondParam: number,
-  microsecondParam: number,
+  millisecond: number,
+  microsecond: number,
   nanosecondParam: number,
-  hours: number,
-  minutes: number,
-  seconds: number,
-  milliseconds: number,
-  microseconds: number,
-  nanoseconds: number
+  norm: TimeDuration
 ) {
-  let hour = hourParam;
-  let minute = minuteParam;
   let second = secondParam;
-  let millisecond = millisecondParam;
-  let microsecond = microsecondParam;
   let nanosecond = nanosecondParam;
 
-  hour += hours;
-  minute += minutes;
-  second += seconds;
-  millisecond += milliseconds;
-  microsecond += microseconds;
-  nanosecond += nanoseconds;
-  let deltaDays = 0;
-  ({ deltaDays, hour, minute, second, millisecond, microsecond, nanosecond } = BalanceTime(
-    hour,
-    minute,
-    second,
-    millisecond,
-    microsecond,
-    nanosecond
-  ));
-  return { deltaDays, hour, minute, second, millisecond, microsecond, nanosecond };
+  second += norm.sec;
+  nanosecond += norm.subsec;
+  return BalanceTime(hour, minute, second, millisecond, microsecond, nanosecond);
 }
 
 function AddDuration(
@@ -5490,14 +5275,10 @@ function AddDuration(
       throw new RangeError('relativeTo is required for years, months, or weeks arithmetic');
     }
     years = months = weeks = 0;
+    const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
+    const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
     ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-      d1 + d2,
-      JSBI.add(JSBI.BigInt(h1), JSBI.BigInt(h2)),
-      JSBI.add(JSBI.BigInt(min1), JSBI.BigInt(min2)),
-      JSBI.add(JSBI.BigInt(s1), JSBI.BigInt(s2)),
-      JSBI.add(JSBI.BigInt(ms1), JSBI.BigInt(ms2)),
-      JSBI.add(JSBI.BigInt(µs1), JSBI.BigInt(µs2)),
-      JSBI.add(JSBI.BigInt(ns1), JSBI.BigInt(ns2)),
+      norm1.add(norm2).add24HourDays(d1 + d2),
       largestUnit
     ));
   } else if (plainRelativeTo) {
@@ -5518,14 +5299,10 @@ function AddDuration(
     weeks = GetSlot(untilResult, WEEKS);
     days = GetSlot(untilResult, DAYS);
     // Signs of date part and time part may not agree; balance them together
+    const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
+    const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
     ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-      days,
-      JSBI.add(JSBI.BigInt(h1), JSBI.BigInt(h2)),
-      JSBI.add(JSBI.BigInt(min1), JSBI.BigInt(min2)),
-      JSBI.add(JSBI.BigInt(s1), JSBI.BigInt(s2)),
-      JSBI.add(JSBI.BigInt(ms1), JSBI.BigInt(ms2)),
-      JSBI.add(JSBI.BigInt(µs1), JSBI.BigInt(µs2)),
-      JSBI.add(JSBI.BigInt(ns1), JSBI.BigInt(ns2)),
+      norm1.add(norm2).add24HourDays(days),
       largestUnit
     ));
   } else {
@@ -5539,6 +5316,8 @@ function AddDuration(
     if (largestUnit === 'year' || largestUnit === 'month' || largestUnit === 'week' || largestUnit === 'day') {
       startDateTime ??= GetPlainDateTimeFor(timeZoneRec, startInstant, calendar);
     }
+    const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
+    const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
     const intermediateNs = AddZonedDateTime(
       startInstant,
       timeZoneRec,
@@ -5547,12 +5326,7 @@ function AddDuration(
       mon1,
       w1,
       d1,
-      h1,
-      min1,
-      s1,
-      ms1,
-      µs1,
-      ns1,
+      norm1,
       startDateTime
     );
     const endNs = AddZonedDateTime(
@@ -5563,12 +5337,7 @@ function AddDuration(
       mon2,
       w2,
       d2,
-      h2,
-      min2,
-      s2,
-      ms2,
-      µs2,
-      ns2
+      norm2
     );
     if (largestUnit !== 'year' && largestUnit !== 'month' && largestUnit !== 'week' && largestUnit !== 'day') {
       // The user is only asking for a time difference, so return difference of instants.
@@ -5576,50 +5345,28 @@ function AddDuration(
       months = 0;
       weeks = 0;
       days = 0;
-      ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = DifferenceInstant(
+      const norm = TimeDuration.fromEpochNsDiff(endNs, GetSlot(zonedRelativeTo, EPOCHNANOSECONDS));
+      ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(norm, largestUnit));
+    } else {
+      let norm;
+      ({ years, months, weeks, days, norm } = DifferenceZonedDateTime(
         GetSlot(zonedRelativeTo, EPOCHNANOSECONDS),
         endNs,
-        1,
-        'nanosecond',
+        timeZoneRec,
+        calendarRec,
         largestUnit,
-        'halfExpand'
+        ObjectCreate(null) as Temporal.DifferenceOptions<Temporal.DateTimeUnit>,
+        startDateTime
       ));
-    } else {
-      ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-        DifferenceZonedDateTime(
-          GetSlot(zonedRelativeTo, EPOCHNANOSECONDS),
-          endNs,
-          timeZoneRec,
-          calendarRec,
-          largestUnit,
-          ObjectCreate(null) as Temporal.DifferenceOptions<Temporal.DateTimeUnit>,
-          startDateTime
-        ));
+      ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(norm, 'hour'));
     }
   }
 
-  RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-function AddInstant(
-  epochNanoseconds: JSBI,
-  h: number | JSBI,
-  min: number | JSBI,
-  s: number | JSBI,
-  ms: number | JSBI,
-  µs: number | JSBI,
-  ns: number | JSBI
-) {
-  let sum = ZERO;
-  sum = JSBI.add(sum, JSBI.BigInt(ns));
-  sum = JSBI.add(sum, JSBI.multiply(JSBI.BigInt(µs), THOUSAND));
-  sum = JSBI.add(sum, JSBI.multiply(JSBI.BigInt(ms), MILLION));
-  sum = JSBI.add(sum, JSBI.multiply(JSBI.BigInt(s), BILLION));
-  sum = JSBI.add(sum, JSBI.multiply(JSBI.BigInt(min), JSBI.BigInt(60 * 1e9)));
-  sum = JSBI.add(sum, JSBI.multiply(JSBI.BigInt(h), JSBI.BigInt(60 * 60 * 1e9)));
-
-  const result = JSBI.add(epochNanoseconds, sum);
+export function AddInstant(epochNanoseconds: JSBI, norm: TimeDuration) {
+  const result = norm.addToEpochNs(epochNanoseconds);
   ValidateEpochNanoseconds(result);
   return result;
 }
@@ -5639,12 +5386,7 @@ function AddDateTime(
   months: number,
   weeks: number,
   daysParam: number,
-  hours: number,
-  minutes: number,
-  seconds: number,
-  milliseconds: number,
-  microseconds: number,
-  nanoseconds: number,
+  norm: TimeDuration,
   options?: Temporal.ArithmeticOptions
 ) {
   // dateAdd must be looked up if years, months, weeks != 0
@@ -5657,12 +5399,7 @@ function AddDateTime(
     millisecondParam,
     microsecondParam,
     nanosecondParam,
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds
+    norm
   );
   days += deltaDays;
 
@@ -5693,12 +5430,7 @@ export function AddZonedDateTime(
   months: number,
   weeks: number,
   days: number,
-  h: number | JSBI,
-  min: number | JSBI,
-  s: number | JSBI,
-  ms: number | JSBI,
-  µs: number | JSBI,
-  ns: number | JSBI,
+  norm: TimeDuration,
   precalculatedPlainDateTime?: Temporal.PlainDateTime,
   options?: Temporal.ArithmeticOptions
 ) {
@@ -5720,14 +5452,14 @@ export function AddZonedDateTime(
   // BTW, this behavior is similar in spirit to offset: 'prefer' in `with`.
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   if (DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0) === 0) {
-    return AddInstant(GetSlot(instant, EPOCHNANOSECONDS), h, min, s, ms, µs, ns);
+    return AddInstant(GetSlot(instant, EPOCHNANOSECONDS), norm);
   }
 
   const dt = precalculatedPlainDateTime ?? GetPlainDateTimeFor(timeZoneRec, instant, calendarRec.receiver);
   if (DurationSign(years, months, weeks, 0, 0, 0, 0, 0, 0, 0) === 0) {
     const overflow = ToTemporalOverflow(options);
     const intermediate = AddDaysToZonedDateTime(instant, dt, timeZoneRec, calendarRec.receiver, days, overflow).epochNs;
-    return AddInstant(intermediate, h, min, s, ms, µs, ns);
+    return AddInstant(intermediate, norm);
   }
 
   // RFC 5545 requires the date portion to be added in calendar days and the
@@ -5756,7 +5488,7 @@ export function AddZonedDateTime(
   // Note that 'compatible' is used below because this disambiguation behavior
   // is required by RFC 5545.
   const instantIntermediate = GetInstantFor(timeZoneRec, dtIntermediate, 'compatible');
-  return AddInstant(GetSlot(instantIntermediate, EPOCHNANOSECONDS), h, min, s, ms, µs, ns);
+  return AddInstant(GetSlot(instantIntermediate, EPOCHNANOSECONDS), norm);
 }
 
 type AddDaysRecord = {
@@ -5876,8 +5608,7 @@ export function AddDurationToOrSubtractDurationFromInstant(
     'weeks',
     'days'
   ]);
-  const ns = AddInstant(
-    GetSlot(instant, EPOCHNANOSECONDS),
+  const norm = TimeDuration.normalize(
     sign * hours,
     sign * minutes,
     sign * seconds,
@@ -5885,6 +5616,7 @@ export function AddDurationToOrSubtractDurationFromInstant(
     sign * microseconds,
     sign * nanoseconds
   );
+  const ns = AddInstant(GetSlot(instant, EPOCHNANOSECONDS), norm);
   const Instant = GetIntrinsic('%Temporal.Instant%');
   return new Instant(ns);
 }
@@ -5902,6 +5634,14 @@ export function AddDurationToOrSubtractDurationFromPlainDateTime(
 
   const calendarRec = new CalendarMethodRecord(GetSlot(dateTime, CALENDAR), ['dateAdd']);
 
+  const norm = TimeDuration.normalize(
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds
+  );
   const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = AddDateTime(
     GetSlot(dateTime, ISO_YEAR),
     GetSlot(dateTime, ISO_MONTH),
@@ -5917,12 +5657,7 @@ export function AddDurationToOrSubtractDurationFromPlainDateTime(
     sign * months,
     sign * weeks,
     sign * days,
-    sign * hours,
-    sign * minutes,
-    sign * seconds,
-    sign * milliseconds,
-    sign * microseconds,
-    sign * nanoseconds,
+    norm,
     options
   );
   return CreateTemporalDateTime(
@@ -5946,6 +5681,14 @@ export function AddDurationToOrSubtractDurationFromPlainTime(
 ): Temporal.PlainTime {
   const sign = operation === 'subtract' ? -1 : 1;
   const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ToTemporalDurationRecord(durationLike);
+  const norm = TimeDuration.normalize(
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds
+  );
   let { hour, minute, second, millisecond, microsecond, nanosecond } = AddTime(
     GetSlot(temporalTime, ISO_HOUR),
     GetSlot(temporalTime, ISO_MINUTE),
@@ -5953,12 +5696,7 @@ export function AddDurationToOrSubtractDurationFromPlainTime(
     GetSlot(temporalTime, ISO_MILLISECOND),
     GetSlot(temporalTime, ISO_MICROSECOND),
     GetSlot(temporalTime, ISO_NANOSECOND),
-    sign * hours,
-    sign * minutes,
-    sign * seconds,
-    sign * milliseconds,
-    sign * microseconds,
-    sign * nanoseconds
+    norm
   );
   ({ hour, minute, second, millisecond, microsecond, nanosecond } = RegulateTime(
     hour,
@@ -5995,8 +5733,9 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
     };
   }
   let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
-  ({ days } = BalanceTimeDuration(days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, 'day'));
   const options = GetOptionsObject(optionsParam);
+  const norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+  days += BalanceTimeDuration(norm, 'day').days;
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
 
   const calendarRec = new CalendarMethodRecord(GetSlot(yearMonth, CALENDAR), [
@@ -6062,6 +5801,14 @@ export function AddDurationToOrSubtractDurationFromZonedDateTime(
     'getPossibleInstantsFor'
   ]);
   const calendarRec = new CalendarMethodRecord(GetSlot(zonedDateTime, CALENDAR), ['dateAdd']);
+  const norm = TimeDuration.normalize(
+    sign * hours,
+    sign * minutes,
+    sign * seconds,
+    sign * milliseconds,
+    sign * microseconds,
+    sign * nanoseconds
+  );
   const epochNanoseconds = AddZonedDateTime(
     GetSlot(zonedDateTime, INSTANT),
     timeZoneRec,
@@ -6070,12 +5817,7 @@ export function AddDurationToOrSubtractDurationFromZonedDateTime(
     sign * months,
     sign * weeks,
     sign * days,
-    sign * hours,
-    sign * minutes,
-    sign * seconds,
-    sign * milliseconds,
-    sign * microseconds,
-    sign * nanoseconds,
+    norm,
     undefined,
     options
   );
@@ -6283,12 +6025,7 @@ export function MoveRelativeZonedDateTime(
     months,
     weeks,
     days,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
+    TimeDuration.ZERO,
     precalculatedPlainDateTime
   );
   return CreateTemporalZonedDateTime(intermediateNs, timeZoneRec.receiver, calendarRec.receiver);
@@ -6299,12 +6036,7 @@ export function AdjustRoundedDurationDays(
   monthsParam: number,
   weeksParam: number,
   daysParam: number,
-  hoursParam: number,
-  minutesParam: number,
-  secondsParam: number,
-  millisecondsParam: number,
-  microsecondsParam: number,
-  nanosecondsParam: number,
+  normParam: TimeDuration,
   increment: number,
   unit: Temporal.DateTimeUnit,
   roundingMode: Temporal.RoundingMode,
@@ -6319,12 +6051,7 @@ export function AdjustRoundedDurationDays(
   let months = monthsParam;
   let weeks = weeksParam;
   let days = daysParam;
-  let hours = hoursParam;
-  let minutes = minutesParam;
-  let seconds = secondsParam;
-  let milliseconds = millisecondsParam;
-  let microseconds = microsecondsParam;
-  let nanoseconds = nanosecondsParam;
+  let norm = normParam;
   if (
     unit === 'year' ||
     unit === 'month' ||
@@ -6332,7 +6059,7 @@ export function AdjustRoundedDurationDays(
     unit === 'day' ||
     (unit === 'nanosecond' && increment === 1)
   ) {
-    return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
+    return { years, months, weeks, days, norm };
   }
 
   // There's one more round of rounding possible: if relativeTo is a
@@ -6343,8 +6070,7 @@ export function AdjustRoundedDurationDays(
   // duration, there's no way for another full day to come from the next
   // round of rounding. And if it were possible (e.g. contrived calendar
   // with 30-minute-long "days") then it'd risk an infinite loop.
-  let timeRemainderNs = TotalDurationNanoseconds(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-  const direction = MathSign(JSBI.toNumber(timeRemainderNs));
+  const direction = norm.sign();
 
   const calendar = GetSlot(zonedRelativeTo, CALENDAR);
   // requires dateAdd if years...weeks != 0
@@ -6356,22 +6082,17 @@ export function AdjustRoundedDurationDays(
     months,
     weeks,
     days,
-    0,
-    0,
-    0,
-    0,
-    0,
-    0,
+    TimeDuration.ZERO,
     precalculatedPlainDateTime
   );
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
   const dayStartInstant = new TemporalInstant(dayStart);
   const dayStartDateTime = GetPlainDateTimeFor(timeZoneRec, dayStartInstant, calendar);
   const dayEnd = AddDaysToZonedDateTime(dayStartInstant, dayStartDateTime, timeZoneRec, calendar, direction).epochNs;
-  const dayLengthNs = JSBI.subtract(dayEnd, dayStart);
+  const dayLength = TimeDuration.fromEpochNsDiff(dayEnd, dayStart);
 
-  const oneDayLess = JSBI.subtract(timeRemainderNs, dayLengthNs);
-  if (JSBI.greaterThanOrEqual(JSBI.multiply(oneDayLess, JSBI.BigInt(direction)), ZERO)) {
+  const oneDayLess = norm.subtract(dayLength);
+  if (oneDayLess.sign() * direction >= 0) {
     // requires dateAdd and dateUntil if years...weeks != 0
     ({ years, months, weeks, days } = AddDuration(
       years,
@@ -6400,34 +6121,10 @@ export function AdjustRoundedDurationDays(
       timeZoneRec,
       precalculatedPlainDateTime
     ));
-    // no calendar calls
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      0,
-      JSBI.toNumber(oneDayLess),
-      increment,
-      unit,
-      roundingMode
-    ));
-    ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-      0,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds,
-      'hour'
-    ));
+    ({ norm } = RoundDuration(0, 0, 0, 0, oneDayLess, increment, unit, roundingMode));
   }
-  return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
+  CombineDateAndNormalizedTimeDuration(years, months, weeks, days, norm);
+  return { years, months, weeks, days, norm };
 }
 
 export function RoundDuration(
@@ -6435,12 +6132,7 @@ export function RoundDuration(
   monthsParam: number,
   weeksParam: number,
   daysParam: number,
-  hoursParam: number,
-  minutesParam: number,
-  secondsParam: number,
-  millisecondsParam: number,
-  microsecondsParam: number,
-  nanosecondsParam: number,
+  normParam: TimeDuration,
   increment: number,
   unit: Temporal.DateTimeUnit,
   roundingMode: Temporal.RoundingMode,
@@ -6455,12 +6147,7 @@ export function RoundDuration(
   let months = monthsParam;
   let weeks = weeksParam;
   let days = daysParam;
-  let hours = hoursParam;
-  let minutes = minutesParam;
-  let seconds = secondsParam;
-  let milliseconds = millisecondsParam;
-  let microseconds = microsecondsParam;
-  let nanoseconds = JSBI.BigInt(nanosecondsParam);
+  let norm = normParam;
   let plainRelativeTo = plainRelativeToParam;
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
 
@@ -6474,7 +6161,6 @@ export function RoundDuration(
   // larger. We'll cast away `undefined` when it's used lower down below.
   let dayLengthNs: JSBI | undefined;
   if (unit === 'year' || unit === 'month' || unit === 'week' || unit === 'day') {
-    nanoseconds = TotalDurationNanoseconds(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
     let deltaDays;
     if (zonedRelativeTo) {
       assertExists(calendarRec);
@@ -6489,20 +6175,12 @@ export function RoundDuration(
         days,
         precalculatedPlainDateTime
       );
-      let dayLengthNumber;
-      ({
-        days: deltaDays,
-        nanoseconds,
-        dayLengthNs: dayLengthNumber
-      } = NanosecondsToDays(nanoseconds, intermediate, timeZoneRec));
-      dayLengthNs = JSBI.BigInt(dayLengthNumber);
+      ({ days: deltaDays, norm, dayLengthNs } = NormalizedTimeDurationToDays(norm, intermediate, timeZoneRec));
     } else {
-      ({ quotient: deltaDays, remainder: nanoseconds } = divmod(nanoseconds, DAY_NANOS));
-      deltaDays = JSBI.toNumber(deltaDays);
+      ({ quotient: deltaDays, remainder: norm } = norm.divmod(JSBI.toNumber(DAY_NANOS)));
       dayLengthNs = DAY_NANOS;
     }
     days += deltaDays;
-    hours = minutes = seconds = milliseconds = microseconds = 0;
   }
 
   let total: number;
@@ -6558,15 +6236,15 @@ export function RoundDuration(
       assertExists(dayLengthNs);
       if (oneYearDays === 0) throw new RangeError('custom calendar reported that a year is 0 days long');
       const divisor = JSBI.multiply(JSBI.BigInt(oneYearDays), dayLengthNs);
-      nanoseconds = JSBI.add(
+      const nanoseconds = JSBI.add(
         JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(years)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs)),
-        nanoseconds
+        norm.totalNs
       );
       const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
       total = BigIntDivideToNumber(nanoseconds, divisor);
       years = JSBI.toNumber(JSBI.divide(rounded, divisor));
-      nanoseconds = ZERO;
       months = weeks = days = 0;
+      norm = TimeDuration.ZERO;
       break;
     }
     case 'month': {
@@ -6614,15 +6292,15 @@ export function RoundDuration(
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       const divisor = JSBI.multiply(JSBI.BigInt(oneMonthDays), dayLengthNs);
-      nanoseconds = JSBI.add(
+      const nanoseconds = JSBI.add(
         JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(months)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs)),
-        nanoseconds
+        norm.totalNs
       );
       const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
       total = BigIntDivideToNumber(nanoseconds, divisor);
       months = JSBI.toNumber(JSBI.divide(rounded, divisor));
-      nanoseconds = ZERO;
       weeks = days = 0;
+      norm = TimeDuration.ZERO;
       break;
     }
     case 'week': {
@@ -6660,123 +6338,66 @@ export function RoundDuration(
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       const divisor = JSBI.multiply(JSBI.BigInt(oneWeekDays), dayLengthNs);
-      nanoseconds = JSBI.add(
+      const nanoseconds = JSBI.add(
         JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(weeks)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs)),
-        nanoseconds
+        norm.totalNs
       );
       const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
       total = BigIntDivideToNumber(nanoseconds, divisor);
       weeks = JSBI.toNumber(JSBI.divide(rounded, divisor));
-      nanoseconds = ZERO;
       days = 0;
+      norm = TimeDuration.ZERO;
       break;
     }
     case 'day': {
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       const divisor = dayLengthNs;
-      nanoseconds = JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(days)), nanoseconds);
+      const nanoseconds = JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(days)), norm.totalNs);
       const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
       total = BigIntDivideToNumber(nanoseconds, divisor);
       days = JSBI.toNumber(JSBI.divide(rounded, divisor));
-      nanoseconds = ZERO;
+      norm = TimeDuration.ZERO;
       break;
     }
     case 'hour': {
       const divisor = 3600e9;
-      let allNanoseconds = JSBI.multiply(JSBI.BigInt(hours), JSBI.BigInt(3600e9));
-      allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(minutes), JSBI.BigInt(60e9)));
-      allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(seconds), BILLION));
-      allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(milliseconds), MILLION));
-      allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(microseconds), THOUSAND));
-      allNanoseconds = JSBI.add(allNanoseconds, nanoseconds);
-      total = BigIntDivideToNumber(allNanoseconds, JSBI.BigInt(divisor));
-      const rounded = RoundNumberToIncrement(allNanoseconds, JSBI.BigInt(divisor * increment), roundingMode);
-      hours = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(divisor)));
-      nanoseconds = ZERO;
-      minutes = seconds = milliseconds = microseconds = 0;
+      total = norm.fdiv(divisor);
+      norm = norm.round(divisor * increment, roundingMode);
       break;
     }
     case 'minute': {
       const divisor = 60e9;
-      let allNanoseconds = JSBI.multiply(JSBI.BigInt(minutes), JSBI.BigInt(60e9));
-      allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(seconds), BILLION));
-      allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(milliseconds), MILLION));
-      allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(microseconds), THOUSAND));
-      allNanoseconds = JSBI.add(allNanoseconds, nanoseconds);
-      total = BigIntDivideToNumber(allNanoseconds, JSBI.BigInt(divisor));
-      const rounded = RoundNumberToIncrement(allNanoseconds, JSBI.BigInt(divisor * increment), roundingMode);
-      minutes = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(divisor)));
-      nanoseconds = ZERO;
-      seconds = milliseconds = microseconds = 0;
+      total = norm.fdiv(divisor);
+      norm = norm.round(divisor * increment, roundingMode);
       break;
     }
     case 'second': {
       const divisor = 1e9;
-      let allNanoseconds = JSBI.multiply(JSBI.BigInt(seconds), BILLION);
-      allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(milliseconds), MILLION));
-      allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(microseconds), THOUSAND));
-      allNanoseconds = JSBI.add(allNanoseconds, nanoseconds);
-      total = BigIntDivideToNumber(allNanoseconds, JSBI.BigInt(divisor));
-      const rounded = RoundNumberToIncrement(allNanoseconds, JSBI.BigInt(divisor * increment), roundingMode);
-      seconds = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(divisor)));
-      nanoseconds = ZERO;
-      milliseconds = microseconds = 0;
+      total = norm.fdiv(divisor);
+      norm = norm.round(divisor * increment, roundingMode);
       break;
     }
     case 'millisecond': {
       const divisor = 1e6;
-      let allNanoseconds = JSBI.multiply(JSBI.BigInt(milliseconds), MILLION);
-      allNanoseconds = JSBI.add(allNanoseconds, JSBI.multiply(JSBI.BigInt(microseconds), THOUSAND));
-      allNanoseconds = JSBI.add(allNanoseconds, nanoseconds);
-      total = BigIntDivideToNumber(allNanoseconds, JSBI.BigInt(divisor));
-      const rounded = RoundNumberToIncrement(allNanoseconds, JSBI.BigInt(divisor * increment), roundingMode);
-      milliseconds = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(divisor)));
-      nanoseconds = ZERO;
-      microseconds = 0;
+      total = norm.fdiv(divisor);
+      norm = norm.round(divisor * increment, roundingMode);
       break;
     }
     case 'microsecond': {
       const divisor = 1e3;
-      let allNanoseconds = JSBI.multiply(JSBI.BigInt(microseconds), THOUSAND);
-      allNanoseconds = JSBI.add(allNanoseconds, nanoseconds);
-      total = BigIntDivideToNumber(allNanoseconds, JSBI.BigInt(divisor));
-      const rounded = RoundNumberToIncrement(allNanoseconds, JSBI.BigInt(divisor * increment), roundingMode);
-      microseconds = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(divisor)));
-      nanoseconds = ZERO;
+      total = norm.fdiv(divisor);
+      norm = norm.round(divisor * increment, roundingMode);
       break;
     }
     case 'nanosecond': {
-      total = JSBI.toNumber(nanoseconds);
-      nanoseconds = RoundNumberToIncrement(JSBI.BigInt(nanoseconds), JSBI.BigInt(increment), roundingMode);
+      total = JSBI.toNumber(norm.totalNs);
+      norm = norm.round(increment, roundingMode);
       break;
     }
   }
-  RejectDuration(
-    years,
-    months,
-    weeks,
-    days,
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    JSBI.toNumber(nanoseconds)
-  );
-  return {
-    years,
-    months,
-    weeks,
-    days,
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds: JSBI.toNumber(nanoseconds),
-    total
-  };
+  CombineDateAndNormalizedTimeDuration(years, months, weeks, days, norm);
+  return { years, months, weeks, days, norm, total };
 }
 
 export function CompareISODate(y1: number, m1: number, d1: number, y2: number, m2: number, d2: number) {
@@ -6832,32 +6453,6 @@ export function CompareISODateTime(
   const dateResult = CompareISODate(y1, m1, d1, y2, m2, d2);
   if (dateResult !== 0) return dateResult;
   return CompareTemporalTime(h1, min1, s1, ms1, µs1, ns1, h2, min2, s2, ms2, µs2, ns2);
-}
-
-// Not abstract operations from the spec
-
-function NonNegativeBigIntDivmod(x: JSBI, y: JSBI) {
-  let { quotient, remainder } = divmod(x, y);
-  if (JSBI.lessThan(remainder, ZERO)) {
-    quotient = JSBI.subtract(quotient, ONE);
-    remainder = JSBI.add(remainder, y);
-  }
-  return { quotient, remainder };
-}
-
-export function BigIntFloorDiv(left: JSBI, right: JSBI) {
-  const { quotient, remainder } = divmod(left, right);
-  if (!isZero(remainder) && !isNegativeJSBI(left) != !isNegativeJSBI(right)) {
-    return JSBI.subtract(quotient, ONE);
-  }
-  return quotient;
-}
-
-/** Divide two JSBIs, and return the result as a Number, including the remainder. */
-export function BigIntDivideToNumber(dividend: JSBI, divisor: JSBI) {
-  const { quotient, remainder } = divmod(dividend, divisor);
-  const result = JSBI.toNumber(quotient) + JSBI.toNumber(remainder) / JSBI.toNumber(divisor);
-  return result;
 }
 
 // Defaults to native bigint, or something "native bigint-like".

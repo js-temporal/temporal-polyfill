@@ -21,6 +21,7 @@ import {
   HasSlot,
   SetSlot
 } from './slots';
+import { TimeDuration } from './timeduration';
 import type { Temporal } from '..';
 import type {
   BuiltinCalendarId,
@@ -226,16 +227,15 @@ export class Calendar implements Temporal.Calendar {
     const duration = ES.ToTemporalDuration(durationParam);
     const options = ES.GetOptionsObject(optionsParam);
     const overflow = ES.ToTemporalOverflow(options);
-    const { days } = ES.BalanceTimeDuration(
-      GetSlot(duration, DAYS),
+    const norm = TimeDuration.normalize(
       GetSlot(duration, HOURS),
       GetSlot(duration, MINUTES),
       GetSlot(duration, SECONDS),
       GetSlot(duration, MILLISECONDS),
       GetSlot(duration, MICROSECONDS),
-      GetSlot(duration, NANOSECONDS),
-      'day'
+      GetSlot(duration, NANOSECONDS)
     );
+    const days = GetSlot(duration, DAYS) + ES.BalanceTimeDuration(norm, 'day').days;
     const id = GetSlot(this, CALENDAR_ID);
     return impl[id].dateAdd(
       date,
