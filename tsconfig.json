@@ -7,7 +7,7 @@
     "importHelpers": true,
     "inlineSources": true,
     "inlineSourceMap": false,
-    "lib": ["dom", "ES2020"],
+    "lib": ["dom", "ES2022"],
     "module": "es6",
     "moduleResolution": "node",
     "noEmitOnError": true,

@@ -23,7 +23,8 @@ const TIME = Symbol('time');
 const DATETIME = Symbol('datetime');
 const INST = Symbol('instant');
 const ORIGINAL = Symbol('original');
-const TZ_RESOLVED = Symbol('timezone');
+const TZ_CANONICAL = Symbol('timezone-canonical');
+const TZ_ORIGINAL = Symbol('timezone-original');
 const CAL_ID = Symbol('calendar-id');
 const LOCALE = Symbol('locale');
 const OPTIONS = Symbol('options');
@@ -53,7 +54,8 @@ interface CustomFormatters {
 
 interface PrivateProps extends CustomFormatters {
   [ORIGINAL]: globalThis.Intl.DateTimeFormat;
-  [TZ_RESOLVED]: string | Temporal.TimeZoneProtocol;
+  [TZ_CANONICAL]: string;
+  [TZ_ORIGINAL]: string;
   [CAL_ID]: globalThis.Intl.ResolvedDateTimeFormatOptions['calendar'];
   [LOCALE]: globalThis.Intl.ResolvedDateTimeFormatOptions['locale'];
   [OPTIONS]: Intl.DateTimeFormatOptions;
@@ -131,7 +133,7 @@ function DateTimeFormatImpl(
 
   this[LOCALE] = ro.locale;
   this[ORIGINAL] = original;
-  this[TZ_RESOLVED] = ro.timeZone;
+  this[TZ_CANONICAL] = ro.timeZone;
   this[CAL_ID] = ro.calendar;
   this[DATE] = dateAmend;
   this[YM] = yearMonthAmend;
@@ -139,6 +141,25 @@ function DateTimeFormatImpl(
   this[TIME] = timeAmend;
   this[DATETIME] = datetimeAmend;
   this[INST] = instantAmend;
+
+  // Save the original time zone, for a few reasons:
+  // - Clearer error messages
+  // - More clearly follows the spec for InitializeDateTimeFormat
+  // - Because it follows the spec more closely, will make it easier to integrate
+  //   support of offset strings and other potential changes like proposal-canonical-tz.
+  const timeZoneOption = hasOptions ? options.timeZone : undefined;
+  if (timeZoneOption === undefined) {
+    this[TZ_ORIGINAL] = ro.timeZone;
+  } else {
+    const id = ES.ToString(timeZoneOption);
+    if (ES.IsTimeZoneOffsetString(id)) {
+      // Note: https://github.com/tc39/ecma402/issues/683 will remove this
+      throw new RangeError('Intl.DateTimeFormat does not currently support offset time zones');
+    }
+    const record = ES.GetAvailableNamedTimeZoneIdentifier(id);
+    if (!record) throw new RangeError(`Intl.DateTimeFormat formats built-in time zones, not ${id}`);
+    this[TZ_ORIGINAL] = record.identifier;
+  }
   return undefined; // TODO: I couldn't satisfy TS without adding this. Is there another way?
 }
 
@@ -180,7 +201,9 @@ Object.defineProperty(DateTimeFormatImpl, 'prototype', {
 export const DateTimeFormat = DateTimeFormatImpl as unknown as typeof Intl.DateTimeFormat;
 
 function resolvedOptions(this: DateTimeFormatImpl): Return['resolvedOptions'] {
-  return this[ORIGINAL].resolvedOptions();
+  const resolved = this[ORIGINAL].resolvedOptions();
+  resolved.timeZone = this[TZ_CANONICAL];
+  return resolved;
 }
 
 // TODO: investigate why there's a rest parameter here. Does this function really need to accept extra params?
@@ -450,7 +473,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     const nanosecond = GetSlot(temporalObj, ISO_NANOSECOND);
     const datetime = new DateTime(1970, 1, 1, hour, minute, second, millisecond, microsecond, nanosecond, main[CAL_ID]);
     return {
-      instant: ES.GetInstantFor(main[TZ_RESOLVED], datetime, 'compatible'),
+      instant: ES.GetInstantFor(main[TZ_CANONICAL], datetime, 'compatible'),
       formatter: getPropLazy(main, TIME)
     };
   }
@@ -467,7 +490,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     }
     const datetime = new DateTime(isoYear, isoMonth, referenceISODay, 12, 0, 0, 0, 0, 0, calendar);
     return {
-      instant: ES.GetInstantFor(main[TZ_RESOLVED], datetime, 'compatible'),
+      instant: ES.GetInstantFor(main[TZ_CANONICAL], datetime, 'compatible'),
       formatter: getPropLazy(main, YM)
     };
   }
@@ -484,7 +507,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     }
     const datetime = new DateTime(referenceISOYear, isoMonth, isoDay, 12, 0, 0, 0, 0, 0, calendar);
     return {
-      instant: ES.GetInstantFor(main[TZ_RESOLVED], datetime, 'compatible'),
+      instant: ES.GetInstantFor(main[TZ_CANONICAL], datetime, 'compatible'),
       formatter: getPropLazy(main, MD)
     };
   }
@@ -499,7 +522,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
     }
     const datetime = new DateTime(isoYear, isoMonth, isoDay, 12, 0, 0, 0, 0, 0, main[CAL_ID]);
     return {
-      instant: ES.GetInstantFor(main[TZ_RESOLVED], datetime, 'compatible'),
+      instant: ES.GetInstantFor(main[TZ_CANONICAL], datetime, 'compatible'),
       formatter: getPropLazy(main, DATE)
     };
   }
@@ -536,7 +559,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
       );
     }
     return {
-      instant: ES.GetInstantFor(main[TZ_RESOLVED], datetime, 'compatible'),
+      instant: ES.GetInstantFor(main[TZ_CANONICAL], datetime, 'compatible'),
       formatter: getPropLazy(main, DATETIME)
     };
   }
