@@ -718,8 +718,8 @@ abstract class HelperBase {
     // `new Intl.DateTimeFormat()` is amazingly slow and chews up RAM. Per
     // https://bugs.chromium.org/p/v8/issues/detail?id=6528#c4, we cache one
     // DateTimeFormat instance per calendar. Caching is lazy so we only pay for
-    // calendars that are used. Note that the nonIsoHelperBase object is spread
-    // into each each calendar's implementation before any cache is created, so
+    // calendars that are used. Note that the HelperBase class is extended to
+    // create each calendar's implementation before any cache is created, so
     // each calendar gets its own separate cached formatter.
     if (typeof this.formatter === 'undefined') {
       this.formatter = new IntlDateTimeFormat(`en-US-u-ca-${this.id}`, {
