@@ -443,29 +443,28 @@ export class Duration implements Temporal.Duration {
       precision,
       'Precision cannot be "minute" because of RangeError above'
     );
-    let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-      ES.RoundDuration(
-        GetSlot(this, YEARS),
-        GetSlot(this, MONTHS),
-        GetSlot(this, WEEKS),
-        GetSlot(this, DAYS),
-        GetSlot(this, HOURS),
-        GetSlot(this, MINUTES),
-        GetSlot(this, SECONDS),
-        GetSlot(this, MILLISECONDS),
-        GetSlot(this, MICROSECONDS),
-        GetSlot(this, NANOSECONDS),
-        increment,
-        unit,
-        roundingMode
-      );
+    let { seconds, milliseconds, microseconds, nanoseconds } = ES.RoundDuration(
+      0,
+      0,
+      0,
+      0,
+      0,
+      0,
+      GetSlot(this, SECONDS),
+      GetSlot(this, MILLISECONDS),
+      GetSlot(this, MICROSECONDS),
+      GetSlot(this, NANOSECONDS),
+      increment,
+      unit,
+      roundingMode
+    );
     return ES.TemporalDurationToString(
-      years,
-      months,
-      weeks,
-      days,
-      hours,
-      minutes,
+      GetSlot(this, YEARS),
+      GetSlot(this, MONTHS),
+      GetSlot(this, WEEKS),
+      GetSlot(this, DAYS),
+      GetSlot(this, HOURS),
+      GetSlot(this, MINUTES),
       seconds,
       milliseconds,
       microseconds,
