@@ -50,10 +50,3 @@ export function BigIntFloorDiv(left: JSBI, right: JSBI) {
   }
   return quotient;
 }
-
-/** Divide two JSBIs, and return the result as a Number, including the remainder. */
-export function BigIntDivideToNumber(dividend: JSBI, divisor: JSBI) {
-  const { quotient, remainder } = divmod(dividend, divisor);
-  const result = JSBI.toNumber(quotient) + JSBI.toNumber(remainder) / JSBI.toNumber(divisor);
-  return result;
-}

@@ -31,7 +31,6 @@ import JSBI from 'jsbi';
 import type { Temporal } from '..';
 import {
   abs,
-  BigIntDivideToNumber,
   DAY_NANOS_JSBI,
   divmod,
   MILLION,
@@ -4357,6 +4356,9 @@ export function RejectDuration(
     const propSign = MathSign(prop);
     if (propSign !== 0 && propSign !== sign) throw new RangeError('mixed-sign values not allowed as duration fields');
   }
+  if (MathAbs(y) >= 2 ** 32 || MathAbs(mon) >= 2 ** 32 || MathAbs(w) >= 2 ** 32) {
+    throw new RangeError('years, months, and weeks must be < 2³²');
+  }
   const msResult = TruncatingDivModByPowerOf10(ms, 3);
   const µsResult = TruncatingDivModByPowerOf10(µs, 6);
   const nsResult = TruncatingDivModByPowerOf10(ns, 9);
@@ -5884,6 +5886,49 @@ function RoundNumberToIncrement(quantity: JSBI, increment: JSBI, mode: Temporal.
   return JSBI.multiply(quotient, increment);
 }
 
+function RoundJSNumberToIncrement(quantity: number, increment: number, mode: Temporal.RoundingMode) {
+  let quotient = MathTrunc(quantity / increment);
+  const remainder = quantity % increment;
+  if (remainder === 0) return quantity;
+  const sign = remainder < 0 ? -1 : 1;
+  const tiebreaker = MathAbs(remainder * 2);
+  const tie = tiebreaker === increment;
+  const expandIsNearer = tiebreaker > increment;
+  switch (mode) {
+    case 'ceil':
+      if (sign > 0) quotient += sign;
+      break;
+    case 'floor':
+      if (sign < 0) quotient += sign;
+      break;
+    case 'expand':
+      // always expand if there is a remainder
+      quotient += sign;
+      break;
+    case 'trunc':
+      // no change needed, because divmod is a truncation
+      break;
+    case 'halfCeil':
+      if (expandIsNearer || (tie && sign > 0)) quotient += sign;
+      break;
+    case 'halfFloor':
+      if (expandIsNearer || (tie && sign < 0)) quotient += sign;
+      break;
+    case 'halfExpand':
+      // "half up away from zero"
+      if (expandIsNearer || tie) quotient += sign;
+      break;
+    case 'halfTrunc':
+      if (expandIsNearer) quotient += sign;
+      break;
+    case 'halfEven': {
+      if (expandIsNearer || (tie && quotient % 2 === 1)) quotient += sign;
+      break;
+    }
+  }
+  return quotient * increment;
+}
+
 export function RoundInstant(
   epochNs: JSBI,
   increment: number,
@@ -6233,27 +6278,12 @@ export function RoundDuration(
       const oneYear = new TemporalDuration(days < 0 ? -1 : 1);
       let { days: oneYearDays } = MoveRelativeDate(calendarRec, plainRelativeTo, oneYear);
 
-      // Note that `nanoseconds` below (here and in similar code for months,
-      // weeks, and days further below) isn't actually nanoseconds for the
-      // full date range.  Instead, it's a BigInt representation of total
-      // days multiplied by the number of nanoseconds in the last day of
-      // the duration. This lets us do days-or-larger rounding using BigInt
-      // math which reduces precision loss.
       oneYearDays = MathAbs(oneYearDays);
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       if (oneYearDays === 0) throw new RangeError('custom calendar reported that a year is 0 days long');
-      const divisor = JSBI.multiply(JSBI.BigInt(oneYearDays), JSBI.BigInt(dayLengthNs));
-      const nanoseconds = JSBI.add(
-        JSBI.add(
-          JSBI.multiply(divisor, JSBI.BigInt(years)),
-          JSBI.multiply(JSBI.BigInt(days), JSBI.BigInt(dayLengthNs))
-        ),
-        norm.totalNs
-      );
-      const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
-      total = BigIntDivideToNumber(nanoseconds, divisor);
-      years = JSBI.toNumber(JSBI.divide(rounded, divisor));
+      total = years + (days + norm.fdiv(dayLengthNs)) / oneYearDays;
+      years = RoundJSNumberToIncrement(total, increment, roundingMode);
       months = weeks = days = 0;
       norm = TimeDuration.ZERO;
       break;
@@ -6302,17 +6332,8 @@ export function RoundDuration(
       if (oneMonthDays === 0) throw new RangeError('custom calendar reported that a month is 0 days long');
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
-      const divisor = JSBI.multiply(JSBI.BigInt(oneMonthDays), JSBI.BigInt(dayLengthNs));
-      const nanoseconds = JSBI.add(
-        JSBI.add(
-          JSBI.multiply(divisor, JSBI.BigInt(months)),
-          JSBI.multiply(JSBI.BigInt(days), JSBI.BigInt(dayLengthNs))
-        ),
-        norm.totalNs
-      );
-      const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
-      total = BigIntDivideToNumber(nanoseconds, divisor);
-      months = JSBI.toNumber(JSBI.divide(rounded, divisor));
+      total = months + (days + norm.fdiv(dayLengthNs)) / oneMonthDays;
+      months = RoundJSNumberToIncrement(total, increment, roundingMode);
       weeks = days = 0;
       norm = TimeDuration.ZERO;
       break;
@@ -6351,17 +6372,8 @@ export function RoundDuration(
       if (oneWeekDays === 0) throw new RangeError('custom calendar reported that a week is 0 days long');
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
-      const divisor = JSBI.multiply(JSBI.BigInt(oneWeekDays), JSBI.BigInt(dayLengthNs));
-      const nanoseconds = JSBI.add(
-        JSBI.add(
-          JSBI.multiply(divisor, JSBI.BigInt(weeks)),
-          JSBI.multiply(JSBI.BigInt(days), JSBI.BigInt(dayLengthNs))
-        ),
-        norm.totalNs
-      );
-      const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
-      total = BigIntDivideToNumber(nanoseconds, divisor);
-      weeks = JSBI.toNumber(JSBI.divide(rounded, divisor));
+      total = weeks + (days + norm.fdiv(dayLengthNs)) / oneWeekDays;
+      weeks = RoundJSNumberToIncrement(total, increment, roundingMode);
       days = 0;
       norm = TimeDuration.ZERO;
       break;
@@ -6369,11 +6381,8 @@ export function RoundDuration(
     case 'day': {
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
-      const divisor = JSBI.BigInt(dayLengthNs);
-      const nanoseconds = JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(days)), norm.totalNs);
-      const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
-      total = BigIntDivideToNumber(nanoseconds, divisor);
-      days = JSBI.toNumber(JSBI.divide(rounded, divisor));
+      total = days + norm.fdiv(dayLengthNs);
+      days = RoundJSNumberToIncrement(total, increment, roundingMode);
       norm = TimeDuration.ZERO;
       break;
     }
