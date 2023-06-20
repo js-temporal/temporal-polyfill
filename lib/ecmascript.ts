@@ -1,4 +1,5 @@
 const ArrayIncludes = Array.prototype.includes;
+const ArrayPrototypeMap = Array.prototype.map;
 const ArrayPrototypePush = Array.prototype.push;
 const ArrayPrototypeFind = Array.prototype.find;
 const ArrayPrototypeSlice = Array.prototype.slice;
@@ -33,7 +34,9 @@ import {
   abs,
   DAY_NANOS_JSBI,
   divmod,
+  maxJSBI,
   MILLION,
+  minJSBI,
   MINUTE_NANOS,
   NonNegativeBigIntDivmod,
   ONE,
@@ -2936,6 +2939,10 @@ function DisambiguatePossibleInstants(
   const offsetBefore = GetOffsetNanosecondsFor(timeZoneRec, dayBefore);
   const offsetAfter = GetOffsetNanosecondsFor(timeZoneRec, dayAfter);
   const nanoseconds = offsetAfter - offsetBefore;
+  if (MathAbs(nanoseconds) > DAY_NANOS) {
+    throw new RangeError('bad return from getOffsetNanosecondsFor: UTC offset shift longer than 24 hours');
+  }
+
   switch (disambiguation) {
     case 'earlier': {
       const norm = TimeDuration.normalize(0, 0, 0, 0, 0, -nanoseconds);
@@ -2989,6 +2996,17 @@ function GetPossibleInstantsFor(timeZoneRec: TimeZoneMethodRecord, dateTime: Tem
     }
     ArrayPrototypePush.call(result, instant);
   }
+
+  const numResults = result.length;
+  if (numResults > 1) {
+    const mapped = Call(ArrayPrototypeMap<JSBI>, result, [(i) => GetSlot(i, EPOCHNANOSECONDS)]);
+    const min = minJSBI(...mapped);
+    const max = maxJSBI(...mapped);
+    if (JSBI.greaterThan(abs(JSBI.subtract(max, min)), DAY_NANOS_JSBI)) {
+      throw new RangeError('bad return from getPossibleInstantsFor: UTC offset shift longer than 24 hours');
+    }
+  }
+
   return result;
 }
 
@@ -3880,20 +3898,34 @@ export function NormalizedTimeDurationToDays(
   // back inside the period where it belongs. Note that this case only can
   // happen for positive durations because the only direction that
   // `disambiguation: 'compatible'` can change clock time is forwards.
-  if (sign === 1) {
-    while (days > 0 && JSBI.greaterThan(relativeResult.epochNs, endNs)) {
-      days--;
-      relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZoneRec, calendar, days);
-      // may do disambiguation
+  if (sign === 1 && days > 0 && JSBI.greaterThan(relativeResult.epochNs, endNs)) {
+    days--;
+    relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZoneRec, calendar, days);
+    // may do disambiguation
+    if (days > 0 && JSBI.greaterThan(relativeResult.epochNs, endNs)) {
+      throw new RangeError('inconsistent result from custom time zone getInstantFor()');
     }
   }
   norm = TimeDuration.fromEpochNsDiff(endNs, relativeResult.epochNs);
 
-  let isOverflow = false;
-  let dayLengthNs;
-  do {
-    // calculate length of the next day (day that contains the time remainder)
-    const oneDayFarther = AddDaysToZonedDateTime(
+  // calculate length of the next day (day that contains the time remainder)
+  let oneDayFarther = AddDaysToZonedDateTime(
+    relativeResult.instant,
+    relativeResult.dateTime,
+    timeZoneRec,
+    calendar,
+    sign
+  );
+  let dayLengthNs = TimeDuration.fromEpochNsDiff(oneDayFarther.epochNs, relativeResult.epochNs);
+  const oneDayLess = norm.subtract(dayLengthNs);
+  let isOverflow = oneDayLess.sign() * sign >= 0;
+  if (isOverflow) {
+    norm = oneDayLess;
+    relativeResult = oneDayFarther;
+    days += sign;
+
+    // ensure there was no more overflow
+    oneDayFarther = AddDaysToZonedDateTime(
       relativeResult.instant,
       relativeResult.dateTime,
       timeZoneRec,
@@ -3902,14 +3934,9 @@ export function NormalizedTimeDurationToDays(
     );
 
     dayLengthNs = TimeDuration.fromEpochNsDiff(oneDayFarther.epochNs, relativeResult.epochNs);
-    const oneDayLess = norm.subtract(dayLengthNs);
-    isOverflow = oneDayLess.sign() * sign >= 0;
-    if (isOverflow) {
-      norm = oneDayLess;
-      relativeResult = oneDayFarther;
-      days += sign;
-    }
-  } while (isOverflow);
+    isOverflow = norm.subtract(dayLengthNs).sign() * sign >= 0;
+    if (isOverflow) throw new RangeError('inconsistent result from custom time zone getPossibleInstantsFor()');
+  }
   if (days !== 0 && MathSign(days) != sign) {
     throw new RangeError('Time zone or calendar converted nanoseconds into a number of days with the opposite sign');
   }
