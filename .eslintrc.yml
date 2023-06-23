@@ -117,3 +117,13 @@ overrides:
       '@typescript-eslint/consistent-type-exports': error
       '@typescript-eslint/consistent-type-imports': error
       prefer-const: off
+  - files:
+      - polyfill/test262/**
+    rules:
+      quotes:
+        - error
+        - double
+        - avoidEscape: true
+      prettier/prettier:
+        - error
+        - singleQuote: false
