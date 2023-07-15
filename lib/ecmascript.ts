@@ -712,6 +712,7 @@ const OFFSET_IDENTIFIER = new RegExp(`^${PARSE.offsetIdentifier.source}$`);
 export function ParseTimeZoneIdentifier(identifier: string): { tzName?: string; offsetNanoseconds?: number } {
   if (!TIMEZONE_IDENTIFIER.test(identifier)) throw new RangeError(`Invalid time zone identifier: ${identifier}`);
   if (OFFSET_IDENTIFIER.test(identifier)) {
+    // The regex limits the input to minutes precision
     const { offsetNanoseconds } = ParseDateTimeUTCOffset(identifier);
     return { offsetNanoseconds };
   }
@@ -1817,7 +1818,7 @@ export function InterpretISODateTimeOffset(
   // the user-provided offset doesn't match any instants for this time
   // zone and date/time.
   if (offsetOpt === 'reject') {
-    const offsetStr = FormatOffsetTimeZoneIdentifier(offsetNs);
+    const offsetStr = formatOffsetStringNanoseconds(offsetNs);
     const timeZoneString = IsTemporalTimeZone(timeZone) ? GetSlot(timeZone, TIMEZONE_ID) : 'time zone';
     // The tsc emit for this line rewrites to invoke the PlainDateTime's valueOf method, NOT
     // toString (which is invoked by Node when using template literals directly).
@@ -2655,7 +2656,10 @@ export function ToTemporalTimeZoneSlotValue(temporalTimeZoneLike: TimeZoneParams
   }
   if (z) return 'UTC';
   // if !tzName && !z then offset must be present
-  const { offsetNanoseconds } = ParseDateTimeUTCOffset(castExists(offset));
+  const { offsetNanoseconds, hasSubMinutePrecision } = ParseDateTimeUTCOffset(castExists(offset));
+  if (hasSubMinutePrecision) {
+    throw new RangeError(`Seconds not allowed in offset time zone: ${offset}`);
+  }
   return FormatOffsetTimeZoneIdentifier(offsetNanoseconds);
 }
 
@@ -2723,7 +2727,28 @@ export function GetOffsetNanosecondsFor(
 
 export function GetOffsetStringFor(timeZone: string | Temporal.TimeZoneProtocol, instant: Temporal.Instant) {
   const offsetNs = GetOffsetNanosecondsFor(timeZone, instant);
-  return FormatOffsetTimeZoneIdentifier(offsetNs);
+  return formatOffsetStringNanoseconds(offsetNs);
+}
+
+// In the spec, the code below only exists as part of GetOffsetStringFor.
+// But in the polyfill, we re-use it to provide clearer error messages.
+function formatOffsetStringNanoseconds(offsetNs: number) {
+  const offsetMinutes = MathTrunc(offsetNs / 6e10);
+  let offsetStringMinutes = FormatOffsetTimeZoneIdentifier(offsetMinutes * 6e10);
+  const subMinuteNanoseconds = MathAbs(offsetNs) % 6e10;
+  if (!subMinuteNanoseconds) return offsetStringMinutes;
+
+  // For offsets between -1s and 0, exclusive, FormatOffsetTimeZoneIdentifier's
+  // return value of "+00:00" is incorrect if there are sub-minute units.
+  if (!offsetMinutes && offsetNs < 0) offsetStringMinutes = '-00:00';
+
+  const seconds = MathFloor(subMinuteNanoseconds / 1e9) % 60;
+  const secondString = ISODateTimePartString(seconds);
+  const nanoseconds = subMinuteNanoseconds % 1e9;
+  if (!nanoseconds) return `${offsetStringMinutes}:${secondString}`;
+
+  let fractionString = `${nanoseconds}`.padStart(9, '0').replace(/0+$/, '');
+  return `${offsetStringMinutes}:${secondString}.${fractionString}`;
 }
 
 export function GetPlainDateTimeFor(
@@ -3303,25 +3328,14 @@ export function GetNamedTimeZoneOffsetNanoseconds(id: string, epochNanoseconds: 
   return JSBI.toNumber(JSBI.subtract(utc, epochNanoseconds));
 }
 
-export function FormatOffsetTimeZoneIdentifier(offsetNanosecondsParam: number): string {
-  const sign = offsetNanosecondsParam < 0 ? '-' : '+';
-  const offsetNanoseconds = MathAbs(offsetNanosecondsParam);
-  const hours = MathFloor(offsetNanoseconds / 3600e9);
-  const hourString = ISODateTimePartString(hours);
-  const minutes = MathFloor(offsetNanoseconds / 60e9) % 60;
-  const minuteString = ISODateTimePartString(minutes);
-  const seconds = MathFloor(offsetNanoseconds / 1e9) % 60;
-  const secondString = ISODateTimePartString(seconds);
-  const nanoseconds = offsetNanoseconds % 1e9;
-  let post = '';
-  if (nanoseconds) {
-    let fraction = `${nanoseconds}`.padStart(9, '0');
-    while (fraction[fraction.length - 1] === '0') fraction = fraction.slice(0, -1);
-    post = `:${secondString}.${fraction}`;
-  } else if (seconds) {
-    post = `:${secondString}`;
-  }
-  return `${sign}${hourString}:${minuteString}${post}`;
+export function FormatOffsetTimeZoneIdentifier(offsetNanoseconds: number) {
+  const sign = offsetNanoseconds < 0 ? '-' : '+';
+  const absoluteMinutes = MathAbs(offsetNanoseconds / 6e10);
+  const intHours = MathFloor(absoluteMinutes / 60);
+  const hh = ISODateTimePartString(intHours);
+  const intMinutes = absoluteMinutes % 60;
+  const mm = ISODateTimePartString(intMinutes);
+  return `${sign}${hh}:${mm}`;
 }
 
 function FormatDateTimeUTCOffsetRounded(offsetNanoseconds: number): string {

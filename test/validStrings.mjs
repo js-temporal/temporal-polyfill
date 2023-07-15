@@ -8,7 +8,8 @@ node --experimental-modules --experimental-specifier-resolution=node --no-warnin
 */
 
 import assert from 'assert';
-import * as ES from '../lib/ecmascript';
+import * as ES from '../lib/ecmascript.mjs';
+import { Instant } from '../lib/instant.mjs';
 
 const timezoneNames = Intl.supportedValuesOf('timeZone');
 const calendarNames = Intl.supportedValuesOf('calendar');
@@ -251,7 +252,12 @@ const temporalSign = withCode(
 );
 const temporalDecimalFraction = fraction;
 function saveOffset(data, result) {
-  data.offset = ES.FormatOffsetTimeZoneIdentifier(ES.ParseDateTimeUTCOffset(result).offsetNanoseconds);
+  // To canonicalize an offset string that may include nanoseconds, we use GetOffsetStringFor
+  const instant = new Instant(0n);
+  const fakeTimeZone = {
+    getOffsetNanosecondsFor: () => ES.ParseDateTimeUTCOffset(result).offsetNanoseconds
+  };
+  data.offset = ES.GetOffsetStringFor(fakeTimeZone, instant);
 }
 const utcOffsetSubMinutePrecision = withCode(
   seq(
@@ -265,11 +271,7 @@ const utcOffsetSubMinutePrecision = withCode(
   saveOffset
 );
 const dateTimeUTCOffset = choice(utcDesignator, utcOffsetSubMinutePrecision);
-const timeZoneUTCOffsetName = seq(
-  sign,
-  hour,
-  choice([minuteSecond, [minuteSecond, [fraction]]], seq(':', minuteSecond, [':', minuteSecond, [fraction]]))
-);
+const timeZoneUTCOffsetName = seq(sign, hour, choice([minuteSecond], seq(':', minuteSecond)));
 const timeZoneIANAName = choice(...timezoneNames);
 const timeZoneIdentifier = withCode(
   choice(timeZoneUTCOffsetName, timeZoneIANAName),
