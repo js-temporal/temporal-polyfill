@@ -57,10 +57,8 @@ function TemporalTimeToString(
     ));
   }
 
-  const hourString = ES.ISODateTimePartString(hour);
-  const minuteString = ES.ISODateTimePartString(minute);
-  const seconds = ES.FormatSecondsStringPart(second, millisecond, microsecond, nanosecond, precision);
-  return `${hourString}:${minuteString}${seconds}`;
+  const subSecondNanoseconds = millisecond * 1e6 + microsecond * 1e3 + nanosecond;
+  return ES.FormatTimeString(hour, minute, second, subSecondNanoseconds, precision);
 }
 
 export class PlainTime implements Temporal.PlainTime {
