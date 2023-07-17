@@ -23,12 +23,7 @@ import type { TimeZoneParams as Params, TimeZoneReturn as Return } from './inter
 
 export class TimeZone implements Temporal.TimeZone {
   constructor(identifier: string) {
-    // Note: if the argument is not passed, GetCanonicalTimeZoneIdentifier(undefined) will throw.
-    //       This check exists only to improve the error message.
-    if (arguments.length < 1) {
-      throw new RangeError('missing argument: identifier is required');
-    }
-    let stringIdentifier = ES.ToString(identifier);
+    let stringIdentifier = ES.RequireString(identifier);
     const parseResult = ES.ParseTimeZoneIdentifier(identifier);
     if (parseResult.offsetNanoseconds !== undefined) {
       stringIdentifier = ES.FormatOffsetTimeZoneIdentifier(parseResult.offsetNanoseconds);
