@@ -10,7 +10,6 @@ const MathSign = Math.sign;
 const MathTrunc = Math.trunc;
 const NumberIsFinite = Number.isFinite;
 const NumberCtor = Number;
-const StringCtor = String;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
@@ -18,6 +17,7 @@ const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const ReflectApply = Reflect.apply;
 const ReflectOwnKeys = Reflect.ownKeys;
 const NumberIsNaN = Number.isNaN;
+const StringCtor = String;
 const StringPrototypeSlice = String.prototype.slice;
 
 import { DEBUG, ENABLE_ASSERTS } from './debug';
@@ -308,12 +308,40 @@ function abs(x: JSBI): JSBI {
   if (JSBI.lessThan(x, ZERO)) return JSBI.multiply(x, NEGATIVE_ONE);
   return x;
 }
+// This convenience function isn't in the spec, but is useful in the polyfill
+// for DRY and better error messages.
+export function RequireString(value: unknown) {
+  if (typeof value !== 'string') {
+    // Use String() to ensure that Symbols won't throw
+    throw new TypeError(`expected a string, not ${StringCtor(value)}`);
+  }
+  return value;
+}
+
+// This function is an enum in the spec, but it's helpful to make it a
+// function in the polyfill.
+function ToPrimitiveAndRequireString(valueParam: unknown) {
+  const value = ToPrimitive(valueParam, StringCtor);
+  return RequireString(value);
+}
+
+// Limited implementation of ToPrimitive that only handles the string case,
+// because that's all that's used in this polyfill.
+function ToPrimitive(value: unknown, preferredType: typeof StringCtor): string | number {
+  assertExists(preferredType === StringCtor);
+  if (IsObject(value)) {
+    const result = value?.toString();
+    if (typeof result === 'string' || typeof result === 'number') return result;
+    throw new TypeError('Cannot convert object to primitive value');
+  }
+  return value;
+}
 
 type BuiltinCastFunction = (v: unknown) => string | number;
 const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
   ['year', ToIntegerWithTruncation],
   ['month', ToPositiveIntegerWithTruncation],
-  ['monthCode', ToString],
+  ['monthCode', ToPrimitiveAndRequireString],
   ['day', ToPositiveIntegerWithTruncation],
   ['hour', ToIntegerWithTruncation],
   ['minute', ToIntegerWithTruncation],
@@ -331,9 +359,9 @@ const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
   ['milliseconds', ToIntegerIfIntegral],
   ['microseconds', ToIntegerIfIntegral],
   ['nanoseconds', ToIntegerIfIntegral],
-  ['era', ToString],
+  ['era', ToPrimitiveAndRequireString],
   ['eraYear', ToIntegerOrInfinity],
-  ['offset', ToString]
+  ['offset', ToPrimitiveAndRequireString]
 ]);
 
 const BUILTIN_DEFAULTS = new Map([
@@ -865,7 +893,7 @@ export function RegulateISOYearMonth(
 
 function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
   if (!IsObject(item)) {
-    return ParseTemporalDurationString(ToString(item));
+    return ParseTemporalDurationString(RequireString(item));
   }
   if (IsTemporalDuration(item)) {
     return {
@@ -1221,7 +1249,7 @@ export function ToRelativeTemporalObject(options: {
   } else {
     let tzName, z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, tzName, offset, z } =
-      ParseISODateTime(ToString(relativeTo)));
+      ParseISODateTime(RequireString(relativeTo)));
     if (tzName) {
       timeZone = ToTemporalTimeZoneSlotValue(tzName);
       if (z) {
@@ -1486,7 +1514,7 @@ export function ToTemporalDate(
     return CalendarDateFromFields(calendar, fields, options);
   }
   ToTemporalOverflow(options); // validate and ignore
-  let { year, month, day, calendar, z } = ParseTemporalDateString(ToString(item));
+  let { year, month, day, calendar, z } = ParseTemporalDateString(RequireString(item));
   if (z) throw new RangeError('Z designator not supported for PlainDate');
   if (!calendar) calendar = 'iso8601';
   if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
@@ -1573,7 +1601,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
     ToTemporalOverflow(options); // validate and ignore
     let z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, z } =
-      ParseTemporalDateTimeString(ToString(item)));
+      ParseTemporalDateTimeString(RequireString(item)));
     if (z) throw new RangeError('Z designator not supported for PlainDateTime');
     RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
     if (!calendar) calendar = 'iso8601';
@@ -1602,13 +1630,14 @@ export function ToTemporalDuration(item: DurationParams['from'][0]) {
   );
 }
 
-export function ToTemporalInstant(item: InstantParams['from'][0]) {
-  if (IsTemporalInstant(item)) return item;
-  if (IsTemporalZonedDateTime(item)) {
+export function ToTemporalInstant(itemParam: InstantParams['from'][0]) {
+  if (IsTemporalInstant(itemParam)) return itemParam;
+  if (IsTemporalZonedDateTime(itemParam)) {
     const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-    return new TemporalInstant(GetSlot(item, EPOCHNANOSECONDS));
+    return new TemporalInstant(GetSlot(itemParam, EPOCHNANOSECONDS));
   }
-  const ns = ParseTemporalInstant(ToString(item));
+  const item = ToPrimitive(itemParam, StringCtor);
+  const ns = ParseTemporalInstant(RequireString(item));
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
   return new TemporalInstant(ns);
 }
@@ -1645,7 +1674,7 @@ export function ToTemporalMonthDay(
   }
 
   ToTemporalOverflow(options); // validate and ignore
-  let { month, day, referenceISOYear, calendar } = ParseTemporalMonthDayString(ToString(item));
+  let { month, day, referenceISOYear, calendar } = ParseTemporalMonthDayString(RequireString(item));
   if (calendar === undefined) calendar = 'iso8601';
   if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
   calendar = ASCIILowercase(calendar);
@@ -1691,7 +1720,7 @@ export function ToTemporalTime(
       overflow
     ));
   } else {
-    ({ hour, minute, second, millisecond, microsecond, nanosecond } = ParseTemporalTimeString(ToString(item)));
+    ({ hour, minute, second, millisecond, microsecond, nanosecond } = ParseTemporalTimeString(RequireString(item)));
     RejectTime(hour, minute, second, millisecond, microsecond, nanosecond);
   }
   const TemporalPlainTime = GetIntrinsic('%Temporal.PlainTime%');
@@ -1711,7 +1740,7 @@ export function ToTemporalYearMonth(
   }
 
   ToTemporalOverflow(options); // validate and ignore
-  let { year, month, referenceISODay, calendar } = ParseTemporalYearMonthString(ToString(item));
+  let { year, month, referenceISODay, calendar } = ParseTemporalYearMonthString(RequireString(item));
   if (calendar === undefined) calendar = 'iso8601';
   if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
   calendar = ASCIILowercase(calendar);
@@ -1853,7 +1882,7 @@ export function ToTemporalZonedDateTime(
   } else {
     let tzName, z;
     ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, tzName, offset, z, calendar } =
-      ParseTemporalZonedDateTimeString(ToString(item)));
+      ParseTemporalZonedDateTimeString(RequireString(item)));
     timeZone = ToTemporalTimeZoneSlotValue(tzName);
     if (z) {
       offsetBehaviour = 'exact';
@@ -2473,7 +2502,7 @@ export function ToTemporalCalendarSlotValue(calendarLike: CalendarParams['from']
     }
     return calendarLike;
   }
-  const identifier = ToString(calendarLike);
+  const identifier = RequireString(calendarLike);
   if (IsBuiltinCalendar(identifier)) return ASCIILowercase(identifier);
   let calendar;
   try {
@@ -2613,7 +2642,7 @@ export function ToTemporalTimeZoneSlotValue(temporalTimeZoneLike: TimeZoneParams
     }
     return temporalTimeZoneLike;
   }
-  const identifier = ToString(temporalTimeZoneLike);
+  const identifier = RequireString(temporalTimeZoneLike);
   const { tzName, offset, z } = ParseTemporalTimeZoneString(identifier);
   if (tzName) {
     // tzName is any valid identifier string in brackets, and could be an offset identifier

@@ -127,21 +127,16 @@ const impl: CalendarImplementations = {} as unknown as CalendarImplementations;
  * 6. Call the corresponding method in the implementation object.
  */
 export class Calendar implements Temporal.Calendar {
-  constructor(idParam: Params['constructor'][0]) {
-    // Note: if the argument is not passed, IsBuiltinCalendar("undefined") will fail. This check
-    //       exists only to improve the error message.
-    if (arguments.length < 1) {
-      throw new RangeError('missing argument: id is required');
-    }
+  constructor(id: Params['constructor'][0]) {
+    const stringId = ES.RequireString(id);
 
-    const id = ES.ToString(idParam);
-    if (!ES.IsBuiltinCalendar(id)) throw new RangeError(`invalid calendar identifier ${id}`);
+    if (!ES.IsBuiltinCalendar(stringId)) throw new RangeError(`invalid calendar identifier ${stringId}`);
     CreateSlots(this);
-    SetSlot(this, CALENDAR_ID, ES.ASCIILowercase(id));
+    SetSlot(this, CALENDAR_ID, ES.ASCIILowercase(stringId));
 
     if (DEBUG) {
       Object.defineProperty(this, '_repr_', {
-        value: `${this[Symbol.toStringTag]} <${id}>`,
+        value: `${this[Symbol.toStringTag]} <${stringId}>`,
         writable: false,
         enumerable: false,
         configurable: false
