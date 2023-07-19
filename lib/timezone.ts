@@ -25,8 +25,8 @@ export class TimeZone implements Temporal.TimeZone {
   constructor(identifier: string) {
     let stringIdentifier = ES.RequireString(identifier);
     const parseResult = ES.ParseTimeZoneIdentifier(identifier);
-    if (parseResult.offsetNanoseconds !== undefined) {
-      stringIdentifier = ES.FormatOffsetTimeZoneIdentifier(parseResult.offsetNanoseconds);
+    if (parseResult.offsetMinutes !== undefined) {
+      stringIdentifier = ES.FormatOffsetTimeZoneIdentifier(parseResult.offsetMinutes);
     } else {
       const record = ES.GetAvailableNamedTimeZoneIdentifier(stringIdentifier);
       if (!record) throw new RangeError(`Invalid time zone identifier: ${stringIdentifier}`);
@@ -53,8 +53,8 @@ export class TimeZone implements Temporal.TimeZone {
     const instant = ES.ToTemporalInstant(instantParam);
     const id = GetSlot(this, TIMEZONE_ID);
 
-    const offsetNanoseconds = ES.ParseTimeZoneIdentifier(id).offsetNanoseconds;
-    if (offsetNanoseconds !== undefined) return offsetNanoseconds;
+    const offsetMinutes = ES.ParseTimeZoneIdentifier(id).offsetMinutes;
+    if (offsetMinutes !== undefined) return offsetMinutes * 60e9;
 
     return ES.GetNamedTimeZoneOffsetNanoseconds(id, GetSlot(instant, EPOCHNANOSECONDS));
   }
@@ -88,8 +88,8 @@ export class TimeZone implements Temporal.TimeZone {
     const Instant = GetIntrinsic('%Temporal.Instant%');
     const id = GetSlot(this, TIMEZONE_ID);
 
-    const offsetNanoseconds = ES.ParseTimeZoneIdentifier(id).offsetNanoseconds;
-    if (offsetNanoseconds !== undefined) {
+    const offsetMinutes = ES.ParseTimeZoneIdentifier(id).offsetMinutes;
+    if (offsetMinutes !== undefined) {
       const epochNs = ES.GetUTCEpochNanoseconds(
         GetSlot(dateTime, ISO_YEAR),
         GetSlot(dateTime, ISO_MONTH),
@@ -102,7 +102,7 @@ export class TimeZone implements Temporal.TimeZone {
         GetSlot(dateTime, ISO_NANOSECOND)
       );
       if (epochNs === null) throw new RangeError('DateTime outside of supported range');
-      return [new Instant(JSBI.subtract(epochNs, JSBI.BigInt(offsetNanoseconds)))];
+      return [new Instant(JSBI.subtract(epochNs, JSBI.BigInt(offsetMinutes * 60e9)))];
     }
 
     const possibleEpochNs = ES.GetNamedTimeZoneEpochNanoseconds(
