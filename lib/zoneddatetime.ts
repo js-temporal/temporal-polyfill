@@ -487,7 +487,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     } else {
       const record = ES.GetAvailableNamedTimeZoneIdentifier(timeZoneIdentifier);
       if (!record) throw new RangeError(`toLocaleString formats built-in time zones, not ${timeZoneIdentifier}`);
-      optionsCopy.timeZone = record.primaryIdentifier;
+      optionsCopy.timeZone = record.identifier;
     }
 
     const formatter = new DateTimeFormat(locales, optionsCopy);

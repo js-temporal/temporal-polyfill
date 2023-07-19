@@ -202,7 +202,7 @@ export const DateTimeFormat = DateTimeFormatImpl as unknown as typeof Intl.DateT
 
 function resolvedOptions(this: DateTimeFormatImpl): Return['resolvedOptions'] {
   const resolved = this[ORIGINAL].resolvedOptions();
-  resolved.timeZone = this[TZ_CANONICAL];
+  resolved.timeZone = this[TZ_ORIGINAL];
   return resolved;
 }
 
