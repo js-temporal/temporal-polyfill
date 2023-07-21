@@ -566,23 +566,11 @@ function ParseISODateTime(isoString: string) {
   if (match[13]) {
     offset = undefined;
     z = true;
-  } else if (match[14] && match[15]) {
-    const offsetSign = match[14] === '-' || match[14] === '\u2212' ? '-' : '+';
-    const offsetHours = match[15] || '00';
-    const offsetMinutes = match[16] || '00';
-    const offsetSeconds = match[17] || '00';
-    let offsetFraction = match[18] || '0';
-    offset = `${offsetSign}${offsetHours}:${offsetMinutes}`;
-    if (+offsetFraction) {
-      while (offsetFraction.endsWith('0')) offsetFraction = offsetFraction.slice(0, -1);
-      offset += `:${offsetSeconds}.${offsetFraction}`;
-    } else if (+offsetSeconds) {
-      offset += `:${offsetSeconds}`;
-    }
-    if (offset === '-00:00') offset = '+00:00';
+  } else if (match[14]) {
+    offset = match[14];
   }
-  const tzName = match[19];
-  const calendar = processAnnotations(match[20]);
+  const tzName = match[15];
+  const calendar = processAnnotations(match[16]);
   RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   return {
     year,
@@ -639,7 +627,7 @@ export function ParseTemporalTimeString(isoString: string) {
     millisecond = ToIntegerOrInfinity(fraction.slice(0, 3));
     microsecond = ToIntegerOrInfinity(fraction.slice(3, 6));
     nanosecond = ToIntegerOrInfinity(fraction.slice(6, 9));
-    processAnnotations(match[14]); // for validation only; ignore found calendar
+    processAnnotations(match[10]); // ignore found calendar
     if (match[8]) throw new RangeError('Z designator not supported for PlainTime');
   } else {
     let z, hasTime;
@@ -3209,7 +3197,7 @@ export function IsOffsetTimeZoneIdentifier(string: string): boolean {
 }
 
 export function ParseDateTimeUTCOffset(string: string): { offsetNanoseconds: number; hasSubMinutePrecision: boolean } {
-  const match = OFFSET.exec(string);
+  const match = OFFSET_WITH_PARTS.exec(string);
   if (!match) {
     throw new RangeError(`invalid time zone offset: ${string}`);
   }
@@ -6741,6 +6729,7 @@ export function ASCIILowercase<T extends string>(str: T): T {
 }
 
 const OFFSET = new RegExp(`^${PARSE.offset.source}$`);
+const OFFSET_WITH_PARTS = new RegExp(`^${PARSE.offsetWithParts.source}$`);
 
 function bisect(
   getState: (epochNs: JSBI) => number,
