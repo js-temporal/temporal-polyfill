@@ -569,7 +569,7 @@ function ParseISODateTime(isoString: string) {
   } else if (match[14]) {
     offset = match[14];
   }
-  const tzName = match[15];
+  const tzAnnotation = match[15];
   const calendar = processAnnotations(match[16]);
   RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   return {
@@ -583,7 +583,7 @@ function ParseISODateTime(isoString: string) {
     millisecond,
     microsecond,
     nanosecond,
-    tzName,
+    tzAnnotation,
     offset,
     z,
     calendar
@@ -600,7 +600,7 @@ export function ParseTemporalInstantString(isoString: string) {
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalZonedDateTimeString(isoString: string) {
   const result = ParseISODateTime(isoString);
-  if (!result.tzName) throw new RangeError('Temporal.ZonedDateTime requires a time zone ID in brackets');
+  if (!result.tzAnnotation) throw new RangeError('Temporal.ZonedDateTime requires a time zone ID in brackets');
   return result;
 }
 
@@ -697,34 +697,54 @@ export function ParseTemporalMonthDayString(isoString: string) {
 const TIMEZONE_IDENTIFIER = new RegExp(`^${PARSE.timeZoneID.source}$`, 'i');
 const OFFSET_IDENTIFIER = new RegExp(`^${PARSE.offsetIdentifier.source}$`);
 
+function throwBadTimeZoneStringError(timeZoneString: string): never {
+  // Offset identifiers only support minute precision, but offsets in ISO
+  // strings support nanosecond precision. If the identifier is invalid but
+  // it's a valid ISO offset, then it has sub-minute precision. Show a clearer
+  // error message in that case.
+  const msg = OFFSET.test(timeZoneString) ? 'Seconds not allowed in offset time zone' : 'Invalid time zone';
+  throw new RangeError(`${msg}: ${timeZoneString}`);
+}
+
 export function ParseTimeZoneIdentifier(identifier: string): { tzName?: string; offsetMinutes?: number } {
-  if (!TIMEZONE_IDENTIFIER.test(identifier)) throw new RangeError(`Invalid time zone identifier: ${identifier}`);
+  if (!TIMEZONE_IDENTIFIER.test(identifier)) {
+    throwBadTimeZoneStringError(identifier);
+  }
   if (OFFSET_IDENTIFIER.test(identifier)) {
-    // The regex limits the input to minutes precision
-    const { offsetNanoseconds } = ParseDateTimeUTCOffset(identifier);
+    const offsetNanoseconds = ParseDateTimeUTCOffset(identifier);
+    // The regex limits the input to minutes precision, so we know that the
+    // division below will result in an integer.
     return { offsetMinutes: offsetNanoseconds / 60e9 };
   }
   return { tzName: identifier };
 }
 
+// This operation doesn't exist in the spec, but in the polyfill it's split from
+// ParseTemporalTimeZoneString so that parsing can be tested separately from the
+// logic of converting parsed values into a named or offset identifier.
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
-export function ParseTemporalTimeZoneString(stringIdent: string): Partial<{
-  tzName: string | undefined;
-  offset: string | undefined;
-  z: boolean | undefined;
-}> {
-  const bareID = new RegExp(`^${PARSE.timeZoneID.source}$`, 'i');
-  if (bareID.test(stringIdent)) return { tzName: stringIdent };
+export function ParseTemporalTimeZoneStringRaw(timeZoneString: string) {
+  if (TIMEZONE_IDENTIFIER.test(timeZoneString)) {
+    return { tzAnnotation: timeZoneString, offset: undefined, z: false };
+  }
   try {
     // Try parsing ISO string instead
-    const result = ParseISODateTime(stringIdent);
-    if (result.z || result.offset || result.tzName) {
-      return result;
+    const { tzAnnotation, offset, z } = ParseISODateTime(timeZoneString);
+    if (z || tzAnnotation || offset) {
+      return { tzAnnotation, offset, z };
     }
   } catch {
     // fall through
   }
-  throw new RangeError(`Invalid time zone: ${stringIdent}`);
+  throwBadTimeZoneStringError(timeZoneString);
+}
+
+export function ParseTemporalTimeZoneString(stringIdent: string) {
+  const { tzAnnotation, offset, z } = ParseTemporalTimeZoneStringRaw(stringIdent);
+  if (tzAnnotation) return ParseTimeZoneIdentifier(tzAnnotation);
+  if (z) return ParseTimeZoneIdentifier('UTC');
+  if (offset) return ParseTimeZoneIdentifier(offset);
+  throw new Error('this line should not be reached');
 }
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
@@ -788,8 +808,7 @@ export function ParseTemporalInstant(isoString: string) {
   if (!z && !offset) throw new RangeError('Temporal.Instant requires a time zone offset');
   // At least one of z or offset is defined, but TS doesn't seem to understand
   // that we only use offset if z is not defined (and thus offset must be defined).
-  // eslint-disable-next-line @typescript-eslint/no-non-null-assertion, @typescript-eslint/no-unnecessary-type-assertion
-  const offsetNs = z ? 0 : ParseDateTimeUTCOffset(offset!).offsetNanoseconds;
+  const offsetNs = z ? 0 : ParseDateTimeUTCOffset(castExists(offset));
   ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = BalanceISODateTime(
     year,
     month,
@@ -1236,11 +1255,24 @@ export function ToRelativeTemporalObject(options: {
     timeZone = fields.timeZone;
     if (timeZone !== undefined) timeZone = ToTemporalTimeZoneSlotValue(timeZone);
   } else {
-    let tzName, z;
-    ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar, tzName, offset, z } =
-      ParseISODateTime(RequireString(relativeTo)));
-    if (tzName) {
-      timeZone = ToTemporalTimeZoneSlotValue(tzName);
+    let tzAnnotation, z;
+    ({
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      second,
+      millisecond,
+      microsecond,
+      nanosecond,
+      calendar,
+      tzAnnotation,
+      offset,
+      z
+    } = ParseISODateTime(RequireString(relativeTo)));
+    if (tzAnnotation) {
+      timeZone = ToTemporalTimeZoneSlotValue(tzAnnotation);
       if (z) {
         offsetBehaviour = 'exact';
       } else if (!offset) {
@@ -1257,8 +1289,7 @@ export function ToRelativeTemporalObject(options: {
     calendar = ASCIILowercase(calendar);
   }
   if (timeZone === undefined) return CreateTemporalDate(year, month, day, calendar);
-  // If offset is missing here, then offsetBehavior will never be be 'option'.
-  const offsetNs = offsetBehaviour === 'option' ? ParseDateTimeUTCOffset(castExists(offset)).offsetNanoseconds : 0;
+  const offsetNs = offsetBehaviour === 'option' ? ParseDateTimeUTCOffset(castExists(offset)) : 0;
   const epochNanoseconds = InterpretISODateTimeOffset(
     year,
     month,
@@ -1869,10 +1900,23 @@ export function ToTemporalZonedDateTime(
       options
     ));
   } else {
-    let tzName, z;
-    ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, tzName, offset, z, calendar } =
-      ParseTemporalZonedDateTimeString(RequireString(item)));
-    timeZone = ToTemporalTimeZoneSlotValue(tzName);
+    let tzAnnotation, z;
+    ({
+      year,
+      month,
+      day,
+      hour,
+      minute,
+      second,
+      millisecond,
+      microsecond,
+      nanosecond,
+      tzAnnotation,
+      offset,
+      z,
+      calendar
+    } = ParseTemporalZonedDateTimeString(RequireString(item)));
+    timeZone = ToTemporalTimeZoneSlotValue(tzAnnotation);
     if (z) {
       offsetBehaviour = 'exact';
     } else if (!offset) {
@@ -1887,9 +1931,7 @@ export function ToTemporalZonedDateTime(
     ToTemporalOverflow(options); // validate and ignore
   }
   let offsetNs = 0;
-  // The code above guarantees that if offsetBehaviour === 'option', then
-  // `offset` is not undefined.
-  if (offsetBehaviour === 'option') offsetNs = ParseDateTimeUTCOffset(castExists(offset)).offsetNanoseconds;
+  if (offsetBehaviour === 'option') offsetNs = ParseDateTimeUTCOffset(castExists(offset));
   const epochNanoseconds = InterpretISODateTimeOffset(
     year,
     month,
@@ -2631,24 +2673,16 @@ export function ToTemporalTimeZoneSlotValue(temporalTimeZoneLike: TimeZoneParams
     }
     return temporalTimeZoneLike;
   }
-  const identifier = RequireString(temporalTimeZoneLike);
-  const { tzName, offset, z } = ParseTemporalTimeZoneString(identifier);
-  if (tzName) {
-    // tzName is any valid identifier string in brackets, and could be an offset identifier
-    const { offsetMinutes } = ParseTimeZoneIdentifier(tzName);
-    if (offsetMinutes !== undefined) return FormatOffsetTimeZoneIdentifier(offsetMinutes);
+  const timeZoneString = RequireString(temporalTimeZoneLike);
 
-    const record = GetAvailableNamedTimeZoneIdentifier(tzName);
-    if (!record) throw new RangeError(`Unrecognized time zone ${tzName}`);
-    return record.identifier;
+  const { tzName, offsetMinutes } = ParseTemporalTimeZoneString(timeZoneString);
+  if (offsetMinutes !== undefined) {
+    return FormatOffsetTimeZoneIdentifier(offsetMinutes);
   }
-  if (z) return 'UTC';
-  // if !tzName && !z then offset must be present
-  const { offsetNanoseconds, hasSubMinutePrecision } = ParseDateTimeUTCOffset(castExists(offset));
-  if (hasSubMinutePrecision) {
-    throw new RangeError(`Seconds not allowed in offset time zone: ${offset}`);
-  }
-  return FormatOffsetTimeZoneIdentifier(offsetNanoseconds / 60e9);
+  // if offsetMinutes is undefined, then tzName must be present
+  const record = GetAvailableNamedTimeZoneIdentifier(castExists(tzName));
+  if (!record) throw new RangeError(`Unrecognized time zone ${tzName}`);
+  return record.identifier;
 }
 
 export function ToTemporalTimeZoneIdentifier(slotValue: TimeZoneSlot) {
@@ -3194,7 +3228,7 @@ export function IsOffsetTimeZoneIdentifier(string: string): boolean {
   return OFFSET.test(string);
 }
 
-export function ParseDateTimeUTCOffset(string: string): { offsetNanoseconds: number; hasSubMinutePrecision: boolean } {
+export function ParseDateTimeUTCOffset(string: string) {
   const match = OFFSET_WITH_PARTS.exec(string);
   if (!match) {
     throw new RangeError(`invalid time zone offset: ${string}`);
@@ -3205,8 +3239,7 @@ export function ParseDateTimeUTCOffset(string: string): { offsetNanoseconds: num
   const seconds = +(match[4] || 0);
   const nanoseconds = +((match[5] || 0) + '000000000').slice(0, 9);
   const offsetNanoseconds = sign * (((hours * 60 + minutes) * 60 + seconds) * 1e9 + nanoseconds);
-  const hasSubMinutePrecision = match[4] !== undefined || match[5] !== undefined;
-  return { offsetNanoseconds, hasSubMinutePrecision };
+  return offsetNanoseconds;
 }
 
 let canonicalTimeZoneIdsCache: Map<string, string> | undefined | null = undefined;
