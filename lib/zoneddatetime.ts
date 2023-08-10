@@ -570,6 +570,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const dt = dateTime(this);
     const tz = GetSlot(this, TIME_ZONE);
+    const offsetNanoseconds = ES.GetOffsetNanosecondsFor(tz, GetSlot(this, INSTANT));
     return {
       calendar: GetSlot(this, CALENDAR),
       isoDay: GetSlot(dt, ISO_DAY),
@@ -581,7 +582,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       isoNanosecond: GetSlot(dt, ISO_NANOSECOND),
       isoSecond: GetSlot(dt, ISO_SECOND),
       isoYear: GetSlot(dt, ISO_YEAR),
-      offset: ES.GetOffsetStringFor(tz, GetSlot(this, INSTANT)),
+      offset: ES.FormatUTCOffsetNanoseconds(offsetNanoseconds),
       timeZone: tz
     };
   }
