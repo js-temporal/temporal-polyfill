@@ -1806,7 +1806,7 @@ export function InterpretISODateTimeOffset(
   // the user-provided offset doesn't match any instants for this time
   // zone and date/time.
   if (offsetOpt === 'reject') {
-    const offsetStr = formatOffsetStringNanoseconds(offsetNs);
+    const offsetStr = FormatUTCOffsetNanoseconds(offsetNs);
     const timeZoneString = IsTemporalTimeZone(timeZone) ? GetSlot(timeZone, TIMEZONE_ID) : 'time zone';
     // The tsc emit for this line rewrites to invoke the PlainDateTime's valueOf method, NOT
     // toString (which is invoked by Node when using template literals directly).
@@ -2731,12 +2731,10 @@ export function GetOffsetNanosecondsFor(
 
 export function GetOffsetStringFor(timeZone: string | Temporal.TimeZoneProtocol, instant: Temporal.Instant) {
   const offsetNs = GetOffsetNanosecondsFor(timeZone, instant);
-  return formatOffsetStringNanoseconds(offsetNs);
+  return FormatUTCOffsetNanoseconds(offsetNs);
 }
 
-// In the spec, the code below only exists as part of GetOffsetStringFor.
-// But in the polyfill, we re-use it to provide clearer error messages.
-function formatOffsetStringNanoseconds(offsetNs: number) {
+export function FormatUTCOffsetNanoseconds(offsetNs: number) {
   const sign = offsetNs < 0 ? '-' : '+';
   const absoluteNs = MathAbs(offsetNs);
   const hour = MathFloor(absoluteNs / 3600e9);
