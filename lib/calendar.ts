@@ -33,16 +33,29 @@ import type { CalendarFieldDescriptor } from './ecmascript';
 
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
+const ArrayPrototypeSort = Array.prototype.sort;
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
-const ArraySort = Array.prototype.sort;
 const MathAbs = Math.abs;
 const MathFloor = Math.floor;
 const ObjectCreate = Object.create;
 const ObjectEntries = Object.entries;
+const OriginalMap = Map;
 const OriginalSet = Set;
+const OriginalWeakMap = WeakMap;
 const ReflectOwnKeys = Reflect.ownKeys;
+const MapPrototypeEntries = Map.prototype.entries;
+const MapPrototypeGet = Map.prototype.get;
+const MapPrototypeSet = Map.prototype.set;
 const SetPrototypeAdd = Set.prototype.add;
-const SetPrototypeValues = Set.prototype.values;
+const WeakMapPrototypeGet = WeakMap.prototype.get;
+const WeakMapPrototypeSet = WeakMap.prototype.set;
+
+const MapIterator = ES.Call(MapPrototypeEntries, new Map(), []);
+const MapIteratorPrototypeNext = MapIterator.next;
+
+function arrayFromSet<T>(src: Set<T>): T[] {
+  return [...src];
+}
 
 /**
  * Shape of internal implementation of each built-in calendar. Note that
@@ -420,7 +433,7 @@ impl['iso8601'] = {
     return fields;
   },
   fieldKeysToIgnore(keys) {
-    const result = new OriginalSet();
+    const result = new OriginalSet<string>();
     for (let ix = 0; ix < keys.length; ix++) {
       const key = keys[ix];
       ES.Call(SetPrototypeAdd, result, [key]);
@@ -430,7 +443,7 @@ impl['iso8601'] = {
         ES.Call(SetPrototypeAdd, result, ['month']);
       }
     }
-    return [...ES.Call(SetPrototypeValues, result, [])];
+    return arrayFromSet(result);
   },
   dateAdd(date, years, months, weeks, days, overflow, calendarSlotValue) {
     let year = GetSlot(date, ISO_YEAR);
@@ -606,7 +619,7 @@ type CachedTypes = Temporal.PlainYearMonth | Temporal.PlainDate | Temporal.Plain
  * because each object's cache is thrown away when the object is GC-ed.
  */
 class OneObjectCache {
-  map = new Map();
+  map = new OriginalMap();
   calls = 0;
   now: number;
   hits = 0;
@@ -615,14 +628,17 @@ class OneObjectCache {
     this.now = globalThis.performance ? globalThis.performance.now() : Date.now();
     if (cacheToClone !== undefined) {
       let i = 0;
-      for (const entry of cacheToClone.map.entries()) {
+      const entriesIterator = ES.Call(MapPrototypeEntries, cacheToClone.map, []);
+      for (;;) {
+        const iterResult = ES.Call(MapIteratorPrototypeNext, entriesIterator, []);
+        if (iterResult.done) break;
         if (++i > OneObjectCache.MAX_CACHE_ENTRIES) break;
-        this.map.set(...entry);
+        ES.Call(MapPrototypeSet, this.map, iterResult.value);
       }
     }
   }
   get(key: string) {
-    const result = this.map.get(key);
+    const result = ES.Call(MapPrototypeGet, this.map, [key]);
     if (result) {
       this.hits++;
       this.report();
@@ -631,7 +647,7 @@ class OneObjectCache {
     return result;
   }
   set(key: string, value: unknown) {
-    this.map.set(key, value);
+    ES.Call(MapPrototypeSet, this.map, [key, value]);
     this.misses++;
     this.report();
   }
@@ -644,12 +660,12 @@ class OneObjectCache {
     */
   }
   setObject(obj: CachedTypes) {
-    if (OneObjectCache.objectMap.get(obj)) throw new RangeError('object already cached');
-    OneObjectCache.objectMap.set(obj, this);
+    if (ES.Call(WeakMapPrototypeGet, OneObjectCache.objectMap, [obj])) throw new RangeError('object already cached');
+    ES.Call(WeakMapPrototypeSet, OneObjectCache.objectMap, [obj, this]);
     this.report();
   }
 
-  static objectMap = new WeakMap();
+  static objectMap = new OriginalWeakMap();
   static MAX_CACHE_ENTRIES = 1000;
 
   /**
@@ -659,10 +675,10 @@ class OneObjectCache {
    * @param obj - object to associate with the cache
    */
   static getCacheForObject(obj: CachedTypes) {
-    let cache = OneObjectCache.objectMap.get(obj);
+    let cache = ES.Call(WeakMapPrototypeGet, OneObjectCache.objectMap, [obj]);
     if (!cache) {
       cache = new OneObjectCache();
-      OneObjectCache.objectMap.set(obj, cache);
+      ES.Call(WeakMapPrototypeSet, OneObjectCache.objectMap, [obj, cache]);
     }
     return cache;
   }
@@ -1783,12 +1799,14 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
   // Ensure that the latest epoch is first in the array. This lets us try to
   // match eras in index order, with the last era getting the remaining older
   // years. Any reverse-signed era must be at the end.
-  ArraySort.call(eras, (e1, e2) => {
-    if (e1.reverseOf) return 1;
-    if (e2.reverseOf) return -1;
-    if (!e1.isoEpoch || !e2.isoEpoch) throw new RangeError('Invalid era data: missing ISO epoch');
-    return e2.isoEpoch.year - e1.isoEpoch.year;
-  });
+  ES.Call(ArrayPrototypeSort, eras, [
+    (e1, e2) => {
+      if (e1.reverseOf) return 1;
+      if (e2.reverseOf) return -1;
+      if (!e1.isoEpoch || !e2.isoEpoch) throw new RangeError('Invalid era data: missing ISO epoch');
+      return e2.isoEpoch.year - e1.isoEpoch.year;
+    }
+  ]);
 
   // If there's a reversed era, then the one before it must be the era that's
   // being reversed.
@@ -2368,15 +2386,16 @@ class NonIsoCalendar implements CalendarImpl {
     cache.setObject(result);
     return result;
   }
-  fields(fieldsParam: string[]): string[] {
-    let fields = fieldsParam;
-    if (ArrayIncludes.call(fields, 'year')) fields = [...fields, 'era', 'eraYear'];
+  fields(fields: string[]): string[] {
+    if (ES.Call(ArrayIncludes, fields, ['year'])) {
+      ES.Call(ArrayPrototypePush, fields, ['era', 'eraYear']);
+    }
     return fields;
   }
   fieldKeysToIgnore(
     keys: Exclude<keyof Temporal.PlainDateLike, 'calendar'>[]
   ): Exclude<keyof Temporal.PlainDateLike, 'calendar'>[] {
-    const result = new OriginalSet();
+    const result = new OriginalSet<(typeof keys)[number]>();
     for (let ix = 0; ix < keys.length; ix++) {
       const key = keys[ix];
       ES.Call(SetPrototypeAdd, result, [key]);
@@ -2416,7 +2435,7 @@ class NonIsoCalendar implements CalendarImpl {
           break;
       }
     }
-    return [...ES.Call(SetPrototypeValues, result, [])];
+    return arrayFromSet(result);
   }
   dateAdd(
     date: Temporal.PlainDate,
