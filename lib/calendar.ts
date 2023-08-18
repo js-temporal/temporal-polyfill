@@ -202,7 +202,8 @@ export class Calendar implements Temporal.Calendar {
     const merged = ObjectCreate(null);
     const fieldsKeys = ReflectOwnKeys(fieldsCopy);
     ES.uncheckedAssertNarrowedType<string[]>(fieldsKeys, 'Reflect.ownKeys does not respect the type of its input');
-    for (const key of fieldsKeys) {
+    for (let ix = 0; ix < fieldsKeys.length; ix++) {
+      const key = fieldsKeys[ix];
       let propValue = undefined;
       if (ES.Call(ArrayIncludes, overriddenKeys, [key])) propValue = additionalFieldsCopy[key];
       else propValue = fieldsCopy[key];

@@ -342,7 +342,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   equals(otherParam: Params['equals'][0]): Return['equals'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalDateTime(otherParam);
-    for (const slot of [
+    const slots = [
       ISO_YEAR,
       ISO_MONTH,
       ISO_DAY,
@@ -352,7 +352,9 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       ISO_MILLISECOND,
       ISO_MICROSECOND,
       ISO_NANOSECOND
-    ]) {
+    ] as const;
+    for (let index = 0; index < slots.length; index++) {
+      const slot = slots[index];
       const val1 = GetSlot(this, slot);
       const val2 = GetSlot(other, slot);
       if (val1 !== val2) return false;
@@ -460,7 +462,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {
     const one = ES.ToTemporalDateTime(oneParam);
     const two = ES.ToTemporalDateTime(twoParam);
-    for (const slot of [
+    const slots = [
       ISO_YEAR,
       ISO_MONTH,
       ISO_DAY,
@@ -470,7 +472,9 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       ISO_MILLISECOND,
       ISO_MICROSECOND,
       ISO_NANOSECOND
-    ] as const) {
+    ] as const;
+    for (let index = 0; index < slots.length; index++) {
+      const slot = slots[index];
       const val1 = GetSlot(one, slot);
       const val2 = GetSlot(two, slot);
       if (val1 !== val2) return ES.ComparisonResult(val1 - val2);

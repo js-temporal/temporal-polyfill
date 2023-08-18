@@ -3,8 +3,9 @@ import { MakeIntrinsicClass } from './intrinsicclass';
 import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, GetSlot } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
-import type { PlainYearMonthParams as Params, PlainYearMonthReturn as Return } from './internaltypes';
+import type { FieldKey, PlainYearMonthParams as Params, PlainYearMonthReturn as Return } from './internaltypes';
 
+const ArrayPrototypeConcat = Array.prototype.concat;
 const ObjectCreate = Object.create;
 
 export class PlainYearMonth implements Temporal.PlainYearMonth {
@@ -100,11 +101,9 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   equals(otherParam: Params['equals'][0]): Return['equals'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalYearMonth(otherParam);
-    for (const slot of [ISO_YEAR, ISO_MONTH, ISO_DAY]) {
-      const val1 = GetSlot(this, slot);
-      const val2 = GetSlot(other, slot);
-      if (val1 !== val2) return false;
-    }
+    if (GetSlot(this, ISO_YEAR) !== GetSlot(other, ISO_YEAR)) return false;
+    if (GetSlot(this, ISO_MONTH) !== GetSlot(other, ISO_MONTH)) return false;
+    if (GetSlot(this, ISO_DAY) !== GetSlot(other, ISO_DAY)) return false;
     return ES.CalendarEquals(GetSlot(this, CALENDAR), GetSlot(other, CALENDAR));
   }
   toString(optionsParam: Params['toString'][0] = undefined): string {
@@ -138,8 +137,8 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     const inputFieldNames = ES.CalendarFields(calendar, ['day'] as const);
     const inputFields = ES.PrepareTemporalFields(item, inputFieldNames, []);
     let mergedFields = ES.CalendarMergeFields(calendar, fields, inputFields);
-    const mergedFieldNames = [...receiverFieldNames, ...inputFieldNames];
-    mergedFields = ES.PrepareTemporalFields(mergedFields, mergedFieldNames, [], [], 'ignore');
+    const concatenatedFieldNames: FieldKey[] = ES.Call(ArrayPrototypeConcat, receiverFieldNames, inputFieldNames);
+    mergedFields = ES.PrepareTemporalFields(mergedFields, concatenatedFieldNames, [], [], 'ignore');
     const options = ObjectCreate(null);
     options.overflow = 'reject';
     return ES.CalendarDateFromFields(calendar, mergedFields, options);
