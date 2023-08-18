@@ -1,6 +1,7 @@
 const ArrayIncludes = Array.prototype.includes;
 const ArrayPrototypePush = Array.prototype.push;
 const ArrayPrototypeFind = Array.prototype.find;
+const ArrayPrototypeSlice = Array.prototype.slice;
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
 const IntlSupportedValuesOf: typeof globalThis.Intl.supportedValuesOf | undefined = globalThis.Intl.supportedValuesOf;
 const MathAbs = Math.abs;
@@ -429,7 +430,8 @@ export function CopyDataProperties<K extends PropertyKey, T extends Record<K, un
   if (typeof source === 'undefined' || source === null) return;
 
   const keys = ReflectOwnKeys(source) as (keyof T)[];
-  for (const nextKey of keys) {
+  for (let index = 0; index < keys.length; index++) {
+    const nextKey = keys[index];
     if (excludedKeys.some((e) => Object.is(e, nextKey))) continue;
     if (Object.prototype.propertyIsEnumerable.call(source, nextKey)) {
       const propValue = source[nextKey];
@@ -929,7 +931,8 @@ function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
     nanoseconds: 0
   };
   let partial = ToTemporalPartialDurationRecord(item);
-  for (const property of DURATION_FIELDS) {
+  for (let index = 0; index < DURATION_FIELDS.length; index++) {
+    const property = DURATION_FIELDS[index];
     const value = partial[property];
     if (value !== undefined) {
       result[property] = value;
@@ -957,7 +960,8 @@ function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.Duration
     nanoseconds: undefined
   };
   let any = false;
-  for (const property of DURATION_FIELDS) {
+  for (let index = 0; index < DURATION_FIELDS.length; index++) {
+    const property = DURATION_FIELDS[index];
     const value = temporalDurationLike[property];
     if (value !== undefined) {
       any = true;
@@ -1176,22 +1180,28 @@ export function GetTemporalUnit<
   extraValues: ReadonlyArray<E> | never[] = []
 ): R {
   const allowedSingular: Array<Temporal.DateTimeUnit | 'auto'> = [];
-  for (const [, singular, category] of SINGULAR_PLURAL_UNITS) {
+  for (let index = 0; index < SINGULAR_PLURAL_UNITS.length; index++) {
+    const entry = SINGULAR_PLURAL_UNITS[index];
+    const singular = entry[1];
+    const category = entry[2];
     if (unitGroup === 'datetime' || unitGroup === category) {
       allowedSingular.push(singular);
     }
   }
-  allowedSingular.push(...extraValues);
+  Call(ArrayPrototypePush, allowedSingular, extraValues);
   let defaultVal: typeof REQUIRED | Temporal.DateTimeUnit | 'auto' | undefined = requiredOrDefault;
   if (defaultVal === REQUIRED) {
     defaultVal = undefined;
   } else if (defaultVal !== undefined) {
     allowedSingular.push(defaultVal);
   }
-  const allowedValues: Array<Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit> | 'auto'> = [
-    ...allowedSingular
-  ];
-  for (const singular of allowedSingular) {
+  const allowedValues: Array<Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit> | 'auto'> = Call(
+    ArrayPrototypeSlice,
+    allowedSingular,
+    []
+  );
+  for (let ix = 0; ix < allowedSingular.length; ix++) {
+    const singular = allowedSingular[ix];
     const plural = PLURAL_FOR.get(singular as Parameters<typeof PLURAL_FOR.get>[0]);
     if (plural !== undefined) allowedValues.push(plural);
   }
@@ -1323,7 +1333,7 @@ export function DefaultTemporalLargestUnit(
   microseconds: number,
   nanoseconds: number
 ): Temporal.DateTimeUnit {
-  for (const [prop, v] of [
+  const entries = [
     ['years', years],
     ['months', months],
     ['weeks', weeks],
@@ -1334,7 +1344,11 @@ export function DefaultTemporalLargestUnit(
     ['milliseconds', milliseconds],
     ['microseconds', microseconds],
     ['nanoseconds', nanoseconds]
-  ] as const) {
+  ] as const;
+  for (let index = 0; index < entries.length; index++) {
+    const entry = entries[index];
+    const prop = entry[0];
+    const v = entry[1];
     if (v !== 0) {
       // All the above keys are definitely in SINGULAR_FOR
       // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
@@ -1457,7 +1471,8 @@ export function PrepareTemporalFields<
   }
   fields.sort();
   let previousProperty = undefined;
-  for (const property of fields) {
+  for (let index = 0; index < fields.length; index++) {
+    const property = fields[index];
     if ((property as string) === 'constructor' || (property as string) === '__proto__') {
       throw new RangeError(`Calendar fields cannot be named ${property}`);
     }
@@ -1855,7 +1870,8 @@ export function InterpretISODateTimeOffset(
 
   // "prefer" or "reject"
   const possibleInstants = GetPossibleInstantsFor(timeZone, dt);
-  for (const candidate of possibleInstants) {
+  for (let index = 0; index < possibleInstants.length; index++) {
+    const candidate = possibleInstants[index];
     const candidateOffset = GetOffsetNanosecondsFor(timeZone, candidate);
     const roundedCandidateOffset = JSBI.toNumber(
       RoundNumberToIncrement(JSBI.BigInt(candidateOffset), MINUTE_NANOS, 'halfExpand')
@@ -3279,9 +3295,15 @@ export function GetAvailableNamedTimeZoneIdentifier(
   // implementations lacking this API, set the cache to `null` to avoid retries.
   if (canonicalTimeZoneIdsCache === undefined) {
     const canonicalTimeZoneIds = IntlSupportedValuesOf?.('timeZone');
-    canonicalTimeZoneIdsCache = canonicalTimeZoneIds
-      ? new Map(canonicalTimeZoneIds.map((id) => [ASCIILowercase(id), id]))
-      : null;
+    if (canonicalTimeZoneIds) {
+      canonicalTimeZoneIdsCache = new Map();
+      for (let ix = 0; ix < canonicalTimeZoneIds.length; ix++) {
+        const id = canonicalTimeZoneIds[ix];
+        canonicalTimeZoneIdsCache.set(ASCIILowercase(id), id);
+      }
+    } else {
+      canonicalTimeZoneIdsCache = null;
+    }
   }
 
   const lower = ASCIILowercase(identifier);
@@ -3705,7 +3727,9 @@ export function DurationSign(
   µs: number,
   ns: number
 ) {
-  for (const prop of [y, mon, w, d, h, min, s, ms, µs, ns]) {
+  const fields = [y, mon, w, d, h, min, s, ms, µs, ns];
+  for (let index = 0; index < fields.length; index++) {
+    const prop = fields[index];
     if (prop !== 0) return prop < 0 ? -1 : 1;
   }
   return 0;
@@ -4071,7 +4095,9 @@ export function BalancePossiblyInfiniteTimeDuration(
   const microseconds = JSBI.toNumber(microsecondsBigInt) * sign;
   const nanoseconds = JSBI.toNumber(nanosecondsBigInt) * sign;
 
-  for (const prop of [days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds]) {
+  const fields = [days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds];
+  for (let index = 0; index < fields.length; index++) {
+    const prop = fields[index];
     if (!NumberIsFinite(prop)) {
       if (sign === 1) {
         return 'positive overflow' as const;
@@ -4566,7 +4592,9 @@ export function RejectDuration(
   ns: number
 ) {
   const sign = DurationSign(y, mon, w, d, h, min, s, ms, µs, ns);
-  for (const prop of [y, mon, w, d, h, min, s, ms, µs, ns]) {
+  const fields = [y, mon, w, d, h, min, s, ms, µs, ns];
+  for (let index = 0; index < fields.length; index++) {
+    const prop = fields[index];
     if (!NumberIsFinite(prop)) throw new RangeError('infinite values not allowed as duration fields');
     const propSign = MathSign(prop);
     if (propSign !== 0 && propSign !== sign) throw new RangeError('mixed-sign values not allowed as duration fields');
@@ -6553,13 +6581,9 @@ export function RoundDuration(
 }
 
 export function CompareISODate(y1: number, m1: number, d1: number, y2: number, m2: number, d2: number) {
-  for (const [x, y] of [
-    [y1, y2],
-    [m1, m2],
-    [d1, d2]
-  ]) {
-    if (x !== y) return ComparisonResult(x - y);
-  }
+  if (y1 !== y2) return ComparisonResult(y1 - y2);
+  if (m1 !== m2) return ComparisonResult(m1 - m2);
+  if (d1 !== d2) return ComparisonResult(d1 - d2);
   return 0;
 }
 

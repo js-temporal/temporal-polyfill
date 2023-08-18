@@ -148,11 +148,9 @@ export class PlainDate implements Temporal.PlainDate {
   equals(otherParam: Params['equals'][0]): Return['equals'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalDate(otherParam);
-    for (const slot of [ISO_YEAR, ISO_MONTH, ISO_DAY]) {
-      const val1 = GetSlot(this, slot);
-      const val2 = GetSlot(other, slot);
-      if (val1 !== val2) return false;
-    }
+    if (GetSlot(this, ISO_YEAR) !== GetSlot(other, ISO_YEAR)) return false;
+    if (GetSlot(this, ISO_MONTH) !== GetSlot(other, ISO_MONTH)) return false;
+    if (GetSlot(this, ISO_DAY) !== GetSlot(other, ISO_DAY)) return false;
     return ES.CalendarEquals(GetSlot(this, CALENDAR), GetSlot(other, CALENDAR));
   }
   toString(optionsParam: Params['toString'][0] = undefined): string {
