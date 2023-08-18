@@ -1545,7 +1545,13 @@ export function ToTemporalDate(
     if (IsTemporalDate(item)) return item;
     if (IsTemporalZonedDateTime(item)) {
       ToTemporalOverflow(options); // validate and ignore
-      item = GetPlainDateTimeFor(GetSlot(item, TIME_ZONE), GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
+      const pdt = GetPlainDateTimeFor(GetSlot(item, TIME_ZONE), GetSlot(item, INSTANT), GetSlot(item, CALENDAR));
+      return CreateTemporalDate(
+        GetSlot(pdt, ISO_YEAR),
+        GetSlot(pdt, ISO_MONTH),
+        GetSlot(pdt, ISO_DAY),
+        GetSlot(pdt, CALENDAR)
+      );
     }
     if (IsTemporalDateTime(item)) {
       ToTemporalOverflow(options); // validate and ignore
