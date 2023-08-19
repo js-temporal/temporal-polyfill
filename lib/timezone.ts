@@ -17,7 +17,7 @@ import {
   GetSlot,
   SetSlot
 } from './slots';
-import JSBI from 'jsbi';
+import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type { TimeZoneParams as Params, TimeZoneReturn as Return } from './internaltypes';
 
@@ -104,10 +104,10 @@ export class TimeZone implements Temporal.TimeZone {
         GetSlot(dateTime, ISO_SECOND),
         GetSlot(dateTime, ISO_MILLISECOND),
         GetSlot(dateTime, ISO_MICROSECOND),
-        GetSlot(dateTime, ISO_NANOSECOND)
+        GetSlot(dateTime, ISO_NANOSECOND),
+        offsetMinutes * 60e9
       );
-      if (epochNs === null) throw new RangeError('DateTime outside of supported range');
-      return [new Instant(JSBI.subtract(epochNs, JSBI.BigInt(offsetMinutes * 60e9)))];
+      return [new Instant(epochNs)];
     }
 
     const possibleEpochNs = ES.GetNamedTimeZoneEpochNanoseconds(

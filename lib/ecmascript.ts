@@ -98,8 +98,18 @@ const HOUR_SECONDS = 3600;
 export const HOUR_NANOS = JSBI.multiply(JSBI.BigInt(HOUR_SECONDS), BILLION);
 const MINUTE_NANOS = JSBI.multiply(SIXTY, BILLION);
 const DAY_NANOS = JSBI.multiply(HOUR_NANOS, TWENTY_FOUR);
-const NS_MIN = JSBI.multiply(JSBI.BigInt(-86400), JSBI.BigInt(1e17));
-const NS_MAX = JSBI.multiply(JSBI.BigInt(86400), JSBI.BigInt(1e17));
+// Instant range is 100 million days (inclusive) before or after epoch.
+const NS_MIN = JSBI.multiply(DAY_NANOS, JSBI.BigInt(-1e8));
+const NS_MAX = JSBI.multiply(DAY_NANOS, JSBI.BigInt(1e8));
+// PlainDateTime range is 24 hours wider (exclusive) than the Instant range on
+// both ends, to allow for valid Instant=>PlainDateTime conversion for all
+// built-in time zones (whose offsets must have a magnitude less than 24 hours).
+const DATETIME_NS_MIN = JSBI.add(JSBI.subtract(NS_MIN, DAY_NANOS), ONE);
+const DATETIME_NS_MAX = JSBI.subtract(JSBI.add(NS_MAX, DAY_NANOS), ONE);
+// The pattern of leap years in the ISO 8601 calendar repeats every 400 years.
+// The constant below is the number of nanoseconds in 400 years. It is used to
+// avoid overflows when dealing with values at the edge legacy Date's range.
+const NS_IN_400_YEAR_CYCLE = JSBI.multiply(JSBI.BigInt(400 * 365 + 97), DAY_NANOS);
 const YEAR_MIN = -271821;
 const YEAR_MAX = 275760;
 const BEFORE_FIRST_OFFSET_TRANSITION = JSBI.multiply(JSBI.BigInt(-388152), JSBI.BigInt(1e13)); // 1847-01-01T00:00:00Z
@@ -803,30 +813,6 @@ export function ParseTemporalDurationString(isoString: string) {
 
   RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
-}
-
-// ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
-export function ParseTemporalInstant(isoString: string) {
-  let { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, offset, z } =
-    ParseTemporalInstantString(isoString);
-
-  // ParseTemporalInstantString ensures that either `z` or `offset` are non-undefined
-  const offsetNs = z ? 0 : ParseDateTimeUTCOffset(castExists(offset));
-  ({ year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = BalanceISODateTime(
-    year,
-    month,
-    day,
-    hour,
-    minute,
-    second,
-    millisecond,
-    microsecond,
-    nanosecond - offsetNs
-  ));
-
-  const epochNs = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
-  if (epochNs === null) throw new RangeError('DateTime outside of supported range');
-  return epochNs;
 }
 
 export function RegulateISODate(
@@ -1695,15 +1681,38 @@ export function ToTemporalDuration(item: DurationParams['from'][0]) {
 }
 
 export function ToTemporalInstant(itemParam: InstantParams['from'][0]) {
-  if (IsTemporalInstant(itemParam)) return itemParam;
-  if (IsTemporalZonedDateTime(itemParam)) {
-    const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-    return new TemporalInstant(GetSlot(itemParam, EPOCHNANOSECONDS));
+  let item: string | number;
+  if (IsObject(itemParam)) {
+    if (IsTemporalInstant(itemParam)) return itemParam;
+    if (IsTemporalZonedDateTime(itemParam)) {
+      const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
+      return new TemporalInstant(GetSlot(itemParam, EPOCHNANOSECONDS));
+    }
+    item = ToPrimitive(itemParam, StringCtor);
+  } else {
+    item = itemParam;
   }
-  const item = ToPrimitive(itemParam, StringCtor);
-  const ns = ParseTemporalInstant(RequireString(item));
+  const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, offset, z } =
+    ParseTemporalInstantString(RequireString(item));
+
+  // ParseTemporalInstantString ensures that either `z` is true or or `offset` is non-undefined
+  const offsetNanoseconds = z ? 0 : ParseDateTimeUTCOffset((assertExists(offset), offset));
+  const epochNanoseconds = GetUTCEpochNanoseconds(
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond,
+    microsecond,
+    nanosecond,
+    offsetNanoseconds
+  );
+  ValidateEpochNanoseconds(epochNanoseconds);
+
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-  return new TemporalInstant(ns);
+  return new TemporalInstant(epochNanoseconds);
 }
 
 export function ToTemporalMonthDay(
@@ -1864,10 +1873,11 @@ export function InterpretISODateTimeOffset(
       second,
       millisecond,
       microsecond,
-      nanosecond
+      nanosecond,
+      offsetNs
     );
-    if (epochNs === null) throw new RangeError('ZonedDateTime outside of supported range');
-    return JSBI.subtract(epochNs, JSBI.BigInt(offsetNs));
+    ValidateEpochNanoseconds(epochNs);
+    return epochNs;
   }
 
   // "prefer" or "reject"
@@ -2899,9 +2909,12 @@ function DisambiguatePossibleInstants(
   const microsecond = GetSlot(dateTime, ISO_MICROSECOND);
   const nanosecond = GetSlot(dateTime, ISO_NANOSECOND);
   const utcns = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
-  if (utcns === null) throw new RangeError('DateTime outside of supported range');
+
+  // In the spec, range validation of `dayBefore` and `dayAfter` happens here.
+  // In the polyfill, it happens in the Instant constructor.
   const dayBefore = new Instant(JSBI.subtract(utcns, DAY_NANOS));
   const dayAfter = new Instant(JSBI.add(utcns, DAY_NANOS));
+
   const offsetBefore = GetOffsetNanosecondsFor(timeZone, dayBefore);
   const offsetAfter = GetOffsetNanosecondsFor(timeZone, dayAfter);
   const nanoseconds = offsetAfter - offsetBefore;
@@ -3382,28 +3395,7 @@ export function GetAvailableNamedTimeZoneIdentifier(
 export function GetNamedTimeZoneOffsetNanoseconds(id: string, epochNanoseconds: JSBI) {
   const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
     GetNamedTimeZoneDateTimeParts(id, epochNanoseconds);
-
-  // The pattern of leap years in the ISO 8601 calendar repeats every 400
-  // years. To avoid overflowing at the edges of the range, we reduce the year
-  // to the remainder after dividing by 400, and then add back all the
-  // nanoseconds from the multiples of 400 years at the end.
-  const reducedYear = year % 400;
-  const yearCycles = (year - reducedYear) / 400;
-  const nsIn400YearCycle = JSBI.multiply(JSBI.BigInt(400 * 365 + 97), DAY_NANOS);
-
-  const reducedUTC = GetUTCEpochNanoseconds(
-    reducedYear,
-    month,
-    day,
-    hour,
-    minute,
-    second,
-    millisecond,
-    microsecond,
-    nanosecond
-  );
-  assertExists(reducedUTC);
-  const utc = JSBI.add(reducedUTC, JSBI.multiply(nsIn400YearCycle, JSBI.BigInt(yearCycles)));
+  const utc = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   return JSBI.toNumber(JSBI.subtract(utc, epochNanoseconds));
 }
 
@@ -3431,20 +3423,29 @@ export function GetUTCEpochNanoseconds(
   second: number,
   millisecond: number,
   microsecond: number,
-  nanosecond: number
+  nanosecond: number,
+  offsetNs = 0
 ) {
+  // The pattern of leap years in the ISO 8601 calendar repeats every 400
+  // years. To avoid overflowing at the edges of the range, we reduce the year
+  // to the remainder after dividing by 400, and then add back all the
+  // nanoseconds from the multiples of 400 years at the end.
+  const reducedYear = year % 400;
+  const yearCycles = (year - reducedYear) / 400;
+
   // Note: Date.UTC() interprets one and two-digit years as being in the
   // 20th century, so don't use it
   const legacyDate = new Date();
   legacyDate.setUTCHours(hour, minute, second, millisecond);
-  legacyDate.setUTCFullYear(year, month - 1, day);
+  legacyDate.setUTCFullYear(reducedYear, month - 1, day);
   const ms = legacyDate.getTime();
-  if (NumberIsNaN(ms)) return null;
   let ns = JSBI.multiply(JSBI.BigInt(ms), MILLION);
   ns = JSBI.add(ns, JSBI.multiply(JSBI.BigInt(microsecond), THOUSAND));
   ns = JSBI.add(ns, JSBI.BigInt(nanosecond));
-  if (JSBI.lessThan(ns, NS_MIN) || JSBI.greaterThan(ns, NS_MAX)) return null;
-  return ns;
+
+  let result = JSBI.add(ns, JSBI.multiply(NS_IN_400_YEAR_CYCLE, JSBI.BigInt(yearCycles)));
+  if (offsetNs) result = JSBI.subtract(result, JSBI.BigInt(offsetNs));
+  return result;
 }
 
 function GetISOPartsFromEpoch(epochNanoseconds: JSBI) {
@@ -3609,6 +3610,11 @@ export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
   return parseFromEnUsFormat(datetime);
 }
 
+// The goal of this function is to find the exact time(s) that correspond to a
+// calendar date and clock time in a particular time zone. Normally there will
+// be only one match. But for repeated clock times after backwards transitions
+// (like when DST ends) there may be two matches. And for skipped clock times
+// after forward transitions, there will be no matches.
 export function GetNamedTimeZoneEpochNanoseconds(
   id: string,
   year: number,
@@ -3621,15 +3627,22 @@ export function GetNamedTimeZoneEpochNanoseconds(
   microsecond: number,
   nanosecond: number
 ) {
+  // Get the offset of one day before and after the requested calendar date and
+  // clock time, avoiding overflows if near the edge of the Instant range.
   const ns = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
-  if (ns === null) throw new RangeError('DateTime outside of supported range');
   let nsEarlier = JSBI.subtract(ns, DAY_NANOS);
   if (JSBI.lessThan(nsEarlier, NS_MIN)) nsEarlier = ns;
   let nsLater = JSBI.add(ns, DAY_NANOS);
   if (JSBI.greaterThan(nsLater, NS_MAX)) nsLater = ns;
-  const earliest = GetNamedTimeZoneOffsetNanoseconds(id, nsEarlier);
-  const latest = GetNamedTimeZoneOffsetNanoseconds(id, nsLater);
-  const found = earliest === latest ? [earliest] : [earliest, latest];
+  const earlierOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, nsEarlier);
+  const laterOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, nsLater);
+
+  // If before and after offsets are the same, then we assume there was no
+  // offset transition in between, and therefore only one exact time can
+  // correspond to the provided calendar date and clock time. But if they're
+  // different, then there was an offset transition in between, so test both
+  // offsets to see which one(s) will yield a matching exact time.
+  const found = earlierOffsetNs === laterOffsetNs ? [earlierOffsetNs] : [earlierOffsetNs, laterOffsetNs];
   return found
     .map((offsetNanoseconds) => {
       const epochNanoseconds = JSBI.subtract(ns, JSBI.BigInt(offsetNanoseconds));
@@ -4552,23 +4565,21 @@ function RejectDateTimeRange(
   microsecond: number,
   nanosecond: number
 ) {
-  RejectToRange(year, YEAR_MIN, YEAR_MAX);
-  // Reject any DateTime 24 hours or more outside the Instant range
-  if (
-    (year === YEAR_MIN &&
-      null ==
-        GetUTCEpochNanoseconds(year, month, day + 1, hour, minute, second, millisecond, microsecond, nanosecond - 1)) ||
-    (year === YEAR_MAX &&
-      null ==
-        GetUTCEpochNanoseconds(year, month, day - 1, hour, minute, second, millisecond, microsecond, nanosecond + 1))
-  ) {
-    throw new RangeError('DateTime outside of supported range');
+  const ns = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
+  if (JSBI.lessThan(ns, DATETIME_NS_MIN) || JSBI.greaterThan(ns, DATETIME_NS_MAX)) {
+    // Because PlainDateTime's range is wider than Instant's range, the line
+    // below will always throw. Calling `ValidateEpochNanoseconds` avoids
+    // repeating the same error message twice.
+    ValidateEpochNanoseconds(ns);
   }
 }
 
+// In the spec, IsValidEpochNanoseconds returns a boolean and call sites are
+// responsible for throwing. In the polyfill, ValidateEpochNanoseconds takes its
+// place so that we can DRY the throwing code.
 export function ValidateEpochNanoseconds(epochNanoseconds: JSBI) {
   if (JSBI.lessThan(epochNanoseconds, NS_MIN) || JSBI.greaterThan(epochNanoseconds, NS_MAX)) {
-    throw new RangeError('Instant outside of supported range');
+    throw new RangeError('date/time value is outside of supported range');
   }
 }
 
