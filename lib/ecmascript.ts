@@ -100,8 +100,7 @@ const NS_MAX = JSBI.multiply(JSBI.BigInt(86400), JSBI.BigInt(1e17));
 const YEAR_MIN = -271821;
 const YEAR_MAX = 275760;
 const BEFORE_FIRST_OFFSET_TRANSITION = JSBI.multiply(JSBI.BigInt(-388152), JSBI.BigInt(1e13)); // 1847-01-01T00:00:00Z
-const ABOUT_TEN_YEARS_NANOS = JSBI.multiply(DAY_NANOS, JSBI.BigInt(366 * 10));
-const ABOUT_ONE_YEAR_NANOS = JSBI.multiply(DAY_NANOS, JSBI.BigInt(366 * 1));
+const ABOUT_THREE_YEARS_NANOS = JSBI.multiply(DAY_NANOS, JSBI.BigInt(366 * 3));
 const TWO_WEEKS_NANOS = JSBI.multiply(DAY_NANOS, JSBI.BigInt(2 * 7));
 
 const BUILTIN_CALENDAR_IDS = [
@@ -3448,44 +3447,19 @@ export function GetNamedTimeZoneDateTimeParts(id: string, epochNanoseconds: JSBI
   return BalanceISODateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
 }
 
-function maxJSBI(one: JSBI, two: JSBI) {
-  return JSBI.lessThan(one, two) ? two : one;
-}
-
-/**
- * Our best guess at how far in advance new rules will be put into the TZDB for
- * future offset transitions. We'll pick 10 years but can always revise it if
- * we find that countries are being unusually proactive in their announcing
- * of offset changes.
- */
-function afterLatestPossibleTzdbRuleChange() {
-  return JSBI.add(SystemUTCEpochNanoSeconds(), ABOUT_TEN_YEARS_NANOS);
-}
-
 export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSBI): JSBI | null {
   if (JSBI.lessThan(epochNanoseconds, BEFORE_FIRST_OFFSET_TRANSITION)) {
     return GetNamedTimeZoneNextTransition(id, BEFORE_FIRST_OFFSET_TRANSITION);
   }
-  // Decide how far in the future after `epochNanoseconds` we'll look for an
-  // offset change. There are two cases:
-  // 1. If it's a past date (or a date in the near future) then it's possible
-  //    that the time zone may have newly added DST in the next few years. So
-  //    we'll have to look from the provided time until a few years after the
-  //    current system time. (Changes to DST policy are usually announced a few
-  //    years in the future.) Note that the first DST anywhere started in 1847,
-  //    so we'll start checks in 1847 instead of wasting cycles on years where
-  //    there will never be transitions.
-  // 2. If it's a future date beyond the next few years, then we'll just assume
-  //    that the latest DST policy in TZDB will still be in effect.  In this
-  //    case, we only need to look one year in the future to see if there are
-  //    any DST transitions.  We actually only need to look 9-10 months because
-  //    DST has two transitions per year, but we'll use a year just to be safe.
-  const oneYearLater = JSBI.add(epochNanoseconds, ABOUT_ONE_YEAR_NANOS);
-  const uppercap = maxJSBI(afterLatestPossibleTzdbRuleChange(), oneYearLater);
-  // The first transition (in any timezone) recorded in the TZDB was in 1847, so
-  // start there if an earlier date is supplied.
-  let leftNanos = maxJSBI(BEFORE_FIRST_OFFSET_TRANSITION, epochNanoseconds);
-  const leftOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, leftNanos);
+  // Optimization: the farthest that we'll look for a next transition is 3 years
+  // after the later of epochNanoseconds or the current time. If there are no
+  // transitions found before then, we'll assume that there will not be any more
+  // transitions after that.
+  const now = SystemUTCEpochNanoSeconds();
+  const base = JSBI.GT(epochNanoseconds, now) ? epochNanoseconds : now;
+  const uppercap = JSBI.add(base, ABOUT_THREE_YEARS_NANOS);
+  let leftNanos = epochNanoseconds;
+  let leftOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, leftNanos);
   let rightNanos = leftNanos;
   let rightOffsetNs = leftOffsetNs;
   while (leftOffsetNs === rightOffsetNs && JSBI.lessThan(JSBI.BigInt(leftNanos), uppercap)) {
@@ -3508,28 +3482,17 @@ export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSB
 }
 
 export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds: JSBI): JSBI | null {
-  // If a time zone uses DST (at the time of `epochNanoseconds`), then we only
-  // have to look back one year to find a transition. But if it doesn't use DST,
-  // then we need to look all the way back to 1847 (the earliest rule in the
-  // TZDB) to see if it had other offset transitions in the past. Looping back
-  // from a far-future date to 1847 is very slow (minutes of 100% CPU!), and is
-  // also unnecessary because DST rules aren't put into the TZDB more than a few
-  // years in the future because the political changes in time zones happen with
-  // only a few years' warning. Therefore, if a far-future date is provided,
-  // then we'll run the check in two parts:
-  // 1. First, we'll look back for up to one year to see if the latest TZDB
-  //    rules have DST.
-  // 2. If not, then we'll "fast-reverse" back to a few years later than the
-  //    current system time, and then look back to 1847. This reduces the
-  //    worst-case loop from 273K years to 175 years, for a ~1500x improvement
-  //    in worst-case perf.
-  const afterLatestRule = afterLatestPossibleTzdbRuleChange();
-  const isFarFuture = JSBI.greaterThan(epochNanoseconds, afterLatestRule);
-  const lowercap = isFarFuture ? JSBI.subtract(epochNanoseconds, ABOUT_ONE_YEAR_NANOS) : BEFORE_FIRST_OFFSET_TRANSITION;
-
-  // TODO: proposal-temporal polyfill has different code for very similar
-  // optimizations as above, as well as in GetNamedTimeZonePreviousTransition.
-  // We should figure out if we should change one polyfill to match the other.
+  // Optimization: if the instant is more than 3 years in the future and there
+  // are no transitions between the present day and 3 years from now, assume
+  // there are none after.
+  const now = SystemUTCEpochNanoSeconds();
+  const lookahead = JSBI.add(now, ABOUT_THREE_YEARS_NANOS);
+  if (JSBI.greaterThan(epochNanoseconds, lookahead)) {
+    const prevBeforeLookahead = GetNamedTimeZonePreviousTransition(id, lookahead);
+    if (prevBeforeLookahead === null || JSBI.lessThan(prevBeforeLookahead, now)) {
+      return prevBeforeLookahead;
+    }
+  }
 
   // We assume most time zones either have regular DST rules that extend
   // indefinitely into the future, or they have no DST transitions between now
@@ -3550,7 +3513,7 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
   const rightOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, rightNanos);
   let leftNanos = rightNanos;
   let leftOffsetNs = rightOffsetNs;
-  while (rightOffsetNs === leftOffsetNs && JSBI.greaterThan(rightNanos, lowercap)) {
+  while (rightOffsetNs === leftOffsetNs && JSBI.greaterThan(rightNanos, BEFORE_FIRST_OFFSET_TRANSITION)) {
     leftNanos = JSBI.subtract(rightNanos, TWO_WEEKS_NANOS);
     if (JSBI.lessThan(leftNanos, BEFORE_FIRST_OFFSET_TRANSITION)) return null;
     leftOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, leftNanos);
@@ -3558,20 +3521,7 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
       rightNanos = leftNanos;
     }
   }
-  if (rightOffsetNs === leftOffsetNs) {
-    if (isFarFuture) {
-      // There was no DST after looking back one year, which means that the most
-      // recent TZDB rules don't have any recurring transitions. To check for
-      // transitions in older rules, back up to a few years after the current
-      // date and then look all the way back to 1847. Note that we move back one
-      // day from the latest possible rule so that when the recursion runs it
-      // won't consider the new time to be "far future" because the system clock
-      // has advanced in the meantime.
-      const newTimeToCheck = JSBI.subtract(afterLatestRule, DAY_NANOS);
-      return GetNamedTimeZonePreviousTransition(id, newTimeToCheck);
-    }
-    return null;
-  }
+  if (rightOffsetNs === leftOffsetNs) return null;
   const result = bisect(
     (epochNs: JSBI) => GetNamedTimeZoneOffsetNanoseconds(id, epochNs),
     leftNanos,
