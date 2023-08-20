@@ -4617,10 +4617,6 @@ export function DifferenceISODate<Allowed extends Temporal.DateTimeUnit>(
         // The end date is later in the month than mid date (or earlier for
         // negative durations). Back up one month.
         months -= sign;
-        if (months === -sign) {
-          years -= sign;
-          months = 11 * sign;
-        }
         mid = AddISODate(y1, m1, d1, years, months, 0, 0, 'constrain');
       }
 
