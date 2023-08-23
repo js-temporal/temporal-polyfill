@@ -2899,6 +2899,7 @@ function DisambiguatePossibleInstants(
     }
   }
 
+  if (disambiguation === 'reject') throw new RangeError('multiple instants found');
   const year = GetSlot(dateTime, ISO_YEAR);
   const month = GetSlot(dateTime, ISO_MONTH);
   const day = GetSlot(dateTime, ISO_DAY);
@@ -3001,9 +3002,6 @@ function DisambiguatePossibleInstants(
       );
       const possible = GetPossibleInstantsFor(timeZone, laterPlainDateTime);
       return possible[possible.length - 1];
-    }
-    case 'reject': {
-      throw new RangeError('no such instant found');
     }
   }
 }
