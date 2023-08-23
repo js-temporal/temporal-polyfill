@@ -1736,9 +1736,6 @@ export function ToTemporalMonthDay(
     // This is probably indicative of problems with HasSlot's typing.
     const fieldNames = CalendarFields(calendar, ['day', 'month', 'monthCode', 'year']);
     const fields = PrepareTemporalFields(item, fieldNames, []);
-    // Callers who omit the calendar are not writing calendar-independent
-    // code. In that case, `monthCode`/`year` can be omitted; `month` and
-    // `day` are sufficient. Add a `year` to satisfy calendar validation.
     return CalendarMonthDayFromFields(calendar, fields, options);
   }
 
