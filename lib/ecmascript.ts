@@ -1849,8 +1849,18 @@ export function InterpretISODateTimeOffset(
   offsetOpt: Temporal.OffsetDisambiguationOptions['offset'],
   matchMinute: boolean
 ) {
-  const DateTime = GetIntrinsic('%Temporal.PlainDateTime%');
-  const dt = new DateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
+  const dt = CreateTemporalDateTime(
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond,
+    microsecond,
+    nanosecond,
+    'iso8601'
+  );
 
   if (offsetBehaviour === 'wall' || offsetOpt === 'ignore') {
     // Simple case: ISO string without a TZ offset (or caller wants to ignore
@@ -2922,7 +2932,6 @@ function DisambiguatePossibleInstants(
   switch (disambiguation) {
     case 'earlier': {
       const calendar = GetSlot(dateTime, CALENDAR);
-      const PlainDateTime = GetIntrinsic('%Temporal.PlainDateTime%');
       const earlier = AddDateTime(
         year,
         month,
@@ -2946,7 +2955,7 @@ function DisambiguatePossibleInstants(
         -nanoseconds,
         undefined
       );
-      const earlierPlainDateTime = new PlainDateTime(
+      const earlierPlainDateTime = CreateTemporalDateTime(
         earlier.year,
         earlier.month,
         earlier.day,
@@ -2964,7 +2973,6 @@ function DisambiguatePossibleInstants(
     // fall through because 'compatible' means 'later' for "spring forward" transitions
     case 'later': {
       const calendar = GetSlot(dateTime, CALENDAR);
-      const PlainDateTime = GetIntrinsic('%Temporal.PlainDateTime%');
       const later = AddDateTime(
         year,
         month,
@@ -2988,7 +2996,7 @@ function DisambiguatePossibleInstants(
         nanoseconds,
         undefined
       );
-      const laterPlainDateTime = new PlainDateTime(
+      const laterPlainDateTime = CreateTemporalDateTime(
         later.year,
         later.month,
         later.day,

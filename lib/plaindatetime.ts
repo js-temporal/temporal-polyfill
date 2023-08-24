@@ -247,7 +247,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = ES.ToTemporalCalendarSlotValue(calendarParam);
-    return new PlainDateTime(
+    return ES.CreateTemporalDateTime(
       GetSlot(this, ISO_YEAR),
       GetSlot(this, ISO_MONTH),
       GetSlot(this, ISO_DAY),
