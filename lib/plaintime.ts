@@ -1,6 +1,6 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
+import { MakeIntrinsicClass } from './intrinsicclass';
 
 import {
   ISO_YEAR,
@@ -296,8 +296,7 @@ export class PlainTime implements Temporal.PlainTime {
     const microsecond = GetSlot(this, ISO_MICROSECOND);
     const nanosecond = GetSlot(this, ISO_NANOSECOND);
 
-    const PlainDateTime = GetIntrinsic('%Temporal.PlainDateTime%');
-    const dt = new PlainDateTime(
+    const dt = ES.CreateTemporalDateTime(
       year,
       month,
       day,
