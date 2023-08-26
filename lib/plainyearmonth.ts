@@ -124,7 +124,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     return new DateTimeFormat(locales, options).format(this);
   }
   valueOf(): never {
-    throw new TypeError('use compare() or equals() to compare Temporal.PlainYearMonth');
+    ES.ValueOfThrows('PlainYearMonth');
   }
   toPlainDate(item: Params['toPlainDate'][0]): Return['toPlainDate'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');

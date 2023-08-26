@@ -510,7 +510,7 @@ export class Duration implements Temporal.Duration {
     );
   }
   valueOf(): never {
-    throw new TypeError('use compare() to compare Temporal.Duration');
+    ES.ValueOfThrows('Duration');
   }
   static from(item: Params['from'][0]): Return['from'] {
     if (ES.IsTemporalDuration(item)) {

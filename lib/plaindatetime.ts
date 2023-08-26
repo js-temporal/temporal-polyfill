@@ -384,7 +384,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     return new DateTimeFormat(locales, options).format(this);
   }
   valueOf(): never {
-    throw new TypeError('use compare() or equals() to compare Temporal.PlainDateTime');
+    ES.ValueOfThrows('PlainDateTime');
   }
 
   toZonedDateTime(
