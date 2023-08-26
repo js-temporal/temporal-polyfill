@@ -126,7 +126,7 @@ export class Instant implements Temporal.Instant {
     return new DateTimeFormat(locales, options).format(this);
   }
   valueOf(): never {
-    throw new TypeError('use compare() or equals() to compare Temporal.Instant');
+    ES.ValueOfThrows('Instant');
   }
   toZonedDateTime(item: Params['toZonedDateTime'][0]): Return['toZonedDateTime'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');

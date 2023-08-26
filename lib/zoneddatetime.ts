@@ -542,7 +542,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     return ES.TemporalZonedDateTimeToString(this, 'auto');
   }
   valueOf(): never {
-    throw new TypeError('use compare() or equals() to compare Temporal.ZonedDateTime');
+    ES.ValueOfThrows('ZonedDateTime');
   }
   startOfDay(): Return['startOfDay'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
