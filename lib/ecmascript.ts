@@ -5899,12 +5899,10 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = duration;
   ({ days } = BalanceTimeDuration(days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, 'day'));
 
-  const options = GetOptionsObject(optionsParam);
-
   const calendar = GetSlot(yearMonth, CALENDAR);
   const fieldNames = CalendarFields(calendar, ['monthCode', 'year'] as const);
   const fields = PrepareTemporalFields(yearMonth, fieldNames, []);
-  const fieldsCopy = SnapshotOwnProperties(GetOptionsObject(fields), null);
+  const fieldsCopy = SnapshotOwnProperties(fields, null);
   fields.day = 1;
   // PrepareTemporalFields returns a type where 'day' is potentially undefined,
   // but TS doesn't narrow the type as a result of the assignment above.
@@ -5923,7 +5921,8 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
     startDate = CalendarDateFromFields(calendar, fieldsCopy);
   }
   const durationToAdd = new Duration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
-  const optionsCopy = SnapshotOwnProperties(GetOptionsObject(options), null);
+  const options = GetOptionsObject(optionsParam);
+  const optionsCopy = SnapshotOwnProperties(options, null);
   const addedDate = CalendarDateAdd(calendar, startDate, durationToAdd, options, dateAdd);
   const addedDateFields = PrepareTemporalFields(addedDate, fieldNames, []);
 
