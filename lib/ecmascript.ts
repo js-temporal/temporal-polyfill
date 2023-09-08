@@ -2043,8 +2043,14 @@ export function CreateTemporalDateSlots(
   SetSlot(result, DATE_BRAND, true);
 
   if (DEBUG) {
+    let repr = TemporalDateToString(result, 'never');
+    if (typeof calendar === 'string') {
+      repr += MaybeFormatCalendarAnnotation(calendar, 'auto');
+    } else {
+      repr += '[u-ca=<calendar object>]';
+    }
     ObjectDefineProperty(result, '_repr_', {
-      value: `${result[Symbol.toStringTag]} <${TemporalDateToString(result)}>`,
+      value: `Temporal.PlainDate <${repr}>`,
       writable: false,
       enumerable: false,
       configurable: false
@@ -2093,8 +2099,14 @@ export function CreateTemporalDateTimeSlots(
   SetSlot(result, CALENDAR, calendar);
 
   if (DEBUG) {
+    let repr = TemporalDateTimeToString(result, 'auto', 'never');
+    if (typeof calendar === 'string') {
+      repr += MaybeFormatCalendarAnnotation(calendar, 'auto');
+    } else {
+      repr += '[u-ca=<calendar object>]';
+    }
     Object.defineProperty(result, '_repr_', {
-      value: `${result[Symbol.toStringTag]} <${TemporalDateTimeToString(result, 'auto')}>`,
+      value: `Temporal.PlainDateTime <${repr}>`,
       writable: false,
       enumerable: false,
       configurable: false
@@ -2138,8 +2150,14 @@ export function CreateTemporalMonthDaySlots(
   SetSlot(result, MONTH_DAY_BRAND, true);
 
   if (DEBUG) {
+    let repr = TemporalMonthDayToString(result, 'never');
+    if (typeof calendar === 'string') {
+      repr += MaybeFormatCalendarAnnotation(calendar, 'auto');
+    } else {
+      repr += '[u-ca=<calendar object>]';
+    }
     Object.defineProperty(result, '_repr_', {
-      value: `${result[Symbol.toStringTag]} <${TemporalMonthDayToString(result)}>`,
+      value: `Temporal.PlainMonthDay <${repr}>`,
       writable: false,
       enumerable: false,
       configurable: false
@@ -2177,8 +2195,14 @@ export function CreateTemporalYearMonthSlots(
   SetSlot(result, YEAR_MONTH_BRAND, true);
 
   if (DEBUG) {
+    let repr = TemporalYearMonthToString(result, 'never');
+    if (typeof calendar === 'string') {
+      repr += MaybeFormatCalendarAnnotation(calendar, 'auto');
+    } else {
+      repr += '[u-ca=<calendar object>]';
+    }
     Object.defineProperty(result, '_repr_', {
-      value: `${result[Symbol.toStringTag]} <${TemporalYearMonthToString(result)}>`,
+      value: `Temporal.PlainYearMonth <${repr}>`,
       writable: false,
       enumerable: false,
       configurable: false
@@ -2216,8 +2240,31 @@ export function CreateTemporalZonedDateTimeSlots(
   SetSlot(result, INSTANT, instant);
 
   if (DEBUG) {
+    let repr;
+    if (typeof timeZone === 'string') {
+      let offsetNs;
+      const offsetMinutes = ParseTimeZoneIdentifier(timeZone).offsetMinutes;
+      if (offsetMinutes !== undefined) {
+        offsetNs = offsetMinutes * 60e9;
+      } else {
+        offsetNs = GetNamedTimeZoneOffsetNanoseconds(timeZone, epochNanoseconds);
+      }
+      const dateTime = GetPlainDateTimeFor('ignored', instant, 'iso8601', offsetNs);
+      repr = TemporalDateTimeToString(dateTime, 'auto', 'never');
+      repr += FormatDateTimeUTCOffsetRounded(offsetNs);
+      repr += `[${timeZone}]`;
+    } else {
+      const dateTime = GetPlainDateTimeFor('ignored', instant, 'iso8601', 0);
+      repr = TemporalDateTimeToString(dateTime, 'auto', 'never') + 'Z[<time zone object>]';
+    }
+    if (typeof calendar === 'string') {
+      repr += MaybeFormatCalendarAnnotation(calendar, 'auto');
+    } else {
+      repr += '[u-ca=<calendar object>]';
+    }
+
     Object.defineProperty(result, '_repr_', {
-      value: `${result[Symbol.toStringTag]} <${TemporalZonedDateTimeToString(result, 'auto')}>`,
+      value: `Temporal.ZonedDateTime <${repr}>`,
       writable: false,
       enumerable: false,
       configurable: false

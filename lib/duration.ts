@@ -60,7 +60,7 @@ export class Duration implements Temporal.Duration {
 
     if (DEBUG) {
       Object.defineProperty(this, '_repr_', {
-        value: `${this[Symbol.toStringTag]} <${ES.TemporalDurationToString(
+        value: `Temporal.Duration <${ES.TemporalDurationToString(
           years,
           months,
           weeks,

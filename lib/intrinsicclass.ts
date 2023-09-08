@@ -58,7 +58,7 @@ const INTRINSICS = {} as TemporalIntrinsicRegisteredKeys &
   TemporalCalendarIntrinsicRegisteredKeys;
 
 type customFormatFunction<T> = (
-  this: T,
+  this: T & { _repr_: string }, // _repr_ is present if DEBUG
   depth: number,
   options: { stylize: (value: unknown, type: 'number' | 'special') => string }
 ) => string;
@@ -68,7 +68,7 @@ const customUtilInspectFormatters: Partial<{
   >;
 }> = {
   ['Temporal.Duration'](depth, options) {
-    const descr = options.stylize(`${this[Symbol.toStringTag]} <${this}>`, 'special');
+    const descr = options.stylize(this._repr_, 'special');
     if (depth < 1) return descr;
     const entries = [];
     for (const prop of [
@@ -91,7 +91,7 @@ const customUtilInspectFormatters: Partial<{
 
 type InspectFormatterOptions = { stylize: (str: string, styleType: string) => string };
 function defaultUtilInspectFormatter(this: any, depth: number, options: InspectFormatterOptions) {
-  return options.stylize(`${this[Symbol.toStringTag]} <${this}>`, 'special');
+  return options.stylize(this._repr_, 'special');
 }
 
 export function MakeIntrinsicClass(
