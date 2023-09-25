@@ -23,6 +23,8 @@ import type { Temporal } from '..';
 import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
 import JSBI from 'jsbi';
 
+const MathAbs = Math.abs;
+
 export class Duration implements Temporal.Duration {
   constructor(
     yearsParam: Params['constructor'][0] = 0,
@@ -284,8 +286,12 @@ export class Duration implements Temporal.Duration {
     const balancingRequested = largestUnit !== existingLargestUnit;
     const calendarUnitsPresent = years !== 0 || months !== 0 || weeks !== 0;
     const timeUnitsOverflowWillOccur =
-      minutes >= 60 || seconds >= 60 || milliseconds >= 1000 || microseconds >= 1000 || nanoseconds >= 1000;
-    const hoursToDaysConversionMayOccur = (days !== 0 && zonedRelativeTo) || hours >= 24;
+      MathAbs(minutes) >= 60 ||
+      MathAbs(seconds) >= 60 ||
+      MathAbs(milliseconds) >= 1000 ||
+      MathAbs(microseconds) >= 1000 ||
+      MathAbs(nanoseconds) >= 1000;
+    const hoursToDaysConversionMayOccur = (days !== 0 && zonedRelativeTo) || MathAbs(hours) >= 24;
     if (
       roundingGranularityIsNoop &&
       !balancingRequested &&
