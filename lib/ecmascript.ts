@@ -1344,6 +1344,10 @@ export function LargerOfTwoTemporalUnits<T1 extends Temporal.DateTimeUnit, T2 ex
   return unit1;
 }
 
+export function IsCalendarUnit(unit: Temporal.DateTimeUnit): unit is Exclude<Temporal.DateUnit, 'day'> {
+  return unit === 'year' || unit === 'month' || unit === 'week';
+}
+
 type FieldCompleteness = 'complete' | 'partial';
 interface FieldPrepareOptions {
   emptySourceErrorMessage: string;
@@ -4051,7 +4055,7 @@ export function BalanceTimeDurationRelative(
     return { days: 0, hours: 0, minutes: 0, seconds: 0, milliseconds: 0, microseconds: 0, nanoseconds: 0 };
   }
 
-  if (largestUnit === 'year' || largestUnit === 'month' || largestUnit === 'week' || largestUnit === 'day') {
+  if (IsCalendarUnit(largestUnit) || largestUnit === 'day') {
     precalculatedPlainDateTime ??= GetPlainDateTimeFor(timeZoneRec, startInstant, 'iso8601');
     ({ days, norm } = NormalizedTimeDurationToDays(norm, zonedRelativeTo, timeZoneRec, precalculatedPlainDateTime));
     largestUnit = 'hour';
@@ -5281,7 +5285,7 @@ function AddDuration(
 
   let years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds;
   if (!zonedRelativeTo && !plainRelativeTo) {
-    if (largestUnit === 'year' || largestUnit === 'month' || largestUnit === 'week') {
+    if (IsCalendarUnit(largestUnit)) {
       throw new RangeError('relativeTo is required for years, months, or weeks arithmetic');
     }
     years = months = weeks = 0;
@@ -5323,7 +5327,7 @@ function AddDuration(
     const calendar = GetSlot(zonedRelativeTo, CALENDAR);
     const startInstant = GetSlot(zonedRelativeTo, INSTANT);
     let startDateTime = precalculatedPlainDateTime;
-    if (largestUnit === 'year' || largestUnit === 'month' || largestUnit === 'week' || largestUnit === 'day') {
+    if (IsCalendarUnit(largestUnit) || largestUnit === 'day') {
       startDateTime ??= GetPlainDateTimeFor(timeZoneRec, startInstant, calendar);
     }
     const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
@@ -6105,13 +6109,7 @@ export function AdjustRoundedDurationDays(
   let weeks = weeksParam;
   let days = daysParam;
   let norm = normParam;
-  if (
-    unit === 'year' ||
-    unit === 'month' ||
-    unit === 'week' ||
-    unit === 'day' ||
-    (unit === 'nanosecond' && increment === 1)
-  ) {
+  if (IsCalendarUnit(unit) || unit === 'day' || (unit === 'nanosecond' && increment === 1)) {
     return { years, months, weeks, days, norm };
   }
 
@@ -6204,7 +6202,7 @@ export function RoundDuration(
   let plainRelativeTo = plainRelativeToParam;
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
 
-  if ((unit === 'year' || unit === 'month' || unit === 'week') && !plainRelativeTo) {
+  if (IsCalendarUnit(unit) && !plainRelativeTo) {
     throw new RangeError(`A starting point is required for ${unit}s rounding`);
   }
 
@@ -6213,7 +6211,7 @@ export function RoundDuration(
   // TS doesn't know that `dayLengthNs` is only used if the unit is day or
   // larger. We'll cast away `undefined` when it's used lower down below.
   let dayLengthNs: number | undefined;
-  if (unit === 'year' || unit === 'month' || unit === 'week' || unit === 'day') {
+  if (IsCalendarUnit(unit) || unit === 'day') {
     let deltaDays;
     if (zonedRelativeTo) {
       assertExists(calendarRec);
