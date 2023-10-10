@@ -4239,11 +4239,12 @@ export function BalancePossiblyInfiniteTimeDurationRelative(
 
   const endNs = AddInstant(intermediateNs, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   nanoseconds = JSBI.subtract(endNs, startNs);
+  if (JSBI.equal(nanoseconds, ZERO)) {
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, milliseconds: 0, microseconds: 0, nanoseconds: 0 };
+  }
 
   if (largestUnit === 'year' || largestUnit === 'month' || largestUnit === 'week' || largestUnit === 'day') {
-    if (!JSBI.equal(nanoseconds, ZERO)) {
-      precalculatedPlainDateTime ??= GetPlainDateTimeFor(timeZone, startInstant, 'iso8601');
-    }
+    precalculatedPlainDateTime ??= GetPlainDateTimeFor(timeZone, startInstant, 'iso8601');
     ({ days, nanoseconds } = NanosecondsToDays(nanoseconds, zonedRelativeTo, precalculatedPlainDateTime));
     largestUnit = 'hour';
   } else {
