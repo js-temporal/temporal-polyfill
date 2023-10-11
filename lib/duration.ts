@@ -309,10 +309,6 @@ export class Duration implements Temporal.Duration {
       largestUnit === 'month' ||
       largestUnit === 'week' ||
       largestUnit === 'day' ||
-      smallestUnit === 'year' ||
-      smallestUnit === 'month' ||
-      smallestUnit === 'week' ||
-      smallestUnit === 'day' ||
       calendarUnitsPresent ||
       days !== 0;
     if (zonedRelativeTo && plainDateTimeOrRelativeToWillBeUsed) {
