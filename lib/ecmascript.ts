@@ -3932,15 +3932,11 @@ function NanosecondsToDays(
   // don't need the path that potentially calls calendar methods.
   const dtStart = precalculatedPlainDateTime ?? GetPlainDateTimeFor(timeZone, start, 'iso8601');
   const dtEnd = GetPlainDateTimeFor(timeZone, end, 'iso8601');
-  let hours, minutes, seconds, milliseconds, microseconds;
-  ({
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds: nanosecondsNumber
-  } = DifferenceTime(
+  const date1 = TemporalDateTimeToDate(dtStart);
+  const date2 = TemporalDateTimeToDate(dtEnd);
+  let daysNumber = DaysUntil(date1, date2);
+
+  const timeSign = CompareTemporalTime(
     GetSlot(dtStart, ISO_HOUR),
     GetSlot(dtStart, ISO_MINUTE),
     GetSlot(dtStart, ISO_SECOND),
@@ -3953,43 +3949,13 @@ function NanosecondsToDays(
     GetSlot(dtEnd, ISO_MILLISECOND),
     GetSlot(dtEnd, ISO_MICROSECOND),
     GetSlot(dtEnd, ISO_NANOSECOND)
-  ));
+  );
 
-  const timeSign = DurationSign(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanosecondsNumber);
-  let y1 = GetSlot(dtStart, ISO_YEAR);
-  let mon1 = GetSlot(dtStart, ISO_MONTH);
-  let d1 = GetSlot(dtStart, ISO_DAY);
-  const y2 = GetSlot(dtEnd, ISO_YEAR);
-  const mon2 = GetSlot(dtEnd, ISO_MONTH);
-  const d2 = GetSlot(dtEnd, ISO_DAY);
-  const dateSign = CompareISODate(y2, mon2, d2, y1, mon1, d1);
-  if (dateSign === -timeSign) {
-    ({ year: y1, month: mon1, day: d1 } = BalanceISODate(y1, mon1, d1 - timeSign));
-    ({
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds,
-      nanoseconds: nanosecondsNumber
-    } = BalanceTimeDuration(-timeSign, hours, minutes, seconds, milliseconds, microseconds, nanosecondsNumber, 'day'));
+  if (daysNumber > 0 && timeSign > 0) {
+    daysNumber--;
+  } else if (daysNumber < 0 && timeSign < 0) {
+    daysNumber++;
   }
-
-  const date1 = CreateTemporalDate(y1, mon1, d1, 'iso8601');
-  const date2 = CreateTemporalDate(y2, mon2, d2, 'iso8601');
-
-  let daysNumber = DaysUntil(date1, date2);
-  // Signs of date part and time part may not agree; balance them together
-  ({ days: daysNumber } = BalanceTimeDuration(
-    daysNumber,
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanosecondsNumber,
-    'day'
-  ));
 
   let relativeResult = AddDaysToZonedDateTime(start, dtStart, timeZone, calendar, daysNumber);
   // may disambiguate
