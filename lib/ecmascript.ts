@@ -5478,22 +5478,12 @@ export function DifferenceTemporalZonedDateTime(
 
     if (JSBI.equal(ns1, ns2)) return new Duration();
 
-    let precalculatedPlainDateTime;
-    let plainRelativeTo;
-    const roundingIsNoop = settings.smallestUnit === 'nanosecond' && settings.roundingIncrement === 1;
-    const plainDateTimeOrRelativeToWillBeUsed =
-      !roundingIsNoop ||
-      settings.smallestUnit === 'year' ||
-      settings.smallestUnit === 'month' ||
-      settings.smallestUnit === 'week';
-    if (plainDateTimeOrRelativeToWillBeUsed) {
-      precalculatedPlainDateTime = GetPlainDateTimeFor(
-        timeZone,
-        GetSlot(zonedDateTime, INSTANT),
-        GetSlot(zonedDateTime, CALENDAR)
-      );
-      plainRelativeTo = TemporalDateTimeToDate(precalculatedPlainDateTime);
-    }
+    const precalculatedPlainDateTime = GetPlainDateTimeFor(
+      timeZone,
+      GetSlot(zonedDateTime, INSTANT),
+      GetSlot(zonedDateTime, CALENDAR)
+    );
+    const plainRelativeTo = TemporalDateTimeToDate(precalculatedPlainDateTime);
 
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       DifferenceZonedDateTime(
@@ -5506,6 +5496,7 @@ export function DifferenceTemporalZonedDateTime(
         precalculatedPlainDateTime
       ));
 
+    const roundingIsNoop = settings.smallestUnit === 'nanosecond' && settings.roundingIncrement === 1;
     if (!roundingIsNoop) {
       ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
         years,
