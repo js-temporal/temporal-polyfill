@@ -356,22 +356,29 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   equals(otherParam: Params['equals'][0]): Return['equals'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalDateTime(otherParam);
-    const slots = [
-      ISO_YEAR,
-      ISO_MONTH,
-      ISO_DAY,
-      ISO_HOUR,
-      ISO_MINUTE,
-      ISO_SECOND,
-      ISO_MILLISECOND,
-      ISO_MICROSECOND,
-      ISO_NANOSECOND
-    ] as const;
-    for (let index = 0; index < slots.length; index++) {
-      const slot = slots[index];
-      const val1 = GetSlot(this, slot);
-      const val2 = GetSlot(other, slot);
-      if (val1 !== val2) return false;
+    if (
+      ES.CompareISODateTime(
+        GetSlot(this, ISO_YEAR),
+        GetSlot(this, ISO_MONTH),
+        GetSlot(this, ISO_DAY),
+        GetSlot(this, ISO_HOUR),
+        GetSlot(this, ISO_MINUTE),
+        GetSlot(this, ISO_SECOND),
+        GetSlot(this, ISO_MILLISECOND),
+        GetSlot(this, ISO_MICROSECOND),
+        GetSlot(this, ISO_NANOSECOND),
+        GetSlot(other, ISO_YEAR),
+        GetSlot(other, ISO_MONTH),
+        GetSlot(other, ISO_DAY),
+        GetSlot(other, ISO_HOUR),
+        GetSlot(other, ISO_MINUTE),
+        GetSlot(other, ISO_SECOND),
+        GetSlot(other, ISO_MILLISECOND),
+        GetSlot(other, ISO_MICROSECOND),
+        GetSlot(other, ISO_NANOSECOND)
+      ) !== 0
+    ) {
+      return false;
     }
     return ES.CalendarEquals(GetSlot(this, CALENDAR), GetSlot(other, CALENDAR));
   }
@@ -476,24 +483,26 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {
     const one = ES.ToTemporalDateTime(oneParam);
     const two = ES.ToTemporalDateTime(twoParam);
-    const slots = [
-      ISO_YEAR,
-      ISO_MONTH,
-      ISO_DAY,
-      ISO_HOUR,
-      ISO_MINUTE,
-      ISO_SECOND,
-      ISO_MILLISECOND,
-      ISO_MICROSECOND,
-      ISO_NANOSECOND
-    ] as const;
-    for (let index = 0; index < slots.length; index++) {
-      const slot = slots[index];
-      const val1 = GetSlot(one, slot);
-      const val2 = GetSlot(two, slot);
-      if (val1 !== val2) return ES.ComparisonResult(val1 - val2);
-    }
-    return 0;
+    return ES.CompareISODateTime(
+      GetSlot(one, ISO_YEAR),
+      GetSlot(one, ISO_MONTH),
+      GetSlot(one, ISO_DAY),
+      GetSlot(one, ISO_HOUR),
+      GetSlot(one, ISO_MINUTE),
+      GetSlot(one, ISO_SECOND),
+      GetSlot(one, ISO_MILLISECOND),
+      GetSlot(one, ISO_MICROSECOND),
+      GetSlot(one, ISO_NANOSECOND),
+      GetSlot(two, ISO_YEAR),
+      GetSlot(two, ISO_MONTH),
+      GetSlot(two, ISO_DAY),
+      GetSlot(two, ISO_HOUR),
+      GetSlot(two, ISO_MINUTE),
+      GetSlot(two, ISO_SECOND),
+      GetSlot(two, ISO_MILLISECOND),
+      GetSlot(two, ISO_MICROSECOND),
+      GetSlot(two, ISO_NANOSECOND)
+    );
   }
   [Symbol.toStringTag]!: 'Temporal.PlainDateTime';
 }

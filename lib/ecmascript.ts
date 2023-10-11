@@ -6931,6 +6931,54 @@ export function CompareISODate(y1: number, m1: number, d1: number, y2: number, m
   return 0;
 }
 
+export function CompareTemporalTime(
+  h1: number,
+  min1: number,
+  s1: number,
+  ms1: number,
+  µs1: number,
+  ns1: number,
+  h2: number,
+  min2: number,
+  s2: number,
+  ms2: number,
+  µs2: number,
+  ns2: number
+) {
+  if (h1 !== h2) return ComparisonResult(h1 - h2);
+  if (min1 !== min2) return ComparisonResult(min1 - min2);
+  if (s1 !== s2) return ComparisonResult(s1 - s2);
+  if (ms1 !== ms2) return ComparisonResult(ms1 - ms2);
+  if (µs1 !== µs2) return ComparisonResult(µs1 - µs2);
+  if (ns1 !== ns2) return ComparisonResult(ns1 - ns2);
+  return 0;
+}
+
+export function CompareISODateTime(
+  y1: number,
+  m1: number,
+  d1: number,
+  h1: number,
+  min1: number,
+  s1: number,
+  ms1: number,
+  µs1: number,
+  ns1: number,
+  y2: number,
+  m2: number,
+  d2: number,
+  h2: number,
+  min2: number,
+  s2: number,
+  ms2: number,
+  µs2: number,
+  ns2: number
+) {
+  const dateResult = CompareISODate(y1, m1, d1, y2, m2, d2);
+  if (dateResult !== 0) return dateResult;
+  return CompareTemporalTime(h1, min1, s1, ms1, µs1, ns1, h2, min2, s2, ms2, µs2, ns2);
+}
+
 // Not abstract operations from the spec
 
 function NonNegativeBigIntDivmod(x: JSBI, y: JSBI) {
