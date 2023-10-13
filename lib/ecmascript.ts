@@ -4217,11 +4217,19 @@ export function BalancePossiblyInfiniteTimeDurationRelative(
     days = 0;
   }
 
-  let result = BalancePossiblyInfiniteTimeDuration(0, 0, 0, 0, 0, 0, nanoseconds, largestUnit);
+  const result = BalancePossiblyInfiniteTimeDuration(0, 0, 0, 0, 0, 0, nanoseconds, largestUnit);
   if (result === 'positive overflow' || result === 'negative overflow') {
     return result;
   }
-  return { ...result, days };
+  return {
+    days,
+    hours: result.hours,
+    minutes: result.minutes,
+    seconds: result.seconds,
+    milliseconds: result.milliseconds,
+    microseconds: result.microseconds,
+    nanoseconds: result.nanoseconds
+  };
 }
 
 export function UnbalanceDateDurationRelative(
