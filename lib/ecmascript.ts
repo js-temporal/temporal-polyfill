@@ -5170,7 +5170,6 @@ export function DifferenceTemporalPlainDate(
 
   const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'date', [], 'day', 'day');
-  resolvedOptions.largestUnit = settings.largestUnit;
 
   const Duration = GetIntrinsic('%Temporal.Duration%');
   if (
@@ -5181,6 +5180,7 @@ export function DifferenceTemporalPlainDate(
     return new Duration();
   }
 
+  resolvedOptions.largestUnit = settings.largestUnit;
   const untilResult = DifferenceDate(calendar, plainDate, other, resolvedOptions);
   let years = GetSlot(untilResult, YEARS);
   let months = GetSlot(untilResult, MONTHS);
@@ -5400,8 +5400,6 @@ export function DifferenceTemporalPlainYearMonth(
     return new Duration();
   }
 
-  resolvedOptions.largestUnit = settings.largestUnit;
-
   const fieldNames = CalendarFields(calendar, ['monthCode', 'year']);
   const thisFields = PrepareTemporalFields(yearMonth, fieldNames, []);
   thisFields.day = 1;
@@ -5410,6 +5408,7 @@ export function DifferenceTemporalPlainYearMonth(
   otherFields.day = 1;
   const otherDate = CalendarDateFromFields(calendar, otherFields);
 
+  resolvedOptions.largestUnit = settings.largestUnit;
   let { years, months } = CalendarDateUntil(calendar, thisDate, otherDate, resolvedOptions);
 
   if (settings.smallestUnit !== 'month' || settings.roundingIncrement !== 1) {
@@ -5448,7 +5447,6 @@ export function DifferenceTemporalZonedDateTime(
 
   const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'datetime', [], 'nanosecond', 'hour');
-  resolvedOptions.largestUnit = settings.largestUnit;
 
   const ns1 = GetSlot(zonedDateTime, EPOCHNANOSECONDS);
   const ns2 = GetSlot(other, EPOCHNANOSECONDS);
@@ -5493,6 +5491,7 @@ export function DifferenceTemporalZonedDateTime(
     );
     const plainRelativeTo = TemporalDateTimeToDate(precalculatedPlainDateTime);
 
+    resolvedOptions.largestUnit = settings.largestUnit;
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
       DifferenceZonedDateTime(
         ns1,
