@@ -3,7 +3,8 @@ import JSBI from 'jsbi';
 import {
   abs,
   BILLION,
-  DAY_NANOS,
+  compare,
+  DAY_NANOS_JSBI,
   divmod,
   ensureJSBI,
   HOUR_NANOS,
@@ -79,7 +80,7 @@ export class TimeDuration {
 
   add24HourDays(days: number) {
     if (!NumberIsInteger(days)) throw new Error('assertion failed: days is an integer');
-    return TimeDuration.#validateNew(JSBI.add(this.totalNs, JSBI.multiply(JSBI.BigInt(days), DAY_NANOS)), 'sum');
+    return TimeDuration.#validateNew(JSBI.add(this.totalNs, JSBI.multiply(JSBI.BigInt(days), DAY_NANOS_JSBI)), 'sum');
   }
 
   addToEpochNs(epochNs: JSBI | bigint) {
