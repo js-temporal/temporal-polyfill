@@ -32,7 +32,7 @@ import type { Temporal } from '..';
 import {
   abs,
   BigIntDivideToNumber,
-  DAY_NANOS,
+  DAY_NANOS_JSBI,
   divmod,
   MILLION,
   MINUTE_NANOS,
@@ -104,23 +104,25 @@ import {
   NANOSECONDS
 } from './slots';
 
+const DAY_SECONDS = 86400;
+const DAY_NANOS = DAY_SECONDS * 1e9;
 // Instant range is 100 million days (inclusive) before or after epoch.
-const NS_MIN = JSBI.multiply(DAY_NANOS, JSBI.BigInt(-1e8));
-const NS_MAX = JSBI.multiply(DAY_NANOS, JSBI.BigInt(1e8));
+const NS_MIN = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(-1e8));
+const NS_MAX = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(1e8));
 // PlainDateTime range is 24 hours wider (exclusive) than the Instant range on
 // both ends, to allow for valid Instant=>PlainDateTime conversion for all
 // built-in time zones (whose offsets must have a magnitude less than 24 hours).
-const DATETIME_NS_MIN = JSBI.add(JSBI.subtract(NS_MIN, DAY_NANOS), ONE);
-const DATETIME_NS_MAX = JSBI.subtract(JSBI.add(NS_MAX, DAY_NANOS), ONE);
+const DATETIME_NS_MIN = JSBI.add(JSBI.subtract(NS_MIN, DAY_NANOS_JSBI), ONE);
+const DATETIME_NS_MAX = JSBI.subtract(JSBI.add(NS_MAX, DAY_NANOS_JSBI), ONE);
 // The pattern of leap years in the ISO 8601 calendar repeats every 400 years.
 // The constant below is the number of nanoseconds in 400 years. It is used to
 // avoid overflows when dealing with values at the edge legacy Date's range.
-const NS_IN_400_YEAR_CYCLE = JSBI.multiply(JSBI.BigInt(400 * 365 + 97), DAY_NANOS);
+const NS_IN_400_YEAR_CYCLE = JSBI.multiply(JSBI.BigInt(400 * 365 + 97), DAY_NANOS_JSBI);
 const YEAR_MIN = -271821;
 const YEAR_MAX = 275760;
 const BEFORE_FIRST_OFFSET_TRANSITION = JSBI.multiply(JSBI.BigInt(-388152), JSBI.BigInt(1e13)); // 1847-01-01T00:00:00Z
-const ABOUT_THREE_YEARS_NANOS = JSBI.multiply(DAY_NANOS, JSBI.BigInt(366 * 3));
-const TWO_WEEKS_NANOS = JSBI.multiply(DAY_NANOS, JSBI.BigInt(2 * 7));
+const ABOUT_THREE_YEARS_NANOS = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(366 * 3));
+const TWO_WEEKS_NANOS = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(2 * 7));
 
 const BUILTIN_CALENDAR_IDS = [
   'iso8601',
@@ -2925,8 +2927,8 @@ function DisambiguatePossibleInstants(
 
   // In the spec, range validation of `dayBefore` and `dayAfter` happens here.
   // In the polyfill, it happens in the Instant constructor.
-  const dayBefore = new Instant(JSBI.subtract(utcns, DAY_NANOS));
-  const dayAfter = new Instant(JSBI.add(utcns, DAY_NANOS));
+  const dayBefore = new Instant(JSBI.subtract(utcns, DAY_NANOS_JSBI));
+  const dayAfter = new Instant(JSBI.add(utcns, DAY_NANOS_JSBI));
 
   const offsetBefore = GetOffsetNanosecondsFor(timeZoneRec, dayBefore);
   const offsetAfter = GetOffsetNanosecondsFor(timeZoneRec, dayAfter);
@@ -3573,9 +3575,9 @@ export function GetNamedTimeZoneEpochNanoseconds(
   // Get the offset of one day before and after the requested calendar date and
   // clock time, avoiding overflows if near the edge of the Instant range.
   const ns = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
-  let nsEarlier = JSBI.subtract(ns, DAY_NANOS);
+  let nsEarlier = JSBI.subtract(ns, DAY_NANOS_JSBI);
   if (JSBI.lessThan(nsEarlier, NS_MIN)) nsEarlier = ns;
-  let nsLater = JSBI.add(ns, DAY_NANOS);
+  let nsLater = JSBI.add(ns, DAY_NANOS_JSBI);
   if (JSBI.greaterThan(nsLater, NS_MAX)) nsLater = ns;
   const earlierOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, nsEarlier);
   const laterOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, nsLater);
@@ -3917,7 +3919,13 @@ export function NormalizedTimeDurationToDays(
   if (norm.abs().cmp(dayLengthNs.abs()) >= 0) {
     throw new Error('assert not reached');
   }
-  return { days, norm, dayLengthNs: dayLengthNs.abs().totalNs };
+  const daylen = JSBI.toNumber(dayLengthNs.abs().totalNs);
+  if (!NumberIsSafeInteger(daylen)) {
+    const h = daylen / 3600e9;
+    throw new RangeError(`Time zone calculated a day length of ${h} h, longer than ~2502 h causes precision loss`);
+  }
+  if (MathAbs(days) > NumberMaxSafeInteger / 86400) throw new Error('assert not reached');
+  return { days, norm, dayLengthNs: daylen };
 }
 
 export function BalanceTimeDuration(norm: TimeDuration, largestUnit: Temporal.DateTimeUnit) {
@@ -4376,7 +4384,7 @@ function CombineDateAndNormalizedTimeDuration(y: number, m: number, w: number, d
 function ISODateToEpochDays(y: number, m: number, d: number) {
   // This is inefficient, but we use GetUTCEpochNanoseconds to avoid duplicating
   // the workarounds for legacy Date. (see that function for explanation)
-  return JSBI.toNumber(JSBI.divide(GetUTCEpochNanoseconds(y, m, d, 0, 0, 0, 0, 0, 0), DAY_NANOS));
+  return JSBI.toNumber(JSBI.divide(GetUTCEpochNanoseconds(y, m, d, 0, 0, 0, 0, 0, 0), DAY_NANOS_JSBI));
 }
 
 export function DifferenceISODate<Allowed extends Temporal.DateTimeUnit>(
@@ -5882,7 +5890,7 @@ export function RoundInstant(
   unit: keyof typeof nsPerTimeUnit,
   roundingMode: Temporal.RoundingMode
 ) {
-  let { remainder } = NonNegativeBigIntDivmod(epochNs, DAY_NANOS);
+  let { remainder } = NonNegativeBigIntDivmod(epochNs, DAY_NANOS_JSBI);
   const wholeDays = JSBI.subtract(epochNs, remainder);
   const roundedRemainder = RoundNumberToIncrement(
     remainder,
@@ -6159,7 +6167,7 @@ export function RoundDuration(
   // If rounding relative to a ZonedDateTime, then some days may not be 24h.
   // TS doesn't know that `dayLengthNs` is only used if the unit is day or
   // larger. We'll cast away `undefined` when it's used lower down below.
-  let dayLengthNs: JSBI | undefined;
+  let dayLengthNs: number | undefined;
   if (unit === 'year' || unit === 'month' || unit === 'week' || unit === 'day') {
     let deltaDays;
     if (zonedRelativeTo) {
@@ -6177,7 +6185,7 @@ export function RoundDuration(
       );
       ({ days: deltaDays, norm, dayLengthNs } = NormalizedTimeDurationToDays(norm, intermediate, timeZoneRec));
     } else {
-      ({ quotient: deltaDays, remainder: norm } = norm.divmod(JSBI.toNumber(DAY_NANOS)));
+      ({ quotient: deltaDays, remainder: norm } = norm.divmod(JSBI.toNumber(DAY_NANOS_JSBI)));
       dayLengthNs = DAY_NANOS;
     }
     days += deltaDays;
@@ -6235,9 +6243,12 @@ export function RoundDuration(
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       if (oneYearDays === 0) throw new RangeError('custom calendar reported that a year is 0 days long');
-      const divisor = JSBI.multiply(JSBI.BigInt(oneYearDays), dayLengthNs);
+      const divisor = JSBI.multiply(JSBI.BigInt(oneYearDays), JSBI.BigInt(dayLengthNs));
       const nanoseconds = JSBI.add(
-        JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(years)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs)),
+        JSBI.add(
+          JSBI.multiply(divisor, JSBI.BigInt(years)),
+          JSBI.multiply(JSBI.BigInt(days), JSBI.BigInt(dayLengthNs))
+        ),
         norm.totalNs
       );
       const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
@@ -6291,9 +6302,12 @@ export function RoundDuration(
       if (oneMonthDays === 0) throw new RangeError('custom calendar reported that a month is 0 days long');
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
-      const divisor = JSBI.multiply(JSBI.BigInt(oneMonthDays), dayLengthNs);
+      const divisor = JSBI.multiply(JSBI.BigInt(oneMonthDays), JSBI.BigInt(dayLengthNs));
       const nanoseconds = JSBI.add(
-        JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(months)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs)),
+        JSBI.add(
+          JSBI.multiply(divisor, JSBI.BigInt(months)),
+          JSBI.multiply(JSBI.BigInt(days), JSBI.BigInt(dayLengthNs))
+        ),
         norm.totalNs
       );
       const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
@@ -6337,9 +6351,12 @@ export function RoundDuration(
       if (oneWeekDays === 0) throw new RangeError('custom calendar reported that a week is 0 days long');
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
-      const divisor = JSBI.multiply(JSBI.BigInt(oneWeekDays), dayLengthNs);
+      const divisor = JSBI.multiply(JSBI.BigInt(oneWeekDays), JSBI.BigInt(dayLengthNs));
       const nanoseconds = JSBI.add(
-        JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(weeks)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs)),
+        JSBI.add(
+          JSBI.multiply(divisor, JSBI.BigInt(weeks)),
+          JSBI.multiply(JSBI.BigInt(days), JSBI.BigInt(dayLengthNs))
+        ),
         norm.totalNs
       );
       const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
@@ -6352,7 +6369,7 @@ export function RoundDuration(
     case 'day': {
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
-      const divisor = dayLengthNs;
+      const divisor = JSBI.BigInt(dayLengthNs);
       const nanoseconds = JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(days)), norm.totalNs);
       const rounded = RoundNumberToIncrement(nanoseconds, JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
       total = BigIntDivideToNumber(nanoseconds, divisor);

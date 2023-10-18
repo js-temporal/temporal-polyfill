@@ -12,7 +12,7 @@ export const BILLION = JSBI.BigInt(1e9);
 const HOUR_SECONDS = 3600;
 export const HOUR_NANOS = JSBI.multiply(JSBI.BigInt(HOUR_SECONDS), BILLION);
 export const MINUTE_NANOS = JSBI.multiply(SIXTY, BILLION);
-export const DAY_NANOS = JSBI.multiply(HOUR_NANOS, TWENTY_FOUR);
+export const DAY_NANOS_JSBI = JSBI.multiply(HOUR_NANOS, TWENTY_FOUR);
 
 /** Handle a JSBI or native BigInt. For user input, use ES.ToBigInt instead */
 export function ensureJSBI(value: JSBI | bigint) {
