@@ -6651,6 +6651,7 @@ export function RoundDuration(
       oneYearDays = MathAbs(oneYearDays);
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
+      if (oneYearDays === 0) throw new RangeError('custom calendar reported that a year is 0 days long');
       const divisor = JSBI.multiply(JSBI.BigInt(oneYearDays), dayLengthNs);
       nanoseconds = JSBI.add(
         JSBI.add(JSBI.multiply(divisor, JSBI.BigInt(years)), JSBI.multiply(JSBI.BigInt(days), dayLengthNs)),
@@ -6704,6 +6705,7 @@ export function RoundDuration(
       let { days: oneMonthDays } = MoveRelativeDate(calendarRec, plainRelativeTo, oneMonth);
 
       oneMonthDays = MathAbs(oneMonthDays);
+      if (oneMonthDays === 0) throw new RangeError('custom calendar reported that a month is 0 days long');
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       const divisor = JSBI.multiply(JSBI.BigInt(oneMonthDays), dayLengthNs);
@@ -6749,6 +6751,7 @@ export function RoundDuration(
       let { days: oneWeekDays } = MoveRelativeDate(calendarRec, plainRelativeTo, oneWeek);
 
       oneWeekDays = MathAbs(oneWeekDays);
+      if (oneWeekDays === 0) throw new RangeError('custom calendar reported that a week is 0 days long');
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       const divisor = JSBI.multiply(JSBI.BigInt(oneWeekDays), dayLengthNs);
