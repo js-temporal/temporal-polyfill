@@ -88,7 +88,7 @@ export class TimeZone implements Temporal.TimeZone {
     const dateTime = ES.ToTemporalDateTime(dateTimeParam);
     const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
-    const timeZoneRec = new TimeZoneMethodRecord(this, ['getPossibleInstantsFor']);
+    const timeZoneRec = new TimeZoneMethodRecord(this, ['getOffsetNanosecondsFor', 'getPossibleInstantsFor']);
     return ES.GetInstantFor(timeZoneRec, dateTime, disambiguation);
   }
   getPossibleInstantsFor(dateTimeParam: Params['getPossibleInstantsFor'][0]): Return['getPossibleInstantsFor'] {
