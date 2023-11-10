@@ -5095,25 +5095,7 @@ export function DifferenceTemporalPlainDate(
     return new Duration();
   }
 
-  const calendarRec = new CalendarMethodRecord(calendar);
-  const roundingIsNoop = settings.smallestUnit === 'day' && settings.roundingIncrement === 1;
-  if (
-    settings.smallestUnit === 'year' ||
-    settings.smallestUnit === 'month' ||
-    settings.smallestUnit === 'week' ||
-    (!roundingIsNoop &&
-      (settings.largestUnit === 'year' || settings.largestUnit === 'month' || settings.largestUnit === 'week'))
-  ) {
-    calendarRec.lookup('dateAdd');
-  }
-  if (
-    settings.largestUnit === 'year' ||
-    settings.largestUnit === 'month' ||
-    settings.largestUnit === 'week' ||
-    settings.smallestUnit === 'year'
-  ) {
-    calendarRec.lookup('dateUntil');
-  }
+  const calendarRec = new CalendarMethodRecord(calendar, ['dateAdd', 'dateUntil']);
 
   resolvedOptions.largestUnit = settings.largestUnit;
   const untilResult = DifferenceDate(calendarRec, plainDate, other, resolvedOptions);
@@ -5122,6 +5104,7 @@ export function DifferenceTemporalPlainDate(
   let weeks = GetSlot(untilResult, WEEKS);
   let days = GetSlot(untilResult, DAYS);
 
+  const roundingIsNoop = settings.smallestUnit === 'day' && settings.roundingIncrement === 1;
   if (!roundingIsNoop) {
     ({ years, months, weeks, days } = RoundDuration(
       years,
@@ -5186,25 +5169,7 @@ export function DifferenceTemporalPlainDateTime(
     return new Duration();
   }
 
-  const calendarRec = new CalendarMethodRecord(calendar);
-  const roundingIsNoop = settings.smallestUnit === 'nanosecond' && settings.roundingIncrement === 1;
-  if (
-    settings.smallestUnit === 'year' ||
-    settings.smallestUnit === 'month' ||
-    settings.smallestUnit === 'week' ||
-    (!datePartsIdentical &&
-      !roundingIsNoop &&
-      (settings.largestUnit === 'year' || settings.largestUnit === 'month' || settings.largestUnit === 'week'))
-  ) {
-    calendarRec.lookup('dateAdd');
-  }
-  if (
-    (!datePartsIdentical &&
-      (settings.largestUnit === 'year' || settings.largestUnit === 'month' || settings.largestUnit === 'week')) ||
-    settings.smallestUnit === 'year'
-  ) {
-    calendarRec.lookup('dateUntil');
-  }
+  const calendarRec = new CalendarMethodRecord(calendar, ['dateAdd', 'dateUntil']);
 
   let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
     DifferenceISODateTime(
@@ -5231,6 +5196,7 @@ export function DifferenceTemporalPlainDateTime(
       resolvedOptions
     );
 
+  const roundingIsNoop = settings.smallestUnit === 'nanosecond' && settings.roundingIncrement === 1;
   if (!roundingIsNoop) {
     const relativeTo = TemporalDateTimeToDate(plainDateTime);
     ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = RoundDuration(
@@ -5378,13 +5344,7 @@ export function DifferenceTemporalPlainYearMonth(
     return new Duration();
   }
 
-  const calendarRec = new CalendarMethodRecord(calendar);
-  if (settings.smallestUnit !== 'month' || settings.roundingIncrement !== 1) {
-    calendarRec.lookup('dateAdd');
-  }
-  calendarRec.lookup('dateFromFields');
-  calendarRec.lookup('dateUntil');
-  calendarRec.lookup('fields');
+  const calendarRec = new CalendarMethodRecord(calendar, ['dateAdd', 'dateFromFields', 'dateUntil', 'fields']);
 
   const fieldNames = CalendarFields(calendarRec, ['monthCode', 'year']);
   const thisFields = PrepareTemporalFields(yearMonth, fieldNames, []);
@@ -5600,7 +5560,7 @@ export function AddDate(
   duration: Temporal.Duration,
   options?: CalendarProtocolParams['dateAdd'][2]
 ): Temporal.PlainDate {
-  // dateAdd must be looked up if years, months, weeks != 0
+  // dateAdd must be looked up
   const years = GetSlot(duration, YEARS);
   const months = GetSlot(duration, MONTHS);
   const weeks = GetSlot(duration, WEEKS);
@@ -6049,31 +6009,7 @@ export function AddDurationToOrSubtractDurationFromDuration(
   if (plainRelativeTo || zonedRelativeTo) {
     const relativeTo = zonedRelativeTo ?? plainRelativeTo;
     assertExists(relativeTo);
-    calendarRec = new CalendarMethodRecord(GetSlot(relativeTo, CALENDAR));
-    if (
-      GetSlot(duration, YEARS) !== 0 ||
-      GetSlot(duration, MONTHS) !== 0 ||
-      GetSlot(duration, WEEKS) !== 0 ||
-      years !== 0 ||
-      months !== 0 ||
-      weeks !== 0
-    ) {
-      calendarRec.lookup('dateAdd');
-      if (
-        years !== 0 ||
-        months !== 0 ||
-        weeks !== 0 ||
-        days !== 0 ||
-        hours !== 0 ||
-        minutes !== 0 ||
-        seconds !== 0 ||
-        milliseconds !== 0 ||
-        microseconds !== 0 ||
-        nanoseconds !== 0
-      ) {
-        calendarRec.lookup('dateUntil');
-      }
-    }
+    calendarRec = new CalendarMethodRecord(GetSlot(relativeTo, CALENDAR), ['dateAdd', 'dateUntil']);
   }
 
   ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = AddDuration(
@@ -6142,10 +6078,7 @@ export function AddDurationToOrSubtractDurationFromPlainDateTime(
     ToTemporalDurationRecord(durationLike);
   const options = GetOptionsObject(optionsParam);
 
-  const calendarRec = new CalendarMethodRecord(GetSlot(dateTime, CALENDAR));
-  if (years !== 0 || months !== 0 || weeks !== 0) {
-    calendarRec.lookup('dateAdd');
-  }
+  const calendarRec = new CalendarMethodRecord(GetSlot(dateTime, CALENDAR), ['dateAdd']);
 
   const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = AddDateTime(
     GetSlot(dateTime, ISO_YEAR),
@@ -6243,14 +6176,14 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   ({ days } = BalanceTimeDuration(days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, 'day'));
   const sign = DurationSign(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
 
-  const calendarRec = new CalendarMethodRecord(GetSlot(yearMonth, CALENDAR));
-  if (sign < 0 || years !== 0 || months !== 0 || weeks !== 0) {
-    calendarRec.lookup('dateAdd');
-  }
-  calendarRec.lookup('dateFromFields');
-  if (sign < 0) calendarRec.lookup('day');
-  calendarRec.lookup('fields');
-  calendarRec.lookup('yearMonthFromFields');
+  const calendarRec = new CalendarMethodRecord(GetSlot(yearMonth, CALENDAR), [
+    'dateAdd',
+    'dateFromFields',
+    'day',
+    'fields',
+    'yearMonthFromFields'
+  ]);
+
   const fieldNames = CalendarFields(calendarRec, ['monthCode', 'year']);
   const fields = PrepareTemporalFields(yearMonth, fieldNames, []);
   const fieldsCopy = SnapshotOwnProperties(fields, null);
@@ -6306,10 +6239,7 @@ export function AddDurationToOrSubtractDurationFromZonedDateTime(
     'getOffsetNanosecondsFor',
     'getPossibleInstantsFor'
   ]);
-  const calendarRec = new CalendarMethodRecord(GetSlot(zonedDateTime, CALENDAR));
-  if (years !== 0 || months !== 0 || weeks !== 0) {
-    calendarRec.lookup('dateAdd');
-  }
+  const calendarRec = new CalendarMethodRecord(GetSlot(zonedDateTime, CALENDAR), ['dateAdd']);
   const epochNanoseconds = AddZonedDateTime(
     GetSlot(zonedDateTime, INSTANT),
     timeZoneRec,

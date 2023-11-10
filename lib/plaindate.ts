@@ -13,9 +13,6 @@ import {
   ISO_NANOSECOND,
   CALENDAR,
   EPOCHNANOSECONDS,
-  MONTHS,
-  WEEKS,
-  YEARS,
   GetSlot
 } from './slots';
 import type { Temporal } from '..';
@@ -129,11 +126,7 @@ export class PlainDate implements Temporal.PlainDate {
     const duration = ES.ToTemporalDuration(temporalDurationLike);
     const options = ES.GetOptionsObject(optionsParam);
 
-    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR));
-    if (GetSlot(duration, YEARS) !== 0 || GetSlot(duration, MONTHS) !== 0 || GetSlot(duration, WEEKS) !== 0) {
-      calendarRec.lookup('dateAdd');
-    }
-
+    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['dateAdd']);
     return ES.AddDate(calendarRec, this, duration, options);
   }
   subtract(
@@ -145,11 +138,7 @@ export class PlainDate implements Temporal.PlainDate {
     const duration = ES.CreateNegatedTemporalDuration(ES.ToTemporalDuration(temporalDurationLike));
     const options = ES.GetOptionsObject(optionsParam);
 
-    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR));
-    if (GetSlot(duration, YEARS) !== 0 || GetSlot(duration, MONTHS) !== 0 || GetSlot(duration, WEEKS) !== 0) {
-      calendarRec.lookup('dateAdd');
-    }
-
+    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['dateAdd']);
     return ES.AddDate(calendarRec, this, duration, options);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {

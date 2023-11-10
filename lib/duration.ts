@@ -329,40 +329,7 @@ export class Duration implements Temporal.Duration {
       const relativeTo = zonedRelativeTo ?? plainRelativeTo;
       ES.assertExists(relativeTo);
       const calendar = GetSlot(relativeTo, CALENDAR);
-      calendarRec = new CalendarMethodRecord(calendar);
-      if (
-        years !== 0 ||
-        months !== 0 ||
-        weeks !== 0 ||
-        largestUnit === 'year' ||
-        largestUnit === 'month' ||
-        largestUnit === 'week' ||
-        smallestUnit === 'year' ||
-        smallestUnit === 'month' ||
-        smallestUnit === 'week'
-      ) {
-        calendarRec.lookup('dateAdd');
-      }
-      if (
-        largestUnit === 'year' ||
-        (largestUnit === 'month' && years !== 0) ||
-        smallestUnit === 'year' ||
-        // Edge condition in AdjustRoundedDurationDays:
-        (zonedRelativeTo &&
-          !roundingGranularityIsNoop &&
-          // TS just seems to be wrong about this condition, as if it's treating
-          // the outer condition 7 lines up from here as if it's joined by &&
-          // instead of ||
-          // @ts-expect-error
-          smallestUnit !== 'year' &&
-          smallestUnit !== 'month' &&
-          smallestUnit !== 'week' &&
-          smallestUnit !== 'day' &&
-          // @ts-expect-error - see above
-          (largestUnit === 'year' || largestUnit === 'month' || largestUnit === 'week'))
-      ) {
-        calendarRec.lookup('dateUntil');
-      }
+      calendarRec = new CalendarMethodRecord(calendar, ['dateAdd', 'dateUntil']);
     }
 
     ({ years, months, weeks, days } = ES.UnbalanceDateDurationRelative(
@@ -505,13 +472,7 @@ export class Duration implements Temporal.Duration {
       calendar = GetSlot(plainRelativeTo, CALENDAR);
     }
     if (calendar) {
-      calendarRec = new CalendarMethodRecord(calendar);
-      if (years !== 0 || months !== 0 || weeks !== 0 || unit === 'year' || unit === 'month' || unit === 'week') {
-        calendarRec.lookup('dateAdd');
-      }
-      if (unit === 'year' || (unit === 'month' && years !== 0)) {
-        calendarRec.lookup('dateUntil');
-      }
+      calendarRec = new CalendarMethodRecord(calendar, ['dateAdd', 'dateUntil']);
     }
 
     // Convert larger units down to days
@@ -780,8 +741,7 @@ export class Duration implements Temporal.Duration {
     if (zonedRelativeTo || plainRelativeTo) {
       const relativeTo = zonedRelativeTo ?? plainRelativeTo;
       ES.assertExists(relativeTo);
-      calendarRec = new CalendarMethodRecord(GetSlot(relativeTo, CALENDAR));
-      if (calendarUnitsPresent) calendarRec.lookup('dateAdd');
+      calendarRec = new CalendarMethodRecord(GetSlot(relativeTo, CALENDAR), ['dateAdd']);
     }
 
     if (zonedRelativeTo && (calendarUnitsPresent || d1 != 0 || d2 !== 0)) {
