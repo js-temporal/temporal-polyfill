@@ -1863,9 +1863,7 @@ export function InterpretISODateTimeOffset(
   offsetOpt: Temporal.OffsetDisambiguationOptions['offset'],
   matchMinute: boolean
 ) {
-  // If offsetBehaviour !== "exact" and offsetOpt !== "use", at least
-  // getPossibleInstantsFor should be looked up in advance. timeZoneRec may be
-  // modified by looking up getOffsetNanosecondsFor as needed.
+  // getPossibleInstantsFor and getOffsetNanosecondsFor should be looked up.
   const dt = CreateTemporalDateTime(
     year,
     month,
@@ -1910,7 +1908,6 @@ export function InterpretISODateTimeOffset(
   // "prefer" or "reject"
   const possibleInstants = GetPossibleInstantsFor(timeZoneRec, dt);
   if (possibleInstants.length > 0) {
-    if (!timeZoneRec.hasLookedUp('getOffsetNanosecondsFor')) timeZoneRec.lookup('getOffsetNanosecondsFor');
     for (let index = 0; index < possibleInstants.length; index++) {
       const candidate = possibleInstants[index];
       const candidateOffset = GetOffsetNanosecondsFor(timeZoneRec, candidate);
@@ -1937,7 +1934,6 @@ export function InterpretISODateTimeOffset(
   }
   // fall through: offsetOpt === 'prefer', but the offset doesn't match
   // so fall back to use the time zone instead.
-  if (!timeZoneRec.hasLookedUp('getOffsetNanosecondsFor')) timeZoneRec.lookup('getOffsetNanosecondsFor');
   const instant = DisambiguatePossibleInstants(possibleInstants, timeZoneRec, dt, disambiguation);
   return GetSlot(instant, EPOCHNANOSECONDS);
 }
@@ -2024,10 +2020,7 @@ export function ToTemporalZonedDateTime(
   }
   let offsetNs = 0;
   if (offsetBehaviour === 'option') offsetNs = ParseDateTimeUTCOffset(castExists(offset));
-  const timeZoneRec = new TimeZoneMethodRecord(timeZone);
-  if (offsetBehaviour !== 'exact' && offsetOpt !== 'use') {
-    timeZoneRec.lookup('getPossibleInstantsFor');
-  }
+  const timeZoneRec = new TimeZoneMethodRecord(timeZone, ['getOffsetNanosecondsFor', 'getPossibleInstantsFor']);
   const epochNanoseconds = InterpretISODateTimeOffset(
     year,
     month,
@@ -2905,16 +2898,8 @@ export function GetInstantFor(
   dateTime: Temporal.PlainDateTime,
   disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>
 ) {
-  // getPossibleInstantsFor must be looked up already.
-  // getOffsetNanosecondsFor _may_ be looked up and timeZoneRec may be modified.
+  // getPossibleInstantsFor and getOffsetNanosecondsFor must be looked up.
   const possibleInstants = GetPossibleInstantsFor(timeZoneRec, dateTime);
-  if (
-    possibleInstants.length === 0 &&
-    disambiguation !== 'reject' &&
-    !timeZoneRec.hasLookedUp('getOffsetNanosecondsFor')
-  ) {
-    timeZoneRec.lookup('getOffsetNanosecondsFor');
-  }
   return DisambiguatePossibleInstants(possibleInstants, timeZoneRec, dateTime, disambiguation);
 }
 

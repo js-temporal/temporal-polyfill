@@ -418,7 +418,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     const timeZone = ES.ToTemporalTimeZoneSlotValue(temporalTimeZoneLike);
     const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
-    const timeZoneRec = new TimeZoneMethodRecord(timeZone, ['getPossibleInstantsFor']);
+    const timeZoneRec = new TimeZoneMethodRecord(timeZone, ['getOffsetNanosecondsFor', 'getPossibleInstantsFor']);
     const instant = ES.GetInstantFor(timeZoneRec, this, disambiguation);
     return ES.CreateTemporalZonedDateTime(GetSlot(instant, EPOCHNANOSECONDS), timeZone, GetSlot(this, CALENDAR));
   }
