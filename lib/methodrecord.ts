@@ -1,4 +1,5 @@
 import { GetIntrinsic } from './intrinsicclass';
+import { CALENDAR, GetSlot } from './slots';
 import type { Temporal } from '..';
 import type { CalendarParams } from './internaltypes';
 import type { TimeZonePrototypeKeys } from './intrinsicclass';
@@ -112,6 +113,16 @@ export class TimeZoneMethodRecord extends MethodRecord<TimeZoneRecordInfo> {
 export class CalendarMethodRecord extends MethodRecord<CalendarRecordInfo> {
   constructor(calendar: string | Temporal.CalendarProtocol, methodNames: CalendarRecordMethodNames[] = []) {
     super('Calendar', calendar, methodNames);
+  }
+
+  static CreateFromRelativeTo(
+    plainRelativeTo: Temporal.PlainDate | undefined,
+    zonedRelativeTo: Temporal.ZonedDateTime | undefined,
+    methodNames: CalendarRecordMethodNames[] = []
+  ) {
+    const relativeTo = zonedRelativeTo ?? plainRelativeTo;
+    if (!relativeTo) return undefined;
+    return new this(GetSlot(relativeTo, CALENDAR), methodNames);
   }
 
   dateAdd(date: Temporal.PlainDate, duration: Temporal.Duration, options: Temporal.ArithmeticOptions | undefined) {
