@@ -1475,9 +1475,10 @@ abstract class IslamicBaseHelper extends HelperBase {
   abstract override id: BuiltinCalendarId;
   calendarType = 'lunar' as const;
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
-    // In leap years, the 12th month has 30 days. In non-leap years: 29.
-    const days = this.daysInMonth({ year: calendarDate.year, month: 12, day: 1 }, cache);
-    return days === 30;
+    const startOfYearCalendar = { year: calendarDate.year, month: 1, monthCode: 'M01', day: 1 };
+    const startOfNextYearCalendar = { year: calendarDate.year + 1, month: 1, monthCode: 'M01', day: 1 };
+    const result = this.calendarDaysUntil(startOfYearCalendar, startOfNextYearCalendar, cache);
+    return result === 355;
   }
   monthsInYear(/* calendarYear, cache */) {
     return 12;
@@ -1523,9 +1524,8 @@ class PersianHelper extends HelperBase {
   id = 'persian' as const;
   calendarType = 'solar' as const;
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
-    // Same logic (count days in the last month) for Persian as for Islamic,
-    // even though Persian is solar and Islamic is lunar.
-    return IslamicHelper.prototype.inLeapYear.call(this, calendarDate, cache);
+    // If the last month has 30 days, it's a leap year.
+    return this.daysInMonth({ year: calendarDate.year, month: 12, day: 1 }, cache) === 30;
   }
   monthsInYear(/* calendarYear, cache */) {
     return 12;
@@ -2494,7 +2494,7 @@ class NonIsoCalendar implements CalendarImpl {
   }
   dayOfYear(date: Temporal.PlainDate): number {
     const cache = OneObjectCache.getCacheForObject(date);
-    const calendarDate = this.helper.isoToCalendarDate(date, cache);
+    const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     const startOfYear = this.helper.startOfCalendarYear(calendarDate);
     const diffDays = this.helper.calendarDaysUntil(startOfYear, calendarDate, cache);
     return diffDays + 1;
