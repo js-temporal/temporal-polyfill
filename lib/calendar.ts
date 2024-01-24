@@ -48,6 +48,67 @@ function arrayFromSet<T>(src: Set<T>): T[] {
   return [...src];
 }
 
+function calendarDateWeekOfYear(
+  id: BuiltinCalendarId,
+  date: Temporal.PlainDate
+): {
+  week: Return['weekOfYear'];
+  year: Return['yearOfWeek'];
+} {
+  // Supports only Gregorian and ISO8601 calendar; can be updated to add support for other calendars.
+  // Returns undefined for calendars without a well-defined week calendar system.
+  // eslint-disable-next-line max-len
+  // Also see: https://github.com/unicode-org/icu/blob/ab72ab1d4a3c3f9beeb7d92b0c7817ca93dfdb04/icu4c/source/i18n/calendar.cpp#L1606
+  if (id !== 'gregory' && id !== 'iso8601') {
+    return { week: undefined, year: undefined };
+  }
+  const calendar = impl[id];
+  let yow = GetSlot(date, ISO_YEAR);
+  const dayOfWeek = calendar.dayOfWeek(date);
+  const dayOfYear = calendar.dayOfYear(date);
+  const fdow = calendar.getFirstDayOfWeek();
+  const mdow = calendar.getMinimalDaysInFirstWeek();
+  ES.uncheckedAssertNarrowedType<number>(fdow, 'guaranteed to exist for iso8601/gregory');
+  ES.uncheckedAssertNarrowedType<number>(mdow, 'guaranteed to exist for iso8601/gregory');
+
+  // For both the input date and the first day of its calendar year, calculate the day of week
+  // relative to first day of week in the relevant calendar (e.g., in iso8601, relative to Monday).
+  let relDow = (dayOfWeek + 7 - fdow) % 7;
+  // Assuming the year length is less than 7000 days.
+  let relDowJan1 = (dayOfWeek - dayOfYear + 7001 - fdow) % 7;
+
+  let woy = MathFloor((dayOfYear - 1 + relDowJan1) / 7);
+  if (7 - relDowJan1 >= mdow) {
+    ++woy;
+  }
+
+  // Adjust for weeks at the year end that overlap into the previous or next calendar year.
+  if (woy == 0) {
+    // Check for last week of previous year; if true, handle the case for
+    // first week of next year
+    let prevDoy = dayOfYear + calendar.daysInYear(calendar.dateAdd(date, -1, 0, 0, 0, 'constrain', id));
+    woy = weekNumber(fdow, mdow, prevDoy, dayOfWeek);
+    yow--;
+  } else {
+    // For it to be week 1 of the next year, dayOfYear must be >= lastDoy - 5
+    //          L-5                  L
+    // doy: 359 360 361 362 363 364 365 001
+    // dow:      1   2   3   4   5   6   7
+    let lastDoy = calendar.daysInYear(date);
+    if (dayOfYear >= lastDoy - 5) {
+      let lastRelDow = (relDow + lastDoy - dayOfYear) % 7;
+      if (lastRelDow < 0) {
+        lastRelDow += 7;
+      }
+      if (6 - lastRelDow >= mdow && dayOfYear + 7 - relDow > lastDoy) {
+        woy = 1;
+        yow++;
+      }
+    }
+  }
+  return { week: woy, year: yow };
+}
+
 /**
  * Shape of internal implementation of each built-in calendar. Note that
  * parameter types are simpler than CalendarProtocol because the `Calendar`
@@ -67,8 +128,8 @@ interface CalendarImpl {
   eraYear(date: Temporal.PlainDate | Temporal.PlainYearMonth): number | undefined;
   dayOfWeek(date: Temporal.PlainDate): number;
   dayOfYear(date: Temporal.PlainDate): number;
-  weekOfYear(date: Temporal.PlainDate): number;
-  yearOfWeek(date: Temporal.PlainDate): number;
+  getFirstDayOfWeek(): number | undefined;
+  getMinimalDaysInFirstWeek(): number | undefined;
   daysInWeek(date: Temporal.PlainDate): number;
   daysInMonth(date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
   daysInYear(date: Temporal.PlainDate | Temporal.PlainYearMonth): number;
@@ -314,12 +375,12 @@ export class Calendar implements Temporal.Calendar {
   weekOfYear(dateParam: Params['weekOfYear'][0]): Return['weekOfYear'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     const date = ES.ToTemporalDate(dateParam);
-    return impl[GetSlot(this, CALENDAR_ID)].weekOfYear(date);
+    return calendarDateWeekOfYear(GetSlot(this, CALENDAR_ID), date).week;
   }
   yearOfWeek(dateParam: Params['yearOfWeek'][0]): Return['yearOfWeek'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     const date = ES.ToTemporalDate(dateParam);
-    return impl[GetSlot(this, CALENDAR_ID)].yearOfWeek(date);
+    return calendarDateWeekOfYear(GetSlot(this, CALENDAR_ID), date).year;
   }
   daysInWeek(dateParam: Params['daysInWeek'][0]): Return['daysInWeek'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
@@ -479,12 +540,6 @@ impl['iso8601'] = {
   dayOfYear(date) {
     return ES.DayOfYear(GetSlot(date, ISO_YEAR), GetSlot(date, ISO_MONTH), GetSlot(date, ISO_DAY));
   },
-  weekOfYear(date) {
-    return ES.WeekOfYear(GetSlot(date, ISO_YEAR), GetSlot(date, ISO_MONTH), GetSlot(date, ISO_DAY)).week;
-  },
-  yearOfWeek(date) {
-    return ES.WeekOfYear(GetSlot(date, ISO_YEAR), GetSlot(date, ISO_MONTH), GetSlot(date, ISO_DAY)).year;
-  },
   daysInWeek() {
     return 7;
   },
@@ -503,6 +558,12 @@ impl['iso8601'] = {
     let date = dateParam;
     if (!HasSlot(date, ISO_YEAR)) date = ES.ToTemporalDate(date);
     return ES.LeapYear(GetSlot(date, ISO_YEAR));
+  },
+  getFirstDayOfWeek() {
+    return 1;
+  },
+  getMinimalDaysInFirstWeek() {
+    return 4;
   }
 };
 
@@ -598,6 +659,16 @@ function resolveNonLunisolarMonth<T extends { monthCode?: string; month?: number
     if (month < 1 || month > monthsPerYear) throw new RangeError(`Invalid monthCode: ${monthCode}`);
   }
   return { ...calendarDate, month, monthCode };
+}
+
+function weekNumber(firstDayOfWeek: number, minimalDaysInFirstWeek: number, desiredDay: number, dayOfWeek: number) {
+  let periodStartDayOfWeek = (dayOfWeek - firstDayOfWeek - desiredDay + 1) % 7;
+  if (periodStartDayOfWeek < 0) periodStartDayOfWeek += 7;
+  let weekNo = MathFloor((desiredDay + periodStartDayOfWeek - 1) / 7);
+  if (7 - periodStartDayOfWeek >= minimalDaysInFirstWeek) {
+    ++weekNo;
+  }
+  return weekNo;
 }
 
 type CachedTypes = Temporal.PlainYearMonth | Temporal.PlainDate | Temporal.PlainMonthDay;
@@ -1299,6 +1370,12 @@ abstract class HelperBase {
     }
     if (overflow === 'constrain' && closestIso !== undefined) return closestIso;
     throw new RangeError(`No recent ${this.id} year with monthCode ${monthCode} and day ${day}`);
+  }
+  getFirstDayOfWeek(): number | undefined {
+    return undefined;
+  }
+  getMinimalDaysInFirstWeek(): number | undefined {
+    return undefined;
   }
 }
 
@@ -2052,6 +2129,12 @@ class GregoryHelper extends SameMonthDayAsGregorianBaseHelper {
     if (era === 'ad' || era === 'a') era = 'ce';
     return { era, eraYear } as T;
   }
+  override getFirstDayOfWeek() {
+    return 1;
+  }
+  override getMinimalDaysInFirstWeek() {
+    return 1;
+  }
 }
 
 // NOTE: Only the 5 modern eras (Meiji and later) are included. For dates
@@ -2499,12 +2582,6 @@ class NonIsoCalendar implements CalendarImpl {
     const diffDays = this.helper.calendarDaysUntil(startOfYear, calendarDate, cache);
     return diffDays + 1;
   }
-  weekOfYear(date: Temporal.PlainDate): number {
-    return impl['iso8601'].weekOfYear(date);
-  }
-  yearOfWeek(date: Temporal.PlainDate): number {
-    return impl['iso8601'].yearOfWeek(date);
-  }
   daysInWeek(date: Temporal.PlainDate): number {
     return impl['iso8601'].daysInWeek(date);
   }
@@ -2548,6 +2625,12 @@ class NonIsoCalendar implements CalendarImpl {
     const calendarDate = this.helper.temporalToCalendarDate(date, cache);
     const result = this.helper.inLeapYear(calendarDate, cache);
     return result;
+  }
+  getFirstDayOfWeek(): number | undefined {
+    return this.helper.getFirstDayOfWeek();
+  }
+  getMinimalDaysInFirstWeek(): number | undefined {
+    return this.helper.getMinimalDaysInFirstWeek();
   }
 }
 
