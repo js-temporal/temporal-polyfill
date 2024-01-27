@@ -450,7 +450,9 @@ describe('ECMAScript', () => {
   });
 
   describe('GetAvailableNamedTimeZoneIdentifier', () => {
-    it('Case-normalizes time zone IDs', () => {
+    // Some environments don't support Intl.supportedValuesOf.
+    const itOrSkipIfNoIntlSupportedValuesOf = () => (Intl?.supportedValuesOf ? it : it.skip);
+    itOrSkipIfNoIntlSupportedValuesOf('Case-normalizes time zone IDs', () => {
       // eslint-disable-next-line max-len
       // curl -s https://raw.githubusercontent.com/unicode-org/cldr-json/main/cldr-json/cldr-bcp47/bcp47/timezone.json > cldr-timezone.json
       const cldrTimeZonePath = new URL('./cldr-timezone.json', import.meta.url);
@@ -470,7 +472,8 @@ describe('ECMAScript', () => {
       const missingFromCLDR = ['CET', 'EET', 'MET', 'WET'];
 
       // All IDs that we know about
-      const ids = [...new Set([...missingFromCLDR, ...cldrIdentifiers, ...Intl.supportedValuesOf('timeZone')])];
+      const IntlNativeIdentifiers = Intl.supportedValuesOf('timeZone');
+      const ids = [...new Set([...missingFromCLDR, ...cldrIdentifiers, ...IntlNativeIdentifiers])];
 
       for (const id of ids) {
         const lower = id.toLowerCase();
@@ -480,7 +483,7 @@ describe('ECMAScript', () => {
         equal(ES.GetAvailableNamedTimeZoneIdentifier(lower)?.identifier, id);
       }
     });
-    it('Returns canonical IDs', () => {
+    itOrSkipIfNoIntlSupportedValuesOf('Returns canonical IDs', () => {
       const ids = Intl.supportedValuesOf('timeZone');
       for (const id of ids) {
         equal(ES.GetAvailableNamedTimeZoneIdentifier(id).primaryIdentifier, id);
