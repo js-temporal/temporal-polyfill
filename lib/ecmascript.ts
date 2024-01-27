@@ -3236,6 +3236,7 @@ export function GetAvailableNamedTimeZoneIdentifier(
     ['Nsw', 'NSW'],
     ['Dar_Es_Salaam', 'Dar_es_Salaam'],
     ['Port_Of_Spain', 'Port_of_Spain'],
+    ['Port-Au-Prince', 'Port-au-Prince'],
     ['Isle_Of_Man', 'Isle_of_Man'],
     ['Comodrivadavia', 'ComodRivadavia'],
     ['Knox_In', 'Knox_IN'],
