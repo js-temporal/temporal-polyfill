@@ -4401,8 +4401,7 @@ export function RejectDuration(
 }
 
 function ISODateSurpasses(sign: -1 | 1, y1: number, m1: number, d1: number, y2: number, m2: number, d2: number) {
-  const constrained = ConstrainISODate(y1, m1, d1);
-  const cmp = CompareISODate(constrained.year, constrained.month, constrained.day, y2, m2, d2);
+  const cmp = CompareISODate(y1, m1, d1, y2, m2, d2);
   return sign * cmp === 1;
 }
 
