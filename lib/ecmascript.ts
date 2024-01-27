@@ -4495,6 +4495,18 @@ export function RejectDuration(
   }
 }
 
+function ISODateSurpasses(sign: -1 | 1, y1: number, m1: number, d1: number, y2: number, m2: number, d2: number) {
+  const constrained = ConstrainISODate(y1, m1, d1);
+  const cmp = CompareISODate(constrained.year, constrained.month, constrained.day, y2, m2, d2);
+  return sign * cmp === 1;
+}
+
+function ISODateToEpochDays(y: number, m: number, d: number) {
+  // This is inefficient, but we use GetUTCEpochNanoseconds to avoid duplicating
+  // the workarounds for legacy Date. (see that function for explanation)
+  return JSBI.toNumber(JSBI.divide(GetUTCEpochNanoseconds(y, m, d, 0, 0, 0, 0, 0, 0), DAY_NANOS));
+}
+
 export function DifferenceISODate<Allowed extends Temporal.DateTimeUnit>(
   y1: number,
   m1: number,
@@ -4504,96 +4516,51 @@ export function DifferenceISODate<Allowed extends Temporal.DateTimeUnit>(
   d2: number,
   largestUnit: Allowed
 ) {
-  switch (largestUnit) {
-    case 'year':
-    case 'month': {
-      const sign = -CompareISODate(y1, m1, d1, y2, m2, d2);
-      if (sign === 0) return { years: 0, months: 0, weeks: 0, days: 0 };
+  const sign = -CompareISODate(y1, m1, d1, y2, m2, d2);
+  if (sign === 0) return { years: 0, months: 0, weeks: 0, days: 0 };
+  uncheckedAssertNarrowedType<-1 | 1>(sign, "the - operator's return type is number");
 
-      const start = { year: y1, month: m1, day: d1 };
-      const end = { year: y2, month: m2, day: d2 };
-
-      let years = end.year - start.year;
-      let mid = AddISODate(y1, m1, d1, years, 0, 0, 0, 'constrain');
-      let midSign = -CompareISODate(mid.year, mid.month, mid.day, y2, m2, d2);
-      if (midSign === 0) {
-        return largestUnit === 'year'
-          ? { years, months: 0, weeks: 0, days: 0 }
-          : { years: 0, months: years * 12, weeks: 0, days: 0 };
-      }
-      let months = end.month - start.month;
-      if (midSign !== sign) {
-        years -= sign;
-        months += sign * 12;
-      }
-      mid = AddISODate(y1, m1, d1, years, months, 0, 0, 'constrain');
-      midSign = -CompareISODate(mid.year, mid.month, mid.day, y2, m2, d2);
-      if (midSign === 0) {
-        return largestUnit === 'year'
-          ? { years, months, weeks: 0, days: 0 }
-          : { years: 0, months: months + years * 12, weeks: 0, days: 0 };
-      }
-      if (midSign !== sign) {
-        // The end date is later in the month than mid date (or earlier for
-        // negative durations). Back up one month.
-        months -= sign;
-        mid = AddISODate(y1, m1, d1, years, months, 0, 0, 'constrain');
-      }
-
-      let days = 0;
-      // If we get here, months and years are correct (no overflow), and `mid`
-      // is within the range from `start` to `end`. To count the days between
-      // `mid` and `end`, there are 3 cases:
-      // 1) same month: use simple subtraction
-      // 2) end is previous month from intermediate (negative duration)
-      // 3) end is next month from intermediate (positive duration)
-      if (mid.month === end.month) {
-        // 1) same month: use simple subtraction
-        days = end.day - mid.day;
-      } else if (sign < 0) {
-        // 2) end is previous month from intermediate (negative duration)
-        // Example: intermediate: Feb 1, end: Jan 30, DaysInMonth = 31, days = -2
-        days = -mid.day - (ISODaysInMonth(end.year, end.month) - end.day);
-      } else {
-        // 3) end is next month from intermediate (positive duration)
-        // Example: intermediate: Jan 29, end: Feb 1, DaysInMonth = 31, days = 3
-        days = end.day + (ISODaysInMonth(mid.year, mid.month) - mid.day);
-      }
-
-      if (largestUnit === 'month') {
-        months += years * 12;
-        years = 0;
-      }
-      return { years, months, weeks: 0, days };
+  let years = 0;
+  let months = 0;
+  let intermediate;
+  if (largestUnit === 'year' || largestUnit === 'month') {
+    // We can skip right to the neighbourhood of the correct number of years,
+    // it'll be at least one less than y2 - y1 (unless it's zero)
+    let candidateYears = y2 - y1;
+    if (candidateYears !== 0) candidateYears -= sign;
+    // loops at most twice
+    while (!ISODateSurpasses(sign, y1 + candidateYears, m1, d1, y2, m2, d2)) {
+      years = candidateYears;
+      candidateYears += sign;
     }
-    case 'week':
-    case 'day': {
-      let larger, smaller, sign;
-      if (CompareISODate(y1, m1, d1, y2, m2, d2) < 0) {
-        smaller = { year: y1, month: m1, day: d1 };
-        larger = { year: y2, month: m2, day: d2 };
-        sign = 1;
-      } else {
-        smaller = { year: y2, month: m2, day: d2 };
-        larger = { year: y1, month: m1, day: d1 };
-        sign = -1;
-      }
-      let days = DayOfYear(larger.year, larger.month, larger.day) - DayOfYear(smaller.year, smaller.month, smaller.day);
-      for (let year = smaller.year; year < larger.year; ++year) {
-        days += LeapYear(year) ? 366 : 365;
-      }
-      let weeks = 0;
-      if (largestUnit === 'week') {
-        weeks = MathFloor(days / 7);
-        days %= 7;
-      }
-      weeks *= sign;
-      days *= sign;
-      return { years: 0, months: 0, weeks, days };
+
+    let candidateMonths = sign;
+    intermediate = BalanceISOYearMonth(y1 + years, m1 + candidateMonths);
+    // loops at most 12 times
+    while (!ISODateSurpasses(sign, intermediate.year, intermediate.month, d1, y2, m2, d2)) {
+      months = candidateMonths;
+      candidateMonths += sign;
+      intermediate = BalanceISOYearMonth(intermediate.year, intermediate.month + sign);
     }
-    default:
-      throw new Error('assert not reached');
+
+    if (largestUnit === 'month') {
+      months += years * 12;
+      years = 0;
+    }
   }
+
+  intermediate = BalanceISOYearMonth(y1 + years, m1 + months);
+  const constrained = ConstrainISODate(intermediate.year, intermediate.month, d1);
+
+  let weeks = 0;
+  let days = ISODateToEpochDays(y2, m2, d2) - ISODateToEpochDays(constrained.year, constrained.month, constrained.day);
+
+  if (largestUnit === 'week') {
+    weeks = MathTrunc(days / 7);
+    days %= 7;
+  }
+
+  return { years, months, weeks, days };
 }
 
 function DifferenceTime(
