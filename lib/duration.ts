@@ -1,6 +1,6 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
-import { MakeIntrinsicClass } from './intrinsicclass';
+import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import { CalendarMethodRecord } from './methodrecord';
 import {
   YEARS,
@@ -16,6 +16,9 @@ import {
   CALENDAR,
   INSTANT,
   EPOCHNANOSECONDS,
+  ISO_YEAR,
+  ISO_MONTH,
+  ISO_DAY,
   CreateSlots,
   GetSlot,
   SetSlot
@@ -26,6 +29,7 @@ import type { DurationParams as Params, DurationReturn as Return } from './inter
 import JSBI from 'jsbi';
 
 const MathAbs = Math.abs;
+const ObjectCreate = Object.create;
 
 export class Duration implements Temporal.Duration {
   constructor(
@@ -304,11 +308,7 @@ export class Duration implements Temporal.Duration {
 
     let precalculatedPlainDateTime;
     const plainDateTimeOrRelativeToWillBeUsed =
-      !roundingGranularityIsNoop ||
-      ES.IsCalendarUnit(largestUnit) ||
-      largestUnit === 'day' ||
-      calendarUnitsPresent ||
-      days !== 0;
+      ES.IsCalendarUnit(largestUnit) || largestUnit === 'day' || calendarUnitsPresent || days !== 0;
     if (zonedRelativeTo && plainDateTimeOrRelativeToWillBeUsed) {
       ES.assertExists(timeZoneRec);
       // Convert a ZonedDateTime relativeTo to PlainDateTime and PlainDate only
@@ -327,81 +327,88 @@ export class Duration implements Temporal.Duration {
       'dateUntil'
     ]);
 
-    ({ years, months, weeks, days } = ES.UnbalanceDateDurationRelative(
-      years,
-      months,
-      weeks,
-      days,
-      largestUnit,
-      plainRelativeTo,
-      calendarRec
-    ));
     let norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-    ({ years, months, weeks, days, norm } = ES.RoundDuration(
-      years,
-      months,
-      weeks,
-      days,
-      norm,
-      roundingIncrement,
-      smallestUnit,
-      roundingMode,
-      plainRelativeTo,
-      calendarRec,
-      zonedRelativeTo,
-      timeZoneRec,
-      precalculatedPlainDateTime
-    ));
+
     if (zonedRelativeTo) {
       ES.assertExists(calendarRec);
       ES.assertExists(timeZoneRec);
-      ({ years, months, weeks, days, norm } = ES.AdjustRoundedDurationDays(
+      const relativeEpochNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
+      const targetEpochNs = ES.AddZonedDateTime(
+        GetSlot(zonedRelativeTo, INSTANT),
+        timeZoneRec,
+        calendarRec,
         years,
         months,
         weeks,
         days,
         norm,
-        roundingIncrement,
-        smallestUnit,
-        roundingMode,
-        zonedRelativeTo,
-        calendarRec,
-        timeZoneRec,
-        precalculatedPlainDateTime
-      ));
-      const intermediate = ES.MoveRelativeZonedDateTime(
-        zonedRelativeTo,
-        calendarRec,
-        timeZoneRec,
-        years,
-        months,
-        weeks,
-        0,
         precalculatedPlainDateTime
       );
-      ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDurationRelative(
-        days,
-        norm,
-        largestUnit,
-        intermediate,
-        timeZoneRec
-      ));
+      ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+        ES.DifferenceZonedDateTimeWithRounding(
+          relativeEpochNs,
+          targetEpochNs,
+          plainRelativeTo,
+          calendarRec,
+          zonedRelativeTo,
+          timeZoneRec,
+          precalculatedPlainDateTime,
+          ObjectCreate(null),
+          largestUnit,
+          roundingIncrement,
+          smallestUnit,
+          roundingMode
+        ));
+    } else if (plainRelativeTo) {
+      ES.assertExists(calendarRec);
+      let targetTime = ES.AddTime(0, 0, 0, 0, 0, 0, norm);
+
+      // Delegate the date part addition to the calendar
+      const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
+      const dateDuration = new TemporalDuration(years, months, weeks, days + targetTime.deltaDays, 0, 0, 0, 0, 0, 0);
+      const targetDate = ES.AddDate(calendarRec, plainRelativeTo, dateDuration);
+
+      ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+        ES.DifferencePlainDateTimeWithRounding(
+          plainRelativeTo,
+          0,
+          0,
+          0,
+          0,
+          0,
+          0,
+          GetSlot(targetDate, ISO_YEAR),
+          GetSlot(targetDate, ISO_MONTH),
+          GetSlot(targetDate, ISO_DAY),
+          targetTime.hour,
+          targetTime.minute,
+          targetTime.second,
+          targetTime.millisecond,
+          targetTime.microsecond,
+          targetTime.nanosecond,
+          calendarRec,
+          largestUnit,
+          roundingIncrement,
+          smallestUnit,
+          roundingMode
+        ));
     } else {
+      // No reference date to calculate difference relative to
+      if (calendarUnitsPresent) {
+        throw new RangeError('a starting point is required for years, months, or weeks balancing');
+      }
+      if (ES.IsCalendarUnit(largestUnit)) {
+        throw new RangeError(`a starting point is required for ${largestUnit}s balancing`);
+      }
+      if (ES.IsCalendarUnit(smallestUnit)) {
+        throw new RangeError(`a starting point is required for ${smallestUnit}s rounding`);
+      }
+      ({ days, norm } = ES.RoundDuration(0, 0, 0, days, norm, roundingIncrement, smallestUnit, roundingMode));
       ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDuration(
         norm.add24HourDays(days),
         largestUnit
       ));
     }
-    ({ years, months, weeks, days } = ES.BalanceDateDurationRelative(
-      years,
-      months,
-      weeks,
-      days,
-      largestUnit,
-      smallestUnit,
-      plainRelativeTo,
-      calendarRec
-    ));
 
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
@@ -446,71 +453,83 @@ export class Duration implements Temporal.Duration {
       'dateUntil'
     ]);
 
-    // Convert larger units down to days
-    ({ years, months, weeks, days } = ES.UnbalanceDateDurationRelative(
-      years,
-      months,
-      weeks,
-      days,
-      unit,
-      plainRelativeTo,
-      calendarRec
-    ));
-    let norm;
-    // If the unit we're totalling is smaller than `days`, convert days down to that unit.
+    let norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
     if (zonedRelativeTo) {
       ES.assertExists(calendarRec);
       ES.assertExists(timeZoneRec);
-      const intermediate = ES.MoveRelativeZonedDateTime(
-        zonedRelativeTo,
-        calendarRec,
+      const relativeEpochNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
+      const targetEpochNs = ES.AddZonedDateTime(
+        GetSlot(zonedRelativeTo, INSTANT),
         timeZoneRec,
+        calendarRec,
         years,
         months,
         weeks,
-        0,
+        days,
+        norm,
         precalculatedPlainDateTime
       );
-      norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-
-      // Inline BalanceTimeDurationRelative, without the final balance step
-      const start = GetSlot(intermediate, INSTANT);
-      const startNs = GetSlot(intermediate, EPOCHNANOSECONDS);
-      let intermediateNs = startNs;
-      let startDt;
-      if (days !== 0) {
-        startDt = ES.GetPlainDateTimeFor(timeZoneRec, start, 'iso8601');
-        intermediateNs = ES.AddDaysToZonedDateTime(start, startDt, timeZoneRec, 'iso8601', days).epochNs;
-      }
-      const endNs = ES.AddInstant(intermediateNs, norm);
-      norm = TimeDuration.fromEpochNsDiff(endNs, startNs);
-      if (ES.IsCalendarUnit(unit) || unit === 'day') {
-        if (!norm.isZero()) startDt ??= ES.GetPlainDateTimeFor(timeZoneRec, start, 'iso8601');
-        ({ days, norm } = ES.NormalizedTimeDurationToDays(norm, intermediate, timeZoneRec, startDt));
-      } else {
-        days = 0;
-      }
-    } else {
-      norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-      norm = norm.add24HourDays(days);
-      days = 0;
+      const { total } = ES.DifferenceZonedDateTimeWithRounding(
+        relativeEpochNs,
+        targetEpochNs,
+        plainRelativeTo,
+        calendarRec,
+        zonedRelativeTo,
+        timeZoneRec,
+        precalculatedPlainDateTime,
+        ObjectCreate(null),
+        unit,
+        1,
+        unit,
+        'trunc'
+      );
+      return total;
     }
-    // Finally, truncate to the correct unit and calculate remainder
-    const { total } = ES.RoundDuration(
-      years,
-      months,
-      weeks,
-      days,
-      norm,
-      1,
-      unit,
-      'trunc',
-      plainRelativeTo,
-      calendarRec,
-      zonedRelativeTo,
-      timeZoneRec,
-      precalculatedPlainDateTime
-    );
+
+    if (plainRelativeTo) {
+      ES.assertExists(calendarRec);
+      let targetTime = ES.AddTime(0, 0, 0, 0, 0, 0, norm);
+
+      // Delegate the date part addition to the calendar
+      const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
+      const dateDuration = new TemporalDuration(years, months, weeks, days + targetTime.deltaDays, 0, 0, 0, 0, 0, 0);
+      const targetDate = ES.AddDate(calendarRec, plainRelativeTo, dateDuration);
+
+      const { total } = ES.DifferencePlainDateTimeWithRounding(
+        plainRelativeTo,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        GetSlot(targetDate, ISO_YEAR),
+        GetSlot(targetDate, ISO_MONTH),
+        GetSlot(targetDate, ISO_DAY),
+        targetTime.hour,
+        targetTime.minute,
+        targetTime.second,
+        targetTime.millisecond,
+        targetTime.microsecond,
+        targetTime.nanosecond,
+        calendarRec,
+        unit,
+        1,
+        unit,
+        'trunc'
+      );
+      return total;
+    }
+
+    // No reference date to calculate difference relative to
+    if (years !== 0 || months !== 0 || weeks !== 0) {
+      throw new RangeError('a starting point is required for years, months, or weeks total');
+    }
+    if (ES.IsCalendarUnit(unit)) {
+      throw new RangeError(`a starting point is required for ${unit}s total`);
+    }
+    norm = norm.add24HourDays(days);
+    const { total } = ES.RoundDuration(0, 0, 0, 0, norm, 1, unit, 'trunc');
     return total;
   }
   toString(optionsParam: Params['toString'][0] = undefined): string {
@@ -722,9 +741,12 @@ export class Duration implements Temporal.Duration {
     }
 
     if (calendarUnitsPresent) {
-      // plainRelativeTo may be undefined, and if so Unbalance will throw
-      ({ days: d1 } = ES.UnbalanceDateDurationRelative(y1, mon1, w1, d1, 'day', plainRelativeTo, calendarRec));
-      ({ days: d2 } = ES.UnbalanceDateDurationRelative(y2, mon2, w2, d2, 'day', plainRelativeTo, calendarRec));
+      if (!plainRelativeTo) {
+        throw new RangeError('A starting point is required for years, months, or weeks comparison');
+      }
+      ES.assertExists(calendarRec);
+      d1 = ES.UnbalanceDateDurationRelative(y1, mon1, w1, d1, plainRelativeTo, calendarRec);
+      d2 = ES.UnbalanceDateDurationRelative(y2, mon2, w2, d2, plainRelativeTo, calendarRec);
     }
     const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1).add24HourDays(d1);
     const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2).add24HourDays(d2);
