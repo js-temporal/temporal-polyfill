@@ -4083,14 +4083,18 @@ export function UnbalanceDateDurationRelative(
 } {
   // calendarRec must have looked up dateAdd and dateUntil
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
+  const defaultLargestUnit = DefaultTemporalLargestUnit(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
+  const effectiveLargestUnit = LargerOfTwoTemporalUnits(largestUnit, 'day');
+  if (LargerOfTwoTemporalUnits(defaultLargestUnit, effectiveLargestUnit) === effectiveLargestUnit) {
+    // no-op
+    return { years, months, weeks, days };
+  }
+  if (!calendarRec) throw new RangeError(`a starting point is required for ${largestUnit}s balancing`);
 
-  switch (largestUnit) {
+  switch (effectiveLargestUnit) {
     case 'year':
-      // no-op
-      return { years, months, weeks, days };
+      throw new Error('assert not reached');
     case 'month': {
-      if (years === 0) return { years: 0, months, weeks, days };
-      if (!calendarRec) throw new RangeError('a starting point is required for months balancing');
       // balance years down to months
       assertExists(plainRelativeTo);
       const later = CalendarDateAdd(calendarRec, plainRelativeTo, new TemporalDuration(years));
@@ -4101,8 +4105,6 @@ export function UnbalanceDateDurationRelative(
       return { years: 0, months: months + yearsInMonths, weeks, days };
     }
     case 'week': {
-      if (years === 0 && months === 0) return { years: 0, months: 0, weeks, days };
-      if (!calendarRec) throw new RangeError('a starting point is required for weeks balancing');
       // balance years and months down to days
       assertExists(plainRelativeTo);
       const later = CalendarDateAdd(calendarRec, plainRelativeTo, new TemporalDuration(years, months));
@@ -4111,8 +4113,6 @@ export function UnbalanceDateDurationRelative(
     }
     default: {
       // largestUnit is "day", or any time unit
-      if (years === 0 && months === 0 && weeks === 0) return { years: 0, months: 0, weeks: 0, days };
-      if (!calendarRec) throw new RangeError('a starting point is required for balancing calendar units');
       // balance years, months, and weeks down to days
       assertExists(plainRelativeTo);
       const later = CalendarDateAdd(calendarRec, plainRelativeTo, new TemporalDuration(years, months, weeks));
