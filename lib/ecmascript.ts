@@ -4613,7 +4613,7 @@ function DifferenceISODateTime(
   const date1 = CreateTemporalDate(y1, mon1, d1, calendarRec.receiver);
   const date2 = CreateTemporalDate(y2, mon2, d2, calendarRec.receiver);
   const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit);
-  const untilOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
+  const untilOptions = SnapshotOwnProperties(options, null);
   untilOptions.largestUnit = dateLargestUnit;
   uncheckedAssertNarrowedType<Temporal.DifferenceOptions<Temporal.DateUnit>>(
     untilOptions,
