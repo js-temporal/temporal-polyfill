@@ -247,15 +247,13 @@ export class PlainDate implements Temporal.PlainDate {
   toPlainYearMonth(): Return['toPlainYearMonth'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['fields', 'yearMonthFromFields']);
-    const fieldNames = ES.CalendarFields(calendarRec, ['monthCode', 'year']);
-    const fields = ES.PrepareTemporalFields(this, fieldNames, []);
+    const fields = ES.PrepareCalendarFields(calendarRec, this, ['monthCode', 'year'], [], []);
     return ES.CalendarYearMonthFromFields(calendarRec, fields);
   }
   toPlainMonthDay(): Return['toPlainMonthDay'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['fields', 'monthDayFromFields']);
-    const fieldNames = ES.CalendarFields(calendarRec, ['day', 'monthCode']);
-    const fields = ES.PrepareTemporalFields(this, fieldNames, []);
+    const fields = ES.PrepareCalendarFields(calendarRec, this, ['day', 'monthCode'], [], []);
     return ES.CalendarMonthDayFromFields(calendarRec, fields);
   }
   getISOFields(): Return['getISOFields'] {
