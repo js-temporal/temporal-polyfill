@@ -1507,13 +1507,16 @@ export function PrepareTemporalFields<
   return result as unknown as PrepareTemporalFieldsReturn<FieldKeys, RequiredFields, Owner<FieldKeys>>;
 }
 
-export function PrepareCalendarFields(
+export function PrepareCalendarFieldsAndFieldNames(
   calendarRec: CalendarMethodRecord,
   bag: Partial<Record<FieldKey, unknown>>,
   calendarFieldNames: FieldKey[],
-  nonCalendarFieldNames: FieldKey[],
-  requiredFieldNames: FieldKey[]
-): PrepareTemporalFieldsReturn<FieldKey, FieldKey[], Owner<FieldKey>> {
+  nonCalendarFieldNames: FieldKey[] = [],
+  requiredFieldNames: FieldKey[] = []
+): {
+  fields: PrepareTemporalFieldsReturn<FieldKey, FieldKey[], Owner<FieldKey>>;
+  fieldNames: FieldKey[];
+} {
   // Special-case built-in method, because we should skip the observable array
   // iteration in Calendar.prototype.fields
   let fieldNames: FieldKey[];
@@ -1531,7 +1534,25 @@ export function PrepareCalendarFields(
     }
   }
   Call(ArrayPrototypePush, fieldNames, nonCalendarFieldNames);
-  return PrepareTemporalFields(bag, fieldNames, requiredFieldNames);
+  const fields = PrepareTemporalFields(bag, fieldNames, requiredFieldNames);
+  return { fields, fieldNames };
+}
+
+export function PrepareCalendarFields(
+  calendarRec: CalendarMethodRecord,
+  bag: Partial<Record<FieldKey, unknown>>,
+  calendarFieldNames: FieldKey[],
+  nonCalendarFieldNames: FieldKey[],
+  requiredFieldNames: FieldKey[]
+): PrepareTemporalFieldsReturn<FieldKey, FieldKey[], Owner<FieldKey>> {
+  const { fields } = PrepareCalendarFieldsAndFieldNames(
+    calendarRec,
+    bag,
+    calendarFieldNames,
+    nonCalendarFieldNames,
+    requiredFieldNames
+  );
+  return fields;
 }
 
 interface TimeRecord {
@@ -2324,29 +2345,6 @@ export function CreateTemporalZonedDateTime(
   const TemporalZonedDateTime = GetIntrinsic('%Temporal.ZonedDateTime%');
   const result = ObjectCreate(TemporalZonedDateTime.prototype);
   CreateTemporalZonedDateTimeSlots(result, epochNanoseconds, timeZone, calendar);
-  return result;
-}
-
-// TODO: should (can?) we make this generic so the field names are checked
-// against the type that the calendar is a property of?
-export function CalendarFields(calendarRec: CalendarMethodRecord, fieldNamesParam: FieldKey[]): FieldKey[] {
-  // Special-case built-in method, because we should skip the observable array
-  // iteration in Calendar.prototype.fields
-  if (calendarRec.isBuiltIn()) {
-    if (calendarRec.receiver === 'iso8601') return fieldNamesParam;
-    uncheckedAssertNarrowedType<BuiltinCalendarId>(
-      calendarRec.receiver,
-      'calendar is guaranteed to be a built-in ID at this point because of isBuiltIn()'
-    );
-    return GetIntrinsic('%calendarFieldsImpl%')(calendarRec.receiver, fieldNamesParam);
-  }
-
-  const fieldNames = calendarRec.fields(fieldNamesParam);
-  const result: FieldKey[] = [];
-  for (const name of fieldNames) {
-    if (typeof name !== 'string') throw new TypeError('bad return from calendar.fields()');
-    ArrayPrototypePush.call(result, name);
-  }
   return result;
 }
 
@@ -5096,8 +5094,10 @@ export function DifferenceTemporalPlainYearMonth(
 
   const calendarRec = new CalendarMethodRecord(calendar, ['dateAdd', 'dateFromFields', 'dateUntil', 'fields']);
 
-  const fieldNames = CalendarFields(calendarRec, ['monthCode', 'year']);
-  const thisFields = PrepareTemporalFields(yearMonth, fieldNames, []);
+  const { fields: thisFields, fieldNames } = PrepareCalendarFieldsAndFieldNames(calendarRec, yearMonth, [
+    'monthCode',
+    'year'
+  ]);
   thisFields.day = 1;
   const thisDate = CalendarDateFromFields(calendarRec, thisFields);
   const otherFields = PrepareTemporalFields(other, fieldNames, []);
@@ -5861,8 +5861,7 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
     'yearMonthFromFields'
   ]);
 
-  const fieldNames = CalendarFields(calendarRec, ['monthCode', 'year']);
-  const fields = PrepareTemporalFields(yearMonth, fieldNames, []);
+  const { fields, fieldNames } = PrepareCalendarFieldsAndFieldNames(calendarRec, yearMonth, ['monthCode', 'year']);
   const fieldsCopy = SnapshotOwnProperties(fields, null);
   fields.day = 1;
   // PrepareTemporalFields returns a type where 'day' is potentially undefined,
