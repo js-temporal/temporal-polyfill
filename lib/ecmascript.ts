@@ -1943,9 +1943,12 @@ export function InterpretISODateTimeOffset(
   // zone and date/time.
   if (offsetOpt === 'reject') {
     const offsetStr = FormatUTCOffsetNanoseconds(offsetNs);
+    // prettier-ignore
     const timeZoneString = IsTemporalTimeZone(timeZoneRec.receiver)
       ? GetSlot(timeZoneRec.receiver, TIMEZONE_ID)
-      : 'time zone';
+      : typeof timeZoneRec.receiver === 'string'
+        ? timeZoneRec.receiver
+        : 'time zone';
     // The tsc emit for this line rewrites to invoke the PlainDateTime's valueOf method, NOT
     // toString (which is invoked by Node when using template literals directly).
     // See https://github.com/microsoft/TypeScript/issues/39744 for the proposed fix in tsc emit
