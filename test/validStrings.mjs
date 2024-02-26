@@ -8,7 +8,7 @@ node --experimental-modules --experimental-specifier-resolution=node --no-warnin
 */
 
 import assert from 'assert';
-import * as ES from '../lib/ecmascript.mjs';
+import * as ES from '../lib/ecmascript';
 
 const timezoneNames = Intl.supportedValuesOf('timeZone');
 const calendarNames = Intl.supportedValuesOf('calendar');
