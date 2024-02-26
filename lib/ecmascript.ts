@@ -735,7 +735,7 @@ export function ParseTemporalTimeZoneStringRaw(timeZoneString: string) {
   throwBadTimeZoneStringError(timeZoneString);
 }
 
-export function ParseTemporalTimeZoneString(stringIdent: string) {
+function ParseTemporalTimeZoneString(stringIdent: string) {
   const { tzAnnotation, offset, z } = ParseTemporalTimeZoneStringRaw(stringIdent);
   if (tzAnnotation) return ParseTimeZoneIdentifier(tzAnnotation);
   if (z) return ParseTimeZoneIdentifier('UTC');
@@ -2983,7 +2983,7 @@ export function ISODateTimePartString(part: number) {
   return ToZeroPaddedDecimalString(part, 2);
 }
 
-export function FormatFractionalSeconds(
+function FormatFractionalSeconds(
   subSecondNanoseconds: number,
   precision: Exclude<SecondsStringPrecisionRecord['precision'], 'minute'>
 ) {
@@ -3369,7 +3369,7 @@ export function FormatOffsetTimeZoneIdentifier(offsetMinutes: number) {
   return `${sign}${timeString}`;
 }
 
-export function FormatDateTimeUTCOffsetRounded(offsetNanosecondsParam: number) {
+function FormatDateTimeUTCOffsetRounded(offsetNanosecondsParam: number) {
   const offsetNanoseconds = JSBI.toNumber(
     RoundNumberToIncrement(JSBI.BigInt(offsetNanosecondsParam), MINUTE_NANOS, 'halfExpand')
   );
