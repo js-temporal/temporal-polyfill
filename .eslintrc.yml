@@ -18,9 +18,9 @@ globals:
   globalThis: readonly
 ignorePatterns:
   - node_modules/
-  - /dist/
-  - /tsc-out/
-  - /test262/
+  - dist/
+  - tsc-out/
+  - test262/
 rules:
   array-element-newline:
     - error
@@ -117,13 +117,3 @@ overrides:
       '@typescript-eslint/consistent-type-exports': error
       '@typescript-eslint/consistent-type-imports': error
       prefer-const: off
-  - files:
-      - polyfill/test262/**
-    rules:
-      quotes:
-        - error
-        - double
-        - avoidEscape: true
-      prettier/prettier:
-        - error
-        - singleQuote: false
