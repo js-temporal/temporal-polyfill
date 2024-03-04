@@ -3039,18 +3039,9 @@ interface ToStringOptions {
   roundingMode: ReturnType<typeof ToTemporalRoundingMode>;
 }
 
-// Because of JSBI, this helper function is quite a bit more complicated
-// than in proposal-temporal. If we remove JSBI later, then we can simplify it
-// to just the `typeof num === 'number'` branch.
-const JSBI_NUMBER_MAX_SAFE_INTEGER = JSBI.BigInt(Number.MAX_SAFE_INTEGER);
 function formatAsDecimalNumber(num: number | JSBI) {
-  if (typeof num === 'number') {
-    if (num <= NumberMaxSafeInteger) return num.toString(10);
-    return JSBI.BigInt(num).toString();
-  } else {
-    if (JSBI.lessThanOrEqual(num, JSBI_NUMBER_MAX_SAFE_INTEGER)) return JSBI.toNumber(num).toString(10);
-    return num.toString();
-  }
+  if (typeof num === 'number' && num <= NumberMaxSafeInteger) return num.toString(10);
+  return JSBI.BigInt(num).toString();
 }
 
 export function TemporalDurationToString(
