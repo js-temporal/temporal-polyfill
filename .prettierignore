@@ -1,0 +1,4 @@
+node_modules/
+dist/
+tsc-out/
+test262/
