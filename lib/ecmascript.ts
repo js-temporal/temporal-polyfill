@@ -217,7 +217,7 @@ export function ToNumber(value: unknown): number {
   return NumberCtor(value);
 }
 
-export function ToIntegerOrInfinity(value: unknown) {
+export function ToIntegerOrInfinity(value: unknown): number {
   const number = ToNumber(value);
   if (NumberIsNaN(number) || number === 0) {
     return 0;
@@ -308,7 +308,7 @@ function abs(x: JSBI): JSBI {
 }
 // This convenience function isn't in the spec, but is useful in the polyfill
 // for DRY and better error messages.
-export function RequireString(value: unknown) {
+export function RequireString(value: unknown): string {
   if (typeof value !== 'string') {
     // Use String() to ensure that Symbols won't throw
     throw new TypeError(`expected a string, not ${StringCtor(value)}`);
@@ -318,7 +318,7 @@ export function RequireString(value: unknown) {
 
 // This function is an enum in the spec, but it's helpful to make it a
 // function in the polyfill.
-function ToPrimitiveAndRequireString(valueParam: unknown) {
+function ToPrimitiveAndRequireString(valueParam: unknown): string {
   const value = ToPrimitive(valueParam, StringCtor);
   return RequireString(value);
 }
@@ -702,7 +702,9 @@ function throwBadTimeZoneStringError(timeZoneString: string): never {
   throw new RangeError(`${msg}: ${timeZoneString}`);
 }
 
-export function ParseTimeZoneIdentifier(identifier: string): { tzName?: string; offsetMinutes?: number } {
+export function ParseTimeZoneIdentifier(
+  identifier: string
+): { tzName: string; offsetMinutes?: undefined } | { tzName?: undefined; offsetMinutes: number } {
   if (!TIMEZONE_IDENTIFIER.test(identifier)) {
     throwBadTimeZoneStringError(identifier);
   }
@@ -719,7 +721,11 @@ export function ParseTimeZoneIdentifier(identifier: string): { tzName?: string; 
 // ParseTemporalTimeZoneString so that parsing can be tested separately from the
 // logic of converting parsed values into a named or offset identifier.
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
-export function ParseTemporalTimeZoneStringRaw(timeZoneString: string) {
+export function ParseTemporalTimeZoneStringRaw(timeZoneString: string): {
+  tzAnnotation: string;
+  offset: string | undefined;
+  z: boolean;
+} {
   if (TIMEZONE_IDENTIFIER.test(timeZoneString)) {
     return { tzAnnotation: timeZoneString, offset: undefined, z: false };
   }
@@ -735,7 +741,7 @@ export function ParseTemporalTimeZoneStringRaw(timeZoneString: string) {
   throwBadTimeZoneStringError(timeZoneString);
 }
 
-function ParseTemporalTimeZoneString(stringIdent: string) {
+function ParseTemporalTimeZoneString(stringIdent: string): ReturnType<typeof ParseTimeZoneIdentifier> {
   const { tzAnnotation, offset, z } = ParseTemporalTimeZoneStringRaw(stringIdent);
   if (tzAnnotation) return ParseTimeZoneIdentifier(tzAnnotation);
   if (z) return ParseTimeZoneIdentifier('UTC');
@@ -1590,7 +1596,16 @@ export function InterpretTemporalDateTimeFields(
 }
 
 export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options?: PlainDateTimeParams['from'][1]) {
-  let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar;
+  let year: number,
+    month: number,
+    day: number,
+    hour: number,
+    minute: number,
+    second: number,
+    millisecond: number,
+    microsecond: number,
+    nanosecond: number,
+    calendar;
   const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
 
   if (IsObject(item)) {
@@ -1865,9 +1880,21 @@ export function ToTemporalZonedDateTime(
   item: ZonedDateTimeParams['from'][0],
   options?: ZonedDateTimeParams['from'][1]
 ) {
-  let year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, timeZone, offset, calendar;
+  let year: number,
+    month: number,
+    day: number,
+    hour: number,
+    minute: number,
+    second: number,
+    millisecond: number,
+    microsecond: number,
+    nanosecond: number,
+    timeZone,
+    offset: string | undefined,
+    calendar: string | Temporal.CalendarProtocol | undefined;
   const resolvedOptions = SnapshotOwnProperties(GetOptionsObject(options), null);
-  let disambiguation, offsetOpt;
+  let disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>;
+  let offsetOpt: NonNullable<Temporal.OffsetDisambiguationOptions['offset']>;
   let matchMinute = false;
   let offsetBehaviour: OffsetBehaviour = 'option';
   if (IsObject(item)) {
@@ -2771,7 +2798,7 @@ export function GetOffsetStringFor(timeZone: string | Temporal.TimeZoneProtocol,
   return FormatUTCOffsetNanoseconds(offsetNs);
 }
 
-export function FormatUTCOffsetNanoseconds(offsetNs: number) {
+export function FormatUTCOffsetNanoseconds(offsetNs: number): string {
   const sign = offsetNs < 0 ? '-' : '+';
   const absoluteNs = MathAbs(offsetNs);
   const hour = MathFloor(absoluteNs / 3600e9);
@@ -2970,8 +2997,8 @@ function GetPossibleInstantsFor(
 export function ISOYearString(year: number) {
   let yearString;
   if (year < 0 || year > 9999) {
-    let sign = year < 0 ? '-' : '+';
-    let yearNumber = MathAbs(year);
+    const sign = year < 0 ? '-' : '+';
+    const yearNumber = MathAbs(year);
     yearString = sign + ToZeroPaddedDecimalString(yearNumber, 6);
   } else {
     yearString = ToZeroPaddedDecimalString(year, 4);
@@ -2986,7 +3013,7 @@ export function ISODateTimePartString(part: number) {
 function FormatFractionalSeconds(
   subSecondNanoseconds: number,
   precision: Exclude<SecondsStringPrecisionRecord['precision'], 'minute'>
-) {
+): string {
   let fraction;
   if (precision === 'auto') {
     if (subSecondNanoseconds === 0) return '';
@@ -3007,7 +3034,7 @@ export function FormatTimeString(
   second: number,
   subSecondNanoseconds: number,
   precision: SecondsStringPrecisionRecord['precision']
-) {
+): string {
   let result = `${ISODateTimePartString(hour)}:${ISODateTimePartString(minute)}`;
   if (precision === 'minute') return result;
 
@@ -3039,7 +3066,7 @@ interface ToStringOptions {
   roundingMode: ReturnType<typeof ToTemporalRoundingMode>;
 }
 
-function formatAsDecimalNumber(num: number | JSBI) {
+function formatAsDecimalNumber(num: number | JSBI): string {
   if (typeof num === 'number' && num <= NumberMaxSafeInteger) return num.toString(10);
   return JSBI.BigInt(num).toString();
 }
@@ -3223,7 +3250,7 @@ export function IsOffsetTimeZoneIdentifier(string: string): boolean {
   return OFFSET.test(string);
 }
 
-export function ParseDateTimeUTCOffset(string: string) {
+export function ParseDateTimeUTCOffset(string: string): number {
   const match = OFFSET_WITH_PARTS.exec(string);
   if (!match) {
     throw new RangeError(`invalid time zone offset: ${string}`);
@@ -3351,7 +3378,7 @@ export function GetNamedTimeZoneOffsetNanoseconds(id: string, epochNanoseconds: 
   return JSBI.toNumber(JSBI.subtract(utc, epochNanoseconds));
 }
 
-export function FormatOffsetTimeZoneIdentifier(offsetMinutes: number) {
+export function FormatOffsetTimeZoneIdentifier(offsetMinutes: number): string {
   const sign = offsetMinutes < 0 ? '-' : '+';
   const absoluteMinutes = MathAbs(offsetMinutes);
   const hour = MathFloor(absoluteMinutes / 60);
@@ -3360,7 +3387,7 @@ export function FormatOffsetTimeZoneIdentifier(offsetMinutes: number) {
   return `${sign}${timeString}`;
 }
 
-function FormatDateTimeUTCOffsetRounded(offsetNanosecondsParam: number) {
+function FormatDateTimeUTCOffsetRounded(offsetNanosecondsParam: number): string {
   const offsetNanoseconds = JSBI.toNumber(
     RoundNumberToIncrement(JSBI.BigInt(offsetNanosecondsParam), MINUTE_NANOS, 'halfExpand')
   );
