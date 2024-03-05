@@ -39,19 +39,9 @@ const MathAbs = Math.abs;
 const MathFloor = Math.floor;
 const ObjectCreate = Object.create;
 const ObjectEntries = Object.entries;
-const OriginalMap = Map;
 const OriginalSet = Set;
-const OriginalWeakMap = WeakMap;
 const ReflectOwnKeys = Reflect.ownKeys;
-const MapPrototypeEntries = Map.prototype.entries;
-const MapPrototypeGet = Map.prototype.get;
-const MapPrototypeSet = Map.prototype.set;
 const SetPrototypeAdd = Set.prototype.add;
-const WeakMapPrototypeGet = WeakMap.prototype.get;
-const WeakMapPrototypeSet = WeakMap.prototype.set;
-
-const MapIterator = ES.Call(MapPrototypeEntries, new Map(), []);
-const MapIteratorPrototypeNext = MapIterator.next;
 
 function arrayFromSet<T>(src: Set<T>): T[] {
   return [...src];
@@ -194,7 +184,7 @@ export class Calendar implements Temporal.Calendar {
   fields(fields: Params['fields'][0]): Return['fields'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
     const fieldsArray = [] as string[];
-    const allowed = new Set(['year', 'month', 'monthCode', 'day']);
+    const allowed = new OriginalSet<string>(['year', 'month', 'monthCode', 'day']);
     for (const name of fields) {
       if (typeof name !== 'string') throw new TypeError('invalid fields');
       if (!allowed.has(name)) throw new RangeError(`invalid field name ${name}`);
@@ -619,7 +609,7 @@ type CachedTypes = Temporal.PlainYearMonth | Temporal.PlainDate | Temporal.Plain
  * because each object's cache is thrown away when the object is GC-ed.
  */
 class OneObjectCache {
-  map = new OriginalMap();
+  map = new Map();
   calls = 0;
   now: number;
   hits = 0;
@@ -628,17 +618,14 @@ class OneObjectCache {
     this.now = globalThis.performance ? globalThis.performance.now() : Date.now();
     if (cacheToClone !== undefined) {
       let i = 0;
-      const entriesIterator = ES.Call(MapPrototypeEntries, cacheToClone.map, []);
-      for (;;) {
-        const iterResult = ES.Call(MapIteratorPrototypeNext, entriesIterator, []);
-        if (iterResult.done) break;
+      for (const entry of cacheToClone.map.entries()) {
         if (++i > OneObjectCache.MAX_CACHE_ENTRIES) break;
-        ES.Call(MapPrototypeSet, this.map, iterResult.value);
+        this.map.set(...entry);
       }
     }
   }
   get(key: string) {
-    const result = ES.Call(MapPrototypeGet, this.map, [key]);
+    const result = this.map.get(key);
     if (result) {
       this.hits++;
       this.report();
@@ -647,7 +634,7 @@ class OneObjectCache {
     return result;
   }
   set(key: string, value: unknown) {
-    ES.Call(MapPrototypeSet, this.map, [key, value]);
+    this.map.set(key, value);
     this.misses++;
     this.report();
   }
@@ -660,12 +647,12 @@ class OneObjectCache {
     */
   }
   setObject(obj: CachedTypes) {
-    if (ES.Call(WeakMapPrototypeGet, OneObjectCache.objectMap, [obj])) throw new RangeError('object already cached');
-    ES.Call(WeakMapPrototypeSet, OneObjectCache.objectMap, [obj, this]);
+    if (OneObjectCache.objectMap.get(obj)) throw new RangeError('object already cached');
+    OneObjectCache.objectMap.set(obj, this);
     this.report();
   }
 
-  static objectMap = new OriginalWeakMap();
+  static objectMap = new WeakMap();
   static MAX_CACHE_ENTRIES = 1000;
 
   /**
@@ -675,10 +662,10 @@ class OneObjectCache {
    * @param obj - object to associate with the cache
    */
   static getCacheForObject(obj: CachedTypes) {
-    let cache = ES.Call(WeakMapPrototypeGet, OneObjectCache.objectMap, [obj]);
+    let cache = OneObjectCache.objectMap.get(obj);
     if (!cache) {
       cache = new OneObjectCache();
-      ES.Call(WeakMapPrototypeSet, OneObjectCache.objectMap, [obj, cache]);
+      OneObjectCache.objectMap.set(obj, cache);
     }
     return cache;
   }
@@ -2387,6 +2374,9 @@ class NonIsoCalendar implements CalendarImpl {
     return result;
   }
   fields(fields: string[]): string[] {
+    // Note that `fields` is a new array created by the caller of this method,
+    // not the original input passed by the original caller. So it's safe to
+    // mutate it here because the mutation is not observable.
     if (ES.Call(ArrayIncludes, fields, ['year'])) {
       ES.Call(ArrayPrototypePush, fields, ['era', 'eraYear']);
     }
