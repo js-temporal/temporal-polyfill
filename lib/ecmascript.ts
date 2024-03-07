@@ -3749,7 +3749,7 @@ function BalanceISOYearMonth(yearParam: number, monthParam: number) {
   return { year, month };
 }
 
-function BalanceISODate(yearParam: number, monthParam: number, dayParam: number) {
+export function BalanceISODate(yearParam: number, monthParam: number, dayParam: number) {
   let year = yearParam;
   let month = monthParam;
   let day = dayParam;
@@ -6061,8 +6061,7 @@ export function RoundISODateTime(
   nanosecondParam: number,
   increment: number,
   unit: UnitSmallerThanOrEqualTo<'day'>,
-  roundingMode: Temporal.RoundingMode,
-  dayLengthNs = 86400e9
+  roundingMode: Temporal.RoundingMode
 ) {
   const { deltaDays, hour, minute, second, millisecond, microsecond, nanosecond } = RoundTime(
     hourParam,
@@ -6073,8 +6072,7 @@ export function RoundISODateTime(
     nanosecondParam,
     increment,
     unit,
-    roundingMode,
-    dayLengthNs
+    roundingMode
   );
   const { year, month, day } = BalanceISODate(yearParam, monthParam, dayParam + deltaDays);
   return { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond };
@@ -6089,8 +6087,7 @@ export function RoundTime(
   nanosecond: number,
   increment: number,
   unit: keyof typeof nsPerTimeUnit | 'day',
-  roundingMode: Temporal.RoundingMode,
-  dayLengthNs = 86400e9
+  roundingMode: Temporal.RoundingMode
 ) {
   let quantity = ZERO;
   switch (unit) {
@@ -6113,7 +6110,7 @@ export function RoundTime(
     case 'nanosecond':
       quantity = JSBI.add(JSBI.multiply(quantity, THOUSAND), JSBI.BigInt(nanosecond));
   }
-  const nsPerUnit = unit === 'day' ? dayLengthNs : nsPerTimeUnit[unit];
+  const nsPerUnit = nsPerTimeUnit[unit];
   const rounded = RoundNumberToIncrement(quantity, JSBI.BigInt(nsPerUnit * increment), roundingMode);
   const result = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(nsPerUnit)));
   switch (unit) {
@@ -6472,36 +6469,36 @@ export function RoundDuration(
     case 'hour': {
       const divisor = 3600e9;
       total = norm.fdiv(divisor);
-      norm = norm.round(divisor * increment, roundingMode);
+      norm = norm.round(JSBI.BigInt(divisor * increment), roundingMode);
       break;
     }
     case 'minute': {
       const divisor = 60e9;
       total = norm.fdiv(divisor);
-      norm = norm.round(divisor * increment, roundingMode);
+      norm = norm.round(JSBI.BigInt(divisor * increment), roundingMode);
       break;
     }
     case 'second': {
       const divisor = 1e9;
       total = norm.fdiv(divisor);
-      norm = norm.round(divisor * increment, roundingMode);
+      norm = norm.round(JSBI.BigInt(divisor * increment), roundingMode);
       break;
     }
     case 'millisecond': {
       const divisor = 1e6;
       total = norm.fdiv(divisor);
-      norm = norm.round(divisor * increment, roundingMode);
+      norm = norm.round(JSBI.BigInt(divisor * increment), roundingMode);
       break;
     }
     case 'microsecond': {
       const divisor = 1e3;
       total = norm.fdiv(divisor);
-      norm = norm.round(divisor * increment, roundingMode);
+      norm = norm.round(JSBI.BigInt(divisor * increment), roundingMode);
       break;
     }
     case 'nanosecond': {
       total = JSBI.toNumber(norm.totalNs);
-      norm = norm.round(increment, roundingMode);
+      norm = norm.round(JSBI.BigInt(increment), roundingMode);
       break;
     }
   }
@@ -6764,6 +6761,7 @@ function bisect(
 }
 
 const nsPerTimeUnit = {
+  day: 86400e9,
   hour: 3600e9,
   minute: 60e9,
   second: 1e9,
