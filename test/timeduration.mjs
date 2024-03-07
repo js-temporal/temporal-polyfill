@@ -436,21 +436,21 @@ describe('Normalized time duration', () => {
   describe('round()', () => {
     it('basic', () => {
       const d = new TimeDuration(1_234_567_890n);
-      check(d.round(1000, 'halfExpand'), 1, 234568000);
+      check(d.round(1000n, 'halfExpand'), 1, 234568000);
     });
 
     it('increment 1', () => {
       const d = new TimeDuration(1_234_567_890n);
-      check(d.round(1, 'ceil'), 1, 234567890);
+      check(d.round(1n, 'ceil'), 1, 234567890);
     });
 
     it('rounds up from subseconds to seconds', () => {
       const d = new TimeDuration(1_999_999_999n);
-      check(d.round(1e9, 'halfExpand'), 2, 0);
+      check(d.round(BigInt(1e9), 'halfExpand'), 2, 0);
     });
 
     describe('Rounding modes', () => {
-      const increment = 100;
+      const increment = 100n;
       const testValues = [-150, -100, -80, -50, -30, 0, 30, 50, 80, 100, 150];
       const expectations = {
         ceil: [-100, -100, 0, 0, 0, 0, 100, 100, 100, 100, 200],
@@ -476,7 +476,7 @@ describe('Normalized time duration', () => {
 
             it(`rounds ${value} s to ${expected} s`, () => {
               const d = new TimeDuration(BigInt(value * 1e9));
-              const result = d.round(increment * 1e9, roundingMode);
+              const result = d.round(increment * BigInt(1e9), roundingMode);
               check(result, expected, 0);
             });
           });
