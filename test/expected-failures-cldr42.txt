@@ -11,6 +11,3 @@ staging/Intl402/Temporal/old/instant-toLocaleString.js
 staging/Intl402/Temporal/old/time-toLocaleString.js
 intl402/DateTimeFormat/prototype/format/temporal-objects-resolved-time-zone.js
 intl402/DateTimeFormat/prototype/format/timedatestyle-en.js
-
-# Date format for {calendar: 'chinese'} or {calendar: 'dangi'} 
-staging/Intl402/Temporal/old/non-iso-calendars.js

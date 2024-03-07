@@ -10,6 +10,7 @@ import {
   HOUR_NANOS,
   MILLION,
   MINUTE_NANOS,
+  ONE,
   TEN,
   THOUSAND,
   TWO,
@@ -122,8 +123,9 @@ export class TimeDuration {
     return JSBI.equal(this.totalNs, ZERO);
   }
 
-  round(increment: number, mode: Temporal.RoundingMode) {
-    if (increment === 1) return this;
+  round(incrementParam: JSBI | bigint, mode: Temporal.RoundingMode) {
+    const increment = ensureJSBI(incrementParam);
+    if (JSBI.equal(increment, ONE)) return this;
     let { quotient, remainder } = divmod(this.totalNs, JSBI.BigInt(increment));
     if (JSBI.equal(remainder, ZERO)) return this;
     const sign = JSBI.lessThan(remainder, ZERO) ? -1 : 1;
