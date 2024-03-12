@@ -2979,7 +2979,7 @@ function DisambiguatePossibleInstants(
     case 'earlier': {
       const norm = TimeDuration.normalize(0, 0, 0, 0, 0, -nanoseconds);
       const earlierTime = AddTime(hour, minute, second, millisecond, microsecond, nanosecond, norm);
-      const earlierDate = AddISODate(year, month, day, 0, 0, 0, earlierTime.deltaDays, 'constrain');
+      const earlierDate = BalanceISODate(year, month, day + earlierTime.deltaDays);
       const earlierPlainDateTime = CreateTemporalDateTime(
         earlierDate.year,
         earlierDate.month,
@@ -2998,7 +2998,7 @@ function DisambiguatePossibleInstants(
     case 'later': {
       const norm = TimeDuration.normalize(0, 0, 0, 0, 0, nanoseconds);
       const laterTime = AddTime(hour, minute, second, millisecond, microsecond, nanosecond, norm);
-      const laterDate = AddISODate(year, month, day, 0, 0, 0, laterTime.deltaDays, 'constrain');
+      const laterDate = BalanceISODate(year, month, day + laterTime.deltaDays);
       const laterPlainDateTime = CreateTemporalDateTime(
         laterDate.year,
         laterDate.month,
@@ -5816,15 +5816,10 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   if (sign < 0) {
     const oneMonthDuration = new Duration(0, 1, 0, 0, 0, 0, 0, 0, 0, 0);
     const nextMonth = CalendarDateAdd(calendarRec, startDate, oneMonthDuration);
-    const endOfMonthISO = AddISODate(
+    const endOfMonthISO = BalanceISODate(
       GetSlot(nextMonth, ISO_YEAR),
       GetSlot(nextMonth, ISO_MONTH),
-      GetSlot(nextMonth, ISO_DAY),
-      0,
-      0,
-      0,
-      -1,
-      'constrain'
+      GetSlot(nextMonth, ISO_DAY) - 1
     );
     const endOfMonth = CreateTemporalDate(
       endOfMonthISO.year,
@@ -6293,15 +6288,10 @@ export function RoundDuration(
       plainRelativeTo = yearsLater;
       days += monthsWeeksInDays;
 
-      const isoResult = AddISODate(
+      const isoResult = BalanceISODate(
         GetSlot(plainRelativeTo, ISO_YEAR),
         GetSlot(plainRelativeTo, ISO_MONTH),
-        GetSlot(plainRelativeTo, ISO_DAY),
-        0,
-        0,
-        0,
-        days,
-        'constrain'
+        GetSlot(plainRelativeTo, ISO_DAY) + days
       );
       const wholeDaysLater = CreateTemporalDate(isoResult.year, isoResult.month, isoResult.day, calendarRec.receiver);
       const untilOptions = ObjectCreate(null) as Temporal.DifferenceOptions<typeof unit>;
@@ -6343,15 +6333,10 @@ export function RoundDuration(
       plainRelativeTo = yearsMonthsLater;
       days += weeksInDays;
 
-      const isoResult = AddISODate(
+      const isoResult = BalanceISODate(
         GetSlot(plainRelativeTo, ISO_YEAR),
         GetSlot(plainRelativeTo, ISO_MONTH),
-        GetSlot(plainRelativeTo, ISO_DAY),
-        0,
-        0,
-        0,
-        days,
-        'constrain'
+        GetSlot(plainRelativeTo, ISO_DAY) + days
       );
       const wholeDaysLater = CreateTemporalDate(isoResult.year, isoResult.month, isoResult.day, calendarRec.receiver);
       const untilOptions = ObjectCreate(null);
@@ -6383,15 +6368,10 @@ export function RoundDuration(
       assertExists(plainRelativeTo);
       assertExists(calendarRec);
 
-      const isoResult = AddISODate(
+      const isoResult = BalanceISODate(
         GetSlot(plainRelativeTo, ISO_YEAR),
         GetSlot(plainRelativeTo, ISO_MONTH),
-        GetSlot(plainRelativeTo, ISO_DAY),
-        0,
-        0,
-        0,
-        days,
-        'constrain'
+        GetSlot(plainRelativeTo, ISO_DAY) + days
       );
       const wholeDaysLater = CreateTemporalDate(isoResult.year, isoResult.month, isoResult.day, calendarRec.receiver);
       const untilOptions = ObjectCreate(null);
