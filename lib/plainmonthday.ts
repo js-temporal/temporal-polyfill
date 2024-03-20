@@ -7,7 +7,6 @@ import { DateTimeFormat } from './intl';
 import type { FieldKey, PlainMonthDayParams as Params, PlainMonthDayReturn as Return } from './internaltypes';
 
 const ArrayPrototypeConcat = Array.prototype.concat;
-const ObjectCreate = Object.create;
 
 export class PlainMonthDay implements Temporal.PlainMonthDay {
   constructor(
@@ -100,9 +99,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     let mergedFields = ES.CalendarMergeFields(calendarRec, fields, inputFields);
     const concatenatedFieldNames: FieldKey[] = ES.Call(ArrayPrototypeConcat, receiverFieldNames, inputFieldNames);
     mergedFields = ES.PrepareTemporalFields(mergedFields, concatenatedFieldNames, [], [], 'ignore');
-    const options = ObjectCreate(null);
-    options.overflow = 'constrain';
-    return ES.CalendarDateFromFields(calendarRec, mergedFields, options);
+    return ES.CalendarDateFromFields(calendarRec, mergedFields);
   }
   getISOFields(): Return['getISOFields'] {
     if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
