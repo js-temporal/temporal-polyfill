@@ -264,7 +264,7 @@ export function ToNumber(value: unknown): number {
   return NumberCtor(value);
 }
 
-export function ToIntegerOrInfinity(value: unknown): number {
+function ToIntegerOrInfinity(value: unknown): number {
   const number = ToNumber(value);
   if (NumberIsNaN(number) || number === 0) {
     return 0;
