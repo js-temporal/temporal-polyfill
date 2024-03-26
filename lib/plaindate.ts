@@ -179,32 +179,18 @@ export class PlainDate implements Temporal.PlainDate {
   }
   toPlainDateTime(temporalTimeParam: Params['toPlainDateTime'][0] = undefined): Return['toPlainDateTime'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
-    const year = GetSlot(this, ISO_YEAR);
-    const month = GetSlot(this, ISO_MONTH);
-    const day = GetSlot(this, ISO_DAY);
-    const calendar = GetSlot(this, CALENDAR);
-
-    if (temporalTimeParam === undefined) return ES.CreateTemporalDateTime(year, month, day, 0, 0, 0, 0, 0, 0, calendar);
-
-    const temporalTime = ES.ToTemporalTime(temporalTimeParam);
-    const hour = GetSlot(temporalTime, ISO_HOUR);
-    const minute = GetSlot(temporalTime, ISO_MINUTE);
-    const second = GetSlot(temporalTime, ISO_SECOND);
-    const millisecond = GetSlot(temporalTime, ISO_MILLISECOND);
-    const microsecond = GetSlot(temporalTime, ISO_MICROSECOND);
-    const nanosecond = GetSlot(temporalTime, ISO_NANOSECOND);
-
+    const temporalTime = ES.ToTemporalTimeOrMidnight(temporalTimeParam);
     return ES.CreateTemporalDateTime(
-      year,
-      month,
-      day,
-      hour,
-      minute,
-      second,
-      millisecond,
-      microsecond,
-      nanosecond,
-      calendar
+      GetSlot(this, ISO_YEAR),
+      GetSlot(this, ISO_MONTH),
+      GetSlot(this, ISO_DAY),
+      GetSlot(temporalTime, ISO_HOUR),
+      GetSlot(temporalTime, ISO_MINUTE),
+      GetSlot(temporalTime, ISO_SECOND),
+      GetSlot(temporalTime, ISO_MILLISECOND),
+      GetSlot(temporalTime, ISO_MICROSECOND),
+      GetSlot(temporalTime, ISO_NANOSECOND),
+      GetSlot(this, CALENDAR)
     );
   }
   toZonedDateTime(item: Params['toZonedDateTime'][0]): Return['toZonedDateTime'] {
@@ -236,41 +222,22 @@ export class PlainDate implements Temporal.PlainDate {
       timeZone = ES.ToTemporalTimeZoneSlotValue(item);
     }
 
-    const year = GetSlot(this, ISO_YEAR);
-    const month = GetSlot(this, ISO_MONTH);
-    const day = GetSlot(this, ISO_DAY);
     const calendar = GetSlot(this, CALENDAR);
-
-    let hour = 0,
-      minute = 0,
-      second = 0,
-      millisecond = 0,
-      microsecond = 0,
-      nanosecond = 0;
-    if (temporalTime !== undefined) {
-      temporalTime = ES.ToTemporalTime(temporalTime);
-      ES.uncheckedAssertNarrowedType<Temporal.PlainTime>(
-        temporalTime,
-        'ToTemporalTime above always returns a PlainTime'
-      );
-      hour = GetSlot(temporalTime, ISO_HOUR);
-      minute = GetSlot(temporalTime, ISO_MINUTE);
-      second = GetSlot(temporalTime, ISO_SECOND);
-      millisecond = GetSlot(temporalTime, ISO_MILLISECOND);
-      microsecond = GetSlot(temporalTime, ISO_MICROSECOND);
-      nanosecond = GetSlot(temporalTime, ISO_NANOSECOND);
-    }
-
+    temporalTime = ES.ToTemporalTimeOrMidnight(temporalTime);
+    ES.uncheckedAssertNarrowedType<Temporal.PlainTime>(
+      temporalTime,
+      'ToTemporalTimeOrMidnight above always returns a PlainTime'
+    );
     const dt = ES.CreateTemporalDateTime(
-      year,
-      month,
-      day,
-      hour,
-      minute,
-      second,
-      millisecond,
-      microsecond,
-      nanosecond,
+      GetSlot(this, ISO_YEAR),
+      GetSlot(this, ISO_MONTH),
+      GetSlot(this, ISO_DAY),
+      GetSlot(temporalTime, ISO_HOUR),
+      GetSlot(temporalTime, ISO_MINUTE),
+      GetSlot(temporalTime, ISO_SECOND),
+      GetSlot(temporalTime, ISO_MILLISECOND),
+      GetSlot(temporalTime, ISO_MICROSECOND),
+      GetSlot(temporalTime, ISO_NANOSECOND),
       calendar
     );
     const timeZoneRec = new TimeZoneMethodRecord(timeZone, ['getOffsetNanosecondsFor', 'getPossibleInstantsFor']);

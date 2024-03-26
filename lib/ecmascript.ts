@@ -1833,6 +1833,12 @@ export function ToTemporalTime(
   return new TemporalPlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
 }
 
+export function ToTemporalTimeOrMidnight(item: string | Temporal.PlainTime | Temporal.PlainTimeLike | undefined) {
+  const TemporalPlainTime = GetIntrinsic('%Temporal.PlainTime%');
+  if (item === undefined) return new TemporalPlainTime();
+  return ToTemporalTime(item);
+}
+
 export function ToTemporalYearMonth(
   item: PlainYearMonthParams['from'][0],
   optionsParam?: PlainYearMonthParams['from'][1]
