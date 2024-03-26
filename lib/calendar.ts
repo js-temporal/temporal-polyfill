@@ -2405,7 +2405,7 @@ class NonIsoCalendar implements CalendarImpl {
     if (type !== 'month-day') {
       fieldDescriptors = [
         { property: 'era', conversion: ES.ToString, required: false },
-        { property: 'eraYear', conversion: ES.ToIntegerOrInfinity, required: false }
+        { property: 'eraYear', conversion: ES.ToIntegerWithTruncation, required: false }
       ];
     }
     return fieldDescriptors;
