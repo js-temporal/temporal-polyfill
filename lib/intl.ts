@@ -325,6 +325,14 @@ function timeAmend(optionsParam: OptionsType<Temporal.PlainTime>) {
 }
 
 function yearMonthAmend(optionsParam: OptionsType<Temporal.PlainYearMonth>) {
+  // Try to fake what dateStyle should do for dates without a day. This is not
+  // accurate for locales that always print the era
+  const dateStyleHacks = {
+    short: { year: '2-digit', month: 'numeric' },
+    medium: { year: 'numeric', month: 'short' },
+    long: { year: 'numeric', month: 'long' },
+    full: { year: 'numeric', month: 'long' }
+  };
   let options = amend(optionsParam, {
     day: false,
     hour: false,
@@ -333,9 +341,13 @@ function yearMonthAmend(optionsParam: OptionsType<Temporal.PlainYearMonth>) {
     weekday: false,
     dayPeriod: false,
     timeZoneName: false,
-    dateStyle: false,
     timeStyle: false
   });
+  if ('dateStyle' in options && options.dateStyle) {
+    const style = options.dateStyle;
+    delete options.dateStyle;
+    Object.assign(options, dateStyleHacks[style]);
+  }
   if (!('year' in options || 'month' in options)) {
     options = ObjectAssign(options, { year: 'numeric', month: 'numeric' });
   }
@@ -343,6 +355,13 @@ function yearMonthAmend(optionsParam: OptionsType<Temporal.PlainYearMonth>) {
 }
 
 function monthDayAmend(optionsParam: OptionsType<Temporal.PlainMonthDay>) {
+  // Try to fake what dateStyle should do for dates without a day
+  const dateStyleHacks = {
+    short: { month: 'numeric', day: 'numeric' },
+    medium: { month: 'short', day: 'numeric' },
+    long: { month: 'long', day: 'numeric' },
+    full: { month: 'long', day: 'numeric' }
+  };
   let options = amend(optionsParam, {
     year: false,
     hour: false,
@@ -351,9 +370,13 @@ function monthDayAmend(optionsParam: OptionsType<Temporal.PlainMonthDay>) {
     weekday: false,
     dayPeriod: false,
     timeZoneName: false,
-    dateStyle: false,
     timeStyle: false
   });
+  if ('dateStyle' in options && options.dateStyle) {
+    const style = options.dateStyle;
+    delete options.dateStyle;
+    Object.assign(options, dateStyleHacks[style]);
+  }
   if (!('month' in options || 'day' in options)) {
     options = ObjectAssign({}, options, { month: 'numeric', day: 'numeric' });
   }
