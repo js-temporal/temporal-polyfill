@@ -266,21 +266,6 @@ export function ToNumber(value: unknown): number {
   return NumberCtor(value);
 }
 
-function ToIntegerOrInfinity(value: unknown): number {
-  const number = ToNumber(value);
-  if (NumberIsNaN(number) || number === 0) {
-    return 0;
-  }
-  if (!NumberIsFinite(number)) {
-    return number;
-  }
-  const integer = MathFloor(MathAbs(number));
-  if (integer === 0) {
-    return 0;
-  }
-  return MathSign(number) * integer;
-}
-
 function IsIntegralNumber(argument: unknown) {
   if (typeof argument !== 'number' || NumberIsNaN(argument) || !NumberIsFinite(argument)) {
     return false;
@@ -576,18 +561,18 @@ function ParseISODateTime(isoString: string) {
   let yearString = match[1];
   if (yearString[0] === '\u2212') yearString = `-${yearString.slice(1)}`;
   if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
-  const year = ToIntegerOrInfinity(yearString);
-  const month = ToIntegerOrInfinity(match[2] || match[4]);
-  const day = ToIntegerOrInfinity(match[3] || match[5]);
-  const hour = ToIntegerOrInfinity(match[6]);
+  const year = +yearString;
+  const month = +(match[2] ?? match[4] ?? 1);
+  const day = +(match[3] ?? match[5] ?? 1);
   const hasTime = match[6] !== undefined;
-  const minute = ToIntegerOrInfinity(match[7] || match[10]);
-  let second = ToIntegerOrInfinity(match[8] || match[11]);
+  const hour = +(match[6] ?? 0);
+  const minute = +(match[7] ?? match[10] ?? 0);
+  let second = +(match[8] ?? match[11] ?? 0);
   if (second === 60) second = 59;
-  const fraction = (match[9] || match[12]) + '000000000';
-  const millisecond = ToIntegerOrInfinity(fraction.slice(0, 3));
-  const microsecond = ToIntegerOrInfinity(fraction.slice(3, 6));
-  const nanosecond = ToIntegerOrInfinity(fraction.slice(6, 9));
+  const fraction = (match[9] ?? match[12] ?? '') + '000000000';
+  const millisecond = +fraction.slice(0, 3);
+  const microsecond = +fraction.slice(3, 6);
+  const nanosecond = +fraction.slice(6, 9);
   let offset;
   let z = false;
   if (match[13]) {
@@ -646,14 +631,14 @@ export function ParseTemporalTimeString(isoString: string) {
   const match = PARSE.time.exec(isoString);
   let hour, minute, second, millisecond, microsecond, nanosecond;
   if (match) {
-    hour = ToIntegerOrInfinity(match[1]);
-    minute = ToIntegerOrInfinity(match[2] || match[5]);
-    second = ToIntegerOrInfinity(match[3] || match[6]);
+    hour = +(match[1] ?? 0);
+    minute = +(match[2] ?? match[5] ?? 0);
+    second = +(match[3] ?? match[6] ?? 0);
     if (second === 60) second = 59;
-    const fraction = (match[4] || match[7]) + '000000000';
-    millisecond = ToIntegerOrInfinity(fraction.slice(0, 3));
-    microsecond = ToIntegerOrInfinity(fraction.slice(3, 6));
-    nanosecond = ToIntegerOrInfinity(fraction.slice(6, 9));
+    const fraction = (match[4] ?? match[7] ?? '') + '000000000';
+    millisecond = +fraction.slice(0, 3);
+    microsecond = +fraction.slice(3, 6);
+    nanosecond = +fraction.slice(6, 9);
     processAnnotations(match[10]); // ignore found calendar
     if (match[8]) throw new RangeError('Z designator not supported for PlainTime');
   } else {
@@ -688,8 +673,8 @@ export function ParseTemporalYearMonthString(isoString: string) {
     let yearString = match[1];
     if (yearString[0] === '\u2212') yearString = `-${yearString.slice(1)}`;
     if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
-    year = ToIntegerOrInfinity(yearString);
-    month = ToIntegerOrInfinity(match[2]);
+    year = +yearString;
+    month = +match[2];
     calendar = processAnnotations(match[3]);
     referenceISODay = 1;
     if (calendar !== undefined && calendar !== 'iso8601') {
@@ -708,8 +693,8 @@ export function ParseTemporalMonthDayString(isoString: string) {
   const match = PARSE.monthday.exec(isoString);
   let month, day, calendar, referenceISOYear;
   if (match) {
-    month = ToIntegerOrInfinity(match[1]);
-    day = ToIntegerOrInfinity(match[2]);
+    month = +match[1];
+    day = +match[2];
     calendar = processAnnotations(match[3]);
     if (calendar !== undefined && calendar !== 'iso8601') {
       throw new RangeError('MM-DD format is only valid with iso8601 calendar');
@@ -808,18 +793,18 @@ export function ParseTemporalDurationString(isoString: string) {
     if (minutesStr ?? fMinutes ?? secondsStr ?? fSeconds ?? false) {
       throw new RangeError('only the smallest unit can be fractional');
     }
-    excessNanoseconds = ToIntegerOrInfinity((fHours + '000000000').slice(0, 9)) * 3600 * sign;
+    excessNanoseconds = ToIntegerWithTruncation((fHours + '000000000').slice(0, 9)) * 3600 * sign;
   } else {
     minutes = minutesStr === undefined ? 0 : ToIntegerWithTruncation(minutesStr) * sign;
     if (fMinutes !== undefined) {
       if (secondsStr ?? fSeconds ?? false) {
         throw new RangeError('only the smallest unit can be fractional');
       }
-      excessNanoseconds = ToIntegerOrInfinity((fMinutes + '000000000').slice(0, 9)) * 60 * sign;
+      excessNanoseconds = ToIntegerWithTruncation((fMinutes + '000000000').slice(0, 9)) * 60 * sign;
     } else {
       seconds = secondsStr === undefined ? 0 : ToIntegerWithTruncation(secondsStr) * sign;
       if (fSeconds !== undefined) {
-        excessNanoseconds = ToIntegerOrInfinity((fSeconds + '000000000').slice(0, 9)) * sign;
+        excessNanoseconds = ToIntegerWithTruncation((fSeconds + '000000000').slice(0, 9)) * sign;
       }
     }
   }
