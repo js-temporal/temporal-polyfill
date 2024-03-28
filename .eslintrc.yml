@@ -91,6 +91,8 @@ overrides:
       no-param-reassign: off
   - files:
       - '**/*.ts'
+    excludedFiles:
+      - './index-lt-4.7.4.d.ts'
     plugins:
       - '@typescript-eslint'
     parserOptions:
@@ -117,3 +119,10 @@ overrides:
       '@typescript-eslint/consistent-type-exports': error
       '@typescript-eslint/consistent-type-imports': error
       prefer-const: off
+  - files:
+      - './index-lt-4.7.4.d.ts'
+    parserOptions:
+      project: null
+    rules:
+      no-unused-vars: off
+      no-undef: off

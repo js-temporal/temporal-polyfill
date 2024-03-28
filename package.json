@@ -11,10 +11,12 @@
       {
         "import": {
           "types": "./index.d.ts",
+          "types@<4.7.4": "./index-lt-4.7.4.d.ts",
           "default": "./dist/index.esm.js"
         },
         "require": {
           "types": "./index.d.cts",
+          "types@<4.7.4": "./index-lt-4.7.4.d.cts",
           "default": "./dist/index.cjs"
         },
         "default": "./dist/index.cjs"
@@ -23,6 +25,13 @@
     ]
   },
   "types": "./index.d.ts",
+  "typesVersions": {
+    "<4.7.4": {
+      "index.d.ts": [
+        "index-lt-4.7.4.d.ts"
+      ]
+    }
+  },
   "scripts": {
     "test": "npm run build && node --no-warnings --experimental-modules --experimental-specifier-resolution=node --icu-data-dir node_modules/full-icu --loader ./test/resolve.source.mjs ./test/all.mjs",
     "test262": "TEST262=1 npm run build && node runtest262.mjs \"$@\"",
