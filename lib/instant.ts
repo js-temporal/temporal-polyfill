@@ -79,9 +79,9 @@ export class Instant implements Temporal.Instant {
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
         : ES.GetOptionsObject(roundToParam);
-    const roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
-    const roundingMode = ES.ToTemporalRoundingMode(roundTo, 'halfExpand');
-    const smallestUnit = ES.GetTemporalUnit(roundTo, 'smallestUnit', 'time', ES.REQUIRED);
+    const roundingIncrement = ES.GetTemporalRoundingIncrementOption(roundTo);
+    const roundingMode = ES.GetRoundingModeOption(roundTo, 'halfExpand');
+    const smallestUnit = ES.GetTemporalUnitValuedOption(roundTo, 'smallestUnit', 'time', ES.REQUIRED);
     const maximumIncrements = {
       hour: 24,
       minute: 1440,
@@ -105,9 +105,9 @@ export class Instant implements Temporal.Instant {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
-    const digits = ES.ToFractionalSecondDigits(options);
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
-    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', undefined);
+    const digits = ES.GetTemporalFractionalSecondDigitsOption(options);
+    const roundingMode = ES.GetRoundingModeOption(options, 'trunc');
+    const smallestUnit = ES.GetTemporalUnitValuedOption(options, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
     let timeZone = options.timeZone;
     if (timeZone !== undefined) timeZone = ES.ToTemporalTimeZoneSlotValue(timeZone);

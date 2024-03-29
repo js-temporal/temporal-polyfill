@@ -129,7 +129,7 @@ export class PlainTime implements Temporal.PlainTime {
     }
     ES.RejectTemporalLikeObject(temporalTimeLike);
     const options = ES.GetOptionsObject(optionsParam);
-    const overflow = ES.ToTemporalOverflow(options);
+    const overflow = ES.GetTemporalOverflowOption(options);
 
     const partialTime = ES.ToTemporalTimeRecord(temporalTimeLike, 'partial');
 
@@ -169,9 +169,9 @@ export class PlainTime implements Temporal.PlainTime {
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
         : ES.GetOptionsObject(roundToParam);
-    const roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
-    const roundingMode = ES.ToTemporalRoundingMode(roundTo, 'halfExpand');
-    const smallestUnit = ES.GetTemporalUnit(roundTo, 'smallestUnit', 'time', ES.REQUIRED);
+    const roundingIncrement = ES.GetTemporalRoundingIncrementOption(roundTo);
+    const roundingMode = ES.GetRoundingModeOption(roundTo, 'halfExpand');
+    const smallestUnit = ES.GetTemporalUnitValuedOption(roundTo, 'smallestUnit', 'time', ES.REQUIRED);
     const MAX_INCREMENTS = {
       hour: 24,
       minute: 60,
@@ -216,9 +216,9 @@ export class PlainTime implements Temporal.PlainTime {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
-    const digits = ES.ToFractionalSecondDigits(options);
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
-    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', undefined);
+    const digits = ES.GetTemporalFractionalSecondDigitsOption(options);
+    const roundingMode = ES.GetRoundingModeOption(options, 'trunc');
+    const smallestUnit = ES.GetTemporalUnitValuedOption(options, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     return TemporalTimeToString(this, precision, { unit, increment, roundingMode });
@@ -327,7 +327,7 @@ export class PlainTime implements Temporal.PlainTime {
 
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
-    const overflow = ES.ToTemporalOverflow(options);
+    const overflow = ES.GetTemporalOverflowOption(options);
     if (ES.IsTemporalTime(item)) {
       return new PlainTime(
         GetSlot(item, ISO_HOUR),

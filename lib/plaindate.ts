@@ -164,7 +164,7 @@ export class PlainDate implements Temporal.PlainDate {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
-    const showCalendar = ES.ToCalendarNameOption(options);
+    const showCalendar = ES.GetTemporalShowCalendarNameOption(options);
     return ES.TemporalDateToString(this, showCalendar);
   }
   toJSON(): Return['toJSON'] {
@@ -277,7 +277,7 @@ export class PlainDate implements Temporal.PlainDate {
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
     if (ES.IsTemporalDate(item)) {
-      ES.ToTemporalOverflow(options); // validate and ignore
+      ES.GetTemporalOverflowOption(options); // validate and ignore
       return ES.CreateTemporalDate(
         GetSlot(item, ISO_YEAR),
         GetSlot(item, ISO_MONTH),

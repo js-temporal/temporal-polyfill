@@ -238,8 +238,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     fields = ES.CalendarMergeFields(calendarRec, fields, partialZonedDateTime);
     fields = ES.PrepareTemporalFields(fields, fieldNames, ['offset']);
 
-    const disambiguation = ES.ToTemporalDisambiguation(resolvedOptions);
-    const offset = ES.ToTemporalOffset(resolvedOptions, 'prefer');
+    const disambiguation = ES.GetTemporalDisambiguationOption(resolvedOptions);
+    const offset = ES.GetTemporalOffsetOption(resolvedOptions, 'prefer');
 
     let { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
       ES.InterpretTemporalDateTimeFields(calendarRec, fields, resolvedOptions);
@@ -363,9 +363,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
         : ES.GetOptionsObject(roundToParam);
-    const roundingIncrement = ES.ToTemporalRoundingIncrement(roundTo);
-    const roundingMode = ES.ToTemporalRoundingMode(roundTo, 'halfExpand');
-    const smallestUnit = ES.GetTemporalUnit(roundTo, 'smallestUnit', 'time', ES.REQUIRED, ['day']);
+    const roundingIncrement = ES.GetTemporalRoundingIncrementOption(roundTo);
+    const roundingMode = ES.GetRoundingModeOption(roundTo, 'halfExpand');
+    const smallestUnit = ES.GetTemporalUnitValuedOption(roundTo, 'smallestUnit', 'time', ES.REQUIRED, ['day']);
     const maximumIncrements = {
       day: 1,
       hour: 24,
@@ -491,13 +491,13 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
-    const showCalendar = ES.ToCalendarNameOption(options);
-    const digits = ES.ToFractionalSecondDigits(options);
-    const showOffset = ES.ToShowOffsetOption(options);
-    const roundingMode = ES.ToTemporalRoundingMode(options, 'trunc');
-    const smallestUnit = ES.GetTemporalUnit(options, 'smallestUnit', 'time', undefined);
+    const showCalendar = ES.GetTemporalShowCalendarNameOption(options);
+    const digits = ES.GetTemporalFractionalSecondDigitsOption(options);
+    const showOffset = ES.GetTemporalShowOffsetOption(options);
+    const roundingMode = ES.GetRoundingModeOption(options, 'trunc');
+    const smallestUnit = ES.GetTemporalUnitValuedOption(options, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
-    const showTimeZone = ES.ToTimeZoneNameOption(options);
+    const showTimeZone = ES.GetTemporalShowTimeZoneNameOption(options);
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     return ES.TemporalZonedDateTimeToString(this, precision, showCalendar, showTimeZone, showOffset, {
       unit,
@@ -659,9 +659,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
     if (ES.IsTemporalZonedDateTime(item)) {
-      ES.ToTemporalDisambiguation(options); // validate and ignore
-      ES.ToTemporalOffset(options, 'reject');
-      ES.ToTemporalOverflow(options);
+      ES.GetTemporalDisambiguationOption(options); // validate and ignore
+      ES.GetTemporalOffsetOption(options, 'reject');
+      ES.GetTemporalOverflowOption(options);
       return ES.CreateTemporalZonedDateTime(
         GetSlot(item, EPOCHNANOSECONDS),
         GetSlot(item, TIME_ZONE),

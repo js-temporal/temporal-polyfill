@@ -116,7 +116,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
-    const showCalendar = ES.ToCalendarNameOption(options);
+    const showCalendar = ES.GetTemporalShowCalendarNameOption(options);
     return ES.TemporalYearMonthToString(this, showCalendar);
   }
   toJSON(): Return['toJSON'] {
@@ -169,7 +169,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
     if (ES.IsTemporalYearMonth(item)) {
-      ES.ToTemporalOverflow(options); // validate and ignore
+      ES.GetTemporalOverflowOption(options); // validate and ignore
       return ES.CreateTemporalYearMonth(
         GetSlot(item, ISO_YEAR),
         GetSlot(item, ISO_MONTH),
