@@ -1,6 +1,13 @@
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
-import type { BuiltinCalendarId, AnyTemporalType, CalendarSlot, TimeZoneSlot } from './internaltypes';
+import type {
+  BuiltinCalendarId,
+  AnySlottedType,
+  CalendarSlot,
+  TimeZoneSlot,
+  FormatterOrAmender
+} from './internaltypes';
+import type { DateTimeFormatImpl } from './intl';
 
 // Instant
 export const EPOCHNANOSECONDS = 'slot-epochNanoSeconds';
@@ -43,13 +50,27 @@ export const NANOSECONDS = 'slot-nanoseconds';
 // Calendar
 export const CALENDAR_ID = 'slot-calendar-identifier';
 
-interface SlotInfo<ValueType, UsedByType extends AnyTemporalType> {
+// DateTimeFormatImpl
+export const DATE = 'date';
+export const YM = 'ym';
+export const MD = 'md';
+export const TIME = 'time';
+export const DATETIME = 'datetime';
+export const INST = 'instant';
+export const ORIGINAL = 'original';
+export const TZ_CANONICAL = 'timezone-canonical';
+export const TZ_ORIGINAL = 'timezone-original';
+export const CAL_ID = 'calendar-id';
+export const LOCALE = 'locale';
+export const OPTIONS = 'options';
+
+interface SlotInfo<ValueType, UsedByType extends AnySlottedType> {
   value: ValueType;
   usedBy: UsedByType;
 }
 
 interface SlotInfoRecord {
-  [k: string]: SlotInfo<unknown, AnyTemporalType>;
+  [k: string]: SlotInfo<unknown, AnySlottedType>;
 }
 
 interface Slots extends SlotInfoRecord {
@@ -94,6 +115,20 @@ interface Slots extends SlotInfoRecord {
 
   // Calendar
   [CALENDAR_ID]: SlotInfo<BuiltinCalendarId, Temporal.Calendar>;
+
+  // DateTimeFormatImpl
+  [DATE]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
+  [YM]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
+  [MD]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
+  [TIME]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
+  [DATETIME]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
+  [INST]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
+  [ORIGINAL]: SlotInfo<globalThis.Intl.DateTimeFormat, DateTimeFormatImpl>;
+  [TZ_CANONICAL]: SlotInfo<string, DateTimeFormatImpl>;
+  [TZ_ORIGINAL]: SlotInfo<string, DateTimeFormatImpl>;
+  [CAL_ID]: SlotInfo<globalThis.Intl.ResolvedDateTimeFormatOptions['calendar'], DateTimeFormatImpl>;
+  [LOCALE]: SlotInfo<globalThis.Intl.ResolvedDateTimeFormatOptions['locale'], DateTimeFormatImpl>;
+  [OPTIONS]: SlotInfo<Intl.DateTimeFormatOptions, DateTimeFormatImpl>;
 }
 
 type TypesWithCalendarUnits =
@@ -146,6 +181,20 @@ interface SlotsToTypes {
 
   // Calendar
   [CALENDAR_ID]: Temporal.Calendar;
+
+  // DateTimeFormatImpl
+  [DATE]: DateTimeFormatImpl;
+  [YM]: DateTimeFormatImpl;
+  [MD]: DateTimeFormatImpl;
+  [TIME]: DateTimeFormatImpl;
+  [DATETIME]: DateTimeFormatImpl;
+  [INST]: DateTimeFormatImpl;
+  [ORIGINAL]: DateTimeFormatImpl;
+  [TZ_CANONICAL]: DateTimeFormatImpl;
+  [TZ_ORIGINAL]: DateTimeFormatImpl;
+  [CAL_ID]: DateTimeFormatImpl;
+  [LOCALE]: DateTimeFormatImpl;
+  [OPTIONS]: DateTimeFormatImpl;
 }
 
 type SlotKey = keyof SlotsToTypes;
@@ -287,7 +336,7 @@ export function HasSlot<
 ): container is Slots[ID1 | ID2 | ID3 | ID4 | ID5 | ID6 | ID7 | ID8 | ID9]['usedBy'];
 export function HasSlot(container: unknown, ...ids: (keyof Slots)[]): boolean {
   if (!container || 'object' !== typeof container) return false;
-  const myslots = GetSlots(container as AnyTemporalType);
+  const myslots = GetSlots(container as AnySlottedType);
   return !!myslots && ids.every((id) => id in myslots);
 }
 export function GetSlot<KeyT extends keyof Slots>(
@@ -310,6 +359,22 @@ export function SetSlot<KeyT extends SlotKey>(
   const existingSlot = slots[id];
 
   if (existingSlot) throw new TypeError(`${id} already has set`);
+
+  slots[id] = value;
+}
+
+export function ResetSlot<KeyT extends SlotKey>(
+  container: DateTimeFormatImpl,
+  id: KeyT,
+  value: Slots[KeyT]['value']
+): void {
+  const slots = GetSlots(container);
+
+  if (slots === undefined) throw new TypeError('Missing slots for the given container');
+
+  const existingSlot = slots[id];
+
+  if (existingSlot === undefined) throw new TypeError(`tried to reset ${id} which was not set`);
 
   slots[id] = value;
 }
