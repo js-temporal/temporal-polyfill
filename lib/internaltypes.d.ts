@@ -1,4 +1,5 @@
 import type { Intl, Temporal } from '..';
+import type { DateTimeFormatImpl } from './intl';
 
 export type BuiltinCalendarId =
   | 'iso8601'
@@ -21,7 +22,8 @@ export type BuiltinCalendarId =
   | 'japanese'
   | 'gregory';
 
-export type AnyTemporalType =
+export type AnySlottedType =
+  | DateTimeFormatImpl
   | Temporal.Calendar
   | Temporal.Duration
   | Temporal.Instant
@@ -205,3 +207,7 @@ export interface CalendarProtocolParams extends InterfaceParams<Temporal.Calenda
 
 export interface DateTimeFormatParams extends MethodParams<typeof Intl.DateTimeFormat> {}
 export interface DateTimeFormatReturn extends MethodReturn<typeof Intl.DateTimeFormat> {}
+
+// ts-prune-ignore-next
+type OptionsAmenderFunction = (options: Intl.DateTimeFormatOptions) => globalThis.Intl.DateTimeFormatOptions;
+type FormatterOrAmender = globalThis.Intl.DateTimeFormat | OptionsAmenderFunction;

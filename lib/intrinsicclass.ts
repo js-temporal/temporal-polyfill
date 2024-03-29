@@ -6,10 +6,19 @@ import { DEBUG } from './debug';
 
 type OmitConstructor<T> = { [P in keyof T as T[P] extends new (...args: any[]) => any ? P : never]: T[P] };
 
-type TemporalIntrinsics = Omit<typeof Temporal, 'Now' | 'Instant' | 'ZonedDateTime'> & {
-  Instant: OmitConstructor<Temporal.Instant> &
+type TemporalIntrinsics = {
+  ['Intl.DateTimeFormat']: typeof globalThis.Intl.DateTimeFormat;
+  ['Temporal.Calendar']: typeof Temporal.Calendar;
+  ['Temporal.Duration']: typeof Temporal.Duration;
+  ['Temporal.Instant']: OmitConstructor<Temporal.Instant> &
     (new (epochNanoseconds: JSBI) => Temporal.Instant) & { prototype: typeof Temporal.Instant.prototype };
-  ZonedDateTime: OmitConstructor<Temporal.ZonedDateTime> &
+  ['Temporal.PlainDate']: typeof Temporal.PlainDate;
+  ['Temporal.PlainDateTime']: typeof Temporal.PlainDateTime;
+  ['Temporal.PlainMonthDay']: typeof Temporal.PlainMonthDay;
+  ['Temporal.PlainTime']: typeof Temporal.PlainTime;
+  ['Temporal.PlainYearMonth']: typeof Temporal.PlainYearMonth;
+  ['Temporal.TimeZone']: typeof Temporal.TimeZone;
+  ['Temporal.ZonedDateTime']: OmitConstructor<Temporal.ZonedDateTime> &
     (new (
       epochNanoseconds: JSBI,
       timeZone: string | Temporal.TimeZoneProtocol,
@@ -21,10 +30,10 @@ type TemporalIntrinsics = Omit<typeof Temporal, 'Now' | 'Instant' | 'ZonedDateTi
     };
 };
 type TemporalIntrinsicRegistrations = {
-  [key in keyof TemporalIntrinsics as `Temporal.${key}`]: TemporalIntrinsics[key];
+  [key in keyof TemporalIntrinsics]: TemporalIntrinsics[key];
 };
 type TemporalIntrinsicPrototypeRegistrations = {
-  [key in keyof TemporalIntrinsics as `Temporal.${key}.prototype`]: TemporalIntrinsics[key]['prototype'];
+  [key in keyof TemporalIntrinsics as `${key}.prototype`]: TemporalIntrinsics[key]['prototype'];
 };
 type TemporalIntrinsicRegisteredKeys = {
   [key in keyof TemporalIntrinsicRegistrations as `%${key}%`]: TemporalIntrinsicRegistrations[key];

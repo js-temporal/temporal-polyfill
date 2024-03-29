@@ -25,6 +25,8 @@ const ReflectApply = Reflect.apply;
 const ReflectOwnKeys = Reflect.ownKeys;
 const SetPrototypeHas = Set.prototype.has;
 const StringCtor = String;
+const StringFromCharCode = String.fromCharCode;
+const StringPrototypeCharCodeAt = String.prototype.charCodeAt;
 const StringPrototypeSlice = String.prototype.slice;
 
 import { DEBUG, ENABLE_ASSERTS } from './debug';
@@ -6700,10 +6702,16 @@ export function ASCIILowercase<T extends string>(str: T): T {
   // values. For example, Turkish's "I" character was the source of a security
   // issue involving "file://" URLs. See
   // https://haacked.com/archive/2012/07/05/turkish-i-problem-and-why-you-should-care.aspx/.
-  return str.replace(/[A-Z]/g, (l) => {
-    const code = l.charCodeAt(0);
-    return String.fromCharCode(code + 0x20);
-  }) as T;
+  let lowercase = '';
+  for (let ix = 0; ix < str.length; ix++) {
+    const code = Call(StringPrototypeCharCodeAt, str, [ix]);
+    if (code >= 0x41 && code <= 0x5a) {
+      lowercase += StringFromCharCode(code + 0x20);
+    } else {
+      lowercase += StringFromCharCode(code);
+    }
+  }
+  return lowercase as T;
 }
 
 // This function isn't in the spec, but we put it in the polyfill to avoid
