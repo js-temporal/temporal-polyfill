@@ -73,7 +73,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
-    const showCalendar = ES.ToCalendarNameOption(options);
+    const showCalendar = ES.GetTemporalShowCalendarNameOption(options);
     return ES.TemporalMonthDayToString(this, showCalendar);
   }
   toJSON(): Return['toJSON'] {
@@ -126,7 +126,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
     if (ES.IsTemporalMonthDay(item)) {
-      ES.ToTemporalOverflow(options); // validate and ignore
+      ES.GetTemporalOverflowOption(options); // validate and ignore
       return ES.CreateTemporalMonthDay(
         GetSlot(item, ISO_MONTH),
         GetSlot(item, ISO_DAY),
