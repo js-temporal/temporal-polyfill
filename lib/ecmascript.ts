@@ -5374,13 +5374,13 @@ function AddDuration(
   const largestUnit = LargerOfTwoTemporalUnits(largestUnit1, largestUnit2);
 
   let years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds;
+  const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
+  const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
   if (!zonedRelativeTo && !plainRelativeTo) {
     if (IsCalendarUnit(largestUnit)) {
       throw new RangeError('relativeTo is required for years, months, or weeks arithmetic');
     }
     years = months = weeks = 0;
-    const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
-    const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
     ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
       norm1.add(norm2).add24HourDays(d1 + d2),
       largestUnit
@@ -5403,8 +5403,6 @@ function AddDuration(
     weeks = GetSlot(untilResult, WEEKS);
     days = GetSlot(untilResult, DAYS);
     // Signs of date part and time part may not agree; balance them together
-    const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
-    const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
     ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
       norm1.add(norm2).add24HourDays(days),
       largestUnit
@@ -5420,8 +5418,6 @@ function AddDuration(
     if (IsCalendarUnit(largestUnit) || largestUnit === 'day') {
       startDateTime ??= GetPlainDateTimeFor(timeZoneRec, startInstant, calendar);
     }
-    const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
-    const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
     const intermediateNs = AddZonedDateTime(
       startInstant,
       timeZoneRec,
