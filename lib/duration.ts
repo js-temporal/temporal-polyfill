@@ -212,13 +212,13 @@ export class Duration implements Temporal.Duration {
       Math.abs(GetSlot(this, NANOSECONDS))
     );
   }
-  add(other: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
+  add(other: Params['add'][0]): Return['add'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    return ES.AddDurations('add', this, other, options);
+    return ES.AddDurations('add', this, other);
   }
-  subtract(other: Params['subtract'][0], options: Params['subtract'][1] = undefined): Return['subtract'] {
+  subtract(other: Params['subtract'][0]): Return['subtract'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    return ES.AddDurations('subtract', this, other, options);
+    return ES.AddDurations('subtract', this, other);
   }
   round(roundToParam: Params['round'][0]): Return['round'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
