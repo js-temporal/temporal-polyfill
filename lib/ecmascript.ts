@@ -1015,7 +1015,7 @@ export function GetRoundingModeOption(
   );
 }
 
-function NegateTemporalRoundingMode(roundingMode: Temporal.RoundingMode) {
+function NegateRoundingMode(roundingMode: Temporal.RoundingMode) {
   switch (roundingMode) {
     case 'ceil':
       return 'floor';
@@ -4782,7 +4782,7 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
   const roundingIncrement = GetTemporalRoundingIncrementOption(options);
 
   let roundingMode = GetRoundingModeOption(options, 'trunc');
-  if (op === 'since') roundingMode = NegateTemporalRoundingMode(roundingMode);
+  if (op === 'since') roundingMode = NegateRoundingMode(roundingMode);
 
   const smallestUnit = GetTemporalUnitValuedOption(options, 'smallestUnit', group, fallbackSmallest);
   if (disallowed.includes(smallestUnit)) {
