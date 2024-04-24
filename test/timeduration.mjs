@@ -375,54 +375,54 @@ describe('Normalized time duration', () => {
   describe('fdiv()', () => {
     it('divide by 1', () => {
       const d = new TimeDuration(1_234_567_890_987n);
-      equal(d.fdiv(1), 1_234_567_890_987);
+      equal(d.fdiv(1n), 1_234_567_890_987);
     });
 
     it('no remainder', () => {
       const d = new TimeDuration(1_234_000_000n);
-      equal(d.fdiv(1e6), 1234);
+      equal(d.fdiv(1_000_000n), 1234);
     });
 
     it('divide by -1', () => {
       const d = new TimeDuration(1_234_567_890_987n);
-      equal(d.fdiv(-1), -1_234_567_890_987);
+      equal(d.fdiv(-1n), -1_234_567_890_987);
     });
 
     it('opposite sign', () => {
       const d1 = new TimeDuration(1_234_567_890n);
-      checkFloat(d1.fdiv(-1e6), -1234.56789);
+      checkFloat(d1.fdiv(-1_000_000n), -1234.56789);
       const d2 = new TimeDuration(-1_234_567_890n);
-      checkFloat(d2.fdiv(1e6), -1234.56789);
+      checkFloat(d2.fdiv(1_000_000n), -1234.56789);
       const d3 = new TimeDuration(-432n);
-      checkFloat(d3.fdiv(864), -0.5);
+      checkFloat(d3.fdiv(864n), -0.5);
     });
 
     it('negative', () => {
       const d = new TimeDuration(-1_234_567_890n);
-      checkFloat(d.fdiv(-1e6), 1234.56789);
+      checkFloat(d.fdiv(-1_000_000n), 1234.56789);
     });
 
     it('quotient larger than seconds', () => {
       const d = TimeDuration.normalize(25 + 5 * 24, 0, 86401, 333, 666, 999);
-      checkFloat(d.fdiv(86400e9), 7.041682102627303);
+      checkFloat(d.fdiv(86400_000_000_000n), 7.041682102627303);
     });
 
     it('quotient smaller than seconds', () => {
       const d = new TimeDuration(90061_333666999n);
-      checkFloat(d.fdiv(1000), 90061333666.999);
-      checkFloat(d.fdiv(10), 9006133366699.9);
+      checkFloat(d.fdiv(1000n), 90061333666.999);
+      checkFloat(d.fdiv(10n), 9006133366699.9);
       // eslint-disable-next-line no-loss-of-precision
-      checkFloat(d.fdiv(3), 30020444555666.333);
+      checkFloat(d.fdiv(3n), 30020444555666.333);
     });
 
     it('divide by 0', () => {
       const d = new TimeDuration(90061_333666999n);
-      throws(() => d.fdiv(0), Error);
+      throws(() => d.fdiv(0n), Error);
     });
 
     it('large number', () => {
       const d = new TimeDuration(2939649_187497660n);
-      checkFloat(d.fdiv(3600e9), 816.56921874935);
+      checkFloat(d.fdiv(3600_000_000_000n), 816.56921874935);
     });
   });
 

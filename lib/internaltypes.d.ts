@@ -1,5 +1,6 @@
 import type { Intl, Temporal } from '..';
 import type { DateTimeFormatImpl } from './intl';
+import type { TimeDuration } from './timeduration';
 
 export type BuiltinCalendarId =
   | 'iso8601'
@@ -211,3 +212,23 @@ export interface DateTimeFormatReturn extends MethodReturn<typeof Intl.DateTimeF
 // ts-prune-ignore-next
 type OptionsAmenderFunction = (options: Intl.DateTimeFormatOptions) => globalThis.Intl.DateTimeFormatOptions;
 type FormatterOrAmender = globalThis.Intl.DateTimeFormat | OptionsAmenderFunction;
+
+interface ISODateTime {
+  year: number;
+  month: number;
+  day: number;
+  hour: number;
+  minute: number;
+  second: number;
+  millisecond: number;
+  microsecond: number;
+  nanosecond: number;
+}
+
+interface InternalDuration {
+  years: number;
+  months: number;
+  weeks: number;
+  days: number;
+  norm: TimeDuration;
+}

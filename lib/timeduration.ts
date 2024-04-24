@@ -102,8 +102,9 @@ export class TimeDuration {
     return { quotient: q, remainder: r };
   }
 
-  fdiv(n: number) {
-    if (n === 0) throw new Error('division by zero');
+  fdiv(nParam: JSBI | bigint) {
+    const n = ensureJSBI(nParam);
+    if (JSBI.equal(n, ZERO)) throw new Error('division by zero');
     const nBigInt = JSBI.BigInt(n);
     let { quotient, remainder } = divmod(this.totalNs, nBigInt);
 
@@ -112,7 +113,7 @@ export class TimeDuration {
     const precision = 50;
     const decimalDigits = [];
     let digit;
-    const sign = (JSBI.lessThan(this.totalNs, ZERO) ? -1 : 1) * MathSign(n);
+    const sign = (JSBI.lessThan(this.totalNs, ZERO) ? -1 : 1) * MathSign(JSBI.toNumber(n));
     while (!JSBI.equal(remainder, ZERO) && decimalDigits.length < precision) {
       remainder = JSBI.multiply(remainder, TEN);
       ({ quotient: digit, remainder } = divmod(remainder, nBigInt));
