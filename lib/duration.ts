@@ -29,6 +29,7 @@ import type { DurationParams as Params, DurationReturn as Return } from './inter
 import JSBI from 'jsbi';
 
 const MathAbs = Math.abs;
+const NumberIsNaN = Number.isNaN;
 const ObjectCreate = Object.create;
 
 export class Duration implements Temporal.Duration {
@@ -348,9 +349,7 @@ export class Duration implements Temporal.Duration {
         ES.DifferenceZonedDateTimeWithRounding(
           relativeEpochNs,
           targetEpochNs,
-          plainRelativeTo,
           calendarRec,
-          zonedRelativeTo,
           timeZoneRec,
           precalculatedPlainDateTime,
           ObjectCreate(null),
@@ -403,7 +402,7 @@ export class Duration implements Temporal.Duration {
       if (ES.IsCalendarUnit(smallestUnit)) {
         throw new RangeError(`a starting point is required for ${smallestUnit}s rounding`);
       }
-      ({ days, norm } = ES.RoundDuration(0, 0, 0, days, norm, roundingIncrement, smallestUnit, roundingMode));
+      ({ days, norm } = ES.RoundTimeDuration(days, norm, roundingIncrement, smallestUnit, roundingMode));
       ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ES.BalanceTimeDuration(
         norm.add24HourDays(days),
         largestUnit
@@ -472,9 +471,7 @@ export class Duration implements Temporal.Duration {
       const { total } = ES.DifferenceZonedDateTimeWithRounding(
         relativeEpochNs,
         targetEpochNs,
-        plainRelativeTo,
         calendarRec,
-        zonedRelativeTo,
         timeZoneRec,
         precalculatedPlainDateTime,
         ObjectCreate(null),
@@ -483,6 +480,7 @@ export class Duration implements Temporal.Duration {
         unit,
         'trunc'
       );
+      if (NumberIsNaN(total)) throw new Error('assertion failed: total hit unexpected code path');
       return total;
     }
 
@@ -518,6 +516,7 @@ export class Duration implements Temporal.Duration {
         unit,
         'trunc'
       );
+      if (NumberIsNaN(total)) throw new Error('assertion failed: total hit unexpected code path');
       return total;
     }
 
@@ -529,7 +528,7 @@ export class Duration implements Temporal.Duration {
       throw new RangeError(`a starting point is required for ${unit}s total`);
     }
     norm = norm.add24HourDays(days);
-    const { total } = ES.RoundDuration(0, 0, 0, 0, norm, 1, unit, 'trunc');
+    const { total } = ES.RoundTimeDuration(0, norm, 1, unit, 'trunc');
     return total;
   }
   toString(optionsParam: Params['toString'][0] = undefined): string {
@@ -572,7 +571,7 @@ export class Duration implements Temporal.Duration {
         microseconds,
         nanoseconds
       );
-      ({ norm } = ES.RoundDuration(0, 0, 0, 0, norm, increment, unit, roundingMode));
+      ({ norm } = ES.RoundTimeDuration(0, norm, increment, unit, roundingMode));
       let deltaDays;
       ({
         days: deltaDays,

@@ -165,7 +165,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const todayNs = GetSlot(ES.GetInstantFor(timeZoneRec, today, 'compatible'), EPOCHNANOSECONDS);
     const tomorrowNs = GetSlot(ES.GetInstantFor(timeZoneRec, tomorrow, 'compatible'), EPOCHNANOSECONDS);
     const diff = TimeDuration.fromEpochNsDiff(tomorrowNs, todayNs);
-    return diff.fdiv(JSBI.toNumber(HOUR_NANOS));
+    return diff.fdiv(HOUR_NANOS);
   }
   get daysInWeek(): Return['daysInWeek'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
