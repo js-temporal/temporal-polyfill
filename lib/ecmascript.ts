@@ -6460,48 +6460,17 @@ export function RoundDuration(
       norm = TimeDuration.ZERO;
       break;
     }
-    case 'day': {
+    case 'day':
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       total = days + norm.fdiv(dayLengthNs);
       days = RoundJSNumberToIncrement(total, increment, roundingMode);
       norm = TimeDuration.ZERO;
       break;
-    }
-    case 'hour': {
-      const divisor = 3600e9;
+    default: {
+      const divisor = NS_PER_TIME_UNIT.get(unit);
       total = norm.fdiv(divisor);
       norm = norm.round(JSBI.BigInt(divisor * increment), roundingMode);
-      break;
-    }
-    case 'minute': {
-      const divisor = 60e9;
-      total = norm.fdiv(divisor);
-      norm = norm.round(JSBI.BigInt(divisor * increment), roundingMode);
-      break;
-    }
-    case 'second': {
-      const divisor = 1e9;
-      total = norm.fdiv(divisor);
-      norm = norm.round(JSBI.BigInt(divisor * increment), roundingMode);
-      break;
-    }
-    case 'millisecond': {
-      const divisor = 1e6;
-      total = norm.fdiv(divisor);
-      norm = norm.round(JSBI.BigInt(divisor * increment), roundingMode);
-      break;
-    }
-    case 'microsecond': {
-      const divisor = 1e3;
-      total = norm.fdiv(divisor);
-      norm = norm.round(JSBI.BigInt(divisor * increment), roundingMode);
-      break;
-    }
-    case 'nanosecond': {
-      total = JSBI.toNumber(norm.totalNs);
-      norm = norm.round(JSBI.BigInt(increment), roundingMode);
-      break;
     }
   }
   CombineDateAndNormalizedTimeDuration(years, months, weeks, days, norm);
