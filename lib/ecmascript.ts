@@ -384,22 +384,30 @@ const BUILTIN_DEFAULTS = new Map([
   ['nanosecond', 0]
 ]);
 
-// each item is [plural, singular, category]
+// each item is [plural, singular, category, (length in ns)]
 const TEMPORAL_UNITS = [
   ['years', 'year', 'date'],
   ['months', 'month', 'date'],
   ['weeks', 'week', 'date'],
-  ['days', 'day', 'date'],
-  ['hours', 'hour', 'time'],
-  ['minutes', 'minute', 'time'],
-  ['seconds', 'second', 'time'],
-  ['milliseconds', 'millisecond', 'time'],
-  ['microseconds', 'microsecond', 'time'],
-  ['nanoseconds', 'nanosecond', 'time']
+  ['days', 'day', 'date', DAY_NANOS],
+  ['hours', 'hour', 'time', 3600e9],
+  ['minutes', 'minute', 'time', 60e9],
+  ['seconds', 'second', 'time', 1e9],
+  ['milliseconds', 'millisecond', 'time', 1e6],
+  ['microseconds', 'microsecond', 'time', 1e3],
+  ['nanoseconds', 'nanosecond', 'time', 1]
 ] as const;
 const SINGULAR_FOR = new Map(TEMPORAL_UNITS.map((e) => [e[0], e[1]] as const));
 const PLURAL_FOR = new Map(TEMPORAL_UNITS.map(([p, s]) => [s, p]));
 const UNITS_DESCENDING = TEMPORAL_UNITS.map(([, s]) => s);
+type TimeUnitOrDay = Temporal.TimeUnit | 'day';
+// Utility type whose `get` is only callable using valid keys, and that therefore
+// omits `undefined` from its result.
+type ConstMap<K, V> = Omit<ReadonlyMap<K, V>, 'get'> & { get(key: K): V };
+const NS_PER_TIME_UNIT = new Map(TEMPORAL_UNITS.map(([, s, , l]) => [s, l] as const).filter(([, l]) => l)) as ConstMap<
+  TimeUnitOrDay,
+  number
+>;
 
 const DURATION_FIELDS = Array.from(SINGULAR_FOR.keys()).sort();
 
@@ -4526,7 +4534,7 @@ function DifferenceInstant(
   ns1: JSBI,
   ns2: JSBI,
   increment: number,
-  smallestUnit: keyof typeof nsPerTimeUnit,
+  smallestUnit: TimeUnitOrDay,
   roundingMode: Temporal.RoundingMode
 ) {
   const diff = TimeDuration.fromEpochNsDiff(ns2, ns1);
@@ -6031,14 +6039,14 @@ function RoundJSNumberToIncrement(quantity: number, increment: number, mode: Tem
 export function RoundInstant(
   epochNs: JSBI,
   increment: number,
-  unit: keyof typeof nsPerTimeUnit,
+  unit: TimeUnitOrDay,
   roundingMode: Temporal.RoundingMode
 ) {
   let { remainder } = NonNegativeBigIntDivmod(epochNs, DAY_NANOS_JSBI);
   const wholeDays = JSBI.subtract(epochNs, remainder);
   const roundedRemainder = RoundNumberToIncrement(
     remainder,
-    JSBI.BigInt(nsPerTimeUnit[unit] * increment),
+    JSBI.BigInt(NS_PER_TIME_UNIT.get(unit) * increment),
     roundingMode
   );
   return JSBI.add(wholeDays, roundedRemainder);
@@ -6081,7 +6089,7 @@ export function RoundTime(
   microsecond: number,
   nanosecond: number,
   increment: number,
-  unit: keyof typeof nsPerTimeUnit | 'day',
+  unit: TimeUnitOrDay,
   roundingMode: Temporal.RoundingMode
 ) {
   let quantity = ZERO;
@@ -6105,7 +6113,7 @@ export function RoundTime(
     case 'nanosecond':
       quantity = JSBI.add(JSBI.multiply(quantity, THOUSAND), JSBI.BigInt(nanosecond));
   }
-  const nsPerUnit = nsPerTimeUnit[unit];
+  const nsPerUnit = NS_PER_TIME_UNIT.get(unit);
   const rounded = RoundNumberToIncrement(quantity, JSBI.BigInt(nsPerUnit * increment), roundingMode);
   const result = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(nsPerUnit)));
   switch (unit) {
@@ -6754,13 +6762,3 @@ function bisect(
   }
   return right;
 }
-
-const nsPerTimeUnit = {
-  day: 86400e9,
-  hour: 3600e9,
-  minute: 60e9,
-  second: 1e9,
-  millisecond: 1e6,
-  microsecond: 1e3,
-  nanosecond: 1
-};
