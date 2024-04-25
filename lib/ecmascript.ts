@@ -6092,30 +6092,29 @@ export function RoundTime(
   unit: TimeUnitOrDay,
   roundingMode: Temporal.RoundingMode
 ) {
-  let quantity = ZERO;
+  let quantity;
   switch (unit) {
     case 'day':
     case 'hour':
-      quantity = JSBI.BigInt(hour);
-    // fall through
+      quantity = ((((hour * 60 + minute) * 60 + second) * 1000 + millisecond) * 1000 + microsecond) * 1000 + nanosecond;
+      break;
     case 'minute':
-      quantity = JSBI.add(JSBI.multiply(quantity, SIXTY), JSBI.BigInt(minute));
-    // fall through
+      quantity = (((minute * 60 + second) * 1000 + millisecond) * 1000 + microsecond) * 1000 + nanosecond;
+      break;
     case 'second':
-      quantity = JSBI.add(JSBI.multiply(quantity, SIXTY), JSBI.BigInt(second));
-    // fall through
+      quantity = ((second * 1000 + millisecond) * 1000 + microsecond) * 1000 + nanosecond;
+      break;
     case 'millisecond':
-      quantity = JSBI.add(JSBI.multiply(quantity, THOUSAND), JSBI.BigInt(millisecond));
-    // fall through
+      quantity = (millisecond * 1000 + microsecond) * 1000 + nanosecond;
+      break;
     case 'microsecond':
-      quantity = JSBI.add(JSBI.multiply(quantity, THOUSAND), JSBI.BigInt(microsecond));
-    // fall through
+      quantity = microsecond * 1000 + nanosecond;
+      break;
     case 'nanosecond':
-      quantity = JSBI.add(JSBI.multiply(quantity, THOUSAND), JSBI.BigInt(nanosecond));
+      quantity = nanosecond;
   }
   const nsPerUnit = NS_PER_TIME_UNIT.get(unit);
-  const rounded = RoundNumberToIncrement(quantity, JSBI.BigInt(nsPerUnit * increment), roundingMode);
-  const result = JSBI.toNumber(JSBI.divide(rounded, JSBI.BigInt(nsPerUnit)));
+  const result = RoundJSNumberToIncrement(quantity, nsPerUnit * increment, roundingMode) / nsPerUnit;
   switch (unit) {
     case 'day':
       return { deltaDays: result, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
