@@ -385,7 +385,7 @@ const BUILTIN_DEFAULTS = new Map([
 ]);
 
 // each item is [plural, singular, category]
-const SINGULAR_PLURAL_UNITS = [
+const TEMPORAL_UNITS = [
   ['years', 'year', 'date'],
   ['months', 'month', 'date'],
   ['weeks', 'week', 'date'],
@@ -397,9 +397,9 @@ const SINGULAR_PLURAL_UNITS = [
   ['microseconds', 'microsecond', 'time'],
   ['nanoseconds', 'nanosecond', 'time']
 ] as const;
-const SINGULAR_FOR = new Map(SINGULAR_PLURAL_UNITS.map((e) => [e[0], e[1]] as const));
-const PLURAL_FOR = new Map(SINGULAR_PLURAL_UNITS.map(([p, s]) => [s, p]));
-const UNITS_DESCENDING = SINGULAR_PLURAL_UNITS.map(([, s]) => s);
+const SINGULAR_FOR = new Map(TEMPORAL_UNITS.map((e) => [e[0], e[1]] as const));
+const PLURAL_FOR = new Map(TEMPORAL_UNITS.map(([p, s]) => [s, p]));
+const UNITS_DESCENDING = TEMPORAL_UNITS.map(([, s]) => s);
 
 const DURATION_FIELDS = Array.from(SINGULAR_FOR.keys()).sort();
 
@@ -1172,10 +1172,10 @@ export function GetTemporalUnit<
   extraValues: ReadonlyArray<E> | never[] = []
 ): R {
   const allowedSingular: Array<Temporal.DateTimeUnit | 'auto'> = [];
-  for (let index = 0; index < SINGULAR_PLURAL_UNITS.length; index++) {
-    const entry = SINGULAR_PLURAL_UNITS[index];
-    const singular = entry[1];
-    const category = entry[2];
+  for (let index = 0; index < TEMPORAL_UNITS.length; index++) {
+    const unitInfo = TEMPORAL_UNITS[index];
+    const singular = unitInfo[1];
+    const category = unitInfo[2];
     if (unitGroup === 'datetime' || unitGroup === category) {
       allowedSingular.push(singular);
     }
@@ -4756,7 +4756,7 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
   fallbackSmallest: T,
   smallestLargestDefaultUnit: T
 ) {
-  const ALLOWED_UNITS = SINGULAR_PLURAL_UNITS.reduce((allowed, unitInfo) => {
+  const ALLOWED_UNITS = TEMPORAL_UNITS.reduce((allowed, unitInfo) => {
     const p = unitInfo[0];
     const s = unitInfo[1];
     const c = unitInfo[2];
