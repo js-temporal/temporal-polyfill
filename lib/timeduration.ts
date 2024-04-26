@@ -8,6 +8,7 @@ import {
   divmod,
   ensureJSBI,
   HOUR_NANOS,
+  isEven,
   MILLION,
   MINUTE_NANOS_JSBI,
   ONE,
@@ -16,6 +17,7 @@ import {
   TWO,
   ZERO
 } from './bigintmath';
+import { ApplyUnsignedRoundingMode, GetUnsignedRoundingMode } from './math';
 import type { Temporal } from '..';
 
 const MathAbs = Math.abs;
@@ -126,47 +128,17 @@ export class TimeDuration {
   round(incrementParam: JSBI | bigint, mode: Temporal.RoundingMode) {
     const increment = ensureJSBI(incrementParam);
     if (JSBI.equal(increment, ONE)) return this;
-    let { quotient, remainder } = divmod(this.totalNs, JSBI.BigInt(increment));
-    if (JSBI.equal(remainder, ZERO)) return this;
-    const sign = JSBI.lessThan(remainder, ZERO) ? -1 : 1;
-    const tiebreaker = abs(JSBI.multiply(remainder, TWO));
-    const tie = JSBI.equal(tiebreaker, JSBI.BigInt(increment));
-    const expandIsNearer = JSBI.greaterThan(tiebreaker, JSBI.BigInt(increment));
-    switch (mode) {
-      case 'ceil':
-        if (sign > 0) quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-        break;
-      case 'floor':
-        if (sign < 0) quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-        break;
-      case 'expand':
-        // always expand if there is a remainder
-        quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-        break;
-      case 'trunc':
-        // no change needed, because divmod is a truncation
-        break;
-      case 'halfCeil':
-        if (expandIsNearer || (tie && sign > 0)) quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-        break;
-      case 'halfFloor':
-        if (expandIsNearer || (tie && sign < 0)) quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-        break;
-      case 'halfExpand':
-        // "half up away from zero"
-        if (expandIsNearer || tie) quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-        break;
-      case 'halfTrunc':
-        if (expandIsNearer) quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-        break;
-      case 'halfEven': {
-        if (expandIsNearer || (tie && !JSBI.equal(JSBI.remainder(quotient, TWO), ZERO))) {
-          quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-        }
-        break;
-      }
-    }
-    return TimeDuration.#validateNew(JSBI.multiply(quotient, JSBI.BigInt(increment)), 'rounding');
+    const { quotient, remainder } = divmod(this.totalNs, increment);
+    const sign = JSBI.lessThan(this.totalNs, ZERO) ? 'negative' : 'positive';
+    const r1 = JSBI.multiply(abs(quotient), increment);
+    const r2 = JSBI.add(r1, increment);
+    const cmp = compare(abs(JSBI.multiply(remainder, TWO)), increment);
+    const unsignedRoundingMode = GetUnsignedRoundingMode(mode, sign);
+    const rounded = JSBI.equal(abs(this.totalNs), r1)
+      ? r1
+      : ApplyUnsignedRoundingMode(r1, r2, cmp, isEven(quotient), unsignedRoundingMode);
+    const result = sign === 'positive' ? rounded : JSBI.unaryMinus(rounded);
+    return TimeDuration.#validateNew(result, 'rounding');
   }
 
   sign() {

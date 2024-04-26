@@ -70,7 +70,7 @@ import type {
   TimeZoneSlot
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
-import { FMAPowerOf10, TruncatingDivModByPowerOf10 } from './math';
+import { ApplyUnsignedRoundingMode, FMAPowerOf10, GetUnsignedRoundingMode, TruncatingDivModByPowerOf10 } from './math';
 import { CalendarMethodRecord, TimeZoneMethodRecord } from './methodrecord';
 import { TimeDuration } from './timeduration';
 import {
@@ -5939,46 +5939,16 @@ export function AddDurationToOrSubtractDurationFromZonedDateTime(
 
 // ts-prune-ignore-next TODO: remove this after tests are converted to TS
 export function RoundNumberToIncrement(quantity: number, increment: number, mode: Temporal.RoundingMode) {
-  let quotient = MathTrunc(quantity / increment);
+  const quotient = MathTrunc(quantity / increment);
   const remainder = quantity % increment;
-  if (remainder === 0) return quantity;
-  const sign = remainder < 0 ? -1 : 1;
-  const tiebreaker = MathAbs(remainder * 2);
-  const tie = tiebreaker === increment;
-  const expandIsNearer = tiebreaker > increment;
-  switch (mode) {
-    case 'ceil':
-      if (sign > 0) quotient += sign;
-      break;
-    case 'floor':
-      if (sign < 0) quotient += sign;
-      break;
-    case 'expand':
-      // always expand if there is a remainder
-      quotient += sign;
-      break;
-    case 'trunc':
-      // no change needed, because divmod is a truncation
-      break;
-    case 'halfCeil':
-      if (expandIsNearer || (tie && sign > 0)) quotient += sign;
-      break;
-    case 'halfFloor':
-      if (expandIsNearer || (tie && sign < 0)) quotient += sign;
-      break;
-    case 'halfExpand':
-      // "half up away from zero"
-      if (expandIsNearer || tie) quotient += sign;
-      break;
-    case 'halfTrunc':
-      if (expandIsNearer) quotient += sign;
-      break;
-    case 'halfEven': {
-      if (expandIsNearer || (tie && quotient % 2 !== 0)) quotient += sign;
-      break;
-    }
-  }
-  return quotient * increment;
+  const sign = quantity < 0 ? 'negative' : 'positive';
+  const r1 = MathAbs(quotient);
+  const r2 = r1 + 1;
+  const cmp = ComparisonResult(MathAbs(remainder * 2) - increment);
+  const even = r1 % 2 === 0;
+  const unsignedRoundingMode = GetUnsignedRoundingMode(mode, sign);
+  const rounded = remainder === 0 ? r1 : ApplyUnsignedRoundingMode(r1, r2, cmp, even, unsignedRoundingMode);
+  return increment * (sign === 'positive' ? rounded : -rounded);
 }
 
 export function RoundInstant(
