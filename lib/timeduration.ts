@@ -9,7 +9,7 @@ import {
   ensureJSBI,
   HOUR_NANOS,
   MILLION,
-  MINUTE_NANOS,
+  MINUTE_NANOS_JSBI,
   ONE,
   TEN,
   THOUSAND,
@@ -64,7 +64,7 @@ export class TimeDuration {
           ),
           JSBI.multiply(JSBI.BigInt(s), BILLION)
         ),
-        JSBI.multiply(JSBI.BigInt(min), MINUTE_NANOS)
+        JSBI.multiply(JSBI.BigInt(min), MINUTE_NANOS_JSBI)
       ),
       JSBI.multiply(JSBI.BigInt(h), HOUR_NANOS)
     );
