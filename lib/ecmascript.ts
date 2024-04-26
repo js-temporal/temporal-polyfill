@@ -40,7 +40,6 @@ import {
   maxJSBI,
   MILLION,
   minJSBI,
-  MINUTE_NANOS,
   NonNegativeBigIntDivmod,
   ONE,
   SIXTY,
@@ -111,6 +110,7 @@ import {
 
 const DAY_SECONDS = 86400;
 const DAY_NANOS = DAY_SECONDS * 1e9;
+const MINUTE_NANOS = 60e9;
 // Instant range is 100 million days (inclusive) before or after epoch.
 const NS_MIN = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(-1e8));
 const NS_MAX = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(1e8));
@@ -1969,9 +1969,7 @@ export function InterpretISODateTimeOffset(
     for (let index = 0; index < possibleInstants.length; index++) {
       const candidate = possibleInstants[index];
       const candidateOffset = GetOffsetNanosecondsFor(timeZoneRec, candidate);
-      const roundedCandidateOffset = JSBI.toNumber(
-        RoundNumberToIncrement(JSBI.BigInt(candidateOffset), MINUTE_NANOS, 'halfExpand')
-      );
+      const roundedCandidateOffset = RoundNumberToIncrement(candidateOffset, 60e9, 'halfExpand');
       if (candidateOffset === offsetNs || (matchMinute && roundedCandidateOffset === offsetNs)) {
         return GetSlot(candidate, EPOCHNANOSECONDS);
       }
@@ -3425,9 +3423,7 @@ export function FormatOffsetTimeZoneIdentifier(offsetMinutes: number): string {
 }
 
 function FormatDateTimeUTCOffsetRounded(offsetNanosecondsParam: number): string {
-  const offsetNanoseconds = JSBI.toNumber(
-    RoundNumberToIncrement(JSBI.BigInt(offsetNanosecondsParam), MINUTE_NANOS, 'halfExpand')
-  );
+  const offsetNanoseconds = RoundNumberToIncrement(offsetNanosecondsParam, MINUTE_NANOS, 'halfExpand');
   return FormatOffsetTimeZoneIdentifier(offsetNanoseconds / 60e9);
 }
 export function GetUTCEpochNanoseconds(
@@ -5941,59 +5937,8 @@ export function AddDurationToOrSubtractDurationFromZonedDateTime(
   return CreateTemporalZonedDateTime(epochNanoseconds, timeZoneRec.receiver, calendarRec.receiver);
 }
 
-function RoundNumberToIncrement(quantity: JSBI, increment: JSBI, mode: Temporal.RoundingMode) {
-  if (JSBI.equal(increment, ONE)) return quantity;
-  let { quotient, remainder } = divmod(quantity, increment);
-  if (JSBI.equal(remainder, ZERO)) return quantity;
-  const sign = JSBI.lessThan(remainder, ZERO) ? -1 : 1;
-  const tiebreaker = abs(JSBI.multiply(remainder, JSBI.BigInt(2)));
-  const tie = JSBI.equal(tiebreaker, increment);
-  const expandIsNearer = JSBI.greaterThan(tiebreaker, increment);
-  switch (mode) {
-    case 'ceil':
-      if (sign > 0) quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-      break;
-    case 'floor':
-      if (sign < 0) quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-      break;
-    case 'expand':
-      // always expand if there is a remainder
-      quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-      break;
-    case 'trunc':
-      // no change needed, because divmod is a truncation
-      break;
-    case 'halfCeil':
-      if (expandIsNearer || (tie && sign > 0)) {
-        quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-      }
-      break;
-    case 'halfFloor':
-      if (expandIsNearer || (tie && sign < 0)) {
-        quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-      }
-      break;
-    case 'halfExpand':
-      // "half up away from zero"
-      if (expandIsNearer || tie) {
-        quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-      }
-      break;
-    case 'halfTrunc':
-      if (expandIsNearer) {
-        quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-      }
-      break;
-    case 'halfEven':
-      if (expandIsNearer || (tie && JSBI.toNumber(JSBI.remainder(abs(quotient), JSBI.BigInt(2))) === 1)) {
-        quotient = JSBI.add(quotient, JSBI.BigInt(sign));
-      }
-      break;
-  }
-  return JSBI.multiply(quotient, increment);
-}
-
-function RoundJSNumberToIncrement(quantity: number, increment: number, mode: Temporal.RoundingMode) {
+// ts-prune-ignore-next TODO: remove this after tests are converted to TS
+export function RoundNumberToIncrement(quantity: number, increment: number, mode: Temporal.RoundingMode) {
   let quotient = MathTrunc(quantity / increment);
   const remainder = quantity % increment;
   if (remainder === 0) return quantity;
@@ -6029,7 +5974,7 @@ function RoundJSNumberToIncrement(quantity: number, increment: number, mode: Tem
       if (expandIsNearer) quotient += sign;
       break;
     case 'halfEven': {
-      if (expandIsNearer || (tie && quotient % 2 === 1)) quotient += sign;
+      if (expandIsNearer || (tie && quotient % 2 !== 0)) quotient += sign;
       break;
     }
   }
@@ -6045,11 +5990,11 @@ export function RoundInstant(
   let { remainder } = NonNegativeBigIntDivmod(epochNs, DAY_NANOS_JSBI);
   const wholeDays = JSBI.subtract(epochNs, remainder);
   const roundedRemainder = RoundNumberToIncrement(
-    remainder,
-    JSBI.BigInt(NS_PER_TIME_UNIT.get(unit) * increment),
+    JSBI.toNumber(remainder),
+    NS_PER_TIME_UNIT.get(unit) * increment,
     roundingMode
   );
-  return JSBI.add(wholeDays, roundedRemainder);
+  return JSBI.add(wholeDays, JSBI.BigInt(roundedRemainder));
 }
 
 export function RoundISODateTime(
@@ -6114,7 +6059,7 @@ export function RoundTime(
       quantity = nanosecond;
   }
   const nsPerUnit = NS_PER_TIME_UNIT.get(unit);
-  const result = RoundJSNumberToIncrement(quantity, nsPerUnit * increment, roundingMode) / nsPerUnit;
+  const result = RoundNumberToIncrement(quantity, nsPerUnit * increment, roundingMode) / nsPerUnit;
   switch (unit) {
     case 'day':
       return { deltaDays: result, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
@@ -6375,7 +6320,7 @@ export function RoundDuration(
       assertExists(dayLengthNs);
       if (oneYearDays === 0) throw new RangeError('custom calendar reported that a year is 0 days long');
       total = years + (days + norm.fdiv(dayLengthNs)) / oneYearDays;
-      years = RoundJSNumberToIncrement(total, increment, roundingMode);
+      years = RoundNumberToIncrement(total, increment, roundingMode);
       months = weeks = days = 0;
       norm = TimeDuration.ZERO;
       break;
@@ -6420,7 +6365,7 @@ export function RoundDuration(
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       total = months + (days + norm.fdiv(dayLengthNs)) / oneMonthDays;
-      months = RoundJSNumberToIncrement(total, increment, roundingMode);
+      months = RoundNumberToIncrement(total, increment, roundingMode);
       weeks = days = 0;
       norm = TimeDuration.ZERO;
       break;
@@ -6455,7 +6400,7 @@ export function RoundDuration(
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       total = weeks + (days + norm.fdiv(dayLengthNs)) / oneWeekDays;
-      weeks = RoundJSNumberToIncrement(total, increment, roundingMode);
+      weeks = RoundNumberToIncrement(total, increment, roundingMode);
       days = 0;
       norm = TimeDuration.ZERO;
       break;
@@ -6464,7 +6409,7 @@ export function RoundDuration(
       // dayLengthNs is never undefined if unit is `day` or larger.
       assertExists(dayLengthNs);
       total = days + norm.fdiv(dayLengthNs);
-      days = RoundJSNumberToIncrement(total, increment, roundingMode);
+      days = RoundNumberToIncrement(total, increment, roundingMode);
       norm = TimeDuration.ZERO;
       break;
     default: {
