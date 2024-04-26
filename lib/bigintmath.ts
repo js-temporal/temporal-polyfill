@@ -19,6 +19,10 @@ export function ensureJSBI(value: JSBI | bigint) {
   return typeof value === 'bigint' ? JSBI.BigInt(value.toString(10)) : value;
 }
 
+export function isEven(value: JSBI): boolean {
+  return JSBI.equal(JSBI.remainder(value, TWO), ZERO);
+}
+
 export function abs(x: JSBI): JSBI {
   if (JSBI.lessThan(x, ZERO)) return JSBI.unaryMinus(x);
   return x;
