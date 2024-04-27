@@ -92,7 +92,7 @@ export class Instant implements Temporal.Instant {
     };
     ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximumIncrements[smallestUnit], true);
     const ns = GetSlot(this, EPOCHNANOSECONDS);
-    const roundedNs = ES.RoundInstant(ns, roundingIncrement, smallestUnit, roundingMode);
+    const roundedNs = ES.RoundTemporalInstant(ns, roundingIncrement, smallestUnit, roundingMode);
     return new Instant(roundedNs);
   }
   equals(otherParam: Params['equals'][0]): Return['equals'] {
@@ -113,7 +113,7 @@ export class Instant implements Temporal.Instant {
     if (timeZone !== undefined) timeZone = ES.ToTemporalTimeZoneSlotValue(timeZone);
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     const ns = GetSlot(this, EPOCHNANOSECONDS);
-    const roundedNs = ES.RoundInstant(ns, increment, unit, roundingMode);
+    const roundedNs = ES.RoundTemporalInstant(ns, increment, unit, roundingMode);
     const roundedInstant = new Instant(roundedNs);
     return ES.TemporalInstantToString(roundedInstant, timeZone as Temporal.TimeZoneProtocol, precision);
   }
