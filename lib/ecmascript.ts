@@ -35,8 +35,11 @@ import JSBI from 'jsbi';
 import type { Temporal } from '..';
 import {
   abs,
+  compare,
   DAY_NANOS_JSBI,
   divmod,
+  ensureJSBI,
+  isEven,
   maxJSBI,
   MILLION,
   minJSBI,
@@ -45,6 +48,7 @@ import {
   SIXTY,
   THOUSAND,
   TWENTY_FOUR,
+  TWO,
   ZERO
 } from './bigintmath';
 import type {
@@ -3267,7 +3271,7 @@ export function TemporalZonedDateTimeToString(
 
   if (options) {
     const { unit, increment, roundingMode } = options;
-    const ns = RoundInstant(GetSlot(zdt, EPOCHNANOSECONDS), increment, unit, roundingMode);
+    const ns = RoundTemporalInstant(GetSlot(zdt, EPOCHNANOSECONDS), increment, unit, roundingMode);
     const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
     instant = new TemporalInstant(ns);
   }
@@ -5951,20 +5955,42 @@ export function RoundNumberToIncrement(quantity: number, increment: number, mode
   return increment * (sign === 'positive' ? rounded : -rounded);
 }
 
-export function RoundInstant(
+// ts-prune-ignore-next TODO: remove this after tests are converted to TS
+export function RoundNumberToIncrementAsIfPositive(
+  quantityParam: JSBI | bigint,
+  incrementParam: JSBI | bigint,
+  mode: Temporal.RoundingMode
+) {
+  const quantity = ensureJSBI(quantityParam);
+  const increment = ensureJSBI(incrementParam);
+  const quotient = JSBI.divide(quantity, increment);
+  const remainder = JSBI.remainder(quantity, increment);
+  const unsignedRoundingMode = GetUnsignedRoundingMode(mode, 'positive');
+  let r1: JSBI, r2: JSBI;
+  if (JSBI.lessThan(quantity, ZERO)) {
+    r1 = JSBI.subtract(quotient, ONE);
+    r2 = quotient;
+  } else {
+    r1 = quotient;
+    r2 = JSBI.add(quotient, ONE);
+  }
+  // Similar to the comparison in RoundNumberToIncrement, but multiplied by an
+  // extra sign to make sure we treat it as positive
+  const cmp = compare(abs(JSBI.multiply(remainder, TWO)), increment) * (JSBI.lessThan(quantity, ZERO) ? -1 : 1);
+  const rounded = JSBI.equal(remainder, ZERO)
+    ? quotient
+    : ApplyUnsignedRoundingMode(r1, r2, cmp, isEven(r1), unsignedRoundingMode);
+  return JSBI.multiply(rounded, increment);
+}
+
+export function RoundTemporalInstant(
   epochNs: JSBI,
   increment: number,
   unit: TimeUnitOrDay,
   roundingMode: Temporal.RoundingMode
 ) {
-  let { remainder } = NonNegativeBigIntDivmod(epochNs, DAY_NANOS_JSBI);
-  const wholeDays = JSBI.subtract(epochNs, remainder);
-  const roundedRemainder = RoundNumberToIncrement(
-    JSBI.toNumber(remainder),
-    NS_PER_TIME_UNIT.get(unit) * increment,
-    roundingMode
-  );
-  return JSBI.add(wholeDays, JSBI.BigInt(roundedRemainder));
+  const incrementNs = NS_PER_TIME_UNIT.get(unit) * increment;
+  return RoundNumberToIncrementAsIfPositive(epochNs, JSBI.BigInt(incrementNs), roundingMode);
 }
 
 export function RoundISODateTime(
