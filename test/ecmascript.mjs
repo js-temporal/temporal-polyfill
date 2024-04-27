@@ -476,6 +476,33 @@ describe('ECMAScript', () => {
     }
   });
 
+  describe('RoundNumberToIncrementAsIfPositive', () => {
+    const increment = 100n;
+    const testValues = [-150, -100, -80, -50, -30, 0, 30, 50, 80, 100, 150];
+    const expectations = {
+      ceil: [-100, -100, -0, -0, -0, 0, 100, 100, 100, 100, 200],
+      expand: [-100, -100, -0, -0, -0, 0, 100, 100, 100, 100, 200],
+      floor: [-200, -100, -100, -100, -100, 0, 0, 0, 0, 100, 100],
+      trunc: [-200, -100, -100, -100, -100, 0, 0, 0, 0, 100, 100],
+      halfCeil: [-100, -100, -100, -0, -0, 0, 0, 100, 100, 100, 200],
+      halfExpand: [-100, -100, -100, -0, -0, 0, 0, 100, 100, 100, 200],
+      halfFloor: [-200, -100, -100, -100, -0, 0, 0, 0, 100, 100, 100],
+      halfTrunc: [-200, -100, -100, -100, -0, 0, 0, 0, 100, 100, 100],
+      halfEven: [-200, -100, -100, -0, -0, 0, 0, 0, 100, 100, 200]
+    };
+    for (const roundingMode of Object.keys(expectations)) {
+      describe(roundingMode, () => {
+        testValues.forEach((value, ix) => {
+          const expected = expectations[roundingMode][ix];
+          it(`rounds ${value} to ${expected}`, () => {
+            const result = ES.RoundNumberToIncrementAsIfPositive(BigInt(value), increment, roundingMode);
+            equal(Number(String(result)), Number(BigInt(expected)));
+          });
+        });
+      });
+    }
+  });
+
   describe('GetAvailableNamedTimeZoneIdentifier', () => {
     // Some environments don't support Intl.supportedValuesOf.
     const itOrSkipIfNoIntlSupportedValuesOf = () => (Intl?.supportedValuesOf ? it : it.skip);
