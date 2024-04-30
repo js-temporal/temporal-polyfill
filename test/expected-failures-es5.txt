@@ -370,6 +370,13 @@ built-ins/Temporal/ZonedDateTime/prototype/getCalendar/builtin.js
 built-ins/Temporal/ZonedDateTime/prototype/getCalendar/not-a-constructor.js
 built-ins/Temporal/ZonedDateTime/prototype/getTimeZone/builtin.js
 built-ins/Temporal/ZonedDateTime/prototype/getTimeZone/not-a-constructor.js
+intl402/DateTimeFormat/prototype/builtin.js
+intl402/DateTimeFormat/prototype/format/builtin.js
+intl402/DateTimeFormat/prototype/format/format-function-builtin.js
+intl402/DateTimeFormat/prototype/formatRange/builtin.js
+intl402/DateTimeFormat/prototype/formatRangeToParts/builtin.js
+intl402/DateTimeFormat/prototype/resolvedOptions/builtin.js
+intl402/DateTimeFormat/supportedLocalesOf/builtin.js
 
 # These two are too slow in ES5 so they'll time out in CI.
 intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js

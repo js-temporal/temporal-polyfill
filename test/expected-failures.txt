@@ -5,3 +5,6 @@
 # Upstream commit 076f2871 introduces a second ToString call on a calendar when
 # canonicalizing the timezone name.
 staging/Intl402/Temporal/old/date-time-format.js
+
+# temporal-test262-runner doesn't support the $262 global object
+intl402/DateTimeFormat/proto-from-ctor-realm.js
