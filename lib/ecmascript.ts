@@ -4626,7 +4626,7 @@ function DifferenceZonedDateTime(
   calendarRec: CalendarMethodRecord,
   largestUnit: Temporal.DateTimeUnit,
   options: Temporal.DifferenceOptions<Temporal.DateTimeUnit>,
-  precalculatedDtStart?: Temporal.PlainDateTime | undefined
+  dtStart: Temporal.PlainDateTime
 ) {
   // getOffsetNanosecondsFor and getPossibleInstantsFor must be looked up
   // dateAdd must be looked up if the instants are not identical (and the date
@@ -4647,9 +4647,7 @@ function DifferenceZonedDateTime(
 
   // Convert start/end instants to datetimes
   const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-  const start = new TemporalInstant(ns1);
   const end = new TemporalInstant(ns2);
-  const dtStart = precalculatedDtStart ?? GetPlainDateTimeFor(timeZoneRec, start, calendarRec.receiver);
   const dtEnd = GetPlainDateTimeFor(timeZoneRec, end, calendarRec.receiver);
 
   // Simulate moving ns1 as many years/months/weeks/days as possible without
@@ -5479,7 +5477,7 @@ function AddDuration(
         calendarRec,
         largestUnit,
         ObjectCreate(null) as Temporal.DifferenceOptions<Temporal.DateTimeUnit>,
-        startDateTime
+        castExists(startDateTime)
       ));
       ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(norm, 'hour'));
     }
