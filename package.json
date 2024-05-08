@@ -20,7 +20,8 @@
         "default": "./dist/index.cjs"
       },
       "./dist/index.cjs"
-    ]
+    ],
+    "./lib/": "./lib/"
   },
   "types": "./index.d.ts",
   "scripts": {
