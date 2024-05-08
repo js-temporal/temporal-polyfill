@@ -214,11 +214,11 @@ export class Duration implements Temporal.Duration {
   }
   add(other: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    return ES.AddDurationToOrSubtractDurationFromDuration('add', this, other, options);
+    return ES.AddDurations('add', this, other, options);
   }
   subtract(other: Params['subtract'][0], options: Params['subtract'][1] = undefined): Return['subtract'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    return ES.AddDurationToOrSubtractDurationFromDuration('subtract', this, other, options);
+    return ES.AddDurations('subtract', this, other, options);
   }
   round(roundToParam: Params['round'][0]): Return['round'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
@@ -243,8 +243,7 @@ export class Duration implements Temporal.Duration {
       minutes,
       seconds,
       milliseconds,
-      microseconds,
-      nanoseconds
+      microseconds
     );
     const roundTo =
       typeof roundToParam === 'string'
@@ -568,8 +567,7 @@ export class Duration implements Temporal.Duration {
         minutes,
         seconds,
         milliseconds,
-        microseconds,
-        nanoseconds
+        microseconds
       );
       ({ norm } = ES.RoundTimeDuration(0, norm, increment, unit, roundingMode));
       let deltaDays;
