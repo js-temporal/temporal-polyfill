@@ -268,8 +268,6 @@ built-ins/Temporal/PlainYearMonth/prototype/with/name.js
 built-ins/Temporal/PlainYearMonth/prototype/with/not-a-constructor.js
 built-ins/Temporal/TimeZone/prototype/getInstantFor/builtin.js
 built-ins/Temporal/TimeZone/prototype/getInstantFor/not-a-constructor.js
-built-ins/Temporal/TimeZone/prototype/getNextTransition/builtin.js
-built-ins/Temporal/TimeZone/prototype/getNextTransition/not-a-constructor.js
 built-ins/Temporal/TimeZone/prototype/getOffsetNanosecondsFor/builtin.js
 built-ins/Temporal/TimeZone/prototype/getOffsetNanosecondsFor/not-a-constructor.js
 built-ins/Temporal/TimeZone/prototype/getOffsetStringFor/builtin.js
@@ -278,8 +276,6 @@ built-ins/Temporal/TimeZone/prototype/getPlainDateTimeFor/builtin.js
 built-ins/Temporal/TimeZone/prototype/getPlainDateTimeFor/not-a-constructor.js
 built-ins/Temporal/TimeZone/prototype/getPossibleInstantsFor/builtin.js
 built-ins/Temporal/TimeZone/prototype/getPossibleInstantsFor/not-a-constructor.js
-built-ins/Temporal/TimeZone/prototype/getPreviousTransition/builtin.js
-built-ins/Temporal/TimeZone/prototype/getPreviousTransition/not-a-constructor.js
 built-ins/Temporal/TimeZone/prototype/toJSON/builtin.js
 built-ins/Temporal/TimeZone/prototype/toJSON/not-a-constructor.js
 built-ins/Temporal/TimeZone/prototype/toString/builtin.js
@@ -292,6 +288,8 @@ built-ins/Temporal/ZonedDateTime/prototype/equals/builtin.js
 built-ins/Temporal/ZonedDateTime/prototype/equals/not-a-constructor.js
 built-ins/Temporal/ZonedDateTime/prototype/getISOFields/builtin.js
 built-ins/Temporal/ZonedDateTime/prototype/getISOFields/not-a-constructor.js
+built-ins/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/builtin.js
+built-ins/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/not-a-constructor.js
 built-ins/Temporal/ZonedDateTime/prototype/round/builtin.js
 built-ins/Temporal/ZonedDateTime/prototype/round/not-a-constructor.js
 built-ins/Temporal/ZonedDateTime/prototype/since/builtin.js

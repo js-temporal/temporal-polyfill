@@ -1051,6 +1051,10 @@ export function GetTemporalShowOffsetOption(options: Temporal.ZonedDateTimeToStr
   return GetOption(options, 'offset', ['auto', 'never'], 'auto');
 }
 
+export function GetDirectionOption(options: { direction?: 'next' | 'previous' }) {
+  return GetOption(options, 'direction', ['next', 'previous'], REQUIRED);
+}
+
 export function GetTemporalRoundingIncrementOption(options: { roundingIncrement?: number }) {
   let increment = options.roundingIncrement;
   if (increment === undefined) return 1;
@@ -6500,7 +6504,7 @@ function GetOption<P extends StringlyTypedKeys<O>, O extends Partial<Record<P, u
 function GetOption<
   P extends StringlyTypedKeys<O>,
   O extends Partial<Record<P, unknown>>,
-  Fallback extends Required<O>[P] | undefined
+  Fallback extends Required<O>[P] | typeof REQUIRED | undefined
 >(
   options: O,
   property: P,
@@ -6525,6 +6529,7 @@ function GetOption<
     }
     return value;
   }
+  if (fallback === REQUIRED) throw new RangeError(`${property} option is required`);
   return fallback;
 }
 
