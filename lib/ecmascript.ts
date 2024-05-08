@@ -1337,8 +1337,7 @@ export function DefaultTemporalLargestUnit(
   minutes: number,
   seconds: number,
   milliseconds: number,
-  microseconds: number,
-  nanoseconds: number
+  microseconds: number
 ): Temporal.DateTimeUnit {
   const entries = [
     ['years', years],
@@ -1349,8 +1348,7 @@ export function DefaultTemporalLargestUnit(
     ['minutes', minutes],
     ['seconds', seconds],
     ['milliseconds', milliseconds],
-    ['microseconds', microseconds],
-    ['nanoseconds', nanoseconds]
+    ['microseconds', microseconds]
   ] as const;
   for (let index = 0; index < entries.length; index++) {
     const entry = entries[index];
@@ -5751,132 +5749,6 @@ export function AddTime(
   return BalanceTime(hour, minute, second, millisecond, microsecond, nanosecond);
 }
 
-function AddDuration(
-  y1: number,
-  mon1: number,
-  w1: number,
-  d1: number,
-  h1: number,
-  min1: number,
-  s1: number,
-  ms1: number,
-  µs1: number,
-  ns1: number,
-  y2: number,
-  mon2: number,
-  w2: number,
-  d2: number,
-  h2: number,
-  min2: number,
-  s2: number,
-  ms2: number,
-  µs2: number,
-  ns2: number,
-  plainRelativeTo: Temporal.PlainDate | undefined,
-  zonedRelativeTo: Temporal.ZonedDateTime | undefined,
-  calendarRec: CalendarMethodRecord | undefined,
-  timeZoneRec: TimeZoneMethodRecord | undefined,
-  precalculatedPlainDateTime?: Temporal.PlainDateTime | undefined
-) {
-  // dateAdd must be looked up if zonedRelativeTo or plainRelativeTo not
-  // undefined, and years...weeks != 0 in either duration
-  // dateUntil must additionally be looked up if duration 2 not zero
-  const largestUnit1 = DefaultTemporalLargestUnit(y1, mon1, w1, d1, h1, min1, s1, ms1, µs1, ns1);
-  const largestUnit2 = DefaultTemporalLargestUnit(y2, mon2, w2, d2, h2, min2, s2, ms2, µs2, ns2);
-  const largestUnit = LargerOfTwoTemporalUnits(largestUnit1, largestUnit2);
-
-  let years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds;
-  const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
-  const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
-  if (!zonedRelativeTo && !plainRelativeTo) {
-    if (IsCalendarUnit(largestUnit)) {
-      throw new RangeError('relativeTo is required for years, months, or weeks arithmetic');
-    }
-    years = months = weeks = 0;
-    ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-      norm1.add(norm2).add24HourDays(d1 + d2),
-      largestUnit
-    ));
-  } else if (plainRelativeTo) {
-    assertExists(calendarRec);
-    const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
-
-    const dateDuration1 = new TemporalDuration(y1, mon1, w1, d1, 0, 0, 0, 0, 0, 0);
-    const dateDuration2 = new TemporalDuration(y2, mon2, w2, d2, 0, 0, 0, 0, 0, 0);
-    const intermediate = AddDate(calendarRec, plainRelativeTo, dateDuration1);
-    const end = AddDate(calendarRec, intermediate, dateDuration2);
-
-    const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit) as Temporal.DateUnit;
-    const differenceOptions = ObjectCreate(null) as Temporal.DifferenceOptions<Temporal.DateUnit>;
-    differenceOptions.largestUnit = dateLargestUnit;
-    const untilResult = DifferenceDate(calendarRec, plainRelativeTo, end, differenceOptions);
-    years = GetSlot(untilResult, YEARS);
-    months = GetSlot(untilResult, MONTHS);
-    weeks = GetSlot(untilResult, WEEKS);
-    days = GetSlot(untilResult, DAYS);
-    // Signs of date part and time part may not agree; balance them together
-    ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-      norm1.add(norm2).add24HourDays(days),
-      largestUnit
-    ));
-  } else {
-    assertExists(zonedRelativeTo);
-    assertExists(timeZoneRec);
-    assertExists(calendarRec);
-    const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-    const calendar = GetSlot(zonedRelativeTo, CALENDAR);
-    const startInstant = GetSlot(zonedRelativeTo, INSTANT);
-    let startDateTime = precalculatedPlainDateTime;
-    if (IsCalendarUnit(largestUnit) || largestUnit === 'day') {
-      startDateTime ??= GetPlainDateTimeFor(timeZoneRec, startInstant, calendar);
-    }
-    const intermediateNs = AddZonedDateTime(
-      startInstant,
-      timeZoneRec,
-      calendarRec,
-      y1,
-      mon1,
-      w1,
-      d1,
-      norm1,
-      startDateTime
-    );
-    const endNs = AddZonedDateTime(
-      new TemporalInstant(intermediateNs),
-      timeZoneRec,
-      calendarRec,
-      y2,
-      mon2,
-      w2,
-      d2,
-      norm2
-    );
-    if (largestUnit !== 'year' && largestUnit !== 'month' && largestUnit !== 'week' && largestUnit !== 'day') {
-      // The user is only asking for a time difference, so return difference of instants.
-      years = 0;
-      months = 0;
-      weeks = 0;
-      days = 0;
-      const norm = TimeDuration.fromEpochNsDiff(endNs, GetSlot(zonedRelativeTo, EPOCHNANOSECONDS));
-      ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(norm, largestUnit));
-    } else {
-      let norm;
-      ({ years, months, weeks, days, norm } = DifferenceZonedDateTime(
-        GetSlot(zonedRelativeTo, EPOCHNANOSECONDS),
-        endNs,
-        timeZoneRec,
-        calendarRec,
-        largestUnit,
-        ObjectCreate(null) as Temporal.DifferenceOptions<Temporal.DateTimeUnit>,
-        castExists(startDateTime)
-      ));
-      ({ hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(norm, 'hour'));
-    }
-  }
-
-  return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
-}
-
 function AddInstant(epochNanoseconds: JSBI, norm: TimeDuration) {
   const result = norm.addToEpochNs(epochNanoseconds);
   ValidateEpochNanoseconds(result);
@@ -6061,15 +5933,14 @@ function AddDaysToZonedDateTime(
 
 type AddSubtractOperation = 'add' | 'subtract';
 
-export function AddDurationToOrSubtractDurationFromDuration(
+export function AddDurations(
   operation: AddSubtractOperation,
   duration: Temporal.Duration,
-  other: DurationParams['add'][0],
+  otherParam: DurationParams['add'][0],
   optionsParam: DurationParams['add'][1]
 ): Temporal.Duration {
   const sign = operation === 'subtract' ? -1 : 1;
-  let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-    ToTemporalDurationRecord(other);
+  const other = ToTemporalDurationRecord(otherParam);
   const options = GetOptionsObject(optionsParam);
   const { plainRelativeTo, zonedRelativeTo, timeZoneRec } = GetTemporalRelativeToOption(options);
 
@@ -6078,33 +5949,120 @@ export function AddDurationToOrSubtractDurationFromDuration(
     'dateUntil'
   ]);
 
-  ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = AddDuration(
-    GetSlot(duration, YEARS),
-    GetSlot(duration, MONTHS),
-    GetSlot(duration, WEEKS),
-    GetSlot(duration, DAYS),
-    GetSlot(duration, HOURS),
-    GetSlot(duration, MINUTES),
-    GetSlot(duration, SECONDS),
-    GetSlot(duration, MILLISECONDS),
-    GetSlot(duration, MICROSECONDS),
-    GetSlot(duration, NANOSECONDS),
-    sign * years,
-    sign * months,
-    sign * weeks,
-    sign * days,
-    sign * hours,
-    sign * minutes,
-    sign * seconds,
-    sign * milliseconds,
-    sign * microseconds,
-    sign * nanoseconds,
-    plainRelativeTo,
-    zonedRelativeTo,
-    calendarRec,
-    timeZoneRec
-  ));
+  const y1 = GetSlot(duration, YEARS);
+  const mon1 = GetSlot(duration, MONTHS);
+  const w1 = GetSlot(duration, WEEKS);
+  const d1 = GetSlot(duration, DAYS);
+  const h1 = GetSlot(duration, HOURS);
+  const min1 = GetSlot(duration, MINUTES);
+  const s1 = GetSlot(duration, SECONDS);
+  const ms1 = GetSlot(duration, MILLISECONDS);
+  const µs1 = GetSlot(duration, MICROSECONDS);
+  const ns1 = GetSlot(duration, NANOSECONDS);
+  const y2 = sign * other.years;
+  const mon2 = sign * other.months;
+  const w2 = sign * other.weeks;
+  const d2 = sign * other.days;
+  const h2 = sign * other.hours;
+  const min2 = sign * other.minutes;
+  const s2 = sign * other.seconds;
+  const ms2 = sign * other.milliseconds;
+  const µs2 = sign * other.microseconds;
+  const ns2 = sign * other.nanoseconds;
+
+  const largestUnit1 = DefaultTemporalLargestUnit(y1, mon1, w1, d1, h1, min1, s1, ms1, µs1);
+  const largestUnit2 = DefaultTemporalLargestUnit(y2, mon2, w2, d2, h2, min2, s2, ms2, µs2);
+  const largestUnit = LargerOfTwoTemporalUnits(largestUnit1, largestUnit2);
+
+  const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
+  const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
   const Duration = GetIntrinsic('%Temporal.Duration%');
+
+  if (!zonedRelativeTo && !plainRelativeTo) {
+    if (IsCalendarUnit(largestUnit)) {
+      throw new RangeError('relativeTo is required for years, months, or weeks arithmetic');
+    }
+    const { days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
+      norm1.add(norm2).add24HourDays(d1 + d2),
+      largestUnit
+    );
+    return new Duration(0, 0, 0, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+  }
+
+  if (plainRelativeTo) {
+    assertExists(calendarRec);
+    const dateDuration1 = new Duration(y1, mon1, w1, d1, 0, 0, 0, 0, 0, 0);
+    const dateDuration2 = new Duration(y2, mon2, w2, d2, 0, 0, 0, 0, 0, 0);
+    const intermediate = AddDate(calendarRec, plainRelativeTo, dateDuration1);
+    const end = AddDate(calendarRec, intermediate, dateDuration2);
+
+    const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit);
+    const differenceOptions = ObjectCreate(null);
+    differenceOptions.largestUnit = dateLargestUnit;
+    const untilResult = DifferenceDate(calendarRec, plainRelativeTo, end, differenceOptions);
+    const years = GetSlot(untilResult, YEARS);
+    const months = GetSlot(untilResult, MONTHS);
+    const weeks = GetSlot(untilResult, WEEKS);
+    let days = GetSlot(untilResult, DAYS);
+    // Signs of date part and time part may not agree; balance them together
+    let hours, minutes, seconds, milliseconds, microseconds, nanoseconds;
+    ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
+      norm1.add(norm2).add24HourDays(days),
+      largestUnit
+    ));
+    return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+  }
+
+  // zonedRelativeTo is defined
+  assertExists(zonedRelativeTo);
+  assertExists(calendarRec);
+  assertExists(timeZoneRec);
+  const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
+  const calendar = GetSlot(zonedRelativeTo, CALENDAR);
+  const startInstant = GetSlot(zonedRelativeTo, INSTANT);
+  let startDateTime;
+  if (IsCalendarUnit(largestUnit) || largestUnit === 'day') {
+    startDateTime = GetPlainDateTimeFor(timeZoneRec, startInstant, calendar);
+  }
+  const intermediateNs = AddZonedDateTime(
+    startInstant,
+    timeZoneRec,
+    calendarRec,
+    y1,
+    mon1,
+    w1,
+    d1,
+    norm1,
+    startDateTime
+  );
+  const endNs = AddZonedDateTime(
+    new TemporalInstant(intermediateNs),
+    timeZoneRec,
+    calendarRec,
+    y2,
+    mon2,
+    w2,
+    d2,
+    norm2
+  );
+  if (largestUnit !== 'year' && largestUnit !== 'month' && largestUnit !== 'week' && largestUnit !== 'day') {
+    // The user is only asking for a time difference, so return difference of instants.
+    const norm = TimeDuration.fromEpochNsDiff(endNs, GetSlot(zonedRelativeTo, EPOCHNANOSECONDS));
+    const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(norm, largestUnit);
+    return new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+  }
+
+  assertExists(startDateTime);
+  const { years, months, weeks, days, norm } = DifferenceZonedDateTime(
+    GetSlot(zonedRelativeTo, EPOCHNANOSECONDS),
+    endNs,
+    timeZoneRec,
+    calendarRec,
+    largestUnit,
+    ObjectCreate(null),
+    startDateTime
+  );
+  const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(norm, 'hour');
   return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
 }
 
