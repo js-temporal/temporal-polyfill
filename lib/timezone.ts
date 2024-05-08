@@ -18,7 +18,6 @@ import {
   GetSlot,
   SetSlot
 } from './slots';
-import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type { TimeZoneParams as Params, TimeZoneReturn as Return } from './internaltypes';
 
@@ -127,36 +126,6 @@ export class TimeZone implements Temporal.TimeZone {
       GetSlot(dateTime, ISO_NANOSECOND)
     );
     return possibleEpochNs.map((ns) => new Instant(ns));
-  }
-  getNextTransition(startingPointParam: Params['getNextTransition'][0]): Return['getNextTransition'] {
-    if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    const startingPoint = ES.ToTemporalInstant(startingPointParam);
-    const id = GetSlot(this, TIMEZONE_ID);
-
-    // Offset time zones or UTC have no transitions
-    if (ES.IsOffsetTimeZoneIdentifier(id) || id === 'UTC') {
-      return null;
-    }
-
-    let epochNanoseconds: JSBI | null = GetSlot(startingPoint, EPOCHNANOSECONDS);
-    const Instant = GetIntrinsic('%Temporal.Instant%');
-    epochNanoseconds = ES.GetNamedTimeZoneNextTransition(id, epochNanoseconds);
-    return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
-  }
-  getPreviousTransition(startingPointParam: Params['getPreviousTransition'][0]): Return['getPreviousTransition'] {
-    if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
-    const startingPoint = ES.ToTemporalInstant(startingPointParam);
-    const id = GetSlot(this, TIMEZONE_ID);
-
-    // Offset time zones or UTC have no transitions
-    if (ES.IsOffsetTimeZoneIdentifier(id) || id === 'UTC') {
-      return null;
-    }
-
-    let epochNanoseconds: JSBI | null = GetSlot(startingPoint, EPOCHNANOSECONDS);
-    const Instant = GetIntrinsic('%Temporal.Instant%');
-    epochNanoseconds = ES.GetNamedTimeZonePreviousTransition(id, epochNanoseconds);
-    return epochNanoseconds === null ? null : new Instant(epochNanoseconds);
   }
   toString(): string {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
