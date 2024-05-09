@@ -611,14 +611,6 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       timeZone: timeZoneRec.receiver
     };
   }
-  getCalendar(): Return['getCalendar'] {
-    if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
-    return ES.ToTemporalCalendarObject(GetSlot(this, CALENDAR));
-  }
-  getTimeZone(): Return['getTimeZone'] {
-    if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
-    return ES.ToTemporalTimeZoneObject(GetSlot(this, TIME_ZONE));
-  }
 
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
