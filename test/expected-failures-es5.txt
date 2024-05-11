@@ -280,8 +280,6 @@ built-ins/Temporal/TimeZone/prototype/toJSON/builtin.js
 built-ins/Temporal/TimeZone/prototype/toJSON/not-a-constructor.js
 built-ins/Temporal/TimeZone/prototype/toString/builtin.js
 built-ins/Temporal/TimeZone/prototype/toString/not-a-constructor.js
-built-ins/Temporal/TimeZone/prototype/equals/not-a-constructor.js
-built-ins/Temporal/TimeZone/prototype/equals/builtin.js
 built-ins/Temporal/ZonedDateTime/prototype/add/builtin.js
 built-ins/Temporal/ZonedDateTime/prototype/add/not-a-constructor.js
 built-ins/Temporal/ZonedDateTime/prototype/equals/builtin.js
