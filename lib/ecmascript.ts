@@ -4277,9 +4277,9 @@ function DifferenceISODateTime(
   ms1: number,
   µs1: number,
   ns1: number,
-  y2: number,
-  mon2: number,
-  d2: number,
+  y2Param: number,
+  mon2Param: number,
+  d2Param: number,
   h2: number,
   min2: number,
   s2: number,
@@ -4295,13 +4295,18 @@ function DifferenceISODateTime(
   let y1 = y1Param;
   let mon1 = mon1Param;
   let d1 = d1Param;
+  let y2 = y2Param;
+  let mon2 = mon2Param;
+  let d2 = d2Param;
 
   let timeDuration = DifferenceTime(h1, min1, s1, ms1, µs1, ns1, h2, min2, s2, ms2, µs2, ns2);
 
   const timeSign = timeDuration.sign();
   const dateSign = CompareISODate(y2, mon2, d2, y1, mon1, d1);
+
+  // back-off a day from date2 so that the signs of the date a time diff match
   if (dateSign === -timeSign) {
-    ({ year: y1, month: mon1, day: d1 } = BalanceISODate(y1, mon1, d1 - timeSign));
+    ({ year: y2, month: mon2, day: d2 } = BalanceISODate(y2, mon2, d2 + timeSign));
     timeDuration = timeDuration.add24HourDays(-timeSign);
   }
 
