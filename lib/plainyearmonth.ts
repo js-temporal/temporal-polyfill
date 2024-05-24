@@ -1,12 +1,13 @@
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
-import { CalendarMethodRecord } from './methodrecord';
 import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, GetSlot } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
-import type { FieldKey, PlainYearMonthParams as Params, PlainYearMonthReturn as Return } from './internaltypes';
-
-const ArrayPrototypeConcat = Array.prototype.concat;
+import type {
+  BuiltinCalendarId,
+  PlainYearMonthParams as Params,
+  PlainYearMonthReturn as Return
+} from './internaltypes';
 
 export class PlainYearMonth implements Temporal.PlainYearMonth {
   constructor(
@@ -17,50 +18,62 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   ) {
     const isoYear = ES.ToIntegerWithTruncation(isoYearParam);
     const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);
-    const calendar = ES.ToTemporalCalendarSlotValue(calendarParam);
+    let calendar = calendarParam === undefined ? 'iso8601' : ES.RequireString(calendarParam);
+    if (!ES.IsBuiltinCalendar(calendar)) throw new RangeError(`unknown calendar ${calendar}`);
+    calendar = ES.CanonicalizeCalendar(calendar);
+    ES.uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
     const referenceISODay = ES.ToIntegerWithTruncation(referenceISODayParam);
 
     ES.CreateTemporalYearMonthSlots(this, isoYear, isoMonth, calendar, referenceISODay);
   }
   get year(): Return['year'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.CalendarYear(GetSlot(this, CALENDAR), this);
+    const isoDate = ES.TemporalObjectToISODateRecord(this);
+    return ES.CalendarYear(GetSlot(this, CALENDAR), isoDate);
   }
   get month(): Return['month'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.CalendarMonth(GetSlot(this, CALENDAR), this);
+    const isoDate = ES.TemporalObjectToISODateRecord(this);
+    return ES.CalendarMonth(GetSlot(this, CALENDAR), isoDate);
   }
   get monthCode(): Return['monthCode'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.CalendarMonthCode(GetSlot(this, CALENDAR), this);
+    const isoDate = ES.TemporalObjectToISODateRecord(this);
+    return ES.CalendarMonthCode(GetSlot(this, CALENDAR), isoDate);
   }
   get calendarId(): Return['calendarId'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.ToTemporalCalendarIdentifier(GetSlot(this, CALENDAR));
+    return GetSlot(this, CALENDAR);
   }
   get era(): Return['era'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.CalendarEra(GetSlot(this, CALENDAR), this);
+    const isoDate = ES.TemporalObjectToISODateRecord(this);
+    return ES.CalendarEra(GetSlot(this, CALENDAR), isoDate);
   }
   get eraYear(): Return['eraYear'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.CalendarEraYear(GetSlot(this, CALENDAR), this);
+    const isoDate = ES.TemporalObjectToISODateRecord(this);
+    return ES.CalendarEraYear(GetSlot(this, CALENDAR), isoDate);
   }
   get daysInMonth(): Return['daysInMonth'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.CalendarDaysInMonth(GetSlot(this, CALENDAR), this);
+    const isoDate = ES.TemporalObjectToISODateRecord(this);
+    return ES.CalendarDaysInMonth(GetSlot(this, CALENDAR), isoDate);
   }
   get daysInYear(): Return['daysInYear'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.CalendarDaysInYear(GetSlot(this, CALENDAR), this);
+    const isoDate = ES.TemporalObjectToISODateRecord(this);
+    return ES.CalendarDaysInYear(GetSlot(this, CALENDAR), isoDate);
   }
   get monthsInYear(): Return['monthsInYear'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.CalendarMonthsInYear(GetSlot(this, CALENDAR), this);
+    const isoDate = ES.TemporalObjectToISODateRecord(this);
+    return ES.CalendarMonthsInYear(GetSlot(this, CALENDAR), isoDate);
   }
   get inLeapYear(): Return['inLeapYear'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.CalendarInLeapYear(GetSlot(this, CALENDAR), this);
+    const isoDate = ES.TemporalObjectToISODateRecord(this);
+    return ES.CalendarInLeapYear(GetSlot(this, CALENDAR), isoDate);
   }
   with(temporalYearMonthLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
@@ -68,23 +81,21 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
       throw new TypeError('invalid argument');
     }
     ES.RejectTemporalLikeObject(temporalYearMonthLike);
-    const resolvedOptions = ES.SnapshotOwnProperties(ES.GetOptionsObject(options), null);
 
-    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), [
-      'fields',
-      'mergeFields',
-      'yearMonthFromFields'
-    ]);
-    let { fields, fieldNames } = ES.PrepareCalendarFieldsAndFieldNames(calendarRec, this, [
-      'month',
-      'monthCode',
-      'year'
-    ]);
-    const partialYearMonth = ES.PrepareTemporalFields(temporalYearMonthLike, fieldNames, 'partial');
-    fields = ES.CalendarMergeFields(calendarRec, fields, partialYearMonth);
-    fields = ES.PrepareTemporalFields(fields, fieldNames, []);
+    const calendar = GetSlot(this, CALENDAR);
+    let fields = ES.TemporalObjectToFields(this);
+    const partialYearMonth = ES.PrepareCalendarFields(
+      calendar,
+      temporalYearMonthLike,
+      ['month', 'monthCode', 'year'],
+      [],
+      'partial'
+    );
+    fields = ES.CalendarMergeFields(calendar, fields, partialYearMonth);
 
-    return ES.CalendarYearMonthFromFields(calendarRec, fields, resolvedOptions);
+    const overflow = ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
+    const { year, month, day } = ES.CalendarYearMonthFromFields(calendar, fields, overflow);
+    return ES.CreateTemporalYearMonth(year, month, calendar, day);
   }
   add(temporalDurationLike: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
@@ -136,21 +147,13 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   toPlainDate(item: Params['toPlainDate'][0]): Return['toPlainDate'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(item)) throw new TypeError('argument should be an object');
-    const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['dateFromFields', 'fields', 'mergeFields']);
+    const calendar = GetSlot(this, CALENDAR);
 
-    const { fields, fieldNames: receiverFieldNames } = ES.PrepareCalendarFieldsAndFieldNames(calendarRec, this, [
-      'monthCode',
-      'year'
-    ]);
-    const { fields: inputFields, fieldNames: inputFieldNames } = ES.PrepareCalendarFieldsAndFieldNames(
-      calendarRec,
-      item,
-      ['day']
-    );
-    let mergedFields = ES.CalendarMergeFields(calendarRec, fields, inputFields);
-    const concatenatedFieldNames: FieldKey[] = ES.Call(ArrayPrototypeConcat, receiverFieldNames, inputFieldNames);
-    mergedFields = ES.PrepareTemporalFields(mergedFields, concatenatedFieldNames, [], [], 'ignore');
-    return ES.CalendarDateFromFields(calendarRec, mergedFields);
+    const fields = ES.TemporalObjectToFields(this);
+    const inputFields = ES.PrepareCalendarFields(calendar, item, ['day'], [], []);
+    const mergedFields = ES.CalendarMergeFields(calendar, fields, inputFields);
+    const { year, month, day } = ES.CalendarDateFromFields(calendar, mergedFields, 'constrain');
+    return ES.CreateTemporalDate(year, month, day, calendar);
   }
   getISOFields(): Return['getISOFields'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
@@ -162,10 +165,9 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     };
   }
 
-  static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
-    const options = ES.GetOptionsObject(optionsParam);
+  static from(item: Params['from'][0], options: Params['from'][1] = undefined): Return['from'] {
     if (ES.IsTemporalYearMonth(item)) {
-      ES.GetTemporalOverflowOption(options); // validate and ignore
+      ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
       return ES.CreateTemporalYearMonth(
         GetSlot(item, ISO_YEAR),
         GetSlot(item, ISO_MONTH),

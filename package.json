@@ -22,7 +22,9 @@
       "./dist/index.cjs"
     ]
   },
-  "sideEffects": false,
+  "sideEffects": [
+    "./tsc-out/calendar.js"
+  ],
   "types": "./index.d.ts",
   "scripts": {
     "test": "npm run build && node --no-warnings --experimental-modules --experimental-specifier-resolution=node --icu-data-dir node_modules/full-icu --loader ./test/resolve.source.mjs ./test/all.mjs",

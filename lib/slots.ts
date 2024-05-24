@@ -1,19 +1,10 @@
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
-import type {
-  BuiltinCalendarId,
-  AnySlottedType,
-  CalendarSlot,
-  TimeZoneSlot,
-  FormatterOrAmender
-} from './internaltypes';
+import type { BuiltinCalendarId, AnySlottedType, FormatterOrAmender } from './internaltypes';
 import type { DateTimeFormatImpl } from './intl';
 
 // Instant
 export const EPOCHNANOSECONDS = 'slot-epochNanoSeconds';
-
-// TimeZone
-export const TIMEZONE_ID = 'slot-timezone-identifier';
 
 // DateTime, Date, Time, YearMonth, MonthDay
 export const ISO_YEAR = 'slot-year';
@@ -32,7 +23,6 @@ export const YEAR_MONTH_BRAND = 'slot-year-month-brand';
 export const MONTH_DAY_BRAND = 'slot-month-day-brand';
 
 // ZonedDateTime
-export const INSTANT = 'slot-cached-instant';
 export const TIME_ZONE = 'slot-time-zone';
 
 // Duration
@@ -46,9 +36,6 @@ export const SECONDS = 'slot-seconds';
 export const MILLISECONDS = 'slot-milliseconds';
 export const MICROSECONDS = 'slot-microseconds';
 export const NANOSECONDS = 'slot-nanoseconds';
-
-// Calendar
-export const CALENDAR_ID = 'slot-calendar-identifier';
 
 // DateTimeFormatImpl
 export const DATE = 'date';
@@ -77,9 +64,6 @@ interface Slots extends SlotInfoRecord {
   // Instant
   [EPOCHNANOSECONDS]: SlotInfo<JSBI, Temporal.Instant | Temporal.ZonedDateTime>; // number? JSBI?
 
-  // TimeZone
-  [TIMEZONE_ID]: SlotInfo<string, Temporal.TimeZone>;
-
   // DateTime, Date, Time, YearMonth, MonthDay
   [ISO_YEAR]: SlotInfo<number, TypesWithCalendarUnits>;
   [ISO_MONTH]: SlotInfo<number, TypesWithCalendarUnits>;
@@ -90,7 +74,7 @@ interface Slots extends SlotInfoRecord {
   [ISO_MILLISECOND]: SlotInfo<number, TypesWithCalendarUnits>;
   [ISO_MICROSECOND]: SlotInfo<number, TypesWithCalendarUnits>;
   [ISO_NANOSECOND]: SlotInfo<number, TypesWithCalendarUnits>;
-  [CALENDAR]: SlotInfo<CalendarSlot, TypesWithCalendarUnits>;
+  [CALENDAR]: SlotInfo<BuiltinCalendarId, TypesWithCalendarUnits>;
 
   // Date, YearMonth, MonthDay common slots
   [DATE_BRAND]: SlotInfo<true, Temporal.PlainDate>;
@@ -98,8 +82,7 @@ interface Slots extends SlotInfoRecord {
   [MONTH_DAY_BRAND]: SlotInfo<true, Temporal.PlainMonthDay>;
 
   // ZonedDateTime
-  [INSTANT]: SlotInfo<Temporal.Instant, Temporal.ZonedDateTime>;
-  [TIME_ZONE]: SlotInfo<TimeZoneSlot, Temporal.ZonedDateTime>;
+  [TIME_ZONE]: SlotInfo<string, Temporal.ZonedDateTime>;
 
   // Duration
   [YEARS]: SlotInfo<number, Temporal.Duration>;
@@ -112,9 +95,6 @@ interface Slots extends SlotInfoRecord {
   [MILLISECONDS]: SlotInfo<number, Temporal.Duration>;
   [MICROSECONDS]: SlotInfo<number, Temporal.Duration>;
   [NANOSECONDS]: SlotInfo<number, Temporal.Duration>;
-
-  // Calendar
-  [CALENDAR_ID]: SlotInfo<BuiltinCalendarId, Temporal.Calendar>;
 
   // DateTimeFormatImpl
   [DATE]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
@@ -143,9 +123,6 @@ interface SlotsToTypes {
   // Instant
   [EPOCHNANOSECONDS]: Temporal.Instant;
 
-  // TimeZone
-  [TIMEZONE_ID]: Temporal.TimeZone;
-
   // DateTime, Date, Time, YearMonth, MonthDay
   [ISO_YEAR]: TypesWithCalendarUnits;
   [ISO_MONTH]: TypesWithCalendarUnits;
@@ -164,7 +141,6 @@ interface SlotsToTypes {
   [MONTH_DAY_BRAND]: Temporal.PlainMonthDay;
 
   // ZonedDateTime
-  [INSTANT]: Temporal.ZonedDateTime;
   [TIME_ZONE]: Temporal.ZonedDateTime;
 
   // Duration
@@ -178,9 +154,6 @@ interface SlotsToTypes {
   [MILLISECONDS]: Temporal.Duration;
   [MICROSECONDS]: Temporal.Duration;
   [NANOSECONDS]: Temporal.Duration;
-
-  // Calendar
-  [CALENDAR_ID]: Temporal.Calendar;
 
   // DateTimeFormatImpl
   [DATE]: DateTimeFormatImpl;

@@ -8,15 +8,13 @@ import { strict as assert } from 'assert';
 const { deepEqual, throws, equal } = assert;
 
 import * as ES from '../lib/ecmascript';
-import { GetSlot, TIMEZONE_ID } from '../lib/slots';
-import { TimeZone } from '../lib/timezone';
 
 import { readFileSync } from 'fs';
 
 describe('ECMAScript', () => {
   describe('GetNamedTimeZoneDateTimeParts', () => {
     describe('epoch', () => {
-      test(0n, GetSlot(TimeZone.from('America/Los_Angeles'), TIMEZONE_ID), {
+      test(0n, 'America/Los_Angeles', {
         year: 1969,
         month: 12,
         day: 31,
@@ -27,7 +25,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 0
       });
-      test(0n, GetSlot(TimeZone.from('America/New_York'), TIMEZONE_ID), {
+      test(0n, 'America/New_York', {
         year: 1969,
         month: 12,
         day: 31,
@@ -38,7 +36,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 0
       });
-      test(0n, GetSlot(TimeZone.from('Europe/London'), TIMEZONE_ID), {
+      test(0n, 'Europe/London', {
         year: 1970,
         month: 1,
         day: 1,
@@ -49,7 +47,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 0
       });
-      test(0n, GetSlot(TimeZone.from('Europe/Berlin'), TIMEZONE_ID), {
+      test(0n, 'Europe/Berlin', {
         year: 1970,
         month: 1,
         day: 1,
@@ -60,7 +58,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 0
       });
-      test(0n, GetSlot(TimeZone.from('Europe/Moscow'), TIMEZONE_ID), {
+      test(0n, 'Europe/Moscow', {
         year: 1970,
         month: 1,
         day: 1,
@@ -71,7 +69,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 0
       });
-      test(0n, GetSlot(TimeZone.from('Asia/Tokyo'), TIMEZONE_ID), {
+      test(0n, 'Asia/Tokyo', {
         year: 1970,
         month: 1,
         day: 1,
@@ -84,7 +82,7 @@ describe('ECMAScript', () => {
       });
     });
     describe('epoch-1', () => {
-      test(-1n, GetSlot(TimeZone.from('America/Los_Angeles'), TIMEZONE_ID), {
+      test(-1n, 'America/Los_Angeles', {
         year: 1969,
         month: 12,
         day: 31,
@@ -95,7 +93,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(-1n, GetSlot(TimeZone.from('America/New_York'), TIMEZONE_ID), {
+      test(-1n, 'America/New_York', {
         year: 1969,
         month: 12,
         day: 31,
@@ -106,7 +104,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(-1n, GetSlot(TimeZone.from('Europe/London'), TIMEZONE_ID), {
+      test(-1n, 'Europe/London', {
         year: 1970,
         month: 1,
         day: 1,
@@ -117,7 +115,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(-1n, GetSlot(TimeZone.from('Europe/Berlin'), TIMEZONE_ID), {
+      test(-1n, 'Europe/Berlin', {
         year: 1970,
         month: 1,
         day: 1,
@@ -128,7 +126,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(-1n, GetSlot(TimeZone.from('Europe/Moscow'), TIMEZONE_ID), {
+      test(-1n, 'Europe/Moscow', {
         year: 1970,
         month: 1,
         day: 1,
@@ -139,7 +137,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(-1n, GetSlot(TimeZone.from('Asia/Tokyo'), TIMEZONE_ID), {
+      test(-1n, 'Asia/Tokyo', {
         year: 1970,
         month: 1,
         day: 1,
@@ -152,7 +150,7 @@ describe('ECMAScript', () => {
       });
     });
     describe('epoch+1', () => {
-      test(1n, GetSlot(TimeZone.from('America/Los_Angeles'), TIMEZONE_ID), {
+      test(1n, 'America/Los_Angeles', {
         year: 1969,
         month: 12,
         day: 31,
@@ -163,7 +161,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 1
       });
-      test(1n, GetSlot(TimeZone.from('America/New_York'), TIMEZONE_ID), {
+      test(1n, 'America/New_York', {
         year: 1969,
         month: 12,
         day: 31,
@@ -174,7 +172,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 1
       });
-      test(1n, GetSlot(TimeZone.from('Europe/London'), TIMEZONE_ID), {
+      test(1n, 'Europe/London', {
         year: 1970,
         month: 1,
         day: 1,
@@ -185,7 +183,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 1
       });
-      test(1n, GetSlot(TimeZone.from('Europe/Berlin'), TIMEZONE_ID), {
+      test(1n, 'Europe/Berlin', {
         year: 1970,
         month: 1,
         day: 1,
@@ -196,7 +194,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 1
       });
-      test(1n, GetSlot(TimeZone.from('Europe/Moscow'), TIMEZONE_ID), {
+      test(1n, 'Europe/Moscow', {
         year: 1970,
         month: 1,
         day: 1,
@@ -207,7 +205,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 1
       });
-      test(1n, GetSlot(TimeZone.from('Asia/Tokyo'), TIMEZONE_ID), {
+      test(1n, 'Asia/Tokyo', {
         year: 1970,
         month: 1,
         day: 1,
@@ -220,7 +218,7 @@ describe('ECMAScript', () => {
       });
     });
     describe('epoch-6300000000001', () => {
-      test(-6300000000001n, GetSlot(TimeZone.from('America/Los_Angeles'), TIMEZONE_ID), {
+      test(-6300000000001n, 'America/Los_Angeles', {
         year: 1969,
         month: 12,
         day: 31,
@@ -231,7 +229,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(-6300000000001n, GetSlot(TimeZone.from('America/New_York'), TIMEZONE_ID), {
+      test(-6300000000001n, 'America/New_York', {
         year: 1969,
         month: 12,
         day: 31,
@@ -242,7 +240,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(-6300000000001n, GetSlot(TimeZone.from('Europe/London'), TIMEZONE_ID), {
+      test(-6300000000001n, 'Europe/London', {
         year: 1969,
         month: 12,
         day: 31,
@@ -253,7 +251,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(-6300000000001n, GetSlot(TimeZone.from('Europe/Berlin'), TIMEZONE_ID), {
+      test(-6300000000001n, 'Europe/Berlin', {
         year: 1969,
         month: 12,
         day: 31,
@@ -264,7 +262,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(-6300000000001n, GetSlot(TimeZone.from('Europe/Moscow'), TIMEZONE_ID), {
+      test(-6300000000001n, 'Europe/Moscow', {
         year: 1970,
         month: 1,
         day: 1,
@@ -275,7 +273,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(-6300000000001n, GetSlot(TimeZone.from('Asia/Tokyo'), TIMEZONE_ID), {
+      test(-6300000000001n, 'Asia/Tokyo', {
         year: 1970,
         month: 1,
         day: 1,
@@ -288,7 +286,7 @@ describe('ECMAScript', () => {
       });
     });
     describe('epoch+6300000000001', () => {
-      test(6300000000001n, GetSlot(TimeZone.from('America/Los_Angeles'), TIMEZONE_ID), {
+      test(6300000000001n, 'America/Los_Angeles', {
         year: 1969,
         month: 12,
         day: 31,
@@ -299,7 +297,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 1
       });
-      test(6300000000001n, GetSlot(TimeZone.from('America/New_York'), TIMEZONE_ID), {
+      test(6300000000001n, 'America/New_York', {
         year: 1969,
         month: 12,
         day: 31,
@@ -310,7 +308,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 1
       });
-      test(6300000000001n, GetSlot(TimeZone.from('Europe/London'), TIMEZONE_ID), {
+      test(6300000000001n, 'Europe/London', {
         year: 1970,
         month: 1,
         day: 1,
@@ -321,7 +319,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 1
       });
-      test(6300000000001n, GetSlot(TimeZone.from('Europe/Berlin'), TIMEZONE_ID), {
+      test(6300000000001n, 'Europe/Berlin', {
         year: 1970,
         month: 1,
         day: 1,
@@ -332,7 +330,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 1
       });
-      test(6300000000001n, GetSlot(TimeZone.from('Europe/Moscow'), TIMEZONE_ID), {
+      test(6300000000001n, 'Europe/Moscow', {
         year: 1970,
         month: 1,
         day: 1,
@@ -343,7 +341,7 @@ describe('ECMAScript', () => {
         microsecond: 0,
         nanosecond: 1
       });
-      test(6300000000001n, GetSlot(TimeZone.from('Asia/Tokyo'), TIMEZONE_ID), {
+      test(6300000000001n, 'Asia/Tokyo', {
         year: 1970,
         month: 1,
         day: 1,
@@ -356,7 +354,7 @@ describe('ECMAScript', () => {
       });
     });
     describe('dst', () => {
-      test(1553993999999999999n, GetSlot(TimeZone.from('Europe/London'), TIMEZONE_ID), {
+      test(1553993999999999999n, 'Europe/London', {
         year: 2019,
         month: 3,
         day: 31,
@@ -367,7 +365,7 @@ describe('ECMAScript', () => {
         microsecond: 999,
         nanosecond: 999
       });
-      test(1553994000000000000n, GetSlot(TimeZone.from('Europe/London'), TIMEZONE_ID), {
+      test(1553994000000000000n, 'Europe/London', {
         year: 2019,
         month: 3,
         day: 31,
@@ -394,7 +392,7 @@ describe('ECMAScript', () => {
 
   describe('GetFormatterParts', () => {
     // https://github.com/tc39/proposal-temporal/issues/575
-    test(1589670000000, GetSlot(TimeZone.from('Europe/London'), TIMEZONE_ID), {
+    test(1589670000000, 'Europe/London', {
       year: 2020,
       month: 5,
       day: 17,

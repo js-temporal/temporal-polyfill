@@ -8,7 +8,6 @@ import type { InstantParams as Params, InstantReturn as Return } from './interna
 
 import JSBI from 'jsbi';
 import { BigIntFloorDiv, MILLION } from './bigintmath';
-import { TimeZoneMethodRecord } from './methodrecord';
 
 export class Instant implements Temporal.Instant {
   constructor(epochNanoseconds: bigint | JSBI) {
@@ -24,9 +23,8 @@ export class Instant implements Temporal.Instant {
     SetSlot(this, EPOCHNANOSECONDS, ns);
 
     if (DEBUG) {
-      const ignored = new TimeZoneMethodRecord('UTC', []);
-      const dateTime = ES.GetPlainDateTimeFor(ignored, this, 'iso8601', 0);
-      const repr = ES.TemporalDateTimeToString(dateTime, 'auto', 'never') + 'Z';
+      const iso = ES.GetISOPartsFromEpoch(ns);
+      const repr = ES.TemporalDateTimeToString(iso, 'iso8601', 'auto', 'never') + 'Z';
       Object.defineProperty(this, '_repr_', {
         value: `${this[Symbol.toStringTag]} <${repr}>`,
         writable: false,
@@ -100,12 +98,12 @@ export class Instant implements Temporal.Instant {
     const smallestUnit = ES.GetTemporalUnitValuedOption(options, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
     let timeZone = options.timeZone;
-    if (timeZone !== undefined) timeZone = ES.ToTemporalTimeZoneSlotValue(timeZone);
+    if (timeZone !== undefined) timeZone = ES.ToTemporalTimeZoneIdentifier(timeZone);
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     const ns = GetSlot(this, EPOCHNANOSECONDS);
     const roundedNs = ES.RoundTemporalInstant(ns, increment, unit, roundingMode);
     const roundedInstant = new Instant(roundedNs);
-    return ES.TemporalInstantToString(roundedInstant, timeZone as Temporal.TimeZoneProtocol, precision);
+    return ES.TemporalInstantToString(roundedInstant, timeZone, precision);
   }
   toJSON(): string {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
@@ -123,7 +121,7 @@ export class Instant implements Temporal.Instant {
   }
   toZonedDateTimeISO(timeZoneParam: Params['toZonedDateTimeISO'][0]): Return['toZonedDateTimeISO'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    const timeZone = ES.ToTemporalTimeZoneSlotValue(timeZoneParam);
+    const timeZone = ES.ToTemporalTimeZoneIdentifier(timeZoneParam);
     return ES.CreateTemporalZonedDateTime(GetSlot(this, EPOCHNANOSECONDS), timeZone, 'iso8601');
   }
 

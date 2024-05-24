@@ -1,6 +1,5 @@
 import * as ES from './ecmascript';
 import { GetIntrinsic } from './intrinsicclass';
-import { TimeZoneMethodRecord } from './methodrecord';
 import type { Temporal } from '..';
 
 const instant: (typeof Temporal.Now)['instant'] = () => {
@@ -8,13 +7,23 @@ const instant: (typeof Temporal.Now)['instant'] = () => {
   return new Instant(ES.SystemUTCEpochNanoSeconds());
 };
 const plainDateTimeISO: (typeof Temporal.Now)['plainDateTimeISO'] = (temporalTimeZoneLike = ES.DefaultTimeZone()) => {
-  const timeZone = ES.ToTemporalTimeZoneSlotValue(temporalTimeZoneLike);
-  const inst = instant();
-  const timeZoneRec = new TimeZoneMethodRecord(timeZone, ['getOffsetNanosecondsFor']);
-  return ES.GetPlainDateTimeFor(timeZoneRec, inst, 'iso8601');
+  const timeZone = ES.ToTemporalTimeZoneIdentifier(temporalTimeZoneLike);
+  const iso = ES.GetISODateTimeFor(timeZone, ES.SystemUTCEpochNanoSeconds());
+  return ES.CreateTemporalDateTime(
+    iso.year,
+    iso.month,
+    iso.day,
+    iso.hour,
+    iso.minute,
+    iso.second,
+    iso.millisecond,
+    iso.microsecond,
+    iso.nanosecond,
+    'iso8601'
+  );
 };
 const zonedDateTimeISO: (typeof Temporal.Now)['zonedDateTimeISO'] = (temporalTimeZoneLike = ES.DefaultTimeZone()) => {
-  const timeZone = ES.ToTemporalTimeZoneSlotValue(temporalTimeZoneLike);
+  const timeZone = ES.ToTemporalTimeZoneIdentifier(temporalTimeZoneLike);
   return ES.CreateTemporalZonedDateTime(ES.SystemUTCEpochNanoSeconds(), timeZone, 'iso8601');
 };
 const plainDateISO: (typeof Temporal.Now)['plainDateISO'] = (temporalTimeZoneLike = ES.DefaultTimeZone()) => {
