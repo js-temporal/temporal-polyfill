@@ -12,14 +12,12 @@ import { toTemporalInstant } from './legacydate';
 // Work around https://github.com/babel/babel/issues/2025.
 const types = [
   Temporal.Instant,
-  Temporal.Calendar,
   Temporal.PlainDate,
   Temporal.PlainDateTime,
   Temporal.Duration,
   Temporal.PlainMonthDay,
   // Temporal.Now, // plain object (not a constructor), so no `prototype`
   Temporal.PlainTime,
-  Temporal.TimeZone,
   Temporal.PlainYearMonth,
   Temporal.ZonedDateTime
 ];

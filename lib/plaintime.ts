@@ -116,19 +116,18 @@ export class PlainTime implements Temporal.PlainTime {
     return GetSlot(this, ISO_NANOSECOND);
   }
 
-  with(temporalTimeLike: Params['with'][0], optionsParam: Params['with'][1] = undefined): Return['with'] {
+  with(temporalTimeLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(temporalTimeLike)) {
       throw new TypeError('invalid argument');
     }
     ES.RejectTemporalLikeObject(temporalTimeLike);
-    const options = ES.GetOptionsObject(optionsParam);
-    const overflow = ES.GetTemporalOverflowOption(options);
 
     const partialTime = ES.ToTemporalTimeRecord(temporalTimeLike, 'partial');
 
     const fields = ES.ToTemporalTimeRecord(this);
     let { hour, minute, second, millisecond, microsecond, nanosecond } = ObjectAssign(fields, partialTime);
+    const overflow = ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = ES.RegulateTime(
       hour,
       minute,
@@ -244,10 +243,9 @@ export class PlainTime implements Temporal.PlainTime {
     };
   }
 
-  static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
-    const options = ES.GetOptionsObject(optionsParam);
-    const overflow = ES.GetTemporalOverflowOption(options);
+  static from(item: Params['from'][0], options: Params['from'][1] = undefined): Return['from'] {
     if (ES.IsTemporalTime(item)) {
+      ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
       return new PlainTime(
         GetSlot(item, ISO_HOUR),
         GetSlot(item, ISO_MINUTE),
@@ -257,7 +255,7 @@ export class PlainTime implements Temporal.PlainTime {
         GetSlot(item, ISO_NANOSECOND)
       );
     }
-    return ES.ToTemporalTime(item, overflow);
+    return ES.ToTemporalTime(item, options);
   }
   static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {
     const one = ES.ToTemporalTime(oneParam);

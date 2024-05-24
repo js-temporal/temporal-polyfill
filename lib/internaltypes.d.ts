@@ -26,7 +26,6 @@ export type BuiltinCalendarId =
 
 export type AnySlottedType =
   | DateTimeFormatImpl
-  | Temporal.Calendar
   | Temporal.Duration
   | Temporal.Instant
   | Temporal.PlainDate
@@ -34,7 +33,6 @@ export type AnySlottedType =
   | Temporal.PlainMonthDay
   | Temporal.PlainTime
   | Temporal.PlainYearMonth
-  | Temporal.TimeZone
   | Temporal.ZonedDateTime;
 
 /*
@@ -52,9 +50,6 @@ export type AnyTemporalConstructor =
   | typeof Temporal.ZonedDateTime;
 */
 
-export type CalendarSlot = string | Temporal.CalendarProtocol;
-export type TimeZoneSlot = string | Temporal.TimeZoneProtocol;
-
 // Used in AnyTemporalLikeType
 type AllTemporalLikeTypes = [
   Temporal.DurationLike,
@@ -70,40 +65,25 @@ export type AnyTemporalLikeType = AllTemporalLikeTypes[number];
 // Keys is a conditionally-mapped version of keyof
 export type Keys<T> = T extends Record<string, unknown> ? keyof T : never;
 
+// Resolve copies the keys and values of a given object type so that TS will
+// stop using type names in error messages / autocomplete. Generally, those
+// names can be more useful, but sometimes having the primitive object shape is
+// significantly easier to reason about (e.g. deeply-nested types).
+// Resolve is an identity function for function types.
+export type Resolve<T> =
+  // Re-mapping doesn't work very well for functions, so exclude them
+  T extends (...args: never[]) => unknown
+    ? T
+    : // Re-map all the keys in T to the same value. This forces TS into no longer
+      // using type aliases, etc.
+      { [K in keyof T]: T[K] };
+
 export type AnyTemporalKey = Exclude<Keys<AnyTemporalLikeType>, symbol>;
 
 export type FieldKey = Exclude<AnyTemporalKey, Keys<Temporal.DurationLike>>;
 
 // The properties below are all the names of Temporal properties that can be set with `with`.
 // `timeZone` and `calendar` are not on the list because they have special methods to set them.
-
-// Used in PrimitiveFieldsOf
-type PrimitivePropertyNames =
-  | 'year'
-  | 'month'
-  | 'monthCode'
-  | 'day'
-  | 'hour'
-  | 'minute'
-  | 'second'
-  | 'millisecond'
-  | 'microsecond'
-  | 'nanosecond'
-  | 'years'
-  | 'months'
-  | 'weeks'
-  | 'days'
-  | 'hours'
-  | 'minutes'
-  | 'seconds'
-  | 'milliseconds'
-  | 'microseconds'
-  | 'nanoseconds'
-  | 'era'
-  | 'eraYear'
-  | 'offset';
-
-export type PrimitiveFieldsOf<T extends AnyTemporalLikeType> = Pick<T, keyof T & PrimitivePropertyNames>;
 
 export type UnitSmallerThanOrEqualTo<T extends Temporal.DateTimeUnit> = T extends 'year'
   ? Temporal.DateTimeUnit
@@ -166,7 +146,6 @@ type InterfaceParams<Type> = {
 // * PlainDateParams['since'][0] - prototype methods
 // * DurationParams['constructor'][3] - constructors
 export interface ZonedDateTimeParams extends MethodParams<typeof Temporal.ZonedDateTime> {}
-export interface CalendarParams extends MethodParams<typeof Temporal.Calendar> {}
 export interface DurationParams extends MethodParams<typeof Temporal.Duration> {}
 export interface InstantParams extends MethodParams<typeof Temporal.Instant> {}
 export interface PlainDateParams extends MethodParams<typeof Temporal.PlainDate> {}
@@ -174,12 +153,10 @@ export interface PlainDateTimeParams extends MethodParams<typeof Temporal.PlainD
 export interface PlainMonthDayParams extends MethodParams<typeof Temporal.PlainMonthDay> {}
 export interface PlainTimeParams extends MethodParams<typeof Temporal.PlainTime> {}
 export interface PlainYearMonthParams extends MethodParams<typeof Temporal.PlainYearMonth> {}
-export interface TimeZoneParams extends MethodParams<typeof Temporal.TimeZone> {}
 export interface ZonedDateTimeParams extends MethodParams<typeof Temporal.ZonedDateTime> {}
 
 // Return types of static or instance methods
 export interface ZonedDateTimeReturn extends MethodReturn<typeof Temporal.ZonedDateTime> {}
-export interface CalendarReturn extends MethodReturn<typeof Temporal.Calendar> {}
 export interface DurationReturn extends MethodReturn<typeof Temporal.Duration> {}
 export interface InstantReturn extends MethodReturn<typeof Temporal.Instant> {}
 export interface PlainDateReturn extends MethodReturn<typeof Temporal.PlainDate> {}
@@ -187,20 +164,45 @@ export interface PlainDateTimeReturn extends MethodReturn<typeof Temporal.PlainD
 export interface PlainMonthDayReturn extends MethodReturn<typeof Temporal.PlainMonthDay> {}
 export interface PlainTimeReturn extends MethodReturn<typeof Temporal.PlainTime> {}
 export interface PlainYearMonthReturn extends MethodReturn<typeof Temporal.PlainYearMonth> {}
-export interface TimeZoneReturn extends MethodReturn<typeof Temporal.TimeZone> {}
 export interface ZonedDateTimeReturn extends MethodReturn<typeof Temporal.ZonedDateTime> {}
-
-export interface CalendarProtocolParams extends InterfaceParams<Temporal.CalendarProtocol> {}
-// UNUSED, BUT MAY USE LATER
-// export interface TimeZoneProtocolParams extends InterfaceParams<Temporal.TimeZoneProtocol> {}
-// export interface TimeZoneProtocolReturn extends InterfaceReturn<Temporal.TimeZoneProtocol> {}
-// export interface CalendarProtocolReturn extends InterfaceReturn<Temporal.CalendarProtocol> {}
 
 export interface DateTimeFormatParams extends MethodParams<typeof Intl.DateTimeFormat> {}
 export interface DateTimeFormatReturn extends MethodReturn<typeof Intl.DateTimeFormat> {}
 
 type OptionsAmenderFunction = (options: Intl.DateTimeFormatOptions) => globalThis.Intl.DateTimeFormatOptions;
 export type FormatterOrAmender = globalThis.Intl.DateTimeFormat | OptionsAmenderFunction;
+
+export type Overflow = NonNullable<Temporal.AssignmentOptions['overflow']>;
+
+export type ISODateToFieldsType = 'date' | 'year-month' | 'month-day';
+
+export interface CalendarFieldsRecord {
+  era?: string;
+  eraYear?: number;
+  year?: number;
+  month?: number;
+  monthCode?: string;
+  day?: number;
+  hour?: number;
+  minute?: number;
+  second?: number;
+  millisecond?: number;
+  microsecond?: number;
+  nanosecond?: number;
+  offset?: string;
+  timeZone?: string;
+}
+export type CalendarYMD = { year: number; month: number; day: number };
+export type MonthDayFromFieldsObject = CalendarFieldsRecord & ({ monthCode: string; day: number } | CalendarYMD);
+
+/** Record representing YMD of an ISO calendar date */
+export interface ISODate {
+  year: number;
+  month: number;
+  day: number;
+}
+
+export type TimeRecord = Required<Temporal.PlainTimeLike>;
 
 export interface ISODateTime {
   year: number;
@@ -212,6 +214,13 @@ export interface ISODateTime {
   millisecond: number;
   microsecond: number;
   nanosecond: number;
+}
+
+export interface DateDuration {
+  years: number;
+  months: number;
+  weeks: number;
+  days: number;
 }
 
 export interface InternalDuration {

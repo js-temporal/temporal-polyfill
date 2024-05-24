@@ -38,16 +38,6 @@ export function divmod(x: JSBI, y: JSBI): { quotient: JSBI; remainder: JSBI } {
   return { quotient, remainder };
 }
 
-export function minJSBI(...args: JSBI[]) {
-  const [first, ...others] = args;
-  return others.reduce((least, candidate) => (JSBI.lessThan(candidate, least) ? candidate : least), first);
-}
-
-export function maxJSBI(...args: JSBI[]) {
-  const [first, ...others] = args;
-  return others.reduce((most, candidate) => (JSBI.greaterThan(candidate, most) ? candidate : most), first);
-}
-
 export function NonNegativeBigIntDivmod(x: JSBI, y: JSBI) {
   let { quotient, remainder } = divmod(x, y);
   if (JSBI.lessThan(remainder, ZERO)) {
