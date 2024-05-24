@@ -121,23 +121,6 @@ export class Instant implements Temporal.Instant {
   valueOf(): never {
     ES.ValueOfThrows('Instant');
   }
-  toZonedDateTime(item: Params['toZonedDateTime'][0]): Return['toZonedDateTime'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    if (!ES.IsObject(item)) {
-      throw new TypeError('invalid argument in toZonedDateTime');
-    }
-    const calendarLike = item.calendar;
-    if (calendarLike === undefined) {
-      throw new TypeError('missing calendar property in toZonedDateTime');
-    }
-    const calendar = ES.ToTemporalCalendarSlotValue(calendarLike);
-    const temporalTimeZoneLike = item.timeZone;
-    if (temporalTimeZoneLike === undefined) {
-      throw new TypeError('missing timeZone property in toZonedDateTime');
-    }
-    const timeZone = ES.ToTemporalTimeZoneSlotValue(temporalTimeZoneLike);
-    return ES.CreateTemporalZonedDateTime(GetSlot(this, EPOCHNANOSECONDS), timeZone, calendar);
-  }
   toZonedDateTimeISO(timeZoneParam: Params['toZonedDateTimeISO'][0]): Return['toZonedDateTimeISO'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const timeZone = ES.ToTemporalTimeZoneSlotValue(timeZoneParam);
