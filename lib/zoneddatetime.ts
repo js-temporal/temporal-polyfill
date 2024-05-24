@@ -23,7 +23,7 @@ import { DateTimeFormat } from './intl';
 import type { ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { BILLION, MILLION, THOUSAND, HOUR_NANOS, BigIntFloorDiv } from './bigintmath';
+import { MILLION, HOUR_NANOS, BigIntFloorDiv } from './bigintmath';
 
 const ArrayPrototypePush = Array.prototype.push;
 const customResolvedOptions = DateTimeFormat.prototype.resolvedOptions as Intl.DateTimeFormat['resolvedOptions'];
@@ -103,20 +103,10 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     return ES.CalendarEraYear(GetSlot(this, CALENDAR), dateTime(this));
   }
-  get epochSeconds(): Return['epochSeconds'] {
-    if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
-    const value = GetSlot(this, EPOCHNANOSECONDS);
-    return JSBI.toNumber(BigIntFloorDiv(value, BILLION));
-  }
   get epochMilliseconds(): Return['epochMilliseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
     return JSBI.toNumber(BigIntFloorDiv(value, MILLION));
-  }
-  get epochMicroseconds(): Return['epochMicroseconds'] {
-    if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
-    const value = GetSlot(this, EPOCHNANOSECONDS);
-    return ES.ToBigIntExternal(BigIntFloorDiv(value, THOUSAND));
   }
   get epochNanoseconds(): Return['epochNanoseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');

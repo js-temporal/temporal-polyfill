@@ -7,7 +7,7 @@ import { DateTimeFormat } from './intl';
 import type { InstantParams as Params, InstantReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { BigIntFloorDiv, BILLION, MILLION, THOUSAND } from './bigintmath';
+import { BigIntFloorDiv, MILLION } from './bigintmath';
 import { TimeZoneMethodRecord } from './methodrecord';
 
 export class Instant implements Temporal.Instant {
@@ -36,20 +36,10 @@ export class Instant implements Temporal.Instant {
     }
   }
 
-  get epochSeconds(): Return['epochSeconds'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    const value = GetSlot(this, EPOCHNANOSECONDS);
-    return JSBI.toNumber(BigIntFloorDiv(value, BILLION));
-  }
   get epochMilliseconds(): Return['epochMilliseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
     return JSBI.toNumber(BigIntFloorDiv(value, MILLION));
-  }
-  get epochMicroseconds(): Return['epochMicroseconds'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    const value = JSBI.BigInt(GetSlot(this, EPOCHNANOSECONDS));
-    return ES.ToBigIntExternal(BigIntFloorDiv(value, THOUSAND));
   }
   get epochNanoseconds(): Return['epochNanoseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
@@ -154,25 +144,11 @@ export class Instant implements Temporal.Instant {
     return ES.CreateTemporalZonedDateTime(GetSlot(this, EPOCHNANOSECONDS), timeZone, 'iso8601');
   }
 
-  static fromEpochSeconds(epochSecondsParam: Params['fromEpochSeconds'][0]): Return['fromEpochSeconds'] {
-    const epochSeconds = ES.ToNumber(epochSecondsParam);
-    const epochNanoseconds = JSBI.multiply(JSBI.BigInt(epochSeconds), BILLION);
-    ES.ValidateEpochNanoseconds(epochNanoseconds);
-    return new Instant(epochNanoseconds);
-  }
   static fromEpochMilliseconds(
     epochMillisecondsParam: Params['fromEpochMilliseconds'][0]
   ): Return['fromEpochMilliseconds'] {
     const epochMilliseconds = ES.ToNumber(epochMillisecondsParam);
     const epochNanoseconds = JSBI.multiply(JSBI.BigInt(epochMilliseconds), MILLION);
-    ES.ValidateEpochNanoseconds(epochNanoseconds);
-    return new Instant(epochNanoseconds);
-  }
-  static fromEpochMicroseconds(
-    epochMicrosecondsParam: Params['fromEpochMicroseconds'][0]
-  ): Return['fromEpochMicroseconds'] {
-    const epochMicroseconds = ES.ToBigInt(epochMicrosecondsParam);
-    const epochNanoseconds = JSBI.multiply(epochMicroseconds, THOUSAND);
     ES.ValidateEpochNanoseconds(epochNanoseconds);
     return new Instant(epochNanoseconds);
   }
