@@ -206,36 +206,6 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       GetSlot(this, CALENDAR)
     );
   }
-  withPlainDate(temporalDateParam: Params['withPlainDate'][0]): Return['withPlainDate'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
-
-    const temporalDate = ES.ToTemporalDate(temporalDateParam);
-    const year = GetSlot(temporalDate, ISO_YEAR);
-    const month = GetSlot(temporalDate, ISO_MONTH);
-    const day = GetSlot(temporalDate, ISO_DAY);
-    let calendar = GetSlot(temporalDate, CALENDAR);
-
-    const hour = GetSlot(this, ISO_HOUR);
-    const minute = GetSlot(this, ISO_MINUTE);
-    const second = GetSlot(this, ISO_SECOND);
-    const millisecond = GetSlot(this, ISO_MILLISECOND);
-    const microsecond = GetSlot(this, ISO_MICROSECOND);
-    const nanosecond = GetSlot(this, ISO_NANOSECOND);
-
-    calendar = ES.ConsolidateCalendars(GetSlot(this, CALENDAR), calendar);
-    return ES.CreateTemporalDateTime(
-      year,
-      month,
-      day,
-      hour,
-      minute,
-      second,
-      millisecond,
-      microsecond,
-      nanosecond,
-      calendar
-    );
-  }
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = ES.ToTemporalCalendarSlotValue(calendarParam);
