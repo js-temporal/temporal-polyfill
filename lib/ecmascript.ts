@@ -2739,19 +2739,6 @@ function ThrowIfCalendarsNotEqual(one: CalendarSlot, two: CalendarSlot, errorMes
   }
 }
 
-export function ConsolidateCalendars(one: CalendarSlot, two: CalendarSlot) {
-  if (one === two) return two;
-  const sOne = ToTemporalCalendarIdentifier(one);
-  const sTwo = ToTemporalCalendarIdentifier(two);
-  if (sOne === sTwo || sOne === 'iso8601') {
-    return two;
-  } else if (sTwo === 'iso8601') {
-    return one;
-  } else {
-    throw new RangeError('irreconcilable calendars');
-  }
-}
-
 export function CalendarDateFromFields(
   calendarRec: CalendarMethodRecord,
   fields: CalendarProtocolParams['dateFromFields'][0],
