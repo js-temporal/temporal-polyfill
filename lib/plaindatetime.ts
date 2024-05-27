@@ -441,21 +441,6 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return ES.TemporalDateTimeToTime(this);
   }
-  getISOFields(): Return['getISOFields'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
-    return {
-      calendar: GetSlot(this, CALENDAR),
-      isoDay: GetSlot(this, ISO_DAY),
-      isoHour: GetSlot(this, ISO_HOUR),
-      isoMicrosecond: GetSlot(this, ISO_MICROSECOND),
-      isoMillisecond: GetSlot(this, ISO_MILLISECOND),
-      isoMinute: GetSlot(this, ISO_MINUTE),
-      isoMonth: GetSlot(this, ISO_MONTH),
-      isoNanosecond: GetSlot(this, ISO_NANOSECOND),
-      isoSecond: GetSlot(this, ISO_SECOND),
-      isoYear: GetSlot(this, ISO_YEAR)
-    };
-  }
 
   static from(item: Params['from'][0], options: Params['from'][1] = undefined): Return['from'] {
     if (ES.IsTemporalDateTime(item)) {
