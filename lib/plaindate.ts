@@ -249,15 +249,6 @@ export class PlainDate implements Temporal.PlainDate {
     const { year, month, day } = ES.CalendarMonthDayFromFields(calendar, fields, 'constrain');
     return ES.CreateTemporalMonthDay(month, day, calendar, year);
   }
-  getISOFields(): Return['getISOFields'] {
-    if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
-    return {
-      calendar: GetSlot(this, CALENDAR),
-      isoDay: GetSlot(this, ISO_DAY),
-      isoMonth: GetSlot(this, ISO_MONTH),
-      isoYear: GetSlot(this, ISO_YEAR)
-    };
-  }
 
   static from(item: Params['from'][0], options: Params['from'][1] = undefined): Return['from'] {
     if (ES.IsTemporalDate(item)) {
