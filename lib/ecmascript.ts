@@ -5020,7 +5020,9 @@ function RoundRelativeDuration(
 }
 
 export function DifferencePlainDateTimeWithRounding(
-  plainDate1: Temporal.PlainDate,
+  y1: number,
+  mon1: number,
+  d1: number,
   h1: number,
   min1: number,
   s1: number,
@@ -5043,9 +5045,6 @@ export function DifferencePlainDateTimeWithRounding(
   roundingMode: Temporal.RoundingMode,
   resolvedOptions: Temporal.DifferenceOptions<Temporal.DateTimeUnit> = ObjectCreate(null)
 ) {
-  const y1 = GetSlot(plainDate1, ISO_YEAR);
-  const mon1 = GetSlot(plainDate1, ISO_MONTH);
-  const d1 = GetSlot(plainDate1, ISO_DAY);
   if (CompareISODateTime(y1, mon1, d1, h1, min1, s1, ms1, µs1, ns1, y2, mon2, d2, h2, min2, s2, ms2, µs2, ns2) == 0) {
     return {
       years: 0,
@@ -5401,11 +5400,12 @@ export function DifferenceTemporalPlainDateTime(
     return new Duration();
   }
 
-  const plainDate1 = TemporalDateTimeToDate(plainDateTime);
   const calendarRec = new CalendarMethodRecord(calendar, ['dateAdd', 'dateUntil']);
   const { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
     DifferencePlainDateTimeWithRounding(
-      plainDate1,
+      GetSlot(plainDateTime, ISO_YEAR),
+      GetSlot(plainDateTime, ISO_MONTH),
+      GetSlot(plainDateTime, ISO_DAY),
       GetSlot(plainDateTime, ISO_HOUR),
       GetSlot(plainDateTime, ISO_MINUTE),
       GetSlot(plainDateTime, ISO_SECOND),
