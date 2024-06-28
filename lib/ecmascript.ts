@@ -4521,6 +4521,10 @@ function NudgeToCalendarUnit(
       throw new Error('assert not reached');
   }
 
+  if ((sign === 1 && (r1 < 0 || r1 >= r2)) || (sign === -1 && (r1 > 0 || r1 <= r2))) {
+    throw new Error('assertion failed: ordering of r1, r2 according to sign');
+  }
+
   // Apply to origin, output PlainDateTimes
   const start = AddDateTime(
     dateTime.year,
@@ -4612,15 +4616,23 @@ function NudgeToCalendarUnit(
   }
 
   // Round the smallestUnit within the epoch-nanosecond span
-  if (JSBI.equal(endEpochNs, startEpochNs)) {
+  if (
+    (sign === 1 && (JSBI.greaterThan(startEpochNs, destEpochNs) || JSBI.greaterThanOrEqual(destEpochNs, endEpochNs))) ||
+    (sign === -1 && (JSBI.greaterThanOrEqual(endEpochNs, destEpochNs) || JSBI.greaterThan(destEpochNs, startEpochNs)))
+  ) {
     throw new RangeError(`custom calendar reported a ${unit} that is 0 days long`);
+  }
+  if (JSBI.equal(endEpochNs, startEpochNs)) {
+    throw new Error('assertion failed: startEpochNs ≠ endEpochNs');
   }
   const numerator = TimeDuration.fromEpochNsDiff(destEpochNs, startEpochNs);
   const denominator = TimeDuration.fromEpochNsDiff(endEpochNs, startEpochNs);
   const unsignedRoundingMode = GetUnsignedRoundingMode(roundingMode, sign < 0 ? 'negative' : 'positive');
   const cmp = numerator.add(numerator).abs().subtract(denominator.abs()).sign();
-  const even = (r1 / (increment * sign)) % 2 === 0;
-  const roundedUnit = numerator.isZero() ? r1 : ApplyUnsignedRoundingMode(r1, r2, cmp, even, unsignedRoundingMode);
+  const even = (MathAbs(r1) / increment) % 2 === 0;
+  const roundedUnit = numerator.isZero()
+    ? MathAbs(r1)
+    : ApplyUnsignedRoundingMode(MathAbs(r1), MathAbs(r2), cmp, even, unsignedRoundingMode);
 
   // Trick to minimize rounding error, due to the lack of fma() in JS
   const fakeNumerator = new TimeDuration(
@@ -4630,9 +4642,12 @@ function NudgeToCalendarUnit(
     )
   );
   const total = fakeNumerator.fdiv(denominator.totalNs);
+  if (MathAbs(total) < MathAbs(r1) || MathAbs(total) >= MathAbs(r2)) {
+    throw new Error('assertion failed: r1 ≤ total < r2');
+  }
 
   // Determine whether expanded or contracted
-  const didExpandCalendarUnit = MathSign(roundedUnit - total) === sign;
+  const didExpandCalendarUnit = roundedUnit === MathAbs(r2);
   duration = didExpandCalendarUnit ? endDuration : startDuration;
 
   return {
