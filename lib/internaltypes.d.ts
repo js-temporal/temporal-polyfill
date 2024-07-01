@@ -14,6 +14,7 @@ export type BuiltinCalendarId =
   | 'persian'
   | 'ethiopic'
   | 'ethioaa'
+  | 'ethiopic-amete-alem' // see https://github.com/tc39/ecma402/issues/285
   | 'coptic'
   | 'chinese'
   | 'dangi'
