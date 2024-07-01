@@ -194,19 +194,15 @@ const impl: CalendarImplementations = {} as unknown as CalendarImplementations;
  */
 export class Calendar implements Temporal.Calendar {
   constructor(id: Params['constructor'][0]) {
-    let stringId = ES.RequireString(id);
+    const stringId = ES.RequireString(id);
     if (!ES.IsBuiltinCalendar(stringId)) throw new RangeError(`invalid calendar identifier ${stringId}`);
     CreateSlots(this);
-    stringId = ES.ASCIILowercase(stringId);
-    ES.uncheckedAssertNarrowedType<BuiltinCalendarId>(
-      stringId,
-      'ES.IsBuiltinCalendar may allow mixed-case IDs, they are only guaranteed to be built-in after being lowercased'
-    );
-    SetSlot(this, CALENDAR_ID, stringId);
+    const canonicalizedStringId = ES.CanonicalizeCalendar(stringId);
+    SetSlot(this, CALENDAR_ID, canonicalizedStringId);
 
     if (DEBUG) {
       Object.defineProperty(this, '_repr_', {
-        value: `Temporal.Calendar <${stringId}>`,
+        value: `Temporal.Calendar <${canonicalizedStringId}>`,
         writable: false,
         enumerable: false,
         configurable: false
