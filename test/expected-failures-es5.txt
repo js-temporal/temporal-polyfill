@@ -336,6 +336,5 @@ intl402/DateTimeFormat/prototype/formatRangeToParts/builtin.js
 intl402/DateTimeFormat/prototype/resolvedOptions/builtin.js
 intl402/DateTimeFormat/supportedLocalesOf/builtin.js
 
-# These two are too slow in ES5 so they'll time out in CI.
-intl402/Temporal/TimeZone/prototype/getPreviousTransition/transition-at-instant-boundaries.js
-intl402/Temporal/TimeZone/prototype/getNextTransition/transition-at-instant-boundaries.js
+# This one is too slow in ES5 so it'll time out in CI.
+intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/transition-at-instant-boundaries.js
