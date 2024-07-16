@@ -1993,10 +1993,8 @@ export function InterpretISODateTimeOffset(
       : typeof timeZoneRec.receiver === 'string'
         ? timeZoneRec.receiver
         : 'time zone';
-    // The tsc emit for this line rewrites to invoke the PlainDateTime's valueOf method, NOT
-    // toString (which is invoked by Node when using template literals directly).
-    // See https://github.com/microsoft/TypeScript/issues/39744 for the proposed fix in tsc emit
-    throw new RangeError(`Offset ${offsetStr} is invalid for ${dt.toString()} in ${timeZoneString}`);
+    const dtStr = TemporalDateTimeToString(dt, 'auto');
+    throw new RangeError(`Offset ${offsetStr} is invalid for ${dtStr} in ${timeZoneString}`);
   }
   // fall through: offsetOpt === 'prefer', but the offset doesn't match
   // so fall back to use the time zone instead.
