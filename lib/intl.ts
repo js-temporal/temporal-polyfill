@@ -559,7 +559,12 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
       year: GetSlot(temporalObj, ISO_YEAR),
       month: GetSlot(temporalObj, ISO_MONTH),
       day: GetSlot(temporalObj, ISO_DAY),
-      hour: 12
+      hour: 12,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+      microsecond: 0,
+      nanosecond: 0
     };
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
@@ -579,7 +584,12 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
       year: GetSlot(temporalObj, ISO_YEAR),
       month: GetSlot(temporalObj, ISO_MONTH),
       day: GetSlot(temporalObj, ISO_DAY),
-      hour: 12
+      hour: 12,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+      microsecond: 0,
+      nanosecond: 0
     };
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
@@ -597,7 +607,12 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
       year: GetSlot(temporalObj, ISO_YEAR),
       month: GetSlot(temporalObj, ISO_MONTH),
       day: GetSlot(temporalObj, ISO_DAY),
-      hour: 12
+      hour: 12,
+      minute: 0,
+      second: 0,
+      millisecond: 0,
+      microsecond: 0,
+      nanosecond: 0
     };
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
