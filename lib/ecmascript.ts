@@ -3954,8 +3954,8 @@ function NudgeToCalendarUnit(
 
   // Round the smallestUnit within the epoch-nanosecond span
   if (
-    (sign === 1 && (JSBI.greaterThan(startEpochNs, destEpochNs) || JSBI.greaterThanOrEqual(destEpochNs, endEpochNs))) ||
-    (sign === -1 && (JSBI.greaterThanOrEqual(endEpochNs, destEpochNs) || JSBI.greaterThan(destEpochNs, startEpochNs)))
+    (sign === 1 && (JSBI.greaterThan(startEpochNs, destEpochNs) || JSBI.greaterThan(destEpochNs, endEpochNs))) ||
+    (sign === -1 && (JSBI.greaterThan(endEpochNs, destEpochNs) || JSBI.greaterThan(destEpochNs, startEpochNs)))
   ) {
     throw new RangeError(`custom calendar reported a ${unit} that is 0 days long`);
   }
@@ -3979,7 +3979,7 @@ function NudgeToCalendarUnit(
     )
   );
   const total = fakeNumerator.fdiv(denominator.totalNs);
-  if (MathAbs(total) < MathAbs(r1) || MathAbs(total) >= MathAbs(r2)) {
+  if (MathAbs(total) < MathAbs(r1) || MathAbs(total) > MathAbs(r2)) {
     throw new Error('assertion failed: r1 ≤ total < r2');
   }
 
