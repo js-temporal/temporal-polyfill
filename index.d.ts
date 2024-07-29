@@ -797,7 +797,7 @@ export namespace Temporal {
    * which happens during the whole day no matter which time zone it's happening
    * in.
    *
-   * See https://tc39.es/proposal-temporal/docs/date.html for more details.
+   * See https://tc39.es/proposal-temporal/docs/plaindate.html for more details.
    */
   export class PlainDate {
     static from(item: Temporal.PlainDate | PlainDateLike | string, options?: AssignmentOptions): Temporal.PlainDate;
@@ -893,7 +893,7 @@ export namespace Temporal {
    * and `Temporal.PlainMonthDay` all carry less information and should be used when
    * complete information is not required.
    *
-   * See https://tc39.es/proposal-temporal/docs/datetime.html for more details.
+   * See https://tc39.es/proposal-temporal/docs/plaindatetime.html for more details.
    */
   export class PlainDateTime {
     static from(
@@ -992,7 +992,7 @@ export namespace Temporal {
    * without a year. For example, it could be used to represent a yearly
    * recurring event, like "Bastille Day is on the 14th of July."
    *
-   * See https://tc39.es/proposal-temporal/docs/monthday.html for more details.
+   * See https://tc39.es/proposal-temporal/docs/plainmonthday.html for more details.
    */
   export class PlainMonthDay {
     static from(
@@ -1046,7 +1046,7 @@ export namespace Temporal {
    * `Temporal.PlainDateTime` by combining it with a `Temporal.PlainDate` using the
    * `toPlainDateTime()` method.
    *
-   * See https://tc39.es/proposal-temporal/docs/time.html for more details.
+   * See https://tc39.es/proposal-temporal/docs/plaintime.html for more details.
    */
   export class PlainTime {
     static from(item: Temporal.PlainTime | PlainTimeLike | string, options?: AssignmentOptions): Temporal.PlainTime;
@@ -1168,7 +1168,7 @@ export namespace Temporal {
    * example, it could be used to represent a particular instance of a monthly
    * recurring event, like "the June 2019 meeting".
    *
-   * See https://tc39.es/proposal-temporal/docs/yearmonth.html for more details.
+   * See https://tc39.es/proposal-temporal/docs/plainyearmonth.html for more details.
    */
   export class PlainYearMonth {
     static from(
