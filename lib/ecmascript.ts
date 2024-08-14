@@ -3980,7 +3980,7 @@ function NudgeToCalendarUnit(
   );
   const total = fakeNumerator.fdiv(denominator.totalNs);
   if (MathAbs(total) < MathAbs(r1) || MathAbs(total) > MathAbs(r2)) {
-    throw new Error('assertion failed: r1 ≤ total < r2');
+    throw new Error('assertion failed: r1 ≤ total ≤ r2');
   }
 
   // Determine whether expanded or contracted
