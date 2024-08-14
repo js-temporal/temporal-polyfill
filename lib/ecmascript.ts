@@ -3967,9 +3967,12 @@ function NudgeToCalendarUnit(
   const unsignedRoundingMode = GetUnsignedRoundingMode(roundingMode, sign < 0 ? 'negative' : 'positive');
   const cmp = numerator.add(numerator).abs().subtract(denominator.abs()).sign();
   const even = (MathAbs(r1) / increment) % 2 === 0;
+  // prettier-ignore
   const roundedUnit = numerator.isZero()
     ? MathAbs(r1)
-    : ApplyUnsignedRoundingMode(MathAbs(r1), MathAbs(r2), cmp, even, unsignedRoundingMode);
+    : !numerator.cmp(denominator) // equal?
+      ? MathAbs(r2)
+      : ApplyUnsignedRoundingMode(MathAbs(r1), MathAbs(r2), cmp, even, unsignedRoundingMode);
 
   // Trick to minimize rounding error, due to the lack of fma() in JS
   const fakeNumerator = new TimeDuration(
