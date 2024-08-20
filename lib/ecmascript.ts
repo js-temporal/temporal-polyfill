@@ -6294,15 +6294,17 @@ function DaysUntil(
   earlier: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.ZonedDateTime,
   later: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.ZonedDateTime
 ) {
-  return DifferenceISODate(
+  const epochDaysEarlier = ISODateToEpochDays(
     GetSlot(earlier, ISO_YEAR),
     GetSlot(earlier, ISO_MONTH),
-    GetSlot(earlier, ISO_DAY),
+    GetSlot(earlier, ISO_DAY)
+  );
+  const epochDaysLater = ISODateToEpochDays(
     GetSlot(later, ISO_YEAR),
     GetSlot(later, ISO_MONTH),
-    GetSlot(later, ISO_DAY),
-    'day'
-  ).days;
+    GetSlot(later, ISO_DAY)
+  );
+  return epochDaysLater - epochDaysEarlier;
 }
 
 export function RoundTimeDuration(
