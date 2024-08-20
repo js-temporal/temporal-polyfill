@@ -369,16 +369,6 @@ const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
   ['millisecond', ToIntegerWithTruncation],
   ['microsecond', ToIntegerWithTruncation],
   ['nanosecond', ToIntegerWithTruncation],
-  ['years', ToIntegerIfIntegral],
-  ['months', ToIntegerIfIntegral],
-  ['weeks', ToIntegerIfIntegral],
-  ['days', ToIntegerIfIntegral],
-  ['hours', ToIntegerIfIntegral],
-  ['minutes', ToIntegerIfIntegral],
-  ['seconds', ToIntegerIfIntegral],
-  ['milliseconds', ToIntegerIfIntegral],
-  ['microseconds', ToIntegerIfIntegral],
-  ['nanoseconds', ToIntegerIfIntegral],
   ['offset', ToPrimitiveAndRequireString]
 ]);
 
@@ -948,7 +938,7 @@ function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.DurationLike | string) {
+export function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.DurationLike | string) {
   if (!IsObject(temporalDurationLike)) {
     throw new TypeError('invalid duration-like');
   }
