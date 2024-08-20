@@ -20,7 +20,6 @@ const NumberIsSafeInteger = Number.isSafeInteger;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
-const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const ReflectApply = Reflect.apply;
 const ReflectOwnKeys = Reflect.ownKeys;
 const SetPrototypeHas = Set.prototype.has;
@@ -1369,9 +1368,6 @@ export function IsCalendarUnit(unit: Temporal.DateTimeUnit): unit is Exclude<Tem
 }
 
 type FieldCompleteness = 'complete' | 'partial';
-interface FieldPrepareOptions {
-  emptySourceErrorMessage: string;
-}
 
 // Returns all potential owners from all Temporal Like-types for a given union
 // of keys in K.
@@ -1457,8 +1453,7 @@ export function PrepareTemporalFields<
   fields: Array<FieldKeys>,
   requiredFields: RequiredFields,
   extraFieldDescriptors: CalendarFieldDescriptor[] = [],
-  duplicateBehaviour: 'throw' | 'ignore' = 'throw',
-  { emptySourceErrorMessage }: FieldPrepareOptions = { emptySourceErrorMessage: 'no supported properties found' }
+  duplicateBehaviour: 'throw' | 'ignore' = 'throw'
 ): PrepareTemporalFieldsReturn<FieldKeys, RequiredFields, Owner<FieldKeys>> {
   const result: Partial<Record<AnyTemporalKey, unknown>> = ObjectCreate(null);
   let any = false;
@@ -1507,7 +1502,7 @@ export function PrepareTemporalFields<
     previousProperty = property;
   }
   if (requiredFields === 'partial' && !any) {
-    throw new TypeError(emptySourceErrorMessage);
+    throw new TypeError('no supported properties found');
   }
   return result as unknown as PrepareTemporalFieldsReturn<FieldKeys, RequiredFields, Owner<FieldKeys>>;
 }
@@ -1583,19 +1578,19 @@ export function ToTemporalTimeRecord(
 ): Partial<TimeRecord> {
   // NOTE: Field order is sorted to make the sort in PrepareTemporalFields more efficient.
   const fields: (keyof TimeRecord)[] = ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second'];
-  const partial = PrepareTemporalFields(bag, fields, 'partial', undefined, undefined, {
-    emptySourceErrorMessage: 'invalid time-like'
-  });
-  const result: Partial<TimeRecord> = {};
+  let any = false;
+  const result: Partial<TimeRecord> = ObjectCreate(null);
   for (let index = 0; index < fields.length; index++) {
     const field = fields[index];
-    const valueDesc = ObjectGetOwnPropertyDescriptor(partial, field);
-    if (valueDesc !== undefined) {
-      result[field] = valueDesc.value;
+    const value = bag[field];
+    if (value !== undefined) {
+      result[field] = ToIntegerWithTruncation(value);
+      any = true;
     } else if (completeness === 'complete') {
       result[field] = 0;
     }
   }
+  if (!any) throw new TypeError('invalid time-like');
   return result;
 }
 
