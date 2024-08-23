@@ -22,3 +22,14 @@ intl402/DateTimeFormat/prototype/formatToParts/temporal-objects-timezone-getoffs
 # Not sure why these tests fail in Node 14, but it's EOL so not worth investigating.
 built-ins/Temporal/PlainYearMonth/prototype/toLocaleString/builtin-calendar-no-observable-calls.js
 built-ins/Temporal/PlainMonthDay/prototype/toLocaleString/builtin-calendar-no-observable-calls.js
+
+# Tests using Object.hasOwn which is not available in Node 14
+intl402/Temporal/PlainDate/prototype/with/gregorian-mutually-exclusive-fields.js
+intl402/Temporal/PlainDate/prototype/with/japanese-mutually-exclusive-fields.js
+intl402/Temporal/PlainYearMonth/from/argument-object.js
+intl402/Temporal/PlainYearMonth/from/reference-day-chinese.js
+intl402/Temporal/PlainYearMonth/from/reference-day-gregory.js
+intl402/Temporal/PlainYearMonth/from/reference-day-hebrew.js
+intl402/Temporal/ZonedDateTime/construct-non-utc-non-iso.js
+intl402/Temporal/ZonedDateTime/supported-values-of.js
+staging/Intl402/Temporal/old/japanese-era.js
