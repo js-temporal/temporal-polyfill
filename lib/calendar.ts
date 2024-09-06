@@ -1151,16 +1151,10 @@ class HebrewHelper extends HelperBase {
     overflow: Overflow = 'constrain',
     fromLegacyDate = false
   ): FullCalendarDate {
-    // The incoming type is actually CalendarDate (same as args to
-    // Calendar.dateFromParams) but TS isn't smart enough to follow all the
-    // reassignments below, so as an alternative to 10+ type casts, we'll lie
-    // here and claim that the type has `day` and `year` filled in already.
-    let { year, eraYear, month, monthCode, day, monthExtra } = calendarDate as Omit<
-      typeof calendarDate,
-      'year' | 'day'
-    > & { year: number; day: number };
-    if (year === undefined && eraYear !== undefined) year = eraYear;
-    if (eraYear === undefined && year !== undefined) eraYear = year;
+    let { year, month, monthCode, day, monthExtra } = calendarDate as Omit<typeof calendarDate, 'day'> & {
+      day: number;
+    };
+    if (year === undefined) throw new TypeError('Missing property: "year"');
     if (fromLegacyDate) {
       // In Pre Node-14 V8, DateTimeFormat.formatToParts `month: 'numeric'`
       // output returns the numeric equivalent of `month` as a string, meaning
@@ -1176,8 +1170,7 @@ class HebrewHelper extends HelperBase {
       }
       // Because we're getting data from legacy Date, then `month` will always be present
       monthCode = this.getMonthCode(year, month as number);
-      const result = { year, month: month as number, day, era: undefined as string | undefined, eraYear, monthCode };
-      return result;
+      return { year, month: month as number, day, monthCode };
     } else {
       // When called without input coming from legacy Date output, simply ensure
       // that all fields are present.
@@ -1221,7 +1214,7 @@ class HebrewHelper extends HelperBase {
           }
         }
       }
-      return { ...calendarDate, day, month, monthCode: monthCode as string, year, eraYear };
+      return { ...calendarDate, day, month, monthCode: monthCode as string, year };
     }
   }
   // All built-in calendars except Chinese/Dangi and Hebrew use an era
@@ -1987,29 +1980,27 @@ abstract class ChineseBaseHelper extends HelperBase {
     overflow: Overflow = 'constrain',
     fromLegacyDate = false
   ): FullCalendarDate {
-    let { year, month, monthExtra, day, monthCode, eraYear } = calendarDate;
+    let { year, month, monthExtra, day, monthCode } = calendarDate;
+    if (year === undefined) throw new TypeError('Missing property: "year"');
     if (fromLegacyDate) {
       // Legacy Date output returns a string that's an integer with an optional
       // "bis" suffix used only by the Chinese/Dangi calendar to indicate a leap
       // month. Below we'll normalize the output.
-      year = eraYear;
       if (monthExtra && monthExtra !== 'bis') throw new RangeError(`Unexpected leap month suffix: ${monthExtra}`);
       const monthCode = buildMonthCode(month as number, monthExtra !== undefined);
       const monthString = `${month}${monthExtra || ''}`;
-      const months = this.getMonthList(year as number, cache);
+      const months = this.getMonthList(year, cache);
       const monthInfo = months[monthString];
       if (monthInfo === undefined) throw new RangeError(`Unmatched month ${monthString} in Chinese year ${year}`);
       month = monthInfo.monthIndex;
-      return { year: year as number, month, day: day as number, era: undefined, eraYear, monthCode };
+      return { year, month, day: day as number, monthCode };
     } else {
       // When called without input coming from legacy Date output,
       // simply ensure that all fields are present.
       this.validateCalendarDate(calendarDate);
-      if (year === undefined) year = eraYear;
-      if (eraYear === undefined) eraYear = year;
       if (month === undefined) {
         ES.assertExists(monthCode);
-        const months = this.getMonthList(year as number, cache);
+        const months = this.getMonthList(year, cache);
         let numberPart = monthCode.replace('L', 'bis').slice(1);
         if (numberPart[0] === '0') numberPart = numberPart.slice(1);
         let monthInfo = months[numberPart];
@@ -2030,7 +2021,7 @@ abstract class ChineseBaseHelper extends HelperBase {
           throw new RangeError(`Unmatched month ${monthCode} in Chinese year ${year}`);
         }
       } else if (monthCode === undefined) {
-        const months = this.getMonthList(year as number, cache);
+        const months = this.getMonthList(year, cache);
         const monthEntries = ObjectEntries(months);
         const largestMonth = monthEntries.length;
         if (overflow === 'reject') {
@@ -2050,7 +2041,7 @@ abstract class ChineseBaseHelper extends HelperBase {
         );
       } else {
         // Both month and monthCode are present. Make sure they don't conflict.
-        const months = this.getMonthList(year as number, cache);
+        const months = this.getMonthList(year, cache);
         let numberPart = monthCode.replace('L', 'bis').slice(1);
         if (numberPart[0] === '0') numberPart = numberPart.slice(1);
         const monthInfo = months[numberPart];
@@ -2059,14 +2050,7 @@ abstract class ChineseBaseHelper extends HelperBase {
           throw new RangeError(`monthCode ${monthCode} doesn't correspond to month ${month} in Chinese year ${year}`);
         }
       }
-      return {
-        ...calendarDate,
-        year: year as number,
-        eraYear,
-        month,
-        monthCode: monthCode,
-        day: day as number
-      };
+      return { ...calendarDate, year, month, monthCode, day: day as number };
     }
   }
   // All built-in calendars except Chinese/Dangi and Hebrew use an era
