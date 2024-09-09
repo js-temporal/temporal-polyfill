@@ -31,11 +31,11 @@ import {
   TZ_ORIGINAL,
   YM
 } from './slots';
-import type { Temporal, Intl } from '..';
+import type { Temporal } from '..';
 import type { DateTimeFormatParams as Params, DateTimeFormatReturn as Return } from './internaltypes';
 import JSBI from 'jsbi';
 
-const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
+const IntlDateTimeFormat = Intl.DateTimeFormat;
 const ObjectAssign = Object.assign;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
@@ -69,12 +69,12 @@ function createDateTimeFormat(
   optionsParam: Params['constructor'][1]
 ) {
   const hasOptions = typeof optionsParam !== 'undefined';
-  let options: globalThis.Intl.DateTimeFormatOptions;
+  let options: Intl.DateTimeFormatOptions;
   if (hasOptions) {
     // Read all the options in the expected order and copy them to a
     // null-prototype object with which we can do further operations
     // unobservably
-    const props: (keyof globalThis.Intl.DateTimeFormatOptions)[] = [
+    const props: (keyof Intl.DateTimeFormatOptions)[] = [
       'localeMatcher',
       'calendar',
       'numberingSystem',
@@ -225,7 +225,7 @@ export type { DateTimeFormatImpl };
 interface DateTimeFormatInterface {
   (locales: Params['constructor'][0], options: Params['constructor'][1]): DateTimeFormatImpl;
   new (locales: Params['constructor'][0], options: Params['constructor'][1]): DateTimeFormatImpl;
-  supportedLocalesOf: typeof globalThis.Intl.DateTimeFormat.supportedLocalesOf;
+  supportedLocalesOf: typeof Intl.DateTimeFormat.supportedLocalesOf;
 }
 
 // A non-class constructor is needed because Intl.DateTimeFormat must be able to
@@ -245,7 +245,7 @@ ObjectDefineProperty(DateTimeFormat, 'prototype', {
   configurable: false
 });
 DateTimeFormat.supportedLocalesOf = IntlDateTimeFormat.supportedLocalesOf;
-MakeIntrinsicClass(DateTimeFormat as unknown as typeof globalThis.Intl.DateTimeFormat, 'Intl.DateTimeFormat');
+MakeIntrinsicClass(DateTimeFormat as unknown as typeof Intl.DateTimeFormat, 'Intl.DateTimeFormat');
 
 function resolvedOptions(this: DateTimeFormatImpl): Return['resolvedOptions'] {
   const resolved = GetSlot(this, ORIGINAL).resolvedOptions();
@@ -344,7 +344,7 @@ function amend(optionsParam: Intl.DateTimeFormatOptions = {}, amended: MaybeFals
     (options[opt] as OptionMaybeFalse) = opt in amended ? amended[opt] : options[opt];
     if ((options[opt] as OptionMaybeFalse) === false || options[opt] === undefined) delete options[opt];
   }
-  return options as globalThis.Intl.DateTimeFormatOptions;
+  return options;
 }
 
 type OptionsType<T extends TypesWithToLocaleString> = NonNullable<Parameters<T['toLocaleString']>[1]>;
@@ -462,7 +462,7 @@ function datetimeAmend(optionsParam: OptionsType<Temporal.PlainDateTime>) {
 }
 
 function instantAmend(optionsParam: OptionsType<Temporal.Instant>) {
-  let options = optionsParam as globalThis.Intl.DateTimeFormatOptions;
+  let options = optionsParam;
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
     options = ObjectAssign({}, options, {
       year: 'numeric',
