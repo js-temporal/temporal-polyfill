@@ -15,6 +15,8 @@ import type {
   Resolve
 } from './internaltypes';
 
+const ArrayPrototypeFind = Array.prototype.find;
+const ArrayPrototypeIncludes = Array.prototype.includes;
 const ArrayPrototypeSort = Array.prototype.sort;
 const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
 const MathAbs = Math.abs;
@@ -462,6 +464,7 @@ abstract class HelperBase {
   abstract inLeapYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache): boolean;
   abstract calendarType: 'solar' | 'lunar' | 'lunisolar';
   reviseIntlEra?<T extends Partial<EraAndEraYear>>(calendarDate: T, isoDate: ISODate): T;
+  eras: Era[] = [];
   checkIcuBugs?(isoDate: ISODate): void;
   private formatter?: globalThis.Intl.DateTimeFormat;
   getFormatter() {
@@ -560,6 +563,11 @@ abstract class HelperBase {
       throw new RangeError(
         `Intl.DateTimeFormat.formatToParts lacks relatedYear in ${this.id} calendar. Try Node 14+ or modern browsers.`
       );
+    }
+    // Translate old ICU era codes "ERA0" etc. into canonical era names.
+    if (this.hasEra) {
+      const replacement = ES.Call(ArrayPrototypeFind, this.eras, [(e) => result.era === e.genericName]);
+      if (replacement) result.era = replacement.name;
     }
     // Translate eras that may be handled differently by Temporal vs. by Intl
     // (e.g. Japanese pre-Meiji eras). See https://github.com/tc39/proposal-temporal/issues/526.
@@ -1369,6 +1377,9 @@ interface InputEra {
   /** name of the era */
   name: string;
 
+  /** Aliases, see https://tc39.es/proposal-intl-era-monthcode/#table-eras */
+  aliases?: string[];
+
   /**
    * Signed calendar year where this era begins.Will be
    * 1 (or 0 for zero-based eras) for the anchor era assuming that `year`
@@ -1408,6 +1419,9 @@ interface InputEra {
 interface Era {
   /** name of the era */
   name: string;
+
+  /** Aliases, see https://tc39.es/proposal-intl-era-monthcode/#table-eras */
+  aliases: string[];
 
   /**
    * alternate name of the era used in old versions of ICU data
@@ -1585,7 +1599,6 @@ abstract class GregorianBaseHelperFixedEpoch extends HelperBase {
 /** Base for Gregorian-like calendars with eras. */
 abstract class GregorianBaseHelper extends HelperBase {
   id: BuiltinCalendarId;
-  eras: Era[];
   anchorEra: Era;
 
   constructor(id: BuiltinCalendarId, originalEras: InputEra[]) {
@@ -1659,8 +1672,10 @@ abstract class GregorianBaseHelper extends HelperBase {
       checkField('era', era);
       checkField('eraYear', eraYear);
     } else if (eraYear != null) {
-      const matchingEra =
-        era === undefined ? undefined : this.eras.find((e) => e.name === era || e.genericName === era);
+      if (era === undefined) throw new RangeError('era and eraYear must be provided together');
+      const matchingEra = ES.Call(ArrayPrototypeFind, this.eras, [
+        ({ name, aliases = [] }) => name === era || ES.Call(ArrayPrototypeIncludes, aliases, [era])
+      ]);
       if (!matchingEra) throw new RangeError(`Era ${era} (ISO year ${eraYear}) was not matched by any era`);
       if (eraYear < 1 && matchingEra.reverseOf) {
         throw new RangeError(`Years in ${era} era must be positive, not ${year}`);
@@ -1783,8 +1798,8 @@ class EthioaaHelper extends OrthodoxBaseHelperFixedEpoch {
 class CopticHelper extends OrthodoxBaseHelper {
   constructor() {
     super('coptic', [
-      { name: 'era1', isoEpoch: { year: 284, month: 8, day: 29 } },
-      { name: 'era0', reverseOf: 'era1' }
+      { name: 'coptic', isoEpoch: { year: 284, month: 8, day: 29 } },
+      { name: 'coptic-inverse', reverseOf: 'coptic' }
     ]);
   }
 }
@@ -1794,8 +1809,8 @@ class CopticHelper extends OrthodoxBaseHelper {
 class EthiopicHelper extends OrthodoxBaseHelper {
   constructor() {
     super('ethiopic', [
-      { name: 'era0', isoEpoch: { year: -5492, month: 7, day: 17 } },
-      { name: 'era1', isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
+      { name: 'ethioaa', aliases: ['ethiopic-amete-alem', 'mundi'], isoEpoch: { year: -5492, month: 7, day: 17 } },
+      { name: 'ethiopic', aliases: ['incar'], isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
     ]);
   }
 }
@@ -1803,8 +1818,8 @@ class EthiopicHelper extends OrthodoxBaseHelper {
 class RocHelper extends SameMonthDayAsGregorianBaseHelper {
   constructor() {
     super('roc', [
-      { name: 'minguo', isoEpoch: { year: 1912, month: 1, day: 1 } },
-      { name: 'before-roc', reverseOf: 'minguo' }
+      { name: 'roc', aliases: ['minguo'], isoEpoch: { year: 1912, month: 1, day: 1 } },
+      { name: 'roc-inverse', aliases: ['before-roc'], reverseOf: 'roc' }
     ]);
   }
 }
@@ -1818,8 +1833,8 @@ class BuddhistHelper extends GregorianBaseHelperFixedEpoch {
 class GregoryHelper extends SameMonthDayAsGregorianBaseHelper {
   constructor() {
     super('gregory', [
-      { name: 'ce', isoEpoch: { year: 1, month: 1, day: 1 } },
-      { name: 'bce', reverseOf: 'ce' }
+      { name: 'gregory', aliases: ['ad', 'ce'], isoEpoch: { year: 1, month: 1, day: 1 } },
+      { name: 'gregory-inverse', aliases: ['be', 'bce'], reverseOf: 'gregory' }
     ]);
   }
   override reviseIntlEra<T extends Partial<EraAndEraYear>>(calendarDate: T /*, isoDate: IsoDate*/): T {
@@ -1828,8 +1843,8 @@ class GregoryHelper extends SameMonthDayAsGregorianBaseHelper {
     // option mistakenly returns the one-letter (narrow) format instead. The
     // code below handles either the correct or Firefox-buggy format. See
     // https://bugzilla.mozilla.org/show_bug.cgi?id=1752253
-    if (era === 'bc' || era === 'b') era = 'bce';
-    if (era === 'ad' || era === 'a') era = 'ce';
+    if (era === 'b') era = 'gregory-inverse';
+    if (era === 'a') era = 'gregory';
     return { era, eraYear } as T;
   }
   override getFirstDayOfWeek() {
@@ -1879,8 +1894,8 @@ class JapaneseHelper extends SameMonthDayAsGregorianBaseHelper {
       { name: 'showa', isoEpoch: { year: 1926, month: 12, day: 25 }, anchorEpoch: { year: 1926, month: 12, day: 25 } },
       { name: 'taisho', isoEpoch: { year: 1912, month: 7, day: 30 }, anchorEpoch: { year: 1912, month: 7, day: 30 } },
       { name: 'meiji', isoEpoch: { year: 1868, month: 9, day: 8 }, anchorEpoch: { year: 1868, month: 9, day: 8 } },
-      { name: 'ce', isoEpoch: { year: 1, month: 1, day: 1 } },
-      { name: 'bce', reverseOf: 'ce' }
+      { name: 'japanese', aliases: ['gregory', 'ad', 'ce'], isoEpoch: { year: 1, month: 1, day: 1 } },
+      { name: 'japanese-inverse', aliases: ['gregory-inverse', 'bc', 'bce'], reverseOf: 'japanese' }
     ]);
   }
 
@@ -1890,7 +1905,9 @@ class JapaneseHelper extends SameMonthDayAsGregorianBaseHelper {
     const { era, eraYear } = calendarDate;
     const { year: isoYear } = isoDate;
     if (this.eras.find((e) => e.name === era)) return { era, eraYear } as T;
-    return (isoYear < 1 ? { era: 'bce', eraYear: 1 - isoYear } : { era: 'ce', eraYear: isoYear }) as T;
+    return (
+      isoYear < 1 ? { era: 'japanese-inverse', eraYear: 1 - isoYear } : { era: 'japanese', eraYear: isoYear }
+    ) as T;
   }
 }
 
