@@ -1040,11 +1040,7 @@ export function GetDirectionOption(options: { direction?: 'next' | 'previous' })
 export function GetTemporalRoundingIncrementOption(options: { roundingIncrement?: number }) {
   let increment = options.roundingIncrement;
   if (increment === undefined) return 1;
-  increment = ToNumber(increment);
-  if (!NumberIsFinite(increment)) {
-    throw new RangeError('roundingIncrement must be finite');
-  }
-  const integerIncrement = MathTrunc(increment);
+  const integerIncrement = ToIntegerWithTruncation(increment);
   if (integerIncrement < 1 || integerIncrement > 1e9) {
     throw new RangeError(`roundingIncrement must be at least 1 and at most 1e9, not ${increment}`);
   }
