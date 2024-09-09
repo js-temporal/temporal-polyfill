@@ -169,7 +169,7 @@ export interface ZonedDateTimeReturn extends MethodReturn<typeof Temporal.ZonedD
 export interface DateTimeFormatParams extends MethodParams<typeof Intl.DateTimeFormat> {}
 export interface DateTimeFormatReturn extends MethodReturn<typeof Intl.DateTimeFormat> {}
 
-type OptionsAmenderFunction = (options: Intl.DateTimeFormatOptions) => globalThis.Intl.DateTimeFormatOptions;
+type OptionsAmenderFunction = (options: globalThis.Intl.DateTimeFormatOptions) => globalThis.Intl.DateTimeFormatOptions;
 export type FormatterOrAmender = globalThis.Intl.DateTimeFormat | OptionsAmenderFunction;
 
 export type Overflow = NonNullable<Temporal.AssignmentOptions['overflow']>;
