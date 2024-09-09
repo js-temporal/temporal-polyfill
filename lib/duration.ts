@@ -278,8 +278,8 @@ export class Duration implements Temporal.Duration {
         ES.DifferenceZonedDateTimeWithRounding(
           relativeEpochNs,
           targetEpochNs,
-          calendar,
           timeZone,
+          calendar,
           largestUnit,
           roundingIncrement,
           smallestUnit,
@@ -377,8 +377,8 @@ export class Duration implements Temporal.Duration {
       const { total } = ES.DifferenceZonedDateTimeWithRounding(
         relativeEpochNs,
         targetEpochNs,
-        calendar,
         timeZone,
+        calendar,
         unit,
         1,
         unit,

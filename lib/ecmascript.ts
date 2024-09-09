@@ -3794,8 +3794,8 @@ function NudgeToCalendarUnit(
   durationParam: InternalDuration,
   destEpochNs: JSBI,
   dateTime: ISODateTime,
-  calendar: BuiltinCalendarId,
   timeZone: string | null,
+  calendar: BuiltinCalendarId,
   increment: number,
   unit: Temporal.DateUnit,
   roundingMode: Temporal.RoundingMode
@@ -3942,8 +3942,8 @@ function NudgeToZonedTime(
   sign: -1 | 1,
   durationParam: InternalDuration,
   dateTime: ISODateTime,
-  calendar: BuiltinCalendarId,
   timeZone: string,
+  calendar: BuiltinCalendarId,
   increment: number,
   unit: Temporal.TimeUnit,
   roundingMode: Temporal.RoundingMode
@@ -4059,8 +4059,8 @@ function BubbleRelativeDuration(
   durationParam: InternalDuration,
   nudgedEpochNs: JSBI,
   plainDateTime: ISODateTime,
-  calendar: BuiltinCalendarId,
   timeZone: string | null,
+  calendar: BuiltinCalendarId,
   largestUnit: Temporal.DateUnit,
   smallestUnit: Temporal.DateUnit
 ) {
@@ -4148,8 +4148,8 @@ function RoundRelativeDuration(
   durationParam: InternalDuration,
   destEpochNs: JSBI,
   dateTime: ISODateTime,
-  calendar: BuiltinCalendarId,
   timeZone: string | null,
+  calendar: BuiltinCalendarId,
   largestUnitParam: Temporal.DateTimeUnit,
   increment: number,
   smallestUnit: Temporal.DateTimeUnit,
@@ -4177,8 +4177,8 @@ function RoundRelativeDuration(
       duration,
       destEpochNs,
       dateTime,
-      calendar,
       timeZone,
+      calendar,
       increment,
       smallestUnit,
       roundingMode
@@ -4191,7 +4191,7 @@ function RoundRelativeDuration(
       smallestUnit,
       'other values handled in irregularLengthUnit clause above'
     );
-    nudgeResult = NudgeToZonedTime(sign, duration, dateTime, calendar, timeZone, increment, smallestUnit, roundingMode);
+    nudgeResult = NudgeToZonedTime(sign, duration, dateTime, timeZone, calendar, increment, smallestUnit, roundingMode);
   } else {
     // Rounding uniform-length days/hours/minutes/etc units. Simple nanosecond
     // math. years/months/weeks unchanged
@@ -4212,8 +4212,8 @@ function RoundRelativeDuration(
       duration,
       nudgeResult.nudgedEpochNs, // The destEpochNs after expanding/contracting
       dateTime,
-      calendar,
       timeZone,
+      calendar,
       largestUnitParam, // where to STOP bubbling
       LargerOfTwoTemporalUnits(smallestUnit, 'day') as Temporal.DateUnit // where to START bubbling-up from
     );
@@ -4332,8 +4332,8 @@ export function DifferencePlainDateTimeWithRounding(
     { years, months, weeks, days, norm },
     destEpochNs,
     dateTime,
-    calendar,
     null,
+    calendar,
     largestUnit,
     roundingIncrement,
     smallestUnit,
@@ -4344,8 +4344,8 @@ export function DifferencePlainDateTimeWithRounding(
 export function DifferenceZonedDateTimeWithRounding(
   ns1: JSBI,
   ns2: JSBI,
-  calendar: BuiltinCalendarId,
   timeZone: string,
+  calendar: BuiltinCalendarId,
   largestUnit: Temporal.DateTimeUnit,
   roundingIncrement: number,
   smallestUnit: Temporal.DateTimeUnit,
@@ -4389,8 +4389,8 @@ export function DifferenceZonedDateTimeWithRounding(
     { years, months, weeks, days, norm },
     ns2,
     dateTime,
-    calendar,
     timeZone,
+    calendar,
     largestUnit,
     roundingIncrement,
     smallestUnit,
@@ -4538,8 +4538,8 @@ export function DifferenceTemporalPlainDate(
       { years, months, weeks, days, norm: TimeDuration.ZERO },
       destEpochNs,
       dateTime,
-      calendar,
       null,
+      calendar,
       settings.largestUnit,
       settings.roundingIncrement,
       settings.smallestUnit,
@@ -4723,8 +4723,8 @@ export function DifferenceTemporalPlainYearMonth(
       { years, months, weeks: 0, days: 0, norm: TimeDuration.ZERO },
       destEpochNs,
       dateTime,
-      calendar,
       null,
+      calendar,
       settings.largestUnit,
       settings.roundingIncrement,
       settings.smallestUnit,
@@ -4795,8 +4795,8 @@ export function DifferenceTemporalZonedDateTime(
       DifferenceZonedDateTimeWithRounding(
         ns1,
         ns2,
-        calendar,
         timeZone,
+        calendar,
         settings.largestUnit,
         settings.roundingIncrement,
         settings.smallestUnit,
