@@ -212,17 +212,7 @@ export class Duration implements Temporal.Duration {
     let microseconds = GetSlot(this, MICROSECONDS);
     let nanoseconds = GetSlot(this, NANOSECONDS);
 
-    const existingLargestUnit = ES.DefaultTemporalLargestUnit(
-      years,
-      months,
-      weeks,
-      days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds
-    );
+    const existingLargestUnit = ES.DefaultTemporalLargestUnit(this);
     const roundTo =
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
@@ -464,17 +454,7 @@ export class Duration implements Temporal.Duration {
 
     if (unit !== 'nanosecond' || increment !== 1) {
       let norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-      const largestUnit = ES.DefaultTemporalLargestUnit(
-        years,
-        months,
-        weeks,
-        days,
-        hours,
-        minutes,
-        seconds,
-        milliseconds,
-        microseconds
-      );
+      const largestUnit = ES.DefaultTemporalLargestUnit(this);
       ({ norm } = ES.RoundTimeDuration(0, norm, increment, unit, roundingMode));
       let deltaDays;
       ({
