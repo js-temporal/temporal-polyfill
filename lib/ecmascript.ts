@@ -2145,7 +2145,7 @@ export function CreateTemporalZonedDateTime(
   calendar: BuiltinCalendarId = 'iso8601'
 ) {
   const TemporalZonedDateTime = GetIntrinsic('%Temporal.ZonedDateTime%');
-  const result = ObjectCreate(TemporalZonedDateTime.prototype);
+  const result: Temporal.ZonedDateTime = ObjectCreate(TemporalZonedDateTime.prototype);
   CreateTemporalZonedDateTimeSlots(result, epochNanoseconds, timeZone, calendar);
   return result;
 }
@@ -4930,11 +4930,7 @@ export function AddZonedDateTime(
   epochNs: JSBI,
   timeZone: string,
   calendar: BuiltinCalendarId,
-  years: number,
-  months: number,
-  weeks: number,
-  days: number,
-  norm: TimeDuration,
+  { years, months, weeks, days, norm }: InternalDuration,
   overflow: Overflow = 'constrain'
 ) {
   // If only time is to be added, then use Instant math. It's not OK to fall
@@ -5191,31 +5187,34 @@ export function AddDurationToOrSubtractDurationFromZonedDateTime(
   zonedDateTime: Temporal.ZonedDateTime,
   durationLike: ZonedDateTimeParams['add'][0],
   optionsParam: ZonedDateTimeParams['add'][1]
-): Temporal.ZonedDateTime {
-  const sign = operation === 'subtract' ? -1 : 1;
-  const { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-    ToTemporalDurationRecord(durationLike);
+) {
+  let duration = ToTemporalDuration(durationLike);
+  if (operation === 'subtract') duration = CreateNegatedTemporalDuration(duration);
+
   const options = GetOptionsObject(optionsParam);
   const overflow = GetTemporalOverflowOption(options);
   const timeZone = GetSlot(zonedDateTime, TIME_ZONE);
   const calendar = GetSlot(zonedDateTime, CALENDAR);
   const norm = TimeDuration.normalize(
-    sign * hours,
-    sign * minutes,
-    sign * seconds,
-    sign * milliseconds,
-    sign * microseconds,
-    sign * nanoseconds
+    GetSlot(duration, HOURS),
+    GetSlot(duration, MINUTES),
+    GetSlot(duration, SECONDS),
+    GetSlot(duration, MILLISECONDS),
+    GetSlot(duration, MICROSECONDS),
+    GetSlot(duration, NANOSECONDS)
   );
+  const normalized = {
+    years: GetSlot(duration, YEARS),
+    months: GetSlot(duration, MONTHS),
+    weeks: GetSlot(duration, WEEKS),
+    days: GetSlot(duration, DAYS),
+    norm
+  };
   const epochNanoseconds = AddZonedDateTime(
     GetSlot(zonedDateTime, EPOCHNANOSECONDS),
     timeZone,
     calendar,
-    sign * years,
-    sign * months,
-    sign * weeks,
-    sign * days,
-    norm,
+    normalized,
     overflow
   );
   return CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
