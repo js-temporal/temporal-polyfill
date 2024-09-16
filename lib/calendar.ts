@@ -1698,9 +1698,13 @@ abstract class GregorianBaseHelper extends HelperBase {
   completeEraYear(
     calendarDate: FullCalendarDate
   ): FullCalendarDate & Required<Pick<FullCalendarDate, 'era' | 'eraYear'>> {
-    const checkField = (name: keyof FullCalendarDate, value: string | number | undefined) => {
+    const checkField = (name: keyof FullCalendarDate, value: string | number | undefined, aliases?: string[]) => {
       const currentValue = calendarDate[name];
-      if (currentValue != null && currentValue != value) {
+      if (
+        currentValue != null &&
+        currentValue != value &&
+        !ES.Call(ArrayPrototypeIncludes, aliases || [], [currentValue])
+      ) {
         throw new RangeErrorCtor(`Input ${name} ${currentValue} doesn't match calculated value ${value}`);
       }
     };
@@ -1731,13 +1735,14 @@ abstract class GregorianBaseHelper extends HelperBase {
         }
       ]);
       if (!matchingEra) throw new RangeError(`Year ${year} was not matched by any era`);
-      return { eraYear: eraYear as unknown as number, era: matchingEra.name };
+      return { eraYear: eraYear as unknown as number, era: matchingEra.name, eraAliases: matchingEra.aliases };
     };
 
     let { year, eraYear, era } = calendarDate;
     if (year != null) {
-      ({ eraYear, era } = eraFromYear(year));
-      checkField('era', era);
+      const matchData = eraFromYear(year);
+      ({ eraYear, era } = matchData);
+      checkField('era', era, matchData?.eraAliases);
       checkField('eraYear', eraYear);
     } else if (eraYear != null) {
       if (era === undefined) throw new RangeErrorCtor('era and eraYear must be provided together');
@@ -2198,18 +2203,30 @@ class NonIsoCalendar implements CalendarImpl {
   }
   dateFromFields(fields: CalendarFieldsRecord, overflow: Overflow): ISODate {
     const cache = new OneObjectCache();
+    if (this.helper.calendarType !== 'lunisolar') {
+      const largestMonth = this.helper.monthsInYear({ year: fields.year ?? 1972 }, cache);
+      resolveNonLunisolarMonth(fields, undefined, largestMonth);
+    }
     const result = this.helper.calendarToIsoDate(fields, overflow, cache);
     cache.setObject(result);
     return result;
   }
   yearMonthFromFields(fields: CalendarFieldsRecord, overflow: Overflow): ISODate {
     const cache = new OneObjectCache();
+    if (this.helper.calendarType !== 'lunisolar') {
+      const largestMonth = this.helper.monthsInYear({ year: fields.year ?? 1972 }, cache);
+      resolveNonLunisolarMonth(fields, undefined, largestMonth);
+    }
     const result = this.helper.calendarToIsoDate({ ...fields, day: 1 }, overflow, cache);
     cache.setObject(result);
     return result;
   }
   monthDayFromFields(fields: MonthDayFromFieldsObject, overflow: Overflow): ISODate {
     const cache = new OneObjectCache();
+    if (this.helper.calendarType !== 'lunisolar') {
+      const largestMonth = this.helper.monthsInYear({ year: fields.year ?? 1972 }, cache);
+      resolveNonLunisolarMonth(fields, undefined, largestMonth);
+    }
     // For lunisolar calendars, either `monthCode` or `year` must be provided
     // because `month` is ambiguous without a year or a code.
     const result = this.helper.monthDayFromFields(fields, overflow, cache);
