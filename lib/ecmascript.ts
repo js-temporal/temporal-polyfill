@@ -5073,25 +5073,24 @@ export function AddDurationToDate(
   durationLike: PlainDateParams['add'][0],
   optionsParam: PlainDateParams['add'][1]
 ) {
-  const sign = operation === 'subtract' ? -1 : 1;
   const isoDate = TemporalObjectToISODateRecord(plainDate);
   const calendar = GetSlot(plainDate, CALENDAR);
 
-  let duration = ToTemporalDurationRecord(durationLike);
+  let duration = ToTemporalDuration(durationLike);
+  if (operation === 'subtract') duration = CreateNegatedTemporalDuration(duration);
   const norm = TimeDuration.normalize(
-    sign * duration.hours,
-    sign * duration.minutes,
-    sign * duration.seconds,
-    sign * duration.milliseconds,
-    sign * duration.microseconds,
-    sign * duration.nanoseconds
+    GetSlot(duration, HOURS),
+    GetSlot(duration, MINUTES),
+    GetSlot(duration, SECONDS),
+    GetSlot(duration, MILLISECONDS),
+    GetSlot(duration, MICROSECONDS),
+    GetSlot(duration, NANOSECONDS)
   );
-  const days = sign * duration.days + BalanceTimeDuration(norm, 'day').days;
   const dateDuration = {
-    years: sign * duration.years,
-    months: sign * duration.months,
-    weeks: sign * duration.weeks,
-    days
+    years: GetSlot(duration, YEARS),
+    months: GetSlot(duration, MONTHS),
+    weeks: GetSlot(duration, WEEKS),
+    days: GetSlot(duration, DAYS) + BalanceTimeDuration(norm, 'day').days
   };
 
   const options = GetOptionsObject(optionsParam);
@@ -5106,22 +5105,21 @@ export function AddDurationToOrSubtractDurationFromPlainDateTime(
   dateTime: Temporal.PlainDateTime,
   durationLike: PlainDateTimeParams['add'][0],
   optionsParam: PlainDateTimeParams['add'][1]
-): Temporal.PlainDateTime {
-  const sign = operation === 'subtract' ? -1 : 1;
-  const { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-    ToTemporalDurationRecord(durationLike);
+) {
+  let duration = ToTemporalDuration(durationLike);
+  if (operation === 'subtract') duration = CreateNegatedTemporalDuration(duration);
   const options = GetOptionsObject(optionsParam);
   const overflow = GetTemporalOverflowOption(options);
 
   const calendar = GetSlot(dateTime, CALENDAR);
 
   const norm = TimeDuration.normalize(
-    sign * hours,
-    sign * minutes,
-    sign * seconds,
-    sign * milliseconds,
-    sign * microseconds,
-    sign * nanoseconds
+    GetSlot(duration, HOURS),
+    GetSlot(duration, MINUTES),
+    GetSlot(duration, SECONDS),
+    GetSlot(duration, MILLISECONDS),
+    GetSlot(duration, MICROSECONDS),
+    GetSlot(duration, NANOSECONDS)
   );
   const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = AddDateTime(
     GetSlot(dateTime, ISO_YEAR),
@@ -5134,10 +5132,10 @@ export function AddDurationToOrSubtractDurationFromPlainDateTime(
     GetSlot(dateTime, ISO_MICROSECOND),
     GetSlot(dateTime, ISO_NANOSECOND),
     calendar,
-    sign * years,
-    sign * months,
-    sign * weeks,
-    sign * days,
+    GetSlot(duration, YEARS),
+    GetSlot(duration, MONTHS),
+    GetSlot(duration, WEEKS),
+    GetSlot(duration, DAYS),
     norm,
     overflow
   );
@@ -5148,16 +5146,16 @@ export function AddDurationToOrSubtractDurationFromPlainTime(
   operation: AddSubtractOperation,
   temporalTime: Temporal.PlainTime,
   durationLike: PlainTimeParams['add'][0]
-): Temporal.PlainTime {
-  const sign = operation === 'subtract' ? -1 : 1;
-  const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = ToTemporalDurationRecord(durationLike);
+) {
+  let duration = ToTemporalDuration(durationLike);
+  if (operation === 'subtract') duration = CreateNegatedTemporalDuration(duration);
   const norm = TimeDuration.normalize(
-    sign * hours,
-    sign * minutes,
-    sign * seconds,
-    sign * milliseconds,
-    sign * microseconds,
-    sign * nanoseconds
+    GetSlot(duration, HOURS),
+    GetSlot(duration, MINUTES),
+    GetSlot(duration, SECONDS),
+    GetSlot(duration, MILLISECONDS),
+    GetSlot(duration, MICROSECONDS),
+    GetSlot(duration, NANOSECONDS)
   );
   let { hour, minute, second, millisecond, microsecond, nanosecond } = AddTime(
     GetSlot(temporalTime, ISO_HOUR),
