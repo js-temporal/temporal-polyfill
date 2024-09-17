@@ -1038,20 +1038,17 @@ abstract class HelperBase {
   // See https://github.com/tc39/proposal-temporal/issues/1784
   erasBeginMidYear = false;
   monthDayFromFields(fields: MonthDayFromFieldsObject, overflow: Overflow, cache: OneObjectCache): ISODate {
-    let { year, era, eraYear, monthCode, day } = fields;
-    let validateDate = monthCode === undefined || year !== undefined || era !== undefined || eraYear !== undefined;
+    let { monthCode, day } = fields;
     if (monthCode === undefined) {
+      let { year, era, eraYear } = fields;
       if (year === undefined && (era === undefined || eraYear === undefined)) {
         throw new TypeErrorCtor(
           'when `monthCode` is omitted, `year` (or `era` and `eraYear`) and `month` are required'
         );
       }
-    }
-    if (validateDate) {
       // Apply overflow behaviour to year/month/day, to get correct monthCode/day
       ({ monthCode, day } = this.isoToCalendarDate(this.calendarToIsoDate(fields, overflow, cache), cache));
     }
-    ES.assertExists(monthCode);
 
     let isoYear, isoMonth, isoDay;
     let closestCalendar, closestIso;
