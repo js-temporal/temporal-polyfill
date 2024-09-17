@@ -3240,7 +3240,7 @@ function NormalizedDurationSign({ years, months, weeks, days, norm }: InternalDu
   return norm.sign();
 }
 
-function BalanceISOYearMonth(yearParam: number, monthParam: number) {
+export function BalanceISOYearMonth(yearParam: number, monthParam: number) {
   let year = yearParam;
   let month = monthParam;
   if (!NumberIsFinite(year) || !NumberIsFinite(month)) throw new RangeErrorCtor('infinity is out of range');
@@ -4913,35 +4913,6 @@ export function DifferenceTemporalZonedDateTime(
   );
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
   return result;
-}
-
-export function AddISODate(
-  yearParam: number,
-  monthParam: number,
-  dayParam: number,
-  yearsParam: number,
-  monthsParam: number,
-  weeksParam: number,
-  daysParam: number,
-  overflow: Overflow
-) {
-  let year = yearParam;
-  let month = monthParam;
-  let day = dayParam;
-  let years = yearsParam;
-  let months = monthsParam;
-  let weeks = weeksParam;
-  let days = daysParam;
-
-  year += years;
-  month += months;
-  ({ year, month } = BalanceISOYearMonth(year, month));
-  ({ year, month, day } = RegulateISODate(year, month, day, overflow));
-  days += 7 * weeks;
-  day += days;
-  ({ year, month, day } = BalanceISODate(year, month, day));
-  RejectDateRange(year, month, day);
-  return { year, month, day };
 }
 
 export function AddTime(

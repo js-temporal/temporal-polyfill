@@ -216,8 +216,16 @@ impl['iso8601'] = {
     }
     return arrayFromSet(result);
   },
-  dateAdd({ year, month, day }, { years = 0, months = 0, weeks = 0, days = 0 }, overflow) {
-    return ES.AddISODate(year, month, day, years, months, weeks, days, overflow);
+  dateAdd(isoDate, { years = 0, months = 0, weeks = 0, days = 0 }, overflow) {
+    let { year, month, day } = isoDate;
+    year += years;
+    month += months;
+    ({ year, month } = ES.BalanceISOYearMonth(year, month));
+    ({ year, month, day } = ES.RegulateISODate(year, month, day, overflow));
+    day += days + 7 * weeks;
+    ({ year, month, day } = ES.BalanceISODate(year, month, day));
+    ES.RejectDateRange(year, month, day);
+    return { year, month, day };
   },
   dateUntil(one, two, largestUnit) {
     return ES.DifferenceISODate(one.year, one.month, one.day, two.year, two.month, two.day, largestUnit);
@@ -844,7 +852,7 @@ abstract class HelperBase {
     return this.isoToCalendarDate(isoDate, cache);
   }
   addDaysIso(isoDate: ISODate, days: number): ISODate {
-    const added = ES.AddISODate(isoDate.year, isoDate.month, isoDate.day, 0, 0, 0, days, 'constrain');
+    const added = ES.BalanceISODate(isoDate.year, isoDate.month, isoDate.day + days);
     return added;
   }
   addDaysCalendar(calendarDate: CalendarYMD, days: number, cache: OneObjectCache): FullCalendarDate {
@@ -1396,7 +1404,7 @@ class IndianHelper extends HelperBase {
     const isoYear = calendarDate.year + 78 + (monthInfo.nextYear ? 1 : 0);
     const isoMonth = monthInfo.month;
     const isoDay = monthInfo.day;
-    const isoDate = ES.AddISODate(isoYear, isoMonth, isoDay, 0, 0, 0, calendarDate.day - 1, 'constrain');
+    const isoDate = ES.BalanceISODate(isoYear, isoMonth, isoDay + calendarDate.day - 1);
     return isoDate;
   }
   // https://bugs.chromium.org/p/v8/issues/detail?id=10529 causes Intl's Indian
