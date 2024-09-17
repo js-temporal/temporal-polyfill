@@ -1010,9 +1010,13 @@ export function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.D
   return result;
 }
 
+function ZeroDateDuration() {
+  return { years: 0, months: 0, weeks: 0, days: 0 };
+}
+
 function ZeroNormalizedDuration() {
   return {
-    date: { years: 0, months: 0, weeks: 0, days: 0 },
+    date: ZeroDateDuration(),
     norm: TimeDuration.ZERO
   };
 }
@@ -3634,6 +3638,41 @@ function ISODateSurpasses(sign: -1 | 1, y1: number, m1: number, d1: number, y2: 
   return sign * cmp === 1;
 }
 
+function NormalizeDurationWith24HourDays(duration: Temporal.Duration) {
+  const norm = TimeDuration.normalize(
+    GetSlot(duration, HOURS),
+    GetSlot(duration, MINUTES),
+    GetSlot(duration, SECONDS),
+    GetSlot(duration, MILLISECONDS),
+    GetSlot(duration, MICROSECONDS),
+    GetSlot(duration, NANOSECONDS)
+  ).add24HourDays(GetSlot(duration, DAYS));
+  const date = {
+    years: GetSlot(duration, YEARS),
+    months: GetSlot(duration, MONTHS),
+    weeks: GetSlot(duration, WEEKS),
+    days: 0
+  };
+  return { date, norm };
+}
+
+function UnnormalizeDuration(normalizedDuration: InternalDuration, largestUnit: Temporal.DateTimeUnit) {
+  const balanceResult = BalanceTimeDuration(normalizedDuration.norm, largestUnit);
+  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
+  return new TemporalDuration(
+    normalizedDuration.date.years,
+    normalizedDuration.date.months,
+    normalizedDuration.date.weeks,
+    normalizedDuration.date.days + balanceResult.days,
+    balanceResult.hours,
+    balanceResult.minutes,
+    balanceResult.seconds,
+    balanceResult.milliseconds,
+    balanceResult.microseconds,
+    balanceResult.nanoseconds
+  );
+}
+
 function CombineDateAndNormalizedTimeDuration(dateDuration: DateDuration, norm: TimeDuration) {
   const dateSign = DateDurationSign(dateDuration);
   const timeSign = norm.sign();
@@ -5011,35 +5050,16 @@ export function AddDurations(
   const largestUnit1 = DefaultTemporalLargestUnit(duration);
   const largestUnit2 = DefaultTemporalLargestUnit(other);
   const largestUnit = LargerOfTwoTemporalUnits(largestUnit1, largestUnit2);
-
-  const norm1 = TimeDuration.normalize(
-    GetSlot(duration, HOURS),
-    GetSlot(duration, MINUTES),
-    GetSlot(duration, SECONDS),
-    GetSlot(duration, MILLISECONDS),
-    GetSlot(duration, MICROSECONDS),
-    GetSlot(duration, NANOSECONDS)
-  );
-  const norm2 = TimeDuration.normalize(
-    GetSlot(other, HOURS),
-    GetSlot(other, MINUTES),
-    GetSlot(other, SECONDS),
-    GetSlot(other, MILLISECONDS),
-    GetSlot(other, MICROSECONDS),
-    GetSlot(other, NANOSECONDS)
-  );
-
   if (IsCalendarUnit(largestUnit)) {
     throw new RangeErrorCtor(
       'For years, months, or weeks arithmetic, use date arithmetic relative to a starting point'
     );
   }
-  const { days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-    norm1.add(norm2).add24HourDays(GetSlot(duration, DAYS) + GetSlot(other, DAYS)),
-    largestUnit
-  );
-  const Duration = GetIntrinsic('%Temporal.Duration%');
-  return new Duration(0, 0, 0, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+
+  const d1 = NormalizeDurationWith24HourDays(duration);
+  const d2 = NormalizeDurationWith24HourDays(other);
+  const result = CombineDateAndNormalizedTimeDuration(ZeroDateDuration(), d1.norm.add(d2.norm));
+  return UnnormalizeDuration(result, largestUnit);
 }
 
 export function AddDurationToOrSubtractDurationFromInstant(
