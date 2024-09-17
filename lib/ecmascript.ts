@@ -1010,6 +1010,13 @@ export function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.D
   return result;
 }
 
+function ZeroNormalizedDuration() {
+  return {
+    date: { years: 0, months: 0, weeks: 0, days: 0 },
+    norm: TimeDuration.ZERO
+  };
+}
+
 export function TemporalObjectToISODateRecord(
   temporalObject: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth | Temporal.PlainMonthDay
 ) {
@@ -3234,10 +3241,10 @@ function DateDurationSign(dateDuration: DateDuration) {
   return 0;
 }
 
-function NormalizedDurationSign({ years, months, weeks, days, norm }: InternalDuration) {
-  const dateSign = DateDurationSign({ years, months, weeks, days });
+function NormalizedDurationSign(duration: InternalDuration) {
+  const dateSign = DateDurationSign(duration.date);
   if (dateSign !== 0) return dateSign;
-  return norm.sign();
+  return duration.norm.sign();
 }
 
 export function BalanceISOYearMonth(yearParam: number, monthParam: number) {
@@ -3633,7 +3640,7 @@ function CombineDateAndNormalizedTimeDuration(dateDuration: DateDuration, norm: 
   if (dateSign !== 0 && timeSign !== 0 && dateSign !== timeSign) {
     throw new RangeErrorCtor('mixed-sign values not allowed as duration fields');
   }
-  return { ...dateDuration, norm };
+  return { date: dateDuration, norm };
 }
 
 function ISODateToEpochDays(y: number, m: number, d: number) {
@@ -3796,15 +3803,7 @@ function DifferenceZonedDateTime(
   largestUnit: Temporal.DateTimeUnit
 ) {
   const nsDiff = JSBI.subtract(ns2, ns1);
-  if (JSBI.equal(nsDiff, ZERO)) {
-    return {
-      years: 0,
-      months: 0,
-      weeks: 0,
-      days: 0,
-      norm: TimeDuration.ZERO
-    };
-  }
+  if (JSBI.equal(nsDiff, ZERO)) return ZeroNormalizedDuration();
   const sign = JSBI.lessThan(nsDiff, ZERO) ? -1 : 1;
 
   // Convert start/end instants to datetimes
@@ -3916,7 +3915,7 @@ function NudgeToCalendarUnit(
   let r1, r2, startDuration, endDuration;
   switch (unit) {
     case 'year': {
-      const years = RoundNumberToIncrement(duration.years, increment, 'trunc');
+      const years = RoundNumberToIncrement(duration.date.years, increment, 'trunc');
       r1 = years;
       r2 = years + increment * sign;
       startDuration = { years: r1, months: 0, weeks: 0, days: 0 };
@@ -3924,30 +3923,30 @@ function NudgeToCalendarUnit(
       break;
     }
     case 'month': {
-      const months = RoundNumberToIncrement(duration.months, increment, 'trunc');
+      const months = RoundNumberToIncrement(duration.date.months, increment, 'trunc');
       r1 = months;
       r2 = months + increment * sign;
-      startDuration = { years: duration.years, months: r1, weeks: 0, days: 0 };
+      startDuration = { years: duration.date.years, months: r1, weeks: 0, days: 0 };
       endDuration = { ...startDuration, months: r2 };
       break;
     }
     case 'week': {
-      const yearsMonths = { years: duration.years, months: duration.months };
+      const yearsMonths = { years: duration.date.years, months: duration.date.months };
       const weeksStart = CalendarDateAdd(calendar, dateTime, yearsMonths, 'constrain');
-      const weeksEnd = BalanceISODate(weeksStart.year, weeksStart.month, weeksStart.day + duration.days);
+      const weeksEnd = BalanceISODate(weeksStart.year, weeksStart.month, weeksStart.day + duration.date.days);
       const untilResult = CalendarDateUntil(calendar, weeksStart, weeksEnd, 'week');
-      const weeks = RoundNumberToIncrement(duration.weeks + untilResult.weeks, increment, 'trunc');
+      const weeks = RoundNumberToIncrement(duration.date.weeks + untilResult.weeks, increment, 'trunc');
       r1 = weeks;
       r2 = weeks + increment * sign;
-      startDuration = { years: duration.years, months: duration.months, weeks: r1, days: 0 };
+      startDuration = { ...duration.date, weeks: r1, days: 0 };
       endDuration = { ...startDuration, weeks: r2 };
       break;
     }
     case 'day': {
-      const days = RoundNumberToIncrement(duration.days, increment, 'trunc');
+      const days = RoundNumberToIncrement(duration.date.days, increment, 'trunc');
       r1 = days;
       r2 = days + increment * sign;
-      startDuration = { years: duration.years, months: duration.months, weeks: duration.weeks, days: r1 };
+      startDuration = { ...duration.date, days: r1 };
       endDuration = { ...startDuration, days: r2 };
       break;
     }
@@ -4032,7 +4031,7 @@ function NudgeToCalendarUnit(
 
   // Determine whether expanded or contracted
   const didExpandCalendarUnit = roundedUnit === MathAbs(r2);
-  duration = { ...(didExpandCalendarUnit ? endDuration : startDuration), norm: TimeDuration.ZERO };
+  duration = { date: didExpandCalendarUnit ? endDuration : startDuration, norm: TimeDuration.ZERO };
 
   return {
     duration,
@@ -4060,13 +4059,7 @@ function NudgeToZonedTime(
 
   // Apply to origin, output start/end of the day as PlainDateTimes
   const date = ISODateTimeToDateRecord(dateTime);
-  const dateDuration = {
-    years: duration.years,
-    months: duration.months,
-    weeks: duration.weeks,
-    days: duration.days
-  };
-  const start = CalendarDateAdd(calendar, date, dateDuration, 'constrain');
+  const start = CalendarDateAdd(calendar, date, duration.date, 'constrain');
   const startDateTime = CombineISODateAndTimeRecord(start, dateTime);
   const endDate = BalanceISODate(start.year, start.month, start.day + sign);
   const endDateTime = CombineISODateAndTimeRecord(endDate, dateTime);
@@ -4105,15 +4098,12 @@ function NudgeToZonedTime(
     nudgedEpochNs = roundedNorm.addToEpochNs(startEpochNs);
   }
 
-  duration = {
-    years: duration.years,
-    months: duration.months,
-    weeks: duration.weeks,
-    days: duration.days + dayDelta,
-    norm: roundedNorm
-  };
+  const resultDuration = CombineDateAndNormalizedTimeDuration(
+    { ...duration.date, days: duration.date.days + dayDelta },
+    roundedNorm
+  );
   return {
-    duration,
+    duration: resultDuration,
     total: NaN, // Not computed in this path, so we assert that it is not NaN later on
     nudgedEpochNs,
     didExpandCalendarUnit: didRoundBeyondDay
@@ -4132,7 +4122,7 @@ function NudgeToDayOrTime(
   // unit must be day or smaller
   let duration = durationParam;
 
-  const norm = duration.norm.add24HourDays(duration.days);
+  const norm = duration.norm.add24HourDays(duration.date.days);
   // Convert to nanoseconds and round
   const unitLength = Call(MapPrototypeGet, NS_PER_TIME_UNIT, [smallestUnit]);
   const total = norm.fdiv(JSBI.BigInt(unitLength));
@@ -4153,7 +4143,7 @@ function NudgeToDayOrTime(
     remainder = roundedNorm.subtract(TimeDuration.normalize(roundedWholeDays * 24, 0, 0, 0, 0, 0));
   }
 
-  duration = { ...duration, days, norm: remainder };
+  duration = { date: { ...duration.date, days }, norm: remainder };
   return {
     duration,
     total,
@@ -4200,18 +4190,18 @@ function BubbleRelativeDuration(
     let endDuration;
     switch (unit) {
       case 'year': {
-        const years = duration.years + sign;
+        const years = duration.date.years + sign;
         endDuration = { years, months: 0, weeks: 0, days: 0 };
         break;
       }
       case 'month': {
-        const months = duration.months + sign;
-        endDuration = { years: duration.years, months, weeks: 0, days: 0 };
+        const months = duration.date.months + sign;
+        endDuration = { years: duration.date.years, months, weeks: 0, days: 0 };
         break;
       }
       case 'week': {
-        const weeks = duration.weeks + sign;
-        endDuration = { years: duration.years, months: duration.months, weeks, days: 0 };
+        const weeks = duration.date.weeks + sign;
+        endDuration = { years: duration.date.years, months: duration.date.months, weeks, days: 0 };
         break;
       }
       default:
@@ -4244,7 +4234,7 @@ function BubbleRelativeDuration(
     // Is nudgedEpochNs at the end-of-unit? This means it should bubble-up to
     // the next highest unit (and possibly further...)
     if (didExpandToEnd) {
-      duration = { ...endDuration, norm: TimeDuration.ZERO };
+      duration = { date: endDuration, norm: TimeDuration.ZERO };
     } else {
       // NOT at end-of-unit. Stop looking for bubbling
       break;
@@ -4332,10 +4322,10 @@ function RoundRelativeDuration(
     largestUnit
   );
   return {
-    years: duration.years,
-    months: duration.months,
-    weeks: duration.weeks,
-    days: duration.days,
+    years: duration.date.years,
+    months: duration.date.months,
+    weeks: duration.date.weeks,
+    days: duration.date.days,
     hours,
     minutes,
     seconds,
@@ -4387,7 +4377,7 @@ export function DifferencePlainDateTimeWithRounding(
     };
   }
 
-  let { years, months, weeks, days, norm } = DifferenceISODateTime(
+  const duration = DifferenceISODateTime(
     y1,
     mon1,
     d1,
@@ -4412,14 +4402,25 @@ export function DifferencePlainDateTimeWithRounding(
 
   const roundingIsNoop = smallestUnit === 'nanosecond' && roundingIncrement === 1;
   if (roundingIsNoop) {
-    const normWithDays = norm.add24HourDays(days);
-    let hours, minutes, seconds, milliseconds, microseconds, nanoseconds;
-    ({ days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
+    const normWithDays = duration.norm.add24HourDays(duration.date.days);
+    const { days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
       normWithDays,
       largestUnit
-    ));
-    const total = JSBI.toNumber(norm.totalNs);
-    return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, total };
+    );
+    const total = JSBI.toNumber(duration.norm.totalNs);
+    return {
+      years: duration.date.years,
+      months: duration.date.months,
+      weeks: duration.date.weeks,
+      days,
+      hours,
+      minutes,
+      seconds,
+      milliseconds,
+      microseconds,
+      nanoseconds,
+      total
+    };
   }
 
   const dateTime = {
@@ -4435,7 +4436,7 @@ export function DifferencePlainDateTimeWithRounding(
   };
   const destEpochNs = GetUTCEpochNanoseconds(y2, mon2, d2, h2, min2, s2, ms2, µs2, ns2);
   return RoundRelativeDuration(
-    { years, months, weeks, days, norm },
+    duration,
     destEpochNs,
     dateTime,
     null,
@@ -4482,17 +4483,21 @@ export function DifferenceZonedDateTimeWithRounding(
     };
   }
 
-  let { years, months, weeks, days, norm } = DifferenceZonedDateTime(ns1, ns2, timeZone, calendar, largestUnit);
+  const duration = DifferenceZonedDateTime(ns1, ns2, timeZone, calendar, largestUnit);
 
   if (smallestUnit === 'nanosecond' && roundingIncrement === 1) {
-    const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(norm, 'hour');
-    const total = JSBI.toNumber(norm.totalNs);
+    const { years, months, weeks, days } = duration.date;
+    const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
+      duration.norm,
+      'hour'
+    );
+    const total = JSBI.toNumber(duration.norm.totalNs);
     return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds, total };
   }
 
   const dateTime = GetISODateTimeFor(timeZone, ns1);
   return RoundRelativeDuration(
-    { years, months, weeks, days, norm },
+    duration,
     ns2,
     dateTime,
     timeZone,
@@ -4637,7 +4642,7 @@ export function DifferenceTemporalPlainDate(
     };
     const destEpochNs = GetUTCEpochNanoseconds(isoOther.year, isoOther.month, isoOther.day, 0, 0, 0, 0, 0, 0);
     ({ years, months, weeks, days } = RoundRelativeDuration(
-      { years, months, weeks, days, norm: TimeDuration.ZERO },
+      { date: { years, months, weeks, days }, norm: TimeDuration.ZERO },
       destEpochNs,
       dateTime,
       null,
@@ -4814,7 +4819,7 @@ export function DifferenceTemporalPlainYearMonth(
     };
     const destEpochNs = GetUTCEpochNanoseconds(otherDate.year, otherDate.month, otherDate.day, 0, 0, 0, 0, 0, 0);
     ({ years, months } = RoundRelativeDuration(
-      { years, months, weeks: 0, days: 0, norm: TimeDuration.ZERO },
+      { date: { years, months, weeks: 0, days: 0 }, norm: TimeDuration.ZERO },
       destEpochNs,
       dateTime,
       null,
@@ -4968,7 +4973,7 @@ export function AddZonedDateTime(
   epochNs: JSBI,
   timeZone: string,
   calendar: BuiltinCalendarId,
-  { norm, ...dateDuration }: InternalDuration,
+  duration: InternalDuration,
   overflow: Overflow = 'constrain'
 ) {
   // If only time is to be added, then use Instant math. It's not OK to fall
@@ -4979,18 +4984,18 @@ export function AddZonedDateTime(
   // not expected and so is avoided below via a fast path for time-only
   // arithmetic.
   // BTW, this behavior is similar in spirit to offset: 'prefer' in `with`.
-  if (DateDurationSign(dateDuration) === 0) return AddInstant(epochNs, norm);
+  if (DateDurationSign(duration.date) === 0) return AddInstant(epochNs, duration.norm);
 
   // RFC 5545 requires the date portion to be added in calendar days and the
   // time portion to be added in exact time.
   const dt = GetISODateTimeFor(timeZone, epochNs);
-  const addedDate = CalendarDateAdd(calendar, dt, dateDuration, overflow);
+  const addedDate = CalendarDateAdd(calendar, dt, duration.date, overflow);
   const dtIntermediate = CombineISODateAndTimeRecord(addedDate, dt);
 
   // Note that 'compatible' is used below because this disambiguation behavior
   // is required by RFC 5545.
   const intermediateNs = GetEpochNanosecondsFor(timeZone, dtIntermediate, 'compatible');
-  return AddInstant(intermediateNs, norm);
+  return AddInstant(intermediateNs, duration.norm);
 }
 
 type AddSubtractOperation = 'add' | 'subtract';
@@ -5241,10 +5246,12 @@ export function AddDurationToOrSubtractDurationFromZonedDateTime(
     GetSlot(duration, NANOSECONDS)
   );
   const normalized = {
-    years: GetSlot(duration, YEARS),
-    months: GetSlot(duration, MONTHS),
-    weeks: GetSlot(duration, WEEKS),
-    days: GetSlot(duration, DAYS),
+    date: {
+      years: GetSlot(duration, YEARS),
+      months: GetSlot(duration, MONTHS),
+      weeks: GetSlot(duration, WEEKS),
+      days: GetSlot(duration, DAYS)
+    },
     norm
   };
   const epochNanoseconds = AddZonedDateTime(

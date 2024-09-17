@@ -224,10 +224,7 @@ export interface DateDuration {
 }
 
 export interface InternalDuration {
-  years: number;
-  months: number;
-  weeks: number;
-  days: number;
+  date: DateDuration;
   norm: TimeDuration;
 }
 
