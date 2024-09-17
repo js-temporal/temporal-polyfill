@@ -4949,21 +4949,17 @@ function AddDateTime(
   microsecond: number,
   nanosecond: number,
   calendar: BuiltinCalendarId,
-  years: number,
-  months: number,
-  weeks: number,
-  daysParam: number,
+  dateDurationParam: DateDuration,
   norm: TimeDuration,
   overflow: Overflow
 ) {
-  let days = daysParam;
   // Add the time part
   const timeResult = AddTime(hour, minute, second, millisecond, microsecond, nanosecond, norm);
-  days += timeResult.deltaDays;
+  const dateDuration = { ...dateDurationParam, days: dateDurationParam.days + timeResult.deltaDays };
 
   // Delegate the date part addition to the calendar
-  RejectDuration(years, months, weeks, days, 0, 0, 0, 0, 0, 0);
-  const addedDate = CalendarDateAdd(calendar, { year, month, day }, { years, months, weeks, days }, overflow);
+  RejectDuration(dateDuration.years, dateDuration.months, dateDuration.weeks, dateDuration.days, 0, 0, 0, 0, 0, 0);
+  const addedDate = CalendarDateAdd(calendar, { year, month, day }, dateDuration, overflow);
 
   return CombineISODateAndTimeRecord(addedDate, timeResult);
 }
@@ -5121,6 +5117,12 @@ export function AddDurationToOrSubtractDurationFromPlainDateTime(
     GetSlot(duration, MICROSECONDS),
     GetSlot(duration, NANOSECONDS)
   );
+  const dateDuration = {
+    years: GetSlot(duration, YEARS),
+    months: GetSlot(duration, MONTHS),
+    weeks: GetSlot(duration, WEEKS),
+    days: GetSlot(duration, DAYS)
+  };
   const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = AddDateTime(
     GetSlot(dateTime, ISO_YEAR),
     GetSlot(dateTime, ISO_MONTH),
@@ -5132,10 +5134,7 @@ export function AddDurationToOrSubtractDurationFromPlainDateTime(
     GetSlot(dateTime, ISO_MICROSECOND),
     GetSlot(dateTime, ISO_NANOSECOND),
     calendar,
-    GetSlot(duration, YEARS),
-    GetSlot(duration, MONTHS),
-    GetSlot(duration, WEEKS),
-    GetSlot(duration, DAYS),
+    dateDuration,
     norm,
     overflow
   );
