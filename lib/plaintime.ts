@@ -1,3 +1,15 @@
+import {
+  // error constructors
+  RangeError as RangeError,
+  TypeError as TypeError,
+
+  // class static functions and methods
+  ArrayPrototypeEvery,
+  ObjectAssign,
+  ObjectDefineProperty,
+  SymbolToStringTag
+} from './primordials';
+
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
@@ -16,8 +28,6 @@ import {
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainTimeParams as Params, PlainTimeReturn as Return } from './internaltypes';
-
-const ObjectAssign = Object.assign;
 
 type TemporalTimeToStringOptions = {
   unit: ReturnType<typeof ES.ToSecondsStringPrecisionRecord>['unit'];
@@ -82,8 +92,8 @@ export class PlainTime implements Temporal.PlainTime {
     SetSlot(this, ISO_NANOSECOND, isoNanosecond);
 
     if (DEBUG) {
-      Object.defineProperty(this, '_repr_', {
-        value: `${this[Symbol.toStringTag]} <${TemporalTimeToString(this, 'auto')}>`,
+      ObjectDefineProperty(this, '_repr_', {
+        value: `${this[SymbolToStringTag]} <${TemporalTimeToString(this, 'auto')}>`,
         writable: false,
         enumerable: false,
         configurable: false
@@ -198,12 +208,11 @@ export class PlainTime implements Temporal.PlainTime {
   equals(otherParam: Params['equals'][0]): Return['equals'] {
     if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalTime(otherParam);
-    for (const slot of [ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND]) {
-      const val1 = GetSlot(this, slot);
-      const val2 = GetSlot(other, slot);
-      if (val1 !== val2) return false;
-    }
-    return true;
+    return ES.Call(
+      ArrayPrototypeEvery,
+      [ISO_HOUR, ISO_MINUTE, ISO_SECOND, ISO_MILLISECOND, ISO_MICROSECOND, ISO_NANOSECOND],
+      [(slot) => GetSlot(this, slot) === GetSlot(other, slot)]
+    );
   }
 
   toString(optionsParam: Params['toString'][0] = undefined): string {

@@ -1,33 +1,74 @@
-const ArrayIncludes = Array.prototype.includes;
-const ArrayPrototypeConcat = Array.prototype.concat;
-const ArrayPrototypeFilter = Array.prototype.filter;
-const ArrayPrototypePush = Array.prototype.push;
-const ArrayPrototypeSlice = Array.prototype.slice;
-const ArrayPrototypeSort = Array.prototype.sort;
-const IntlDateTimeFormat = globalThis.Intl.DateTimeFormat;
-const IntlSupportedValuesOf: typeof globalThis.Intl.supportedValuesOf | undefined = globalThis.Intl.supportedValuesOf;
-const MapCtor = Map;
-const MapPrototypeSet = Map.prototype.set;
-const MathAbs = Math.abs;
-const MathFloor = Math.floor;
-const MathMax = Math.max;
-const MathMin = Math.min;
-const MathSign = Math.sign;
-const MathTrunc = Math.trunc;
-const NumberIsFinite = Number.isFinite;
-const NumberCtor = Number;
-const NumberIsNaN = Number.isNaN;
-const NumberIsSafeInteger = Number.isSafeInteger;
-const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
-const ObjectCreate = Object.create;
-const ObjectDefineProperty = Object.defineProperty;
-const ReflectApply = Reflect.apply;
-const ReflectOwnKeys = Reflect.ownKeys;
-const SetPrototypeHas = Set.prototype.has;
-const StringCtor = String;
-const StringFromCharCode = String.fromCharCode;
-const StringPrototypeCharCodeAt = String.prototype.charCodeAt;
-const StringPrototypeSlice = String.prototype.slice;
+import {
+  // constructors and similar
+  Date as Date,
+  Map as Map,
+  Number as Number,
+  RegExp as RegExp,
+  Set as Set,
+  String as String,
+  Symbol as Symbol,
+
+  // error constructors
+  Error as Error,
+  RangeError as RangeError,
+  TypeError as TypeError,
+
+  // class static functions and methods
+  ArrayPrototypeConcat,
+  ArrayPrototypeEvery,
+  ArrayPrototypeFilter,
+  ArrayPrototypeFlatMap,
+  ArrayPrototypeIncludes,
+  ArrayPrototypeIndexOf,
+  ArrayPrototypeJoin,
+  ArrayPrototypeMap,
+  ArrayPrototypePush,
+  ArrayPrototypeReduce,
+  ArrayPrototypeSort,
+  BigIntPrototypeToString,
+  DateNow,
+  DatePrototypeGetTime,
+  DatePrototypeGetUTCFullYear,
+  DatePrototypeGetUTCMonth,
+  DatePrototypeGetUTCDate,
+  DatePrototypeGetUTCHours,
+  DatePrototypeGetUTCMinutes,
+  DatePrototypeGetUTCSeconds,
+  DatePrototypeGetUTCMilliseconds,
+  DatePrototypeSetUTCFullYear,
+  DatePrototypeSetUTCHours,
+  IntlDateTimeFormat,
+  IntlDateTimeFormatPrototypeGetFormat,
+  IntlDateTimeFormatPrototypeResolvedOptions,
+  IntlSupportedValuesOf,
+  MapPrototypeGet,
+  MapPrototypeHas,
+  MapPrototypeSet,
+  MathAbs,
+  MathFloor,
+  MathMax,
+  MathMin,
+  MathSign,
+  MathTrunc,
+  NumberIsFinite,
+  NumberIsNaN,
+  NumberIsSafeInteger,
+  NumberMaxSafeInteger,
+  NumberPrototypeToString,
+  ObjectAssign,
+  ObjectCreate,
+  ObjectDefineProperty,
+  ReflectApply,
+  ReflectOwnKeys,
+  RegExpPrototypeExec,
+  RegExpPrototypeTest,
+  SetPrototypeHas,
+  StringFromCharCode,
+  StringPrototypeCharCodeAt,
+  StringPrototypeSlice,
+  StringPrototypeSplit,
+  StringPrototypeToUpperCase
+} from './primordials';
 
 import { DEBUG, ENABLE_ASSERTS } from './debug';
 import JSBI from 'jsbi';
@@ -244,7 +285,7 @@ export function ToNumber(value: unknown): number {
   // we'll leave ToNumber as-is.
   // See https://github.com/ljharb/es-abstract/blob/main/2022/ToNumber.js
   if (typeof value === 'bigint') throw new TypeError('Cannot convert BigInt to number');
-  return NumberCtor(value);
+  return Number(value);
 }
 
 function IsIntegralNumber(argument: unknown) {
@@ -259,7 +300,7 @@ export function ToString(value: unknown): string {
   if (typeof value === 'symbol') {
     throw new TypeError('Cannot convert a Symbol value to a String');
   }
-  return StringCtor(value);
+  return String(value);
 }
 
 export function ToIntegerWithTruncation(value: unknown): number {
@@ -307,7 +348,7 @@ function ToZeroPaddedDecimalString(n: number, minLength: number) {
 export function RequireString(value: unknown): string {
   if (typeof value !== 'string') {
     // Use String() to ensure that Symbols won't throw
-    throw new TypeError(`expected a string, not ${StringCtor(value)}`);
+    throw new TypeError(`expected a string, not ${String(value)}`);
   }
   return value;
 }
@@ -315,14 +356,14 @@ export function RequireString(value: unknown): string {
 // This function is an enum in the spec, but it's helpful to make it a
 // function in the polyfill.
 function ToPrimitiveAndRequireString(valueParam: unknown): string {
-  const value = ToPrimitive(valueParam, StringCtor);
+  const value = ToPrimitive(valueParam, String);
   return RequireString(value);
 }
 
 // Limited implementation of ToPrimitive that only handles the string case,
 // because that's all that's used in this polyfill.
-function ToPrimitive(value: unknown, preferredType: typeof StringCtor): string | number {
-  assertExists(preferredType === StringCtor);
+function ToPrimitive(value: unknown, preferredType: typeof String): string | number {
+  assertExists(preferredType === String);
   if (IsObject(value)) {
     const result = value?.toString();
     if (typeof result === 'string' || typeof result === 'number') return result;
@@ -376,6 +417,7 @@ const BUILTIN_DEFAULTS = new Map([
 ]);
 
 // each item is [plural, singular, category, (length in ns)]
+type TemporalUnitsEntry = [Temporal.PluralUnit<Temporal.DateTimeUnit>, Temporal.DateTimeUnit, 'date' | 'time', number?];
 const TEMPORAL_UNITS = [
   ['years', 'year', 'date'],
   ['months', 'month', 'date'],
@@ -388,19 +430,32 @@ const TEMPORAL_UNITS = [
   ['microseconds', 'microsecond', 'time', 1e3],
   ['nanoseconds', 'nanosecond', 'time', 1]
 ] as const;
-const SINGULAR_FOR = new Map(TEMPORAL_UNITS.map((e) => [e[0], e[1]] as const));
-const PLURAL_FOR = new Map(TEMPORAL_UNITS.map(([p, s]) => [s, p]));
-const UNITS_DESCENDING = TEMPORAL_UNITS.map(([, s]) => s);
+const SINGULAR_FOR = new Map(
+  Call(ArrayPrototypeMap, TEMPORAL_UNITS, [(e: TemporalUnitsEntry) => [e[0], e[1]] as const])
+);
+// Iterable destructuring is acceptable in this first-run code.
+const PLURAL_FOR = new Map(Call(ArrayPrototypeMap, TEMPORAL_UNITS, [([p, s]: TemporalUnitsEntry) => [s, p] as const]));
+const UNITS_DESCENDING = Call(ArrayPrototypeMap, TEMPORAL_UNITS, [([, s]) => s]);
 type TimeUnitOrDay = Temporal.TimeUnit | 'day';
 // Utility type whose `get` is only callable using valid keys, and that therefore
 // omits `undefined` from its result.
 type ConstMap<K, V> = Omit<ReadonlyMap<K, V>, 'get'> & { get(key: K): V };
-const NS_PER_TIME_UNIT = new Map(TEMPORAL_UNITS.map(([, s, , l]) => [s, l] as const).filter(([, l]) => l)) as ConstMap<
-  TimeUnitOrDay,
-  number
->;
+const NS_PER_TIME_UNIT = new Map(
+  Call(ArrayPrototypeFlatMap, TEMPORAL_UNITS, [([, s, , l]: TemporalUnitsEntry) => (l ? [[s, l] as const] : [])])
+) as ConstMap<TimeUnitOrDay, number>;
 
-const DURATION_FIELDS = Array.from(SINGULAR_FOR.keys()).sort();
+const DURATION_FIELDS = [
+  'days',
+  'hours',
+  'microseconds',
+  'milliseconds',
+  'minutes',
+  'months',
+  'nanoseconds',
+  'seconds',
+  'weeks',
+  'years'
+] as const;
 
 import * as PARSE from './regex';
 
@@ -408,7 +463,9 @@ const IntlDateTimeFormatEnUsCache = new Map<string, Intl.DateTimeFormat>();
 
 function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier: string) {
   const lowercaseIdentifier = ASCIILowercase(timeZoneIdentifier);
-  let instance = IntlDateTimeFormatEnUsCache.get(lowercaseIdentifier);
+  let instance: Intl.DateTimeFormat | undefined = Call(MapPrototypeGet, IntlDateTimeFormatEnUsCache, [
+    lowercaseIdentifier
+  ]);
   if (instance === undefined) {
     instance = new IntlDateTimeFormat('en-us', {
       timeZone: lowercaseIdentifier,
@@ -421,7 +478,7 @@ function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier: string) {
       minute: 'numeric',
       second: 'numeric'
     });
-    IntlDateTimeFormatEnUsCache.set(lowercaseIdentifier, instance);
+    Call(MapPrototypeSet, IntlDateTimeFormatEnUsCache, [lowercaseIdentifier, instance]);
   }
   return instance;
 }
@@ -532,7 +589,11 @@ function FormatCalendarAnnotation(id: BuiltinCalendarId, showCalendar: Temporal.
 function processAnnotations(annotations: string) {
   let calendar;
   let calendarWasCritical = false;
-  for (const [, critical, key, value] of annotations.matchAll(PARSE.annotation)) {
+  // Avoid the user code minefield of matchAll.
+  let match;
+  PARSE.annotation.lastIndex = 0;
+  while ((match = Call(RegExpPrototypeExec, PARSE.annotation, [annotations]))) {
+    const { 1: critical, 2: key, 3: value } = match;
     if (key === 'u-ca') {
       if (calendar === undefined) {
         calendar = value;
@@ -549,7 +610,7 @@ function processAnnotations(annotations: string) {
 
 function ParseISODateTime(isoString: string) {
   // ZDT is the superset of fields for every other Temporal type
-  const match = PARSE.zoneddatetime.exec(isoString);
+  const match = Call(RegExpPrototypeExec, PARSE.zoneddatetime, [isoString]);
   if (!match) throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
   const calendar = processAnnotations(match[16]);
   let yearString = match[1];
@@ -563,9 +624,9 @@ function ParseISODateTime(isoString: string) {
   let second = +(match[8] ?? match[11] ?? 0);
   if (second === 60) second = 59;
   const fraction = (match[9] ?? match[12] ?? '') + '000000000';
-  const millisecond = +fraction.slice(0, 3);
-  const microsecond = +fraction.slice(3, 6);
-  const nanosecond = +fraction.slice(6, 9);
+  const millisecond = +Call(StringPrototypeSlice, fraction, [0, 3]);
+  const microsecond = +Call(StringPrototypeSlice, fraction, [3, 6]);
+  const nanosecond = +Call(StringPrototypeSlice, fraction, [6, 9]);
   let offset;
   let z = false;
   if (match[13]) {
@@ -614,7 +675,7 @@ export function ParseTemporalDateString(isoString: string) {
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalTimeString(isoString: string) {
-  const match = PARSE.time.exec(isoString);
+  const match = Call(RegExpPrototypeExec, PARSE.time, [isoString]);
   let hour, minute, second, millisecond, microsecond, nanosecond;
   if (match) {
     processAnnotations(match[10]); // ignore found calendar
@@ -623,9 +684,9 @@ export function ParseTemporalTimeString(isoString: string) {
     second = +(match[3] ?? match[6] ?? 0);
     if (second === 60) second = 59;
     const fraction = (match[4] ?? match[7] ?? '') + '000000000';
-    millisecond = +fraction.slice(0, 3);
-    microsecond = +fraction.slice(3, 6);
-    nanosecond = +fraction.slice(6, 9);
+    millisecond = +Call(StringPrototypeSlice, fraction, [0, 3]);
+    microsecond = +Call(StringPrototypeSlice, fraction, [3, 6]);
+    nanosecond = +Call(StringPrototypeSlice, fraction, [6, 9]);
     if (match[8]) throw new RangeError('Z designator not supported for PlainTime');
   } else {
     const { time, z } = ParseISODateTime(isoString);
@@ -634,7 +695,7 @@ export function ParseTemporalTimeString(isoString: string) {
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = time);
   }
   // if it's a date-time string, OK
-  if (/[tT ][0-9][0-9]/.test(isoString)) {
+  if (Call(RegExpPrototypeTest, /[tT ][0-9][0-9]/, [isoString])) {
     return { hour, minute, second, millisecond, microsecond, nanosecond };
   }
   try {
@@ -653,7 +714,7 @@ export function ParseTemporalTimeString(isoString: string) {
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalYearMonthString(isoString: string) {
-  const match = PARSE.yearmonth.exec(isoString);
+  const match = Call(RegExpPrototypeExec, PARSE.yearmonth, [isoString]);
   let year, month, calendar, referenceISODay;
   if (match) {
     calendar = processAnnotations(match[3]);
@@ -675,7 +736,7 @@ export function ParseTemporalYearMonthString(isoString: string) {
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalMonthDayString(isoString: string) {
-  const match = PARSE.monthday.exec(isoString);
+  const match = Call(RegExpPrototypeExec, PARSE.monthday, [isoString]);
   let month, day, calendar, referenceISOYear;
   if (match) {
     calendar = processAnnotations(match[3]);
@@ -700,17 +761,19 @@ function throwBadTimeZoneStringError(timeZoneString: string): never {
   // strings support nanosecond precision. If the identifier is invalid but
   // it's a valid ISO offset, then it has sub-minute precision. Show a clearer
   // error message in that case.
-  const msg = OFFSET.test(timeZoneString) ? 'Seconds not allowed in offset time zone' : 'Invalid time zone';
+  const msg = Call(RegExpPrototypeTest, OFFSET, [timeZoneString])
+    ? 'Seconds not allowed in offset time zone'
+    : 'Invalid time zone';
   throw new RangeError(`${msg}: ${timeZoneString}`);
 }
 
 export function ParseTimeZoneIdentifier(
   identifier: string
 ): { tzName: string; offsetMinutes?: undefined } | { tzName?: undefined; offsetMinutes: number } {
-  if (!TIMEZONE_IDENTIFIER.test(identifier)) {
+  if (!Call(RegExpPrototypeTest, TIMEZONE_IDENTIFIER, [identifier])) {
     throwBadTimeZoneStringError(identifier);
   }
-  if (OFFSET_IDENTIFIER.test(identifier)) {
+  if (Call(RegExpPrototypeTest, OFFSET_IDENTIFIER, [identifier])) {
     const offsetNanoseconds = ParseDateTimeUTCOffset(identifier);
     // The regex limits the input to minutes precision, so we know that the
     // division below will result in an integer.
@@ -728,7 +791,7 @@ export function ParseTemporalTimeZoneStringRaw(timeZoneString: string): {
   offset: string | undefined;
   z: boolean;
 } {
-  if (TIMEZONE_IDENTIFIER.test(timeZoneString)) {
+  if (Call(RegExpPrototypeTest, TIMEZONE_IDENTIFIER, [timeZoneString])) {
     return { tzAnnotation: timeZoneString, offset: undefined, z: false };
   }
   try {
@@ -753,9 +816,9 @@ function ParseTemporalTimeZoneString(stringIdent: string): ReturnType<typeof Par
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalDurationString(isoString: string) {
-  const match = PARSE.duration.exec(isoString);
+  const match = Call(RegExpPrototypeExec, PARSE.duration, [isoString]);
   if (!match) throw new RangeError(`invalid duration: ${isoString}`);
-  if (match.slice(2).every((element) => element === undefined)) {
+  if (Call(ArrayPrototypeEvery, match, [(part, i) => i < 2 || part === undefined])) {
     throw new RangeError(`invalid duration: ${isoString}`);
   }
   const sign = match[1] === '-' ? -1 : 1;
@@ -778,18 +841,19 @@ export function ParseTemporalDurationString(isoString: string) {
     if (minutesStr ?? fMinutes ?? secondsStr ?? fSeconds ?? false) {
       throw new RangeError('only the smallest unit can be fractional');
     }
-    excessNanoseconds = ToIntegerWithTruncation((fHours + '000000000').slice(0, 9)) * 3600 * sign;
+    excessNanoseconds = ToIntegerWithTruncation(Call(StringPrototypeSlice, fHours + '000000000', [0, 9])) * 3600 * sign;
   } else {
     minutes = minutesStr === undefined ? 0 : ToIntegerWithTruncation(minutesStr) * sign;
     if (fMinutes !== undefined) {
       if (secondsStr ?? fSeconds ?? false) {
         throw new RangeError('only the smallest unit can be fractional');
       }
-      excessNanoseconds = ToIntegerWithTruncation((fMinutes + '000000000').slice(0, 9)) * 60 * sign;
+      excessNanoseconds =
+        ToIntegerWithTruncation(Call(StringPrototypeSlice, fMinutes + '000000000', [0, 9])) * 60 * sign;
     } else {
       seconds = secondsStr === undefined ? 0 : ToIntegerWithTruncation(secondsStr) * sign;
       if (fSeconds !== undefined) {
-        excessNanoseconds = ToIntegerWithTruncation((fSeconds + '000000000').slice(0, 9)) * sign;
+        excessNanoseconds = ToIntegerWithTruncation(Call(StringPrototypeSlice, fSeconds + '000000000', [0, 9])) * sign;
       }
     }
   }
@@ -1172,7 +1236,7 @@ export function GetTemporalUnitValuedOption<
     const singular = unitInfo[1];
     const category = unitInfo[2];
     if (unitGroup === 'datetime' || unitGroup === category) {
-      allowedSingular.push(singular);
+      Call(ArrayPrototypePush, allowedSingular, [singular]);
     }
   }
   Call(ArrayPrototypePush, allowedSingular, extraValues);
@@ -1180,27 +1244,24 @@ export function GetTemporalUnitValuedOption<
   if (defaultVal === REQUIRED) {
     defaultVal = undefined;
   } else if (defaultVal !== undefined) {
-    allowedSingular.push(defaultVal);
+    Call(ArrayPrototypePush, allowedSingular, [defaultVal]);
   }
-  const allowedValues: Array<Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit> | 'auto'> = Call(
-    ArrayPrototypeSlice,
-    allowedSingular,
-    []
-  );
-  for (let ix = 0; ix < allowedSingular.length; ix++) {
-    const singular = allowedSingular[ix];
-    const plural = PLURAL_FOR.get(singular as Parameters<typeof PLURAL_FOR.get>[0]);
-    if (plural !== undefined) allowedValues.push(plural);
+  const allowedValues: Array<Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit> | 'auto'> = [];
+  Call(ArrayPrototypePush, allowedValues, allowedSingular);
+  for (let index = 0; index < allowedSingular.length; index++) {
+    const singular = allowedSingular[index];
+    const plural = Call(MapPrototypeGet, PLURAL_FOR, [singular]);
+    if (plural !== undefined) Call(ArrayPrototypePush, allowedValues, [plural]);
   }
   let retval = GetOption(options, key, allowedValues, defaultVal);
   if (retval === undefined && requiredOrDefault === REQUIRED) {
     throw new RangeError(`${key} is required`);
   }
   // Coerce any plural units into their singular form
-  if (SINGULAR_FOR.has(retval as Temporal.PluralUnit<Temporal.DateTimeUnit>)) {
+  if (Call(MapPrototypeHas, SINGULAR_FOR, [retval as Temporal.PluralUnit<Temporal.DateTimeUnit>])) {
     // We just has-checked this, but tsc doesn't understand that.
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return SINGULAR_FOR.get(retval as Temporal.PluralUnit<Temporal.DateTimeUnit>)! as R;
+    return Call(MapPrototypeGet, SINGULAR_FOR, [retval as Temporal.PluralUnit<Temporal.DateTimeUnit>])! as R;
   }
   return retval as R;
 }
@@ -1295,7 +1356,11 @@ export function LargerOfTwoTemporalUnits<T1 extends Temporal.DateTimeUnit, T2 ex
   unit1: T1,
   unit2: T2
 ) {
-  if (UNITS_DESCENDING.indexOf(unit1) > UNITS_DESCENDING.indexOf(unit2)) return unit2;
+  const i1 = Call(ArrayPrototypeIndexOf, UNITS_DESCENDING, [unit1]);
+  const i2 = Call(ArrayPrototypeIndexOf, UNITS_DESCENDING, [unit2]);
+  if (i1 > i2) {
+    return unit2;
+  }
   return unit1;
 }
 
@@ -1387,12 +1452,12 @@ export function PrepareCalendarFields<
     const value = bag[property];
     if (value !== undefined) {
       any = true;
-      result[property] = castExists(BUILTIN_CASTS.get(property))(value);
+      result[property] = castExists(Call(MapPrototypeGet, BUILTIN_CASTS, [property])(value));
     } else if (requiredFields !== 'partial') {
-      if (Call(ArrayIncludes, requiredFields, [property])) {
+      if (Call(ArrayPrototypeIncludes, requiredFields, [property])) {
         throw new TypeError(`required property '${property}' missing or undefined`);
       }
-      result[property] = BUILTIN_DEFAULTS.get(property);
+      result[property] = Call(MapPrototypeGet, BUILTIN_DEFAULTS, [property]);
     }
   }
   if (requiredFields === 'partial' && !any) {
@@ -1595,7 +1660,7 @@ export function ToTemporalInstant(itemParam: InstantParams['from'][0]) {
       const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
       return new TemporalInstant(GetSlot(itemParam, EPOCHNANOSECONDS));
     }
-    item = ToPrimitive(itemParam, StringCtor);
+    item = ToPrimitive(itemParam, String);
   } else {
     item = itemParam;
   }
@@ -1989,7 +2054,7 @@ export function CreateTemporalDateTimeSlots(
       nanosecond: ns
     };
     let repr = TemporalDateTimeToString(iso, calendar, 'auto');
-    Object.defineProperty(result, '_repr_', {
+    ObjectDefineProperty(result, '_repr_', {
       value: `Temporal.PlainDateTime <${repr}>`,
       writable: false,
       enumerable: false,
@@ -2035,7 +2100,7 @@ export function CreateTemporalMonthDaySlots(
 
   if (DEBUG) {
     const repr = TemporalMonthDayToString(result, 'auto');
-    Object.defineProperty(result, '_repr_', {
+    ObjectDefineProperty(result, '_repr_', {
       value: `Temporal.PlainMonthDay <${repr}>`,
       writable: false,
       enumerable: false,
@@ -2075,7 +2140,7 @@ export function CreateTemporalYearMonthSlots(
 
   if (DEBUG) {
     const repr = TemporalYearMonthToString(result, 'auto');
-    Object.defineProperty(result, '_repr_', {
+    ObjectDefineProperty(result, '_repr_', {
       value: `Temporal.PlainYearMonth <${repr}>`,
       writable: false,
       enumerable: false,
@@ -2111,7 +2176,7 @@ export function CreateTemporalZonedDateTimeSlots(
 
   if (DEBUG) {
     const repr = TemporalZonedDateTimeToString(result, 'auto');
-    Object.defineProperty(result, '_repr_', {
+    ObjectDefineProperty(result, '_repr_', {
       value: `Temporal.ZonedDateTime <${repr}>`,
       writable: false,
       enumerable: false,
@@ -2147,10 +2212,10 @@ export function CalendarMergeFields<Base extends Record<string, unknown>, ToAdd 
   for (let ix = 0; ix < CALENDAR_FIELD_KEYS.length; ix++) {
     let propValue = undefined;
     const key = CALENDAR_FIELD_KEYS[ix];
-    if (Call(ArrayIncludes, fieldsKeys, [key]) && !Call(ArrayIncludes, overriddenKeys, [key])) {
+    if (Call(ArrayPrototypeIncludes, fieldsKeys, [key]) && !Call(ArrayPrototypeIncludes, overriddenKeys, [key])) {
       propValue = fields[key];
     }
-    if (Call(ArrayIncludes, additionalKeys, [key])) {
+    if (Call(ArrayPrototypeIncludes, additionalKeys, [key])) {
       propValue = additionalFields[key];
     }
     if (propValue !== undefined) merged[key] = propValue;
@@ -2573,7 +2638,7 @@ interface ToStringOptions {
 }
 
 function formatAsDecimalNumber(num: number | JSBI): string {
-  if (typeof num === 'number' && num <= NumberMaxSafeInteger) return num.toString(10);
+  if (typeof num === 'number' && num <= NumberMaxSafeInteger) return Call(NumberPrototypeToString, num, [10]);
   return JSBI.BigInt(num).toString();
 }
 
@@ -2705,11 +2770,11 @@ export function TemporalZonedDateTimeToString(
 }
 
 export function IsOffsetTimeZoneIdentifier(string: string): boolean {
-  return OFFSET.test(string);
+  return Call(RegExpPrototypeTest, OFFSET, [string]);
 }
 
 export function ParseDateTimeUTCOffset(string: string): number {
-  const match = OFFSET_WITH_PARTS.exec(string);
+  const match = Call(RegExpPrototypeExec, OFFSET_WITH_PARTS, [string]);
   if (!match) {
     throw new RangeError(`invalid time zone offset: ${string}`);
   }
@@ -2717,12 +2782,13 @@ export function ParseDateTimeUTCOffset(string: string): number {
   const hours = +match[2];
   const minutes = +(match[3] || 0);
   const seconds = +(match[4] || 0);
-  const nanoseconds = +((match[5] || 0) + '000000000').slice(0, 9);
+  const nanoseconds = +Call(StringPrototypeSlice, (match[5] || 0) + '000000000', [0, 9]);
   const offsetNanoseconds = sign * (((hours * 60 + minutes) * 60 + seconds) * 1e9 + nanoseconds);
   return offsetNanoseconds;
 }
 
 let canonicalTimeZoneIdsCache: Map<string, string> | undefined | null = undefined;
+const isTZIDSep = ObjectAssign(ObjectCreate(null), { '/': true, '-': true, _: true });
 
 export function GetAvailableNamedTimeZoneIdentifier(
   identifier: string
@@ -2733,7 +2799,7 @@ export function GetAvailableNamedTimeZoneIdentifier(
   if (canonicalTimeZoneIdsCache === undefined) {
     const canonicalTimeZoneIds = IntlSupportedValuesOf?.('timeZone');
     if (canonicalTimeZoneIds) {
-      canonicalTimeZoneIdsCache = new MapCtor();
+      canonicalTimeZoneIdsCache = new Map();
       for (let ix = 0; ix < canonicalTimeZoneIds.length; ix++) {
         const id = canonicalTimeZoneIds[ix];
         Call(MapPrototypeSet, canonicalTimeZoneIdsCache, [ASCIILowercase(id), id]);
@@ -2744,14 +2810,16 @@ export function GetAvailableNamedTimeZoneIdentifier(
   }
 
   const lower = ASCIILowercase(identifier);
-  let primaryIdentifier = canonicalTimeZoneIdsCache?.get(lower);
+  let primaryIdentifier = canonicalTimeZoneIdsCache
+    ? Call(MapPrototypeGet, canonicalTimeZoneIdsCache, [lower])
+    : undefined;
   if (primaryIdentifier) return { identifier: primaryIdentifier, primaryIdentifier };
 
   // It's not already a primary identifier, so get its primary identifier (or
   // return if it's not an available named time zone ID).
   try {
     const formatter = getIntlDateTimeFormatEnUsForTimeZone(identifier);
-    primaryIdentifier = formatter.resolvedOptions().timeZone;
+    primaryIdentifier = Call(IntlDateTimeFormatPrototypeResolvedOptions, formatter, []).timeZone;
   } catch {
     return undefined;
   }
@@ -2771,10 +2839,11 @@ export function GetAvailableNamedTimeZoneIdentifier(
   // capitalization pattern:
   // 1. capitalize the first letter of the identifier
   // 2. capitalize the letter after every slash, dash, or underscore delimiter
-  const standardCase = [...lower]
-    .map((c, i) => (i === 0 || '/-_'.includes(lower[i - 1]) ? c.toUpperCase() : c))
-    .join('');
-  const segments = standardCase.split('/');
+  const chars = Call(ArrayPrototypeMap, lower, [
+    (c, i) => (i === 0 || isTZIDSep[lower[i - 1]] ? Call(StringPrototypeToUpperCase, c, []) : c)
+  ]);
+  const standardCase = Call(ArrayPrototypeJoin, chars, ['']);
+  const segments = ReflectApply(StringPrototypeSplit, standardCase, ['/']);
 
   if (segments.length === 1) {
     // If a single-segment legacy ID is 2-3 chars or contains a number or dash, then
@@ -2784,14 +2853,19 @@ export function GetAvailableNamedTimeZoneIdentifier(
     // Otherwise it's standard form: first letter capitalized, e.g. Iran, Egypt, Hongkong
     if (lower === 'gb-eire') return { identifier: 'GB-Eire', primaryIdentifier };
     return {
-      identifier: lower.length <= 3 || /[-0-9]/.test(lower) ? lower.toUpperCase() : segments[0],
+      identifier:
+        lower.length <= 3 || Call(RegExpPrototypeTest, /[-0-9]/, [lower])
+          ? Call(StringPrototypeToUpperCase, lower, [])
+          : segments[0],
       primaryIdentifier
     };
   }
 
   // All Etc zone names are uppercase except three exceptions.
   if (segments[0] === 'Etc') {
-    const etcName = ['Zulu', 'Greenwich', 'Universal'].includes(segments[1]) ? segments[1] : segments[1].toUpperCase();
+    const etcName = Call(ArrayPrototypeIncludes, ['Zulu', 'Greenwich', 'Universal'], [segments[1]])
+      ? segments[1]
+      : Call(StringPrototypeToUpperCase, segments[1], []);
     return { identifier: `Etc/${etcName}`, primaryIdentifier };
   }
 
@@ -2818,7 +2892,7 @@ export function GetAvailableNamedTimeZoneIdentifier(
   ]);
   segments[1] = specialCases.get(segments[1]) ?? segments[1];
   if (segments.length > 2) segments[2] = specialCases.get(segments[2]) ?? segments[2];
-  return { identifier: segments.join('/'), primaryIdentifier };
+  return { identifier: Call(ArrayPrototypeJoin, segments, ['/']), primaryIdentifier };
 }
 
 function GetNamedTimeZoneOffsetNanoseconds(id: string, epochNanoseconds: JSBI) {
@@ -2864,9 +2938,9 @@ function GetUTCEpochNanoseconds(
   // Note: Date.UTC() interprets one and two-digit years as being in the
   // 20th century, so don't use it
   const legacyDate = new Date();
-  legacyDate.setUTCHours(hour, minute, second, millisecond);
-  legacyDate.setUTCFullYear(reducedYear, month - 1, day);
-  const ms = legacyDate.getTime();
+  Call(DatePrototypeSetUTCHours, legacyDate, [hour, minute, second, millisecond]);
+  Call(DatePrototypeSetUTCFullYear, legacyDate, [reducedYear, month - 1, day]);
+  const ms = Call(DatePrototypeGetTime, legacyDate, []);
   let ns = JSBI.multiply(JSBI.BigInt(ms), MILLION);
   ns = JSBI.add(ns, JSBI.multiply(JSBI.BigInt(microsecond), THOUSAND));
   ns = JSBI.add(ns, JSBI.BigInt(nanosecond));
@@ -2888,13 +2962,13 @@ export function GetISOPartsFromEpoch(epochNanoseconds: JSBI) {
   const nanosecond = nanos % 1e3;
 
   const item = new Date(epochMilliseconds);
-  const year = item.getUTCFullYear();
-  const month = item.getUTCMonth() + 1;
-  const day = item.getUTCDate();
-  const hour = item.getUTCHours();
-  const minute = item.getUTCMinutes();
-  const second = item.getUTCSeconds();
-  const millisecond = item.getUTCMilliseconds();
+  const year = Call(DatePrototypeGetUTCFullYear, item, []);
+  const month = Call(DatePrototypeGetUTCMonth, item, []) + 1;
+  const day = Call(DatePrototypeGetUTCDate, item, []);
+  const hour = Call(DatePrototypeGetUTCHours, item, []);
+  const minute = Call(DatePrototypeGetUTCMinutes, item, []);
+  const second = Call(DatePrototypeGetUTCSeconds, item, []);
+  const millisecond = Call(DatePrototypeGetUTCMilliseconds, item, []);
 
   return { epochMilliseconds, year, month, day, hour, minute, second, millisecond, microsecond, nanosecond };
 }
@@ -2993,7 +3067,7 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
 
 // ts-prune-ignore-next TODO: remove this after tests are converted to TS
 export function parseFromEnUsFormat(datetime: string) {
-  const parts = datetime.split(/[^\w]+/);
+  const parts = Call(StringPrototypeSplit, datetime, [/[^\w]+/]);
 
   if (parts.length !== 7) {
     throw new RangeError(`expected 7 parts in "${datetime}`);
@@ -3002,7 +3076,7 @@ export function parseFromEnUsFormat(datetime: string) {
   const month = +parts[0];
   const day = +parts[1];
   let year = +parts[2];
-  const era = parts[3].toUpperCase();
+  const era = Call(StringPrototypeToUpperCase, parts[3], []);
   if (era === 'B' || era === 'BC') {
     year = -year + 1;
   } else if (era !== 'A' && era !== 'AD') {
@@ -3034,7 +3108,8 @@ export function parseFromEnUsFormat(datetime: string) {
 export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
   const formatter = getIntlDateTimeFormatEnUsForTimeZone(timeZone);
   // Using `format` instead of `formatToParts` for compatibility with older clients
-  const datetime = formatter.format(new Date(epochMilliseconds));
+  const boundFormat = Call(IntlDateTimeFormatPrototypeGetFormat, formatter, []);
+  const datetime = Call(boundFormat, formatter, [new Date(epochMilliseconds)]);
   return parseFromEnUsFormat(datetime);
 }
 
@@ -3071,8 +3146,8 @@ function GetNamedTimeZoneEpochNanoseconds(
   // different, then there was an offset transition in between, so test both
   // offsets to see which one(s) will yield a matching exact time.
   const found = earlierOffsetNs === laterOffsetNs ? [earlierOffsetNs] : [earlierOffsetNs, laterOffsetNs];
-  return found
-    .map((offsetNanoseconds) => {
+  const candidates = Call(ArrayPrototypeMap, found, [
+    (offsetNanoseconds) => {
       const epochNanoseconds = JSBI.subtract(ns, JSBI.BigInt(offsetNanoseconds));
       const parts = GetNamedTimeZoneDateTimeParts(id, epochNanoseconds);
       if (
@@ -3089,8 +3164,9 @@ function GetNamedTimeZoneEpochNanoseconds(
         return undefined;
       }
       return epochNanoseconds;
-    })
-    .filter((x) => x !== undefined) as JSBI[];
+    }
+  ]);
+  return Call(ArrayPrototypeFilter, candidates, [(x) => x !== undefined]) as JSBI[];
 }
 
 export function LeapYear(year: number) {
@@ -3975,7 +4051,10 @@ function NudgeToZonedTime(
 
   // Compute time parts of the duration to nanoseconds and round
   // Result could be negative
-  let roundedNorm = duration.norm.round(JSBI.BigInt(castExists(NS_PER_TIME_UNIT.get(unit)) * increment), roundingMode);
+  let roundedNorm = duration.norm.round(
+    JSBI.BigInt(Call(MapPrototypeGet, NS_PER_TIME_UNIT, [unit]) * increment),
+    roundingMode
+  );
 
   // Does the rounded time exceed the time-in-day?
   const beyondDaySpan = roundedNorm.subtract(daySpan);
@@ -3986,7 +4065,7 @@ function NudgeToZonedTime(
     // If rounded into next day, use the day-end as the local origin and rerun
     // the rounding
     dayDelta = sign;
-    roundedNorm = beyondDaySpan.round(JSBI.BigInt(castExists(NS_PER_TIME_UNIT.get(unit)) * increment), roundingMode);
+    roundedNorm = beyondDaySpan.round(JSBI.BigInt(NS_PER_TIME_UNIT.get(unit) * increment), roundingMode);
     nudgedEpochNs = roundedNorm.addToEpochNs(endEpochNs);
   } else {
     // Otherwise, if time not rounded beyond day, use the day-start as the local
@@ -4024,7 +4103,7 @@ function NudgeToDayOrTime(
 
   const norm = duration.norm.add24HourDays(duration.days);
   // Convert to nanoseconds and round
-  const unitLength = castExists(NS_PER_TIME_UNIT.get(smallestUnit));
+  const unitLength = Call(MapPrototypeGet, NS_PER_TIME_UNIT, [smallestUnit]);
   const total = norm.fdiv(JSBI.BigInt(unitLength));
   const roundedNorm = norm.round(JSBI.BigInt(increment * unitLength), roundingMode);
   const diffNorm = roundedNorm.subtract(norm);
@@ -4072,8 +4151,8 @@ function BubbleRelativeDuration(
   // Check to see if nudgedEpochNs has hit the boundary of any units higher than
   // smallestUnit, in which case increment the higher unit and clear smaller
   // units.
-  const largestUnitIndex = UNITS_DESCENDING.indexOf(largestUnit);
-  const smallestUnitIndex = UNITS_DESCENDING.indexOf(smallestUnit);
+  const largestUnitIndex = Call(ArrayPrototypeIndexOf, UNITS_DESCENDING, [largestUnit]);
+  const smallestUnitIndex = Call(ArrayPrototypeIndexOf, UNITS_DESCENDING, [smallestUnit]);
   for (let unitIndex = smallestUnitIndex - 1; unitIndex >= largestUnitIndex; unitIndex--) {
     // The only situation where days and smaller bubble-up into weeks is when
     // largestUnit is 'week' (not to be confused with the situation where
@@ -4408,19 +4487,24 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
   fallbackSmallest: T,
   smallestLargestDefaultUnit: T
 ) {
-  const ALLOWED_UNITS = TEMPORAL_UNITS.reduce((allowed, unitInfo) => {
-    const p = unitInfo[0];
-    const s = unitInfo[1];
-    const c = unitInfo[2];
-    if ((group === 'datetime' || c === group) && !disallowed.includes(s)) {
-      allowed.push(s, p);
-    }
-    return allowed;
-  }, [] as (Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit>)[]);
+  const ALLOWED_UNITS = Call(ArrayPrototypeReduce, TEMPORAL_UNITS, [
+    (allowed, unitInfo) => {
+      const p = unitInfo[0];
+      const s = unitInfo[1];
+      const c = unitInfo[2];
+      if ((group === 'datetime' || c === group) && !Call(ArrayPrototypeIncludes, disallowed, [s])) {
+        Call(ArrayPrototypePush, allowed, [s, p]);
+      }
+      return allowed;
+    },
+    [] as (Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit>)[]
+  ]);
 
   let largestUnit = GetTemporalUnitValuedOption(options, 'largestUnit', group, 'auto');
-  if (disallowed.includes(largestUnit)) {
-    throw new RangeError(`largestUnit must be one of ${ALLOWED_UNITS.join(', ')}, not ${largestUnit}`);
+  if (Call(ArrayPrototypeIncludes, disallowed, [largestUnit])) {
+    throw new RangeError(
+      `largestUnit must be one of ${Call(ArrayPrototypeJoin, ALLOWED_UNITS, [', '])}, not ${largestUnit}`
+    );
   }
 
   const roundingIncrement = GetTemporalRoundingIncrementOption(options);
@@ -4429,8 +4513,10 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
   if (op === 'since') roundingMode = NegateRoundingMode(roundingMode);
 
   const smallestUnit = GetTemporalUnitValuedOption(options, 'smallestUnit', group, fallbackSmallest);
-  if (disallowed.includes(smallestUnit)) {
-    throw new RangeError(`smallestUnit must be one of ${ALLOWED_UNITS.join(', ')}, not ${smallestUnit}`);
+  if (Call(ArrayPrototypeIncludes, disallowed, [smallestUnit])) {
+    throw new RangeError(
+      `smallestUnit must be one of ${Call(ArrayPrototypeJoin, ALLOWED_UNITS, [', '])}, not ${smallestUnit}`
+    );
   }
 
   const defaultLargestUnit = LargerOfTwoTemporalUnits(smallestLargestDefaultUnit, smallestUnit);
@@ -5243,7 +5329,7 @@ export function RoundTemporalInstant(
   unit: TimeUnitOrDay,
   roundingMode: Temporal.RoundingMode
 ) {
-  const incrementNs = NS_PER_TIME_UNIT.get(unit) * increment;
+  const incrementNs = Call(MapPrototypeGet, NS_PER_TIME_UNIT, [unit]) * increment;
   return RoundNumberToIncrementAsIfPositive(epochNs, JSBI.BigInt(incrementNs), roundingMode);
 }
 
@@ -5298,7 +5384,7 @@ export function RoundTime(
     case 'nanosecond':
       quantity = nanosecond;
   }
-  const nsPerUnit = NS_PER_TIME_UNIT.get(unit);
+  const nsPerUnit = Call(MapPrototypeGet, NS_PER_TIME_UNIT, [unit]);
   const result = RoundNumberToIncrement(quantity, nsPerUnit * increment, roundingMode) / nsPerUnit;
   switch (unit) {
     case 'day':
@@ -5340,7 +5426,7 @@ export function RoundTimeDuration(
     days = RoundNumberToIncrement(total, increment, roundingMode);
     norm = TimeDuration.ZERO;
   } else {
-    const divisor = JSBI.BigInt(NS_PER_TIME_UNIT.get(unit));
+    const divisor = JSBI.BigInt(Call(MapPrototypeGet, NS_PER_TIME_UNIT, [unit]));
     total = norm.fdiv(divisor);
     norm = norm.round(JSBI.multiply(divisor, JSBI.BigInt(increment)), roundingMode);
   }
@@ -5435,7 +5521,7 @@ export function ToBigInt(arg: unknown): JSBI {
     // JSBI doesn't know anything about the bigint type, and intentionally
     // assumes it doesn't exist. Passing one to the BigInt function will throw
     // an error.
-    return JSBI.BigInt(prim.toString(10));
+    return JSBI.BigInt(Call(BigIntPrototypeToString, prim, [10]));
   }
   // JSBI will properly coerce types into a BigInt the same as the native BigInt
   // constructor will, with the exception of native bigint which is handled
@@ -5450,9 +5536,9 @@ export function ToBigInt(arg: unknown): JSBI {
 // milliseconds. That way there is a guarantee that the full nanoseconds are always going to be
 // increasing at least and that the microsecond and nanosecond fields are likely to be non-zero.
 export const SystemUTCEpochNanoSeconds: () => JSBI = (() => {
-  let ns = JSBI.BigInt(Date.now() % 1e6);
+  let ns = JSBI.BigInt(DateNow() % 1e6);
   return () => {
-    const ms = JSBI.BigInt(Date.now());
+    const ms = JSBI.BigInt(DateNow());
     const result = JSBI.add(JSBI.multiply(ms, MILLION), ns);
     ns = JSBI.remainder(ms, MILLION);
     if (JSBI.greaterThan(result, NS_MAX)) return NS_MAX;
@@ -5462,7 +5548,7 @@ export const SystemUTCEpochNanoSeconds: () => JSBI = (() => {
 })();
 
 export function DefaultTimeZone() {
-  return new IntlDateTimeFormat().resolvedOptions().timeZone;
+  return Call(IntlDateTimeFormatPrototypeResolvedOptions, new IntlDateTimeFormat(), []).timeZone;
 }
 
 export function ComparisonResult(value: number) {
@@ -5511,8 +5597,10 @@ function GetOption<
   let value = options[property];
   if (value !== undefined) {
     value = ToString(value) as O[P];
-    if (!allowedValues.includes(value)) {
-      throw new RangeError(`${property} must be one of ${allowedValues.join(', ')}, not ${value}`);
+    if (!Call(ArrayPrototypeIncludes, allowedValues, [value])) {
+      throw new RangeError(
+        `${property} must be one of ${Call(ArrayPrototypeJoin, allowedValues, [', '])}, not ${value}`
+      );
     }
     return value;
   }
@@ -5521,7 +5609,7 @@ function GetOption<
 }
 
 export function IsBuiltinCalendar(id: string): id is BuiltinCalendarId {
-  return BUILTIN_CALENDAR_IDS.includes(ASCIILowercase(id));
+  return Call(ArrayPrototypeIncludes, BUILTIN_CALENDAR_IDS, [ASCIILowercase(id)]);
 }
 
 // This is a temporary implementation. Ideally we'd rely on Intl.DateTimeFormat

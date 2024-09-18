@@ -1,3 +1,21 @@
+import {
+  // constructors and similar
+  Number as Number,
+
+  // error constructors
+  Error as Error,
+  RangeError as RangeError,
+
+  // class static functions and methods
+  ArrayPrototypeJoin,
+  ArrayPrototypePush,
+  MathAbs,
+  MathSign,
+  NumberIsInteger,
+  NumberIsSafeInteger,
+  ReflectApply
+} from './primordials';
+
 import JSBI from 'jsbi';
 
 import {
@@ -19,11 +37,6 @@ import {
 } from './bigintmath';
 import { ApplyUnsignedRoundingMode, GetUnsignedRoundingMode } from './math';
 import type { Temporal } from '..';
-
-const MathAbs = Math.abs;
-const MathSign = Math.sign;
-const NumberIsInteger = Number.isInteger;
-const NumberIsSafeInteger = Number.isSafeInteger;
 
 export class TimeDuration {
   static MAX = JSBI.BigInt('9007199254740991999999999');
@@ -111,15 +124,15 @@ export class TimeDuration {
     // Perform long division to calculate the fractional part of the quotient
     // remainder / n with more accuracy than 64-bit floating point division
     const precision = 50;
-    const decimalDigits = [];
+    const decimalDigits: number[] = [];
     let digit;
     const sign = (JSBI.lessThan(this.totalNs, ZERO) ? -1 : 1) * MathSign(JSBI.toNumber(n));
     while (!JSBI.equal(remainder, ZERO) && decimalDigits.length < precision) {
       remainder = JSBI.multiply(remainder, TEN);
       ({ quotient: digit, remainder } = divmod(remainder, nBigInt));
-      decimalDigits.push(MathAbs(JSBI.toNumber(digit)));
+      ReflectApply(ArrayPrototypePush, decimalDigits, [MathAbs(JSBI.toNumber(digit))]);
     }
-    return sign * Number(abs(quotient).toString() + '.' + decimalDigits.join(''));
+    return sign * Number(abs(quotient).toString() + '.' + ReflectApply(ArrayPrototypeJoin, decimalDigits, ['']));
   }
 
   isZero() {

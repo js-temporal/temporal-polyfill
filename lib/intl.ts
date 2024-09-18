@@ -1,3 +1,24 @@
+import {
+  // error constructors
+  Error as Error,
+  RangeError as RangeError,
+  TypeError as TypeError,
+
+  // class static functions and methods
+  IntlDateTimeFormat,
+  IntlDateTimeFormatPrototypeGetFormat,
+  IntlDateTimeFormatPrototypeFormatRange,
+  IntlDateTimeFormatPrototypeFormatRangeToParts,
+  IntlDateTimeFormatPrototypeFormatToParts,
+  IntlDateTimeFormatPrototypeResolvedOptions,
+  ObjectAssign,
+  ObjectCreate,
+  ObjectDefineProperties,
+  ObjectDefineProperty,
+  ObjectPrototypeHasOwnProperty,
+  ReflectApply
+} from './primordials';
+
 import { BigIntFloorDiv, MILLION } from './bigintmath';
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
@@ -34,13 +55,6 @@ import {
 import type { Temporal } from '..';
 import type { DateTimeFormatParams as Params, DateTimeFormatReturn as Return } from './internaltypes';
 import JSBI from 'jsbi';
-
-const IntlDateTimeFormat = Intl.DateTimeFormat;
-const ObjectAssign = Object.assign;
-const ObjectCreate = Object.create;
-const ObjectDefineProperty = Object.defineProperty;
-const ObjectHasOwnProperty = Object.prototype.hasOwnProperty;
-const ReflectApply = Reflect.apply;
 
 type LazySlot = typeof DATE | typeof YM | typeof MD | typeof TIME | typeof DATETIME | typeof INST;
 
@@ -98,8 +112,9 @@ function createDateTimeFormat(
     ];
     options = ES.ToObject(optionsParam);
     const newOptions = ObjectCreate(null);
-    for (const prop of props) {
-      if (ES.Call(ObjectHasOwnProperty, options, [prop])) {
+    for (let i = 0; i < props.length; i++) {
+      const prop = props[i];
+      if (ES.Call(ObjectPrototypeHasOwnProperty, options, [prop])) {
         newOptions[prop] = options[prop];
       }
     }
@@ -108,7 +123,7 @@ function createDateTimeFormat(
     options = ObjectCreate(null);
   }
   const original = new IntlDateTimeFormat(locale, options);
-  const ro = original.resolvedOptions();
+  const ro = ES.Call(IntlDateTimeFormatPrototypeResolvedOptions, original, []);
 
   CreateSlots(dtf);
 
@@ -127,7 +142,7 @@ function createDateTimeFormat(
   if (hasOptions) {
     const clonedResolved = ObjectAssign(ObjectCreate(null), ro);
     for (const prop in clonedResolved) {
-      if (!ReflectApply(ObjectHasOwnProperty, options, [prop])) {
+      if (!ReflectApply(ObjectPrototypeHasOwnProperty, options, [prop])) {
         delete clonedResolved[prop as keyof typeof clonedResolved];
       }
     }
@@ -177,11 +192,9 @@ class DateTimeFormatImpl {
     if (!HasSlot(this, ORIGINAL)) throw new TypeError('invalid receiver');
     const boundFormat = <P extends readonly unknown[]>(datetime: Params['format'][0], ...args: P) =>
       ES.Call(format, this, [datetime, ...args]);
-    ObjectDefineProperty(boundFormat, 'name', {
-      value: '',
-      enumerable: false,
-      writable: false,
-      configurable: true
+    ObjectDefineProperties(boundFormat, {
+      length: { value: 1, enumerable: false, writable: false, configurable: true },
+      name: { value: '', enumerable: false, writable: false, configurable: true }
     });
     return boundFormat;
   }
@@ -248,7 +261,7 @@ DateTimeFormat.supportedLocalesOf = IntlDateTimeFormat.supportedLocalesOf;
 MakeIntrinsicClass(DateTimeFormat as unknown as typeof Intl.DateTimeFormat, 'Intl.DateTimeFormat');
 
 function resolvedOptions(this: DateTimeFormatImpl): Return['resolvedOptions'] {
-  const resolved = GetSlot(this, ORIGINAL).resolvedOptions();
+  const resolved = ES.Call(IntlDateTimeFormatPrototypeResolvedOptions, GetSlot(this, ORIGINAL), []);
   resolved.timeZone = GetSlot(this, TZ_ORIGINAL);
   return resolved;
 }
@@ -264,10 +277,17 @@ function format<P extends readonly unknown[]>(
   datetime: Params['format'][0],
   ...rest: P
 ): Return['format'] {
-  const overrides = extractOverrides(datetime, this);
-  if (overrides.formatter) return overrides.formatter.format(epochNsToMs(overrides.epochNs));
-  const original = GetSlot(this, ORIGINAL);
-  return ReflectApply(original.format, original, [datetime, ...rest]);
+  let overrides = extractOverrides(datetime, this);
+  let formatter, formatArgs: [Params['format'][0], ...unknown[]];
+  if (overrides.formatter) {
+    formatter = overrides.formatter;
+    formatArgs = [epochNsToMs(overrides.epochNs)];
+  } else {
+    formatter = GetSlot(this, ORIGINAL);
+    formatArgs = [datetime, ...rest];
+  }
+  const boundFormat = ES.Call(IntlDateTimeFormatPrototypeGetFormat, formatter, []);
+  return ES.Call(boundFormat, formatter, formatArgs);
 }
 
 function formatToParts<P extends readonly unknown[]>(
@@ -275,13 +295,21 @@ function formatToParts<P extends readonly unknown[]>(
   datetime: Params['formatToParts'][0],
   ...rest: P
 ): Return['formatToParts'] {
-  const overrides = extractOverrides(datetime, this);
-  if (overrides.formatter) return overrides.formatter.formatToParts(epochNsToMs(overrides.epochNs));
-  const original = GetSlot(this, ORIGINAL);
-  return ReflectApply(original.formatToParts, original, [datetime, ...rest]);
+  let overrides = extractOverrides(datetime, this);
+  let formatter, formatArgs;
+  if (overrides.formatter) {
+    formatter = overrides.formatter;
+    formatArgs = [epochNsToMs(overrides.epochNs)];
+  } else {
+    formatter = GetSlot(this, ORIGINAL);
+    formatArgs = [datetime, ...rest];
+  }
+  return ES.Call(IntlDateTimeFormatPrototypeFormatToParts, formatter, formatArgs as [number | Date | undefined]);
 }
 
 function formatRange(this: DateTimeFormatImpl, a: Params['formatRange'][0], b: Params['formatRange'][1]) {
+  let formatArgs = [a, b] as const;
+  let formatter;
   if (isTemporalObject(a) || isTemporalObject(b)) {
     if (!sameTemporalType(a, b)) {
       throw new TypeError('Intl.DateTimeFormat.formatRange accepts two values of the same type');
@@ -292,10 +320,13 @@ function formatRange(this: DateTimeFormatImpl, a: Params['formatRange'][0], b: P
       if (bformatter !== aformatter) {
         throw new Error('assertion failed: formatters for same Temporal type should be identical');
       }
-      return aformatter.formatRange(epochNsToMs(aa), epochNsToMs(bb));
+      formatter = aformatter;
+      formatArgs = [epochNsToMs(aa), epochNsToMs(bb)];
     }
+  } else {
+    formatter = GetSlot(this, ORIGINAL);
   }
-  return GetSlot(this, ORIGINAL).formatRange(a, b);
+  return ES.Call(IntlDateTimeFormatPrototypeFormatRange, formatter, formatArgs);
 }
 
 function formatRangeToParts(
@@ -303,6 +334,8 @@ function formatRangeToParts(
   a: Params['formatRangeToParts'][0],
   b: Params['formatRangeToParts'][1]
 ) {
+  let formatArgs = [a, b] as const;
+  let formatter;
   if (isTemporalObject(a) || isTemporalObject(b)) {
     if (!sameTemporalType(a, b)) {
       throw new TypeError('Intl.DateTimeFormat.formatRangeToParts accepts two values of the same type');
@@ -313,10 +346,13 @@ function formatRangeToParts(
       if (bformatter !== aformatter) {
         throw new Error('assertion failed: formatters for same Temporal type should be identical');
       }
-      return aformatter.formatRangeToParts(epochNsToMs(aa), epochNsToMs(bb));
+      formatter = aformatter;
+      formatArgs = [epochNsToMs(aa), epochNsToMs(bb)];
     }
+  } else {
+    formatter = GetSlot(this, ORIGINAL);
   }
-  return GetSlot(this, ORIGINAL).formatRangeToParts(a, b);
+  return ES.Call(IntlDateTimeFormatPrototypeFormatRangeToParts, formatter, formatArgs);
 }
 
 // "false" is a signal to delete this option
@@ -326,7 +362,7 @@ type MaybeFalseOptions = {
 
 function amend(optionsParam: Intl.DateTimeFormatOptions = {}, amended: MaybeFalseOptions = {}) {
   const options = ObjectAssign({}, optionsParam);
-  for (const opt of [
+  const props = [
     'year',
     'month',
     'day',
@@ -338,7 +374,9 @@ function amend(optionsParam: Intl.DateTimeFormatOptions = {}, amended: MaybeFals
     'timeZoneName',
     'dateStyle',
     'timeStyle'
-  ] as const) {
+  ] as const;
+  for (let i = 0; i < props.length; i++) {
+    const opt = props[i];
     // TODO: can this be typed more cleanly?
     type OptionMaybeFalse = (typeof options)[typeof opt] | false;
     (options[opt] as OptionMaybeFalse) = opt in amended ? amended[opt] : options[opt];
@@ -390,7 +428,7 @@ function yearMonthAmend(optionsParam: OptionsType<Temporal.PlainYearMonth>) {
   if ('dateStyle' in options && options.dateStyle) {
     const style = options.dateStyle;
     delete options.dateStyle;
-    Object.assign(options, dateStyleHacks[style]);
+    ObjectAssign(options, dateStyleHacks[style]);
   }
   if (!('year' in options || 'month' in options)) {
     options = ObjectAssign(options, { year: 'numeric', month: 'numeric' });
@@ -419,7 +457,7 @@ function monthDayAmend(optionsParam: OptionsType<Temporal.PlainMonthDay>) {
   if ('dateStyle' in options && options.dateStyle) {
     const style = options.dateStyle;
     delete options.dateStyle;
-    Object.assign(options, dateStyleHacks[style]);
+    ObjectAssign(options, dateStyleHacks[style]);
   }
   if (!('month' in options || 'day' in options)) {
     options = ObjectAssign({}, options, { month: 'numeric', day: 'numeric' });

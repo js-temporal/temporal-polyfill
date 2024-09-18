@@ -1,3 +1,13 @@
+import {
+  // error constructors
+  RangeError as RangeError,
+  TypeError as TypeError,
+
+  // class static functions and methods
+  ObjectDefineProperty,
+  SymbolToStringTag
+} from './primordials';
+
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
@@ -25,8 +35,8 @@ export class Instant implements Temporal.Instant {
     if (DEBUG) {
       const iso = ES.GetISOPartsFromEpoch(ns);
       const repr = ES.TemporalDateTimeToString(iso, 'iso8601', 'auto', 'never') + 'Z';
-      Object.defineProperty(this, '_repr_', {
-        value: `${this[Symbol.toStringTag]} <${repr}>`,
+      ObjectDefineProperty(this, '_repr_', {
+        value: `${this[SymbolToStringTag]} <${repr}>`,
         writable: false,
         enumerable: false,
         configurable: false

@@ -1,3 +1,5 @@
+import { Error as Error, RangeError as RangeError, TypeError as TypeError, ObjectCreate } from './primordials';
+
 import * as ES from './ecmascript';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import {
@@ -21,7 +23,6 @@ import JSBI from 'jsbi';
 import { MILLION, HOUR_NANOS, BigIntFloorDiv } from './bigintmath';
 
 const customResolvedOptions = DateTimeFormat.prototype.resolvedOptions as Intl.DateTimeFormat['resolvedOptions'];
-const ObjectCreate = Object.create;
 
 export class ZonedDateTime implements Temporal.ZonedDateTime {
   constructor(epochNanosecondsParam: bigint | JSBI, timeZoneParam: string, calendarParam = 'iso8601') {

@@ -1,16 +1,18 @@
+import {
+  MathAbs,
+  MathLog10,
+  MathSign,
+  MathTrunc,
+  NumberParseInt,
+  NumberPrototypeToPrecision,
+  ReflectApply,
+  StringPrototypePadStart,
+  StringPrototypeRepeat,
+  StringPrototypeSlice
+} from './primordials';
+
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
-
-const MathAbs = Math.abs;
-const MathLog10 = Math.log10;
-const MathSign = Math.sign;
-const MathTrunc = Math.trunc;
-const NumberParseInt = Number.parseInt;
-const NumberPrototypeToPrecision = Number.prototype.toPrecision;
-const StringPrototypePadStart = String.prototype.padStart;
-const StringPrototypeRepeat = String.prototype.repeat;
-const StringPrototypeSlice = String.prototype.slice;
-const ReflectApply = Reflect.apply;
 
 // Computes trunc(x / 10**p) and x % 10**p, returning { div, mod }, with
 // precision loss only once in the quotient, by string manipulation. If the
