@@ -1,17 +1,17 @@
 import {
   // constructors and similar
-  Date as Date,
-  Map as Map,
-  Number as Number,
-  RegExp as RegExp,
-  Set as Set,
-  String as String,
-  Symbol as Symbol,
+  Date as DateCtor,
+  Map as MapCtor,
+  Number as NumberCtor,
+  RegExp as RegExpCtor,
+  Set as SetCtor,
+  String as StringCtor,
+  Symbol as SymbolCtor,
 
   // error constructors
-  Error as Error,
-  RangeError as RangeError,
-  TypeError as TypeError,
+  Error as ErrorCtor,
+  RangeError as RangeErrorCtor,
+  TypeError as TypeErrorCtor,
 
   // class static functions and methods
   ArrayPrototypeConcat,
@@ -195,7 +195,7 @@ const BUILTIN_CALENDAR_IDS = [
   'gregory'
 ];
 
-const ICU_LEGACY_TIME_ZONE_IDS = new Set([
+const ICU_LEGACY_TIME_ZONE_IDS = new SetCtor([
   'ACT',
   'AET',
   'AGT',
@@ -285,7 +285,7 @@ export function ToNumber(value: unknown): number {
   // we'll leave ToNumber as-is.
   // See https://github.com/ljharb/es-abstract/blob/main/2022/ToNumber.js
   if (typeof value === 'bigint') throw new TypeError('Cannot convert BigInt to number');
-  return Number(value);
+  return NumberCtor(value);
 }
 
 function IsIntegralNumber(argument: unknown) {
@@ -307,7 +307,7 @@ export function ToIntegerWithTruncation(value: unknown): number {
   const number = ToNumber(value);
   if (number === 0) return 0;
   if (NumberIsNaN(number) || !NumberIsFinite(number)) {
-    throw new RangeError('invalid number value');
+    throw new RangeErrorCtor('invalid number value');
   }
   const integer = MathTrunc(number);
   if (integer === 0) return 0; // ℝ(value) in spec text; converts -0 to 0
@@ -318,17 +318,17 @@ function ToPositiveIntegerWithTruncation(valueParam: unknown, property?: string)
   const integer = ToIntegerWithTruncation(valueParam);
   if (integer <= 0) {
     if (property !== undefined) {
-      throw new RangeError(`property '${property}' cannot be a a number less than one`);
+      throw new RangeErrorCtor(`property '${property}' cannot be a a number less than one`);
     }
-    throw new RangeError('Cannot convert a number less than one to a positive integer');
+    throw new RangeErrorCtor('Cannot convert a number less than one to a positive integer');
   }
   return integer;
 }
 
 export function ToIntegerIfIntegral(valueParam: unknown): number {
   const number = ToNumber(valueParam);
-  if (!NumberIsFinite(number)) throw new RangeError('infinity is out of range');
-  if (!IsIntegralNumber(number)) throw new RangeError(`unsupported fractional value ${valueParam}`);
+  if (!NumberIsFinite(number)) throw new RangeErrorCtor('infinity is out of range');
+  if (!IsIntegralNumber(number)) throw new RangeErrorCtor(`unsupported fractional value ${valueParam}`);
   if (number === 0) return 0; // ℝ(value) in spec text; converts -0 to 0
   return number;
 }
@@ -348,7 +348,7 @@ function ToZeroPaddedDecimalString(n: number, minLength: number) {
 export function RequireString(value: unknown): string {
   if (typeof value !== 'string') {
     // Use String() to ensure that Symbols won't throw
-    throw new TypeError(`expected a string, not ${String(value)}`);
+    throw new TypeErrorCtor(`expected a string, not ${StringCtor(value)}`);
   }
   return value;
 }
@@ -356,7 +356,7 @@ export function RequireString(value: unknown): string {
 // This function is an enum in the spec, but it's helpful to make it a
 // function in the polyfill.
 function ToPrimitiveAndRequireString(valueParam: unknown): string {
-  const value = ToPrimitive(valueParam, String);
+  const value = ToPrimitive(valueParam, StringCtor);
   return RequireString(value);
 }
 
@@ -390,7 +390,7 @@ const CALENDAR_FIELD_KEYS: readonly FieldKey[] = [
 ] as const;
 
 type BuiltinCastFunction = (v: unknown) => string | number;
-const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
+const BUILTIN_CASTS = new MapCtor<AnyTemporalKey, BuiltinCastFunction>([
   ['era', ToString],
   ['eraYear', ToIntegerWithTruncation],
   ['year', ToIntegerWithTruncation],
@@ -407,7 +407,7 @@ const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
   ['timeZone', ToTemporalTimeZoneIdentifier]
 ]);
 
-const BUILTIN_DEFAULTS = new Map([
+const BUILTIN_DEFAULTS = new MapCtor([
   ['hour', 0],
   ['minute', 0],
   ['second', 0],
@@ -430,17 +430,19 @@ const TEMPORAL_UNITS = [
   ['microseconds', 'microsecond', 'time', 1e3],
   ['nanoseconds', 'nanosecond', 'time', 1]
 ] as const;
-const SINGULAR_FOR = new Map(
+const SINGULAR_FOR = new MapCtor(
   Call(ArrayPrototypeMap, TEMPORAL_UNITS, [(e: TemporalUnitsEntry) => [e[0], e[1]] as const])
 );
 // Iterable destructuring is acceptable in this first-run code.
-const PLURAL_FOR = new Map(Call(ArrayPrototypeMap, TEMPORAL_UNITS, [([p, s]: TemporalUnitsEntry) => [s, p] as const]));
+const PLURAL_FOR = new MapCtor(
+  Call(ArrayPrototypeMap, TEMPORAL_UNITS, [([p, s]: TemporalUnitsEntry) => [s, p] as const])
+);
 const UNITS_DESCENDING = Call(ArrayPrototypeMap, TEMPORAL_UNITS, [([, s]) => s]);
 type TimeUnitOrDay = Temporal.TimeUnit | 'day';
 // Utility type whose `get` is only callable using valid keys, and that therefore
 // omits `undefined` from its result.
 type ConstMap<K, V> = Omit<ReadonlyMap<K, V>, 'get'> & { get(key: K): V };
-const NS_PER_TIME_UNIT = new Map(
+const NS_PER_TIME_UNIT = new MapCtor(
   Call(ArrayPrototypeFlatMap, TEMPORAL_UNITS, [([, s, , l]: TemporalUnitsEntry) => (l ? [[s, l] as const] : [])])
 ) as ConstMap<TimeUnitOrDay, number>;
 
@@ -459,7 +461,7 @@ const DURATION_FIELDS = [
 
 import * as PARSE from './regex';
 
-const IntlDateTimeFormatEnUsCache = new Map<string, Intl.DateTimeFormat>();
+const IntlDateTimeFormatEnUsCache = new MapCtor<string, Intl.DateTimeFormat>();
 
 function getIntlDateTimeFormatEnUsForTimeZone(timeZoneIdentifier: string) {
   const lowercaseIdentifier = ASCIILowercase(timeZoneIdentifier);
@@ -554,16 +556,16 @@ export function IsTemporalZonedDateTime(item: unknown): item is Temporal.ZonedDa
 }
 export function RejectTemporalLikeObject(item: AnyTemporalLikeType) {
   if (HasSlot(item, CALENDAR) || HasSlot(item, TIME_ZONE)) {
-    throw new TypeError('with() does not support a calendar or timeZone property');
+    throw new TypeErrorCtor('with() does not support a calendar or timeZone property');
   }
   if (IsTemporalTime(item)) {
-    throw new TypeError('with() does not accept Temporal.PlainTime, use withPlainTime() instead');
+    throw new TypeErrorCtor('with() does not accept Temporal.PlainTime, use withPlainTime() instead');
   }
   if ((item as { calendar: unknown }).calendar !== undefined) {
-    throw new TypeError('with() does not support a calendar property');
+    throw new TypeErrorCtor('with() does not support a calendar property');
   }
   if ((item as { timeZone: unknown }).timeZone !== undefined) {
-    throw new TypeError('with() does not support a timeZone property');
+    throw new TypeErrorCtor('with() does not support a timeZone property');
   }
 }
 
@@ -599,10 +601,12 @@ function processAnnotations(annotations: string) {
         calendar = value;
         calendarWasCritical = critical === '!';
       } else if (critical === '!' || calendarWasCritical) {
-        throw new RangeError(`Invalid annotations in ${annotations}: more than one u-ca present with critical flag`);
+        throw new RangeErrorCtor(
+          `Invalid annotations in ${annotations}: more than one u-ca present with critical flag`
+        );
       }
     } else if (critical === '!') {
-      throw new RangeError(`Unrecognized annotation: !${key}=${value}`);
+      throw new RangeErrorCtor(`Unrecognized annotation: !${key}=${value}`);
     }
   }
   return calendar;
@@ -611,10 +615,10 @@ function processAnnotations(annotations: string) {
 function ParseISODateTime(isoString: string) {
   // ZDT is the superset of fields for every other Temporal type
   const match = Call(RegExpPrototypeExec, PARSE.zoneddatetime, [isoString]);
-  if (!match) throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
+  if (!match) throw new RangeErrorCtor(`invalid ISO 8601 string: ${isoString}`);
   const calendar = processAnnotations(match[16]);
   let yearString = match[1];
-  if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
+  if (yearString === '-000000') throw new RangeErrorCtor(`invalid ISO 8601 string: ${isoString}`);
   const year = +yearString;
   const month = +(match[2] ?? match[4] ?? 1);
   const day = +(match[3] ?? match[5] ?? 1);
@@ -652,14 +656,14 @@ function ParseISODateTime(isoString: string) {
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalInstantString(isoString: string) {
   const result = ParseISODateTime(isoString);
-  if (!result.z && !result.offset) throw new RangeError('Temporal.Instant requires a time zone offset');
+  if (!result.z && !result.offset) throw new RangeErrorCtor('Temporal.Instant requires a time zone offset');
   return result;
 }
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalZonedDateTimeString(isoString: string) {
   const result = ParseISODateTime(isoString);
-  if (!result.tzAnnotation) throw new RangeError('Temporal.ZonedDateTime requires a time zone ID in brackets');
+  if (!result.tzAnnotation) throw new RangeErrorCtor('Temporal.ZonedDateTime requires a time zone ID in brackets');
   return result;
 }
 
@@ -687,11 +691,11 @@ export function ParseTemporalTimeString(isoString: string) {
     millisecond = +Call(StringPrototypeSlice, fraction, [0, 3]);
     microsecond = +Call(StringPrototypeSlice, fraction, [3, 6]);
     nanosecond = +Call(StringPrototypeSlice, fraction, [6, 9]);
-    if (match[8]) throw new RangeError('Z designator not supported for PlainTime');
+    if (match[8]) throw new RangeErrorCtor('Z designator not supported for PlainTime');
   } else {
     const { time, z } = ParseISODateTime(isoString);
-    if (time === 'start-of-day') throw new RangeError(`time is missing in string: ${isoString}`);
-    if (z) throw new RangeError('Z designator not supported for PlainTime');
+    if (time === 'start-of-day') throw new RangeErrorCtor(`time is missing in string: ${isoString}`);
+    if (z) throw new RangeErrorCtor('Z designator not supported for PlainTime');
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = time);
   }
   // if it's a date-time string, OK
@@ -709,7 +713,7 @@ export function ParseTemporalTimeString(isoString: string) {
       return { hour, minute, second, millisecond, microsecond, nanosecond };
     }
   }
-  throw new RangeError(`invalid ISO 8601 time-only string ${isoString}; may need a T prefix`);
+  throw new RangeErrorCtor(`invalid ISO 8601 time-only string ${isoString}; may need a T prefix`);
 }
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
@@ -719,17 +723,17 @@ export function ParseTemporalYearMonthString(isoString: string) {
   if (match) {
     calendar = processAnnotations(match[3]);
     let yearString = match[1];
-    if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
+    if (yearString === '-000000') throw new RangeErrorCtor(`invalid ISO 8601 string: ${isoString}`);
     year = +yearString;
     month = +match[2];
     referenceISODay = 1;
     if (calendar !== undefined && calendar !== 'iso8601') {
-      throw new RangeError('YYYY-MM format is only valid with iso8601 calendar');
+      throw new RangeErrorCtor('YYYY-MM format is only valid with iso8601 calendar');
     }
   } else {
     let z;
     ({ year, month, calendar, day: referenceISODay, z } = ParseISODateTime(isoString));
-    if (z) throw new RangeError('Z designator not supported for PlainYearMonth');
+    if (z) throw new RangeErrorCtor('Z designator not supported for PlainYearMonth');
   }
   return { year, month, calendar, referenceISODay };
 }
@@ -743,18 +747,18 @@ export function ParseTemporalMonthDayString(isoString: string) {
     month = +match[1];
     day = +match[2];
     if (calendar !== undefined && calendar !== 'iso8601') {
-      throw new RangeError('MM-DD format is only valid with iso8601 calendar');
+      throw new RangeErrorCtor('MM-DD format is only valid with iso8601 calendar');
     }
   } else {
     let z;
     ({ month, day, calendar, year: referenceISOYear, z } = ParseISODateTime(isoString));
-    if (z) throw new RangeError('Z designator not supported for PlainMonthDay');
+    if (z) throw new RangeErrorCtor('Z designator not supported for PlainMonthDay');
   }
   return { month, day, calendar, referenceISOYear };
 }
 
-const TIMEZONE_IDENTIFIER = new RegExp(`^${PARSE.timeZoneID.source}$`, 'i');
-const OFFSET_IDENTIFIER = new RegExp(`^${PARSE.offsetIdentifier.source}$`);
+const TIMEZONE_IDENTIFIER = new RegExpCtor(`^${PARSE.timeZoneID.source}$`, 'i');
+const OFFSET_IDENTIFIER = new RegExpCtor(`^${PARSE.offsetIdentifier.source}$`);
 
 function throwBadTimeZoneStringError(timeZoneString: string): never {
   // Offset identifiers only support minute precision, but offsets in ISO
@@ -764,7 +768,7 @@ function throwBadTimeZoneStringError(timeZoneString: string): never {
   const msg = Call(RegExpPrototypeTest, OFFSET, [timeZoneString])
     ? 'Seconds not allowed in offset time zone'
     : 'Invalid time zone';
-  throw new RangeError(`${msg}: ${timeZoneString}`);
+  throw new RangeErrorCtor(`${msg}: ${timeZoneString}`);
 }
 
 export function ParseTimeZoneIdentifier(
@@ -811,15 +815,15 @@ function ParseTemporalTimeZoneString(stringIdent: string): ReturnType<typeof Par
   if (tzAnnotation) return ParseTimeZoneIdentifier(tzAnnotation);
   if (z) return ParseTimeZoneIdentifier('UTC');
   if (offset) return ParseTimeZoneIdentifier(offset);
-  throw new Error('this line should not be reached');
+  throw new ErrorCtor('this line should not be reached');
 }
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalDurationString(isoString: string) {
   const match = Call(RegExpPrototypeExec, PARSE.duration, [isoString]);
-  if (!match) throw new RangeError(`invalid duration: ${isoString}`);
+  if (!match) throw new RangeErrorCtor(`invalid duration: ${isoString}`);
   if (Call(ArrayPrototypeEvery, match, [(part, i) => i < 2 || part === undefined])) {
-    throw new RangeError(`invalid duration: ${isoString}`);
+    throw new RangeErrorCtor(`invalid duration: ${isoString}`);
   }
   const sign = match[1] === '-' ? -1 : 1;
   const years = match[2] === undefined ? 0 : ToIntegerWithTruncation(match[2]) * sign;
@@ -839,14 +843,14 @@ export function ParseTemporalDurationString(isoString: string) {
 
   if (fHours !== undefined) {
     if (minutesStr ?? fMinutes ?? secondsStr ?? fSeconds ?? false) {
-      throw new RangeError('only the smallest unit can be fractional');
+      throw new RangeErrorCtor('only the smallest unit can be fractional');
     }
     excessNanoseconds = ToIntegerWithTruncation(Call(StringPrototypeSlice, fHours + '000000000', [0, 9])) * 3600 * sign;
   } else {
     minutes = minutesStr === undefined ? 0 : ToIntegerWithTruncation(minutesStr) * sign;
     if (fMinutes !== undefined) {
       if (secondsStr ?? fSeconds ?? false) {
-        throw new RangeError('only the smallest unit can be fractional');
+        throw new RangeErrorCtor('only the smallest unit can be fractional');
       }
       excessNanoseconds =
         ToIntegerWithTruncation(Call(StringPrototypeSlice, fMinutes + '000000000', [0, 9])) * 60 * sign;
@@ -977,7 +981,7 @@ function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
 
 export function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.DurationLike | string) {
   if (!IsObject(temporalDurationLike)) {
-    throw new TypeError('invalid duration-like');
+    throw new TypeErrorCtor('invalid duration-like');
   }
   const result: Record<(typeof DURATION_FIELDS)[number], number | undefined> = {
     years: undefined,
@@ -1001,7 +1005,7 @@ export function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.D
     }
   }
   if (!any) {
-    throw new TypeError('invalid duration-like');
+    throw new TypeErrorCtor('invalid duration-like');
   }
   return result;
 }
@@ -1106,17 +1110,17 @@ export function GetTemporalRoundingIncrementOption(options: { roundingIncrement?
   if (increment === undefined) return 1;
   const integerIncrement = ToIntegerWithTruncation(increment);
   if (integerIncrement < 1 || integerIncrement > 1e9) {
-    throw new RangeError(`roundingIncrement must be at least 1 and at most 1e9, not ${increment}`);
+    throw new RangeErrorCtor(`roundingIncrement must be at least 1 and at most 1e9, not ${increment}`);
   }
   return integerIncrement;
 }
 export function ValidateTemporalRoundingIncrement(increment: number, dividend: number, inclusive: boolean) {
   const maximum = inclusive ? dividend : dividend - 1;
   if (increment > maximum) {
-    throw new RangeError(`roundingIncrement must be at least 1 and less than ${maximum}, not ${increment}`);
+    throw new RangeErrorCtor(`roundingIncrement must be at least 1 and less than ${maximum}, not ${increment}`);
   }
   if (dividend % increment !== 0) {
-    throw new RangeError(`Rounding increment must divide evenly into ${dividend}`);
+    throw new RangeErrorCtor(`Rounding increment must divide evenly into ${dividend}`);
   }
 }
 
@@ -1127,13 +1131,13 @@ export function GetTemporalFractionalSecondDigitsOption(
   if (digitsValue === undefined) return 'auto';
   if (typeof digitsValue !== 'number') {
     if (ToString(digitsValue) !== 'auto') {
-      throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digitsValue}`);
+      throw new RangeErrorCtor(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digitsValue}`);
     }
     return 'auto';
   }
   const digitCount = MathFloor(digitsValue);
   if (!NumberIsFinite(digitCount) || digitCount < 0 || digitCount > 9) {
-    throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digitsValue}`);
+    throw new RangeErrorCtor(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digitsValue}`);
   }
   return digitCount as Exclude<Temporal.ToStringPrecisionOptions['fractionalSecondDigits'], 'auto'>;
 }
@@ -1183,7 +1187,7 @@ export function ToSecondsStringPrecisionRecord(
   }
 }
 
-export const REQUIRED = Symbol('~required~');
+export const REQUIRED = SymbolCtor('~required~');
 
 interface TemporalUnitOptionsBag {
   smallestUnit?: Temporal.PluralUnit<Temporal.DateTimeUnit> | Temporal.DateTimeUnit;
@@ -1255,7 +1259,7 @@ export function GetTemporalUnitValuedOption<
   }
   let retval = GetOption(options, key, allowedValues, defaultVal);
   if (retval === undefined && requiredOrDefault === REQUIRED) {
-    throw new RangeError(`${key} is required`);
+    throw new RangeErrorCtor(`${key} is required`);
   }
   // Coerce any plural units into their singular form
   if (Call(MapPrototypeHas, SINGULAR_FOR, [retval as Temporal.PluralUnit<Temporal.DateTimeUnit>])) {
@@ -1314,12 +1318,12 @@ export function GetTemporalRelativeToOption(options: {
       }
       matchMinutes = true;
     } else if (z) {
-      throw new RangeError(
+      throw new RangeErrorCtor(
         'Z designator not supported for PlainDate relativeTo; either remove the Z or add a bracketed time zone'
       );
     }
     if (!calendar) calendar = 'iso8601';
-    if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+    if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
     calendar = CanonicalizeCalendar(calendar);
   }
   if (timeZone === undefined) return { plainRelativeTo: CreateTemporalDate(year, month, day, calendar) };
@@ -1455,13 +1459,13 @@ export function PrepareCalendarFields<
       result[property] = castExists(Call(MapPrototypeGet, BUILTIN_CASTS, [property])(value));
     } else if (requiredFields !== 'partial') {
       if (Call(ArrayPrototypeIncludes, requiredFields, [property])) {
-        throw new TypeError(`required property '${property}' missing or undefined`);
+        throw new TypeErrorCtor(`required property '${property}' missing or undefined`);
       }
       result[property] = Call(MapPrototypeGet, BUILTIN_DEFAULTS, [property]);
     }
   }
   if (requiredFields === 'partial' && !any) {
-    throw new TypeError('no supported properties found');
+    throw new TypeErrorCtor('no supported properties found');
   }
   return result as unknown as PrepareCalendarFieldsReturn<FieldKeys, RequiredFields>;
 }
@@ -1495,7 +1499,7 @@ export function ToTemporalTimeRecord(
       result[field] = 0;
     }
   }
-  if (!any) throw new TypeError('invalid time-like');
+  if (!any) throw new TypeErrorCtor('invalid time-like');
   return result;
 }
 
@@ -1529,9 +1533,9 @@ export function ToTemporalDate(
     return CreateTemporalDate(year, month, day, calendar);
   }
   let { year, month, day, calendar, z } = ParseTemporalDateString(RequireString(item));
-  if (z) throw new RangeError('Z designator not supported for PlainDate');
+  if (z) throw new RangeErrorCtor('Z designator not supported for PlainDate');
   if (!calendar) calendar = 'iso8601';
-  if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+  if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
   calendar = CanonicalizeCalendar(calendar);
   uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
   GetTemporalOverflowOption(GetOptionsObject(options)); // validate and ignore
@@ -1609,7 +1613,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
   } else {
     let z;
     ({ year, month, day, time, calendar, z } = ParseTemporalDateTimeString(RequireString(item)));
-    if (z) throw new RangeError('Z designator not supported for PlainDateTime');
+    if (z) throw new RangeErrorCtor('Z designator not supported for PlainDateTime');
     if (time === 'start-of-day') {
       time = { hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
     }
@@ -1625,7 +1629,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
       time.nanosecond
     );
     if (!calendar) calendar = 'iso8601';
-    if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+    if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
     calendar = CanonicalizeCalendar(calendar);
     GetTemporalOverflowOption(GetOptionsObject(options));
   }
@@ -1660,7 +1664,7 @@ export function ToTemporalInstant(itemParam: InstantParams['from'][0]) {
       const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
       return new TemporalInstant(GetSlot(itemParam, EPOCHNANOSECONDS));
     }
-    item = ToPrimitive(itemParam, String);
+    item = ToPrimitive(itemParam, StringCtor);
   } else {
     item = itemParam;
   }
@@ -1716,14 +1720,14 @@ export function ToTemporalMonthDay(item: PlainMonthDayParams['from'][0], options
 
   let { month, day, referenceISOYear, calendar } = ParseTemporalMonthDayString(RequireString(item));
   if (calendar === undefined) calendar = 'iso8601';
-  if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+  if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
   calendar = CanonicalizeCalendar(calendar);
   uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
 
   GetTemporalOverflowOption(GetOptionsObject(options));
   if (referenceISOYear === undefined) {
     if (calendar !== 'iso8601') {
-      throw new Error(`assertion failed: missing year with non-"iso8601" calendar identifier ${calendar}`);
+      throw new ErrorCtor(`assertion failed: missing year with non-"iso8601" calendar identifier ${calendar}`);
     }
     const isoCalendarReferenceYear = 1972; // First leap year after Unix epoch
     return CreateTemporalMonthDay(month, day, calendar, isoCalendarReferenceYear);
@@ -1808,7 +1812,7 @@ export function ToTemporalYearMonth(
 
   let { year, month, referenceISODay, calendar } = ParseTemporalYearMonthString(RequireString(item));
   if (calendar === undefined) calendar = 'iso8601';
-  if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+  if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
   calendar = CanonicalizeCalendar(calendar);
   uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
 
@@ -1837,7 +1841,7 @@ export function InterpretISODateTimeOffset(
   // behaviour collapses into ~WALL~, which is equivalent to offset: "ignore".
   if (time === 'start-of-day') {
     if (offsetBehaviour !== 'wall' || offsetNs !== 0) {
-      throw new Error('assertion failure: offset cannot be provided in YYYY-MM-DD[Zone] string');
+      throw new ErrorCtor('assertion failure: offset cannot be provided in YYYY-MM-DD[Zone] string');
     }
     return GetStartOfDay(timeZone, { year, month, day });
   }
@@ -1900,7 +1904,7 @@ export function InterpretISODateTimeOffset(
   if (offsetOpt === 'reject') {
     const offsetStr = FormatUTCOffsetNanoseconds(offsetNs);
     const dtStr = TemporalDateTimeToString(dt, 'iso8601', 'auto');
-    throw new RangeError(`Offset ${offsetStr} is invalid for ${dtStr} in ${timeZone}`);
+    throw new RangeErrorCtor(`Offset ${offsetStr} is invalid for ${dtStr} in ${timeZone}`);
   }
   // fall through: offsetOpt === 'prefer', but the offset doesn't match
   // so fall back to use the time zone instead.
@@ -1953,7 +1957,7 @@ export function ToTemporalZonedDateTime(
       offsetBehaviour = 'wall';
     }
     if (!calendar) calendar = 'iso8601';
-    if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+    if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
     calendar = CanonicalizeCalendar(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
     const options = GetOptionsObject(optionsParam);
@@ -2318,7 +2322,7 @@ export function ToTemporalCalendarIdentifier(calendarLike: Temporal.CalendarLike
     }
   }
   if (!calendar) calendar = 'iso8601';
-  if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
+  if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
   return CanonicalizeCalendar(calendar);
 }
 
@@ -2365,7 +2369,7 @@ export function ToTemporalTimeZoneIdentifier(temporalTimeZoneLike: unknown): str
   }
   // if offsetMinutes is undefined, then tzName must be present
   const record = GetAvailableNamedTimeZoneIdentifier(castExists(tzName));
-  if (!record) throw new RangeError(`Unrecognized time zone ${tzName}`);
+  if (!record) throw new RangeErrorCtor(`Unrecognized time zone ${tzName}`);
   return record.identifier;
 }
 
@@ -2463,12 +2467,12 @@ function DisambiguatePossibleEpochNanoseconds(
       case 'later':
         return possibleEpochNs[numInstants - 1];
       case 'reject': {
-        throw new RangeError('multiple instants found');
+        throw new RangeErrorCtor('multiple instants found');
       }
     }
   }
 
-  if (disambiguation === 'reject') throw new RangeError('multiple instants found');
+  if (disambiguation === 'reject') throw new RangeErrorCtor('multiple instants found');
   const {
     year,
     month,
@@ -2490,7 +2494,7 @@ function DisambiguatePossibleEpochNanoseconds(
   const offsetAfter = GetOffsetNanosecondsFor(timeZone, dayAfter);
   const nanoseconds = offsetAfter - offsetBefore;
   if (MathAbs(nanoseconds) > DAY_NANOS) {
-    throw new Error('assertion failure: UTC offset shift longer than 24 hours');
+    throw new ErrorCtor('assertion failure: UTC offset shift longer than 24 hours');
   }
 
   switch (disambiguation) {
@@ -2555,7 +2559,7 @@ export function GetStartOfDay(timeZone: string, isoDate: ISODate) {
   // Otherwise, 00:00:00 lies within a DST gap. Compute an epochNs that's
   // guaranteed to be before the transition
   if (IsOffsetTimeZoneIdentifier(timeZone)) {
-    throw new Error('assertion failure: should only be reached with named time zone');
+    throw new ErrorCtor('assertion failure: should only be reached with named time zone');
   }
 
   const utcns = GetUTCEpochNanoseconds(isoDate.year, isoDate.month, isoDate.day, 0, 0, 0, 0, 0, 0);
@@ -2776,7 +2780,7 @@ export function IsOffsetTimeZoneIdentifier(string: string): boolean {
 export function ParseDateTimeUTCOffset(string: string): number {
   const match = Call(RegExpPrototypeExec, OFFSET_WITH_PARTS, [string]);
   if (!match) {
-    throw new RangeError(`invalid time zone offset: ${string}`);
+    throw new RangeErrorCtor(`invalid time zone offset: ${string}`);
   }
   const sign = match[1] === '-' ? -1 : +1;
   const hours = +match[2];
@@ -2799,7 +2803,7 @@ export function GetAvailableNamedTimeZoneIdentifier(
   if (canonicalTimeZoneIdsCache === undefined) {
     const canonicalTimeZoneIds = IntlSupportedValuesOf?.('timeZone');
     if (canonicalTimeZoneIds) {
-      canonicalTimeZoneIdsCache = new Map();
+      canonicalTimeZoneIdsCache = new MapCtor();
       for (let ix = 0; ix < canonicalTimeZoneIds.length; ix++) {
         const id = canonicalTimeZoneIds[ix];
         Call(MapPrototypeSet, canonicalTimeZoneIdsCache, [ASCIILowercase(id), id]);
@@ -2828,7 +2832,9 @@ export function GetAvailableNamedTimeZoneIdentifier(
   // Reject them even if the implementation's Intl supports them, as they are
   // not present in the IANA time zone database.
   if (Call(SetPrototypeHas, ICU_LEGACY_TIME_ZONE_IDS, [identifier])) {
-    throw new RangeError(`${identifier} is a legacy time zone identifier from ICU. Use ${primaryIdentifier} instead`);
+    throw new RangeErrorCtor(
+      `${identifier} is a legacy time zone identifier from ICU. Use ${primaryIdentifier} instead`
+    );
   }
 
   // The identifier is an alias (a deprecated identifier that's a synonym for a
@@ -2937,7 +2943,7 @@ function GetUTCEpochNanoseconds(
 
   // Note: Date.UTC() interprets one and two-digit years as being in the
   // 20th century, so don't use it
-  const legacyDate = new Date();
+  const legacyDate = new DateCtor();
   Call(DatePrototypeSetUTCHours, legacyDate, [hour, minute, second, millisecond]);
   Call(DatePrototypeSetUTCFullYear, legacyDate, [reducedYear, month - 1, day]);
   const ms = Call(DatePrototypeGetTime, legacyDate, []);
@@ -2961,7 +2967,7 @@ export function GetISOPartsFromEpoch(epochNanoseconds: JSBI) {
   const microsecond = MathFloor(nanos / 1e3) % 1e3;
   const nanosecond = nanos % 1e3;
 
-  const item = new Date(epochMilliseconds);
+  const item = new DateCtor(epochMilliseconds);
   const year = Call(DatePrototypeGetUTCFullYear, item, []);
   const month = Call(DatePrototypeGetUTCMonth, item, []) + 1;
   const day = Call(DatePrototypeGetUTCDate, item, []);
@@ -3109,7 +3115,7 @@ export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
   const formatter = getIntlDateTimeFormatEnUsForTimeZone(timeZone);
   // Using `format` instead of `formatToParts` for compatibility with older clients
   const boundFormat = Call(IntlDateTimeFormatPrototypeGetFormat, formatter, []);
-  const datetime = Call(boundFormat, formatter, [new Date(epochMilliseconds)]);
+  const datetime = Call(boundFormat, formatter, [new DateCtor(epochMilliseconds)]);
   return parseFromEnUsFormat(datetime);
 }
 
@@ -3208,7 +3214,7 @@ export function DurationSign(
 function BalanceISOYearMonth(yearParam: number, monthParam: number) {
   let year = yearParam;
   let month = monthParam;
-  if (!NumberIsFinite(year) || !NumberIsFinite(month)) throw new RangeError('infinity is out of range');
+  if (!NumberIsFinite(year) || !NumberIsFinite(month)) throw new RangeErrorCtor('infinity is out of range');
   month -= 1;
   year += MathFloor(month / 12);
   month %= 12;
@@ -3221,7 +3227,7 @@ export function BalanceISODate(yearParam: number, monthParam: number, dayParam: 
   let year = yearParam;
   let month = monthParam;
   let day = dayParam;
-  if (!NumberIsFinite(day)) throw new RangeError('infinity is out of range');
+  if (!NumberIsFinite(day)) throw new RangeErrorCtor('infinity is out of range');
   ({ year, month } = BalanceISOYearMonth(year, month));
 
   // The pattern of leap years in the ISO 8601 calendar repeats every 400
@@ -3396,7 +3402,7 @@ export function BalanceTimeDuration(norm: TimeDuration, largestUnit: Temporal.Da
       seconds = 0;
       break;
     default:
-      throw new Error('assert not reached');
+      throw new ErrorCtor('assert not reached');
   }
 
   days *= sign;
@@ -3474,7 +3480,7 @@ function ConstrainTime(
 }
 
 export function RejectToRange(value: number, min: number, max: number) {
-  if (value < min || value > max) throw new RangeError(`value out of range: ${min} <= ${value} <= ${max}`);
+  if (value < min || value > max) throw new RangeErrorCtor(`value out of range: ${min} <= ${value} <= ${max}`);
 }
 
 function RejectISODate(year: number, month: number, day: number) {
@@ -3543,7 +3549,7 @@ export function RejectDateTimeRange(
 // place so that we can DRY the throwing code.
 export function ValidateEpochNanoseconds(epochNanoseconds: JSBI) {
   if (JSBI.lessThan(epochNanoseconds, NS_MIN) || JSBI.greaterThan(epochNanoseconds, NS_MAX)) {
-    throw new RangeError('date/time value is outside of supported range');
+    throw new RangeErrorCtor('date/time value is outside of supported range');
   }
 }
 
@@ -3572,12 +3578,14 @@ export function RejectDuration(
   const fields = [y, mon, w, d, h, min, s, ms, µs, ns];
   for (let index = 0; index < fields.length; index++) {
     const prop = fields[index];
-    if (!NumberIsFinite(prop)) throw new RangeError('infinite values not allowed as duration fields');
+    if (!NumberIsFinite(prop)) throw new RangeErrorCtor('infinite values not allowed as duration fields');
     const propSign = MathSign(prop);
-    if (propSign !== 0 && propSign !== sign) throw new RangeError('mixed-sign values not allowed as duration fields');
+    if (propSign !== 0 && propSign !== sign) {
+      throw new RangeErrorCtor('mixed-sign values not allowed as duration fields');
+    }
   }
   if (MathAbs(y) >= 2 ** 32 || MathAbs(mon) >= 2 ** 32 || MathAbs(w) >= 2 ** 32) {
-    throw new RangeError('years, months, and weeks must be < 2³²');
+    throw new RangeErrorCtor('years, months, and weeks must be < 2³²');
   }
   const msResult = TruncatingDivModByPowerOf10(ms, 3);
   const µsResult = TruncatingDivModByPowerOf10(µs, 6);
@@ -3585,7 +3593,7 @@ export function RejectDuration(
   const remainderSec = TruncatingDivModByPowerOf10(msResult.mod * 1e6 + µsResult.mod * 1e3 + nsResult.mod, 9).div;
   const totalSec = d * 86400 + h * 3600 + min * 60 + s + msResult.div + µsResult.div + nsResult.div + remainderSec;
   if (!NumberIsSafeInteger(totalSec)) {
-    throw new RangeError('total of duration time units cannot exceed 9007199254740991.999999999 s');
+    throw new RangeErrorCtor('total of duration time units cannot exceed 9007199254740991.999999999 s');
   }
 }
 
@@ -3598,7 +3606,7 @@ function CombineDateAndNormalizedTimeDuration(y: number, m: number, w: number, d
   const dateSign = DurationSign(y, m, w, d, 0, 0, 0, 0, 0, 0);
   const timeSign = norm.sign();
   if (dateSign !== 0 && timeSign !== 0 && dateSign !== timeSign) {
-    throw new RangeError('mixed-sign values not allowed as duration fields');
+    throw new RangeErrorCtor('mixed-sign values not allowed as duration fields');
   }
 }
 
@@ -3686,7 +3694,7 @@ function DifferenceTime(
   const nanoseconds = ns2 - ns1;
   const norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
 
-  if (norm.abs().sec >= 86400) throw new Error('assertion failure in DifferenceTime: _bt_.[[Days]] should be 0');
+  if (norm.abs().sec >= 86400) throw new ErrorCtor('assertion failure in DifferenceTime: _bt_.[[Days]] should be 0');
 
   return norm;
 }
@@ -3847,7 +3855,7 @@ function DifferenceZonedDateTime(
   }
 
   if (dayCorrection > maxDayCorrection) {
-    throw new Error(`assertion failed: more than ${maxDayCorrection} day correction needed`);
+    throw new ErrorCtor(`assertion failed: more than ${maxDayCorrection} day correction needed`);
   }
 
   // Output of the above loop
@@ -3921,11 +3929,11 @@ function NudgeToCalendarUnit(
       break;
     }
     default:
-      throw new Error('assert not reached');
+      throw new ErrorCtor('assert not reached');
   }
 
   if ((sign === 1 && (r1 < 0 || r1 >= r2)) || (sign === -1 && (r1 > 0 || r1 <= r2))) {
-    throw new Error('assertion failed: ordering of r1, r2 according to sign');
+    throw new ErrorCtor('assertion failed: ordering of r1, r2 according to sign');
   }
 
   // Apply to origin, output PlainDateTimes
@@ -3970,10 +3978,10 @@ function NudgeToCalendarUnit(
     (sign === 1 && (JSBI.greaterThan(startEpochNs, destEpochNs) || JSBI.greaterThan(destEpochNs, endEpochNs))) ||
     (sign === -1 && (JSBI.greaterThan(endEpochNs, destEpochNs) || JSBI.greaterThan(destEpochNs, startEpochNs)))
   ) {
-    throw new RangeError(`custom calendar reported a ${unit} that is 0 days long`);
+    throw new RangeErrorCtor(`custom calendar reported a ${unit} that is 0 days long`);
   }
   if (JSBI.equal(endEpochNs, startEpochNs)) {
-    throw new Error('assertion failed: startEpochNs ≠ endEpochNs');
+    throw new ErrorCtor('assertion failed: startEpochNs ≠ endEpochNs');
   }
   const numerator = TimeDuration.fromEpochNsDiff(destEpochNs, startEpochNs);
   const denominator = TimeDuration.fromEpochNsDiff(endEpochNs, startEpochNs);
@@ -3996,7 +4004,7 @@ function NudgeToCalendarUnit(
   );
   const total = fakeNumerator.fdiv(denominator.totalNs);
   if (MathAbs(total) < MathAbs(r1) || MathAbs(total) > MathAbs(r2)) {
-    throw new Error('assertion failed: r1 ≤ total ≤ r2');
+    throw new ErrorCtor('assertion failed: r1 ≤ total ≤ r2');
   }
 
   // Determine whether expanded or contracted
@@ -4047,7 +4055,7 @@ function NudgeToZonedTime(
 
   // The signed amount of time from the start of the whole-day interval to the end
   const daySpan = TimeDuration.fromEpochNsDiff(endEpochNs, startEpochNs);
-  if (daySpan.sign() !== sign) throw new RangeError('time zone returned inconsistent Instants');
+  if (daySpan.sign() !== sign) throw new RangeErrorCtor('time zone returned inconsistent Instants');
 
   // Compute time parts of the duration to nanoseconds and round
   // Result could be negative
@@ -4184,7 +4192,7 @@ function BubbleRelativeDuration(
         break;
       }
       default:
-        throw new Error('assert not reached');
+        throw new ErrorCtor('assert not reached');
     }
 
     // Compute end-of-unit in epoch-nanoseconds
@@ -4502,7 +4510,7 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
 
   let largestUnit = GetTemporalUnitValuedOption(options, 'largestUnit', group, 'auto');
   if (Call(ArrayPrototypeIncludes, disallowed, [largestUnit])) {
-    throw new RangeError(
+    throw new RangeErrorCtor(
       `largestUnit must be one of ${Call(ArrayPrototypeJoin, ALLOWED_UNITS, [', '])}, not ${largestUnit}`
     );
   }
@@ -4514,7 +4522,7 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
 
   const smallestUnit = GetTemporalUnitValuedOption(options, 'smallestUnit', group, fallbackSmallest);
   if (Call(ArrayPrototypeIncludes, disallowed, [smallestUnit])) {
-    throw new RangeError(
+    throw new RangeErrorCtor(
       `smallestUnit must be one of ${Call(ArrayPrototypeJoin, ALLOWED_UNITS, [', '])}, not ${smallestUnit}`
     );
   }
@@ -4522,7 +4530,7 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
   const defaultLargestUnit = LargerOfTwoTemporalUnits(smallestLargestDefaultUnit, smallestUnit);
   if (largestUnit === 'auto') largestUnit = defaultLargestUnit;
   if (LargerOfTwoTemporalUnits(largestUnit, smallestUnit) !== largestUnit) {
-    throw new RangeError(`largestUnit ${largestUnit} cannot be smaller than smallestUnit ${smallestUnit}`);
+    throw new RangeErrorCtor(`largestUnit ${largestUnit} cannot be smaller than smallestUnit ${smallestUnit}`);
   }
   const MAX_DIFFERENCE_INCREMENTS: { [k in Temporal.DateTimeUnit]?: number } = {
     hour: 24,
@@ -4589,7 +4597,7 @@ export function DifferenceTemporalPlainDate(
   const calendar = GetSlot(plainDate, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
   if (!CalendarEquals(calendar, otherCalendar)) {
-    throw new RangeError(`cannot compute difference between dates of ${calendar} and ${otherCalendar} calendars`);
+    throw new RangeErrorCtor(`cannot compute difference between dates of ${calendar} and ${otherCalendar} calendars`);
   }
 
   const resolvedOptions = GetOptionsObject(options);
@@ -4647,7 +4655,7 @@ export function DifferenceTemporalPlainDateTime(
   const calendar = GetSlot(plainDateTime, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
   if (!CalendarEquals(calendar, otherCalendar)) {
-    throw new RangeError(`cannot compute difference between dates of ${calendar} and ${otherCalendar} calendars`);
+    throw new RangeErrorCtor(`cannot compute difference between dates of ${calendar} and ${otherCalendar} calendars`);
   }
 
   const resolvedOptions = GetOptionsObject(options);
@@ -4768,7 +4776,7 @@ export function DifferenceTemporalPlainYearMonth(
   const calendar = GetSlot(yearMonth, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
   if (!CalendarEquals(calendar, otherCalendar)) {
-    throw new RangeError(`cannot compute difference between months of ${calendar} and ${otherCalendar} calendars`);
+    throw new RangeErrorCtor(`cannot compute difference between months of ${calendar} and ${otherCalendar} calendars`);
   }
 
   const resolvedOptions = GetOptionsObject(options);
@@ -4832,7 +4840,7 @@ export function DifferenceTemporalZonedDateTime(
   const calendar = GetSlot(zonedDateTime, CALENDAR);
   const otherCalendar = GetSlot(other, CALENDAR);
   if (!CalendarEquals(calendar, otherCalendar)) {
-    throw new RangeError(`cannot compute difference between dates of ${calendar} and ${otherCalendar} calendars`);
+    throw new RangeErrorCtor(`cannot compute difference between dates of ${calendar} and ${otherCalendar} calendars`);
   }
 
   const resolvedOptions = GetOptionsObject(options);
@@ -4869,7 +4877,7 @@ export function DifferenceTemporalZonedDateTime(
   } else {
     const timeZone = GetSlot(zonedDateTime, TIME_ZONE);
     if (!TimeZoneEquals(timeZone, GetSlot(other, TIME_ZONE))) {
-      throw new RangeError(
+      throw new RangeErrorCtor(
         "When calculating difference between time zones, largestUnit must be 'hours' " +
           'or smaller because day lengths can vary between time zones due to DST or time zone offset changes.'
       );
@@ -5049,7 +5057,9 @@ export function AddDurations(
   );
 
   if (IsCalendarUnit(largestUnit)) {
-    throw new RangeError('For years, months, or weeks arithmetic, use date arithmetic relative to a starting point');
+    throw new RangeErrorCtor(
+      'For years, months, or weeks arithmetic, use date arithmetic relative to a starting point'
+    );
   }
   const { days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
     norm1.add(norm2).add24HourDays(GetSlot(duration, DAYS) + GetSlot(other, DAYS)),
@@ -5068,7 +5078,7 @@ export function AddDurationToOrSubtractDurationFromInstant(
   if (operation === 'subtract') duration = CreateNegatedTemporalDuration(duration);
   const largestUnit = DefaultTemporalLargestUnit(duration);
   if (IsCalendarUnit(largestUnit) || largestUnit === 'day') {
-    throw new RangeError(
+    throw new RangeErrorCtor(
       `Duration field ${largestUnit} not supported by Temporal.Instant. Try Temporal.ZonedDateTime instead.`
     );
   }
@@ -5515,7 +5525,7 @@ export function ToBigInt(arg: unknown): JSBI {
   // The AO ToBigInt throws on numbers because it does not allow implicit
   // conversion between number and bigint (unlike the bigint constructor).
   if (typeof prim === 'number') {
-    throw new TypeError('cannot convert number to bigint');
+    throw new TypeErrorCtor('cannot convert number to bigint');
   }
   if (typeof prim === 'bigint') {
     // JSBI doesn't know anything about the bigint type, and intentionally
@@ -5558,7 +5568,9 @@ export function ComparisonResult(value: number) {
 export function GetOptionsObject<T>(options: T) {
   if (options === undefined) return ObjectCreate(null) as NonNullable<T>;
   if (IsObject(options) && options !== null) return options;
-  throw new TypeError(`Options parameter must be an object, not ${options === null ? 'null' : `${typeof options}`}`);
+  throw new TypeErrorCtor(
+    `Options parameter must be an object, not ${options === null ? 'null' : `${typeof options}`}`
+  );
 }
 
 export function CreateOnePropObject<K extends string, V>(propName: K, propValue: V): { [k in K]: V } {
@@ -5598,13 +5610,13 @@ function GetOption<
   if (value !== undefined) {
     value = ToString(value) as O[P];
     if (!Call(ArrayPrototypeIncludes, allowedValues, [value])) {
-      throw new RangeError(
+      throw new RangeErrorCtor(
         `${property} must be one of ${Call(ArrayPrototypeJoin, allowedValues, [', '])}, not ${value}`
       );
     }
     return value;
   }
-  if (fallback === REQUIRED) throw new RangeError(`${property} option is required`);
+  if (fallback === REQUIRED) throw new RangeErrorCtor(`${property} option is required`);
   return fallback;
 }
 
@@ -5664,7 +5676,7 @@ export function ValueOfThrows(constructorName: string): never {
       ? 'Temporal.PlainDate.compare(obj1.toPlainDate(year), obj2.toPlainDate(year))'
       : `Temporal.${constructorName}.compare(obj1, obj2)`;
 
-  throw new TypeError(
+  throw new TypeErrorCtor(
     'Do not use built-in arithmetic operators with Temporal objects. ' +
       `When comparing, use ${compareCode}, not obj1 > obj2. ` +
       "When coercing to strings, use `${obj}` or String(obj), not '' + obj. " +
@@ -5674,8 +5686,8 @@ export function ValueOfThrows(constructorName: string): never {
   );
 }
 
-const OFFSET = new RegExp(`^${PARSE.offset.source}$`);
-const OFFSET_WITH_PARTS = new RegExp(`^${PARSE.offsetWithParts.source}$`);
+const OFFSET = new RegExpCtor(`^${PARSE.offset.source}$`);
+const OFFSET_WITH_PARTS = new RegExpCtor(`^${PARSE.offsetWithParts.source}$`);
 
 function bisect(
   getState: (epochNs: JSBI) => number,
@@ -5699,7 +5711,7 @@ function bisect(
       right = middle;
       rstate = mstate;
     } else {
-      throw new Error(`invalid state in bisection ${lstate} - ${mstate} - ${rstate}`);
+      throw new ErrorCtor(`invalid state in bisection ${lstate} - ${mstate} - ${rstate}`);
     }
   }
   return right;

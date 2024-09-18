@@ -1,10 +1,10 @@
 import {
   // constructors and similar
-  Number as Number,
+  Number as NumberCtor,
 
   // error constructors
-  Error as Error,
-  RangeError as RangeError,
+  Error as ErrorCtor,
+  RangeError as RangeErrorCtor,
 
   // class static functions and methods
   ArrayPrototypeJoin,
@@ -48,17 +48,17 @@ export class TimeDuration {
 
   constructor(totalNs: bigint | JSBI) {
     this.totalNs = ensureJSBI(totalNs);
-    if (JSBI.greaterThan(abs(this.totalNs), TimeDuration.MAX)) throw new Error('assertion failed: integer too big');
+    if (JSBI.greaterThan(abs(this.totalNs), TimeDuration.MAX)) throw new ErrorCtor('assertion failed: integer too big');
 
     this.sec = JSBI.toNumber(JSBI.divide(this.totalNs, BILLION));
     this.subsec = JSBI.toNumber(JSBI.remainder(this.totalNs, BILLION));
-    if (!NumberIsSafeInteger(this.sec)) throw new Error('assertion failed: seconds too big');
-    if (MathAbs(this.subsec) > 999_999_999) throw new Error('assertion failed: subseconds too big');
+    if (!NumberIsSafeInteger(this.sec)) throw new ErrorCtor('assertion failed: seconds too big');
+    if (MathAbs(this.subsec) > 999_999_999) throw new ErrorCtor('assertion failed: subseconds too big');
   }
 
   static #validateNew(totalNs: JSBI, operation: string) {
     if (JSBI.greaterThan(abs(totalNs), TimeDuration.MAX)) {
-      throw new RangeError(`${operation} of duration time units cannot exceed ${TimeDuration.MAX} s`);
+      throw new RangeErrorCtor(`${operation} of duration time units cannot exceed ${TimeDuration.MAX} s`);
     }
     return new TimeDuration(totalNs);
   }
@@ -95,7 +95,7 @@ export class TimeDuration {
   }
 
   add24HourDays(days: number) {
-    if (!NumberIsInteger(days)) throw new Error('assertion failed: days is an integer');
+    if (!NumberIsInteger(days)) throw new ErrorCtor('assertion failed: days is an integer');
     return TimeDuration.#validateNew(JSBI.add(this.totalNs, JSBI.multiply(JSBI.BigInt(days), DAY_NANOS_JSBI)), 'sum');
   }
 
@@ -108,7 +108,7 @@ export class TimeDuration {
   }
 
   divmod(n: number) {
-    if (n === 0) throw new Error('division by zero');
+    if (n === 0) throw new ErrorCtor('division by zero');
     const { quotient, remainder } = divmod(this.totalNs, JSBI.BigInt(n));
     const q = JSBI.toNumber(quotient);
     const r = new TimeDuration(remainder);
@@ -117,7 +117,7 @@ export class TimeDuration {
 
   fdiv(nParam: JSBI | bigint) {
     const n = ensureJSBI(nParam);
-    if (JSBI.equal(n, ZERO)) throw new Error('division by zero');
+    if (JSBI.equal(n, ZERO)) throw new ErrorCtor('division by zero');
     const nBigInt = JSBI.BigInt(n);
     let { quotient, remainder } = divmod(this.totalNs, nBigInt);
 
@@ -132,7 +132,7 @@ export class TimeDuration {
       ({ quotient: digit, remainder } = divmod(remainder, nBigInt));
       ReflectApply(ArrayPrototypePush, decimalDigits, [MathAbs(JSBI.toNumber(digit))]);
     }
-    return sign * Number(abs(quotient).toString() + '.' + ReflectApply(ArrayPrototypeJoin, decimalDigits, ['']));
+    return sign * NumberCtor(abs(quotient).toString() + '.' + ReflectApply(ArrayPrototypeJoin, decimalDigits, ['']));
   }
 
   isZero() {
