@@ -1,3 +1,14 @@
+import {
+  WeakMap as WeakMap,
+
+  // class static functions and methods
+  ArrayPrototypeEvery,
+  ReflectApply,
+  SymbolFor,
+  WeakMapPrototypeGet,
+  WeakMapPrototypeSet
+} from './primordials';
+
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type { BuiltinCalendarId, AnySlottedType, FormatterOrAmender } from './internaltypes';
@@ -175,10 +186,10 @@ type SlotKey = keyof SlotsToTypes;
 const globalSlots = new WeakMap<Slots[keyof Slots]['usedBy'], Record<keyof Slots, Slots[keyof Slots]['value']>>();
 
 function _GetSlots(container: Slots[keyof Slots]['usedBy']) {
-  return globalSlots.get(container);
+  return ReflectApply(WeakMapPrototypeGet, globalSlots, [container]);
 }
 
-const GetSlotsSymbol = Symbol.for('@@Temporal__GetSlots');
+const GetSlotsSymbol = SymbolFor('@@Temporal__GetSlots');
 
 // expose GetSlots to avoid dual package hazards
 (globalThis as any)[GetSlotsSymbol] ||= _GetSlots;
@@ -186,10 +197,10 @@ const GetSlotsSymbol = Symbol.for('@@Temporal__GetSlots');
 const GetSlots = (globalThis as any)[GetSlotsSymbol] as typeof _GetSlots;
 
 function _CreateSlots(container: Slots[keyof Slots]['usedBy']): void {
-  globalSlots.set(container, Object.create(null));
+  ReflectApply(WeakMapPrototypeSet, globalSlots, [container, Object.create(null)]);
 }
 
-const CreateSlotsSymbol = Symbol.for('@@Temporal__CreateSlots');
+const CreateSlotsSymbol = SymbolFor('@@Temporal__CreateSlots');
 
 // expose CreateSlots to avoid dual package hazards
 (globalThis as any)[CreateSlotsSymbol] ||= _CreateSlots;
@@ -310,7 +321,7 @@ export function HasSlot<
 export function HasSlot(container: unknown, ...ids: (keyof Slots)[]): boolean {
   if (!container || 'object' !== typeof container) return false;
   const myslots = GetSlots(container as AnySlottedType);
-  return !!myslots && ids.every((id) => id in myslots);
+  return !!myslots && ReflectApply(ArrayPrototypeEvery, ids, [(id) => id in myslots]);
 }
 export function GetSlot<KeyT extends keyof Slots>(
   container: Slots[typeof id]['usedBy'],

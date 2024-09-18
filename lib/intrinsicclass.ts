@@ -1,3 +1,14 @@
+import {
+  ArrayPrototypeJoin,
+  ArrayPrototypePush,
+  ObjectDefineProperty,
+  ObjectGetOwnPropertyDescriptor,
+  ObjectGetOwnPropertyNames,
+  ReflectApply,
+  SymbolFor,
+  SymbolToStringTag
+} from './primordials';
+
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type { CalendarImpl } from './calendar';
@@ -60,8 +71,8 @@ const customUtilInspectFormatters: Partial<{
   ['Temporal.Duration'](depth, options) {
     const descr = options.stylize(this._repr_, 'special');
     if (depth < 1) return descr;
-    const entries = [];
-    for (const prop of [
+    const entries: string[] = [];
+    const props = [
       'years',
       'months',
       'weeks',
@@ -72,10 +83,14 @@ const customUtilInspectFormatters: Partial<{
       'milliseconds',
       'microseconds',
       'nanoseconds'
-    ] as const) {
-      if (this[prop] !== 0) entries.push(`  ${prop}: ${options.stylize(this[prop], 'number')}`);
+    ] as const;
+    for (let i = 0; i < props.length; i++) {
+      const prop = props[i];
+      if (this[prop] !== 0) {
+        ReflectApply(ArrayPrototypePush, entries, [`  ${prop}: ${options.stylize(this[prop], 'number')}`]);
+      }
     }
-    return descr + ' {\n' + entries.join(',\n') + '\n}';
+    return descr + ' {\n' + ReflectApply(ArrayPrototypeJoin, entries, [',\n']) + '\n}';
   }
 };
 
@@ -88,29 +103,33 @@ export function MakeIntrinsicClass(
   Class: TemporalIntrinsicRegistrations[typeof name],
   name: keyof TemporalIntrinsicRegistrations
 ) {
-  Object.defineProperty(Class.prototype, Symbol.toStringTag, {
+  ObjectDefineProperty(Class.prototype, SymbolToStringTag, {
     value: name,
     writable: false,
     enumerable: false,
     configurable: true
   });
   if (DEBUG) {
-    Object.defineProperty(Class.prototype, Symbol.for('nodejs.util.inspect.custom'), {
+    ObjectDefineProperty(Class.prototype, SymbolFor('nodejs.util.inspect.custom'), {
       value: customUtilInspectFormatters[name] || defaultUtilInspectFormatter,
       writable: false,
       enumerable: false,
       configurable: true
     });
   }
-  for (const prop of Object.getOwnPropertyNames(Class)) {
+  const staticNames = ObjectGetOwnPropertyNames(Class);
+  for (let i = 0; i < staticNames.length; i++) {
+    const prop = staticNames[i];
     // we know that `prop` is present, so the descriptor is never undefined
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const desc = Object.getOwnPropertyDescriptor(Class, prop)!;
+    const desc = ObjectGetOwnPropertyDescriptor(Class, prop)!;
     if (!desc.configurable || !desc.enumerable) continue;
     desc.enumerable = false;
     Object.defineProperty(Class, prop, desc);
   }
-  for (const prop of Object.getOwnPropertyNames(Class.prototype)) {
+  const protoNames = ObjectGetOwnPropertyNames(Class.prototype);
+  for (let i = 0; i < protoNames.length; i++) {
+    const prop = protoNames[i];
     // we know that `prop` is present, so the descriptor is never undefined
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
     const desc = Object.getOwnPropertyDescriptor(Class.prototype, prop)!;

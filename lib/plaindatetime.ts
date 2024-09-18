@@ -1,3 +1,5 @@
+import { RangeError as RangeError, TypeError as TypeError, ObjectCreate } from './primordials';
+
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 
