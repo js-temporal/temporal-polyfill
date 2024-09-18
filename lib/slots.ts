@@ -1,5 +1,5 @@
 import {
-  WeakMap as WeakMap,
+  WeakMap as WeakMapCtor,
 
   // class static functions and methods
   ArrayPrototypeEvery,
@@ -183,7 +183,7 @@ interface SlotsToTypes {
 
 type SlotKey = keyof SlotsToTypes;
 
-const globalSlots = new WeakMap<Slots[keyof Slots]['usedBy'], Record<keyof Slots, Slots[keyof Slots]['value']>>();
+const globalSlots = new WeakMapCtor<Slots[keyof Slots]['usedBy'], Record<keyof Slots, Slots[keyof Slots]['value']>>();
 
 function _GetSlots(container: Slots[keyof Slots]['usedBy']) {
   return ReflectApply(WeakMapPrototypeGet, globalSlots, [container]);
