@@ -5112,22 +5112,11 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
 ) {
   let duration = ToTemporalDuration(durationLike);
   if (operation === 'subtract') duration = CreateNegatedTemporalDuration(duration);
-  const years = GetSlot(duration, YEARS);
-  const months = GetSlot(duration, MONTHS);
-  const weeks = GetSlot(duration, WEEKS);
-  let days = GetSlot(duration, DAYS);
   const options = GetOptionsObject(optionsParam);
+  const normalizedDuration = NormalizeDurationWith24HourDays(duration);
   const overflow = GetTemporalOverflowOption(options);
   const sign = DurationSign(duration);
-  const norm = TimeDuration.normalize(
-    GetSlot(duration, HOURS),
-    GetSlot(duration, MINUTES),
-    GetSlot(duration, SECONDS),
-    GetSlot(duration, MILLISECONDS),
-    GetSlot(duration, MICROSECONDS),
-    GetSlot(duration, NANOSECONDS)
-  );
-  days += BalanceTimeDuration(norm, 'day').days;
+  const durationToAdd = { ...normalizedDuration.date, days: BalanceTimeDuration(normalizedDuration.norm, 'day').days };
 
   const calendar = GetSlot(yearMonth, CALENDAR);
   const fields: CalendarFieldsRecord = TemporalObjectToFields(yearMonth);
@@ -5138,7 +5127,7 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
     startDate = BalanceISODate(nextMonth.year, nextMonth.month, nextMonth.day - 1);
   }
   RejectDateRange(startDate.year, startDate.month, startDate.day);
-  const addedDate = CalendarDateAdd(calendar, startDate, { years, months, weeks, days }, overflow);
+  const addedDate = CalendarDateAdd(calendar, startDate, durationToAdd, overflow);
   const addedDateFields = ISODateToFields(calendar, addedDate, 'year-month');
 
   const { year, month, day } = CalendarYearMonthFromFields(calendar, addedDateFields, overflow);
