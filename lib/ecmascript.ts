@@ -4860,20 +4860,14 @@ export function DifferenceTemporalZonedDateTime(
     settings.largestUnit !== 'day'
   ) {
     // The user is only asking for a time difference, so return difference of instants.
-    const {
-      duration: { norm }
-    } = DifferenceInstant(
+    const { duration } = DifferenceInstant(
       ns1,
       ns2,
       settings.roundingIncrement,
       settings.smallestUnit as Temporal.TimeUnit,
       settings.roundingMode
     );
-    const { hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = BalanceTimeDuration(
-      norm,
-      settings.largestUnit
-    );
-    result = new Duration(0, 0, 0, 0, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
+    result = UnnormalizeDuration(duration, settings.largestUnit);
   } else {
     const timeZone = GetSlot(zonedDateTime, TIME_ZONE);
     if (!TimeZoneEquals(timeZone, GetSlot(other, TIME_ZONE))) {
