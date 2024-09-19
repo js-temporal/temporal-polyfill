@@ -3720,7 +3720,7 @@ export function DifferenceISODate<Allowed extends Temporal.DateTimeUnit>(
   largestUnit: Allowed
 ) {
   const sign = -CompareISODate(y1, m1, d1, y2, m2, d2);
-  if (sign === 0) return { years: 0, months: 0, weeks: 0, days: 0 };
+  if (sign === 0) return ZeroDateDuration();
   uncheckedAssertNarrowedType<-1 | 1>(sign, "the - operator's return type is number");
 
   let years = 0;
