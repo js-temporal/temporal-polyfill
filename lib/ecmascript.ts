@@ -4984,7 +4984,7 @@ export function AddDurations(
   return UnnormalizeDuration(result, largestUnit);
 }
 
-export function AddDurationToOrSubtractDurationFromInstant(
+export function AddDurationToInstant(
   operation: AddSubtractOperation,
   instant: Temporal.Instant,
   durationLike: InstantParams['add'][0]
@@ -5023,7 +5023,7 @@ export function AddDurationToDate(
   return CreateTemporalDate(addedDate.year, addedDate.month, addedDate.day, calendar);
 }
 
-export function AddDurationToOrSubtractDurationFromPlainDateTime(
+export function AddDurationToDateTime(
   operation: AddSubtractOperation,
   dateTime: Temporal.PlainDateTime,
   durationLike: PlainDateTimeParams['add'][0],
@@ -5075,7 +5075,7 @@ export function AddDurationToOrSubtractDurationFromPlainDateTime(
   );
 }
 
-export function AddDurationToOrSubtractDurationFromPlainTime(
+export function AddDurationToTime(
   operation: AddSubtractOperation,
   temporalTime: Temporal.PlainTime,
   durationLike: PlainTimeParams['add'][0]
@@ -5105,7 +5105,7 @@ export function AddDurationToOrSubtractDurationFromPlainTime(
   return new PlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
 }
 
-export function AddDurationToOrSubtractDurationFromPlainYearMonth(
+export function AddDurationToYearMonth(
   operation: AddSubtractOperation,
   yearMonth: Temporal.PlainYearMonth,
   durationLike: PlainYearMonthParams['add'][0],
@@ -5134,7 +5134,7 @@ export function AddDurationToOrSubtractDurationFromPlainYearMonth(
   return CreateTemporalYearMonth(year, month, calendar, day);
 }
 
-export function AddDurationToOrSubtractDurationFromZonedDateTime(
+export function AddDurationToZonedDateTime(
   operation: AddSubtractOperation,
   zonedDateTime: Temporal.ZonedDateTime,
   durationLike: ZonedDateTimeParams['add'][0],
