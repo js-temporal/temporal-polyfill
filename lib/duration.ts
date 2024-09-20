@@ -258,7 +258,7 @@ export class Duration implements Temporal.Duration {
       // Delegate the date part addition to the calendar
       const isoRelativeToDate = ES.TemporalObjectToISODateRecord(plainRelativeTo);
       const calendar = GetSlot(plainRelativeTo, CALENDAR);
-      const dateDuration = { ...duration.date, days: targetTime.deltaDays };
+      const dateDuration = ES.AdjustDateDurationRecord(duration.date, targetTime.deltaDays);
       const targetDate = ES.CalendarDateAdd(calendar, isoRelativeToDate, dateDuration, 'constrain');
 
       return ES.DifferencePlainDateTimeWithRounding(
@@ -340,7 +340,7 @@ export class Duration implements Temporal.Duration {
       // Delegate the date part addition to the calendar
       const isoRelativeToDate = ES.TemporalObjectToISODateRecord(plainRelativeTo);
       const calendar = GetSlot(plainRelativeTo, CALENDAR);
-      const dateDuration = { ...duration.date, days: targetTime.deltaDays };
+      const dateDuration = ES.AdjustDateDurationRecord(duration.date, targetTime.deltaDays);
       const targetDate = ES.CalendarDateAdd(calendar, isoRelativeToDate, dateDuration, 'constrain');
 
       const { total } = ES.DifferencePlainDateTimeWithRounding(
