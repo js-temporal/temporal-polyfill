@@ -616,7 +616,7 @@ abstract class HelperBase {
     // Translate old ICU era codes "ERA0" etc. into canonical era names.
     if (this.hasEra) {
       const replacement = ES.Call(ArrayPrototypeFind, this.eras, [(e) => result.era === e.genericName]);
-      if (replacement) result.era = replacement.name;
+      if (replacement) result.era = replacement.code;
     }
     // Translate eras that may be handled differently by Temporal vs. by Intl
     // (e.g. Japanese pre-Meiji eras). See https://github.com/tc39/proposal-temporal/issues/526.
@@ -1432,11 +1432,20 @@ class IndianHelper extends HelperBase {
  * encoded in the type, e.g. isoEpoch is required unless reverseOf is present.
  *  */
 interface InputEra {
-  /** name of the era */
-  name: string;
+  /**
+   * Era code, used to populate the 'era' field of Temporal instances.
+   * See https://tc39.es/proposal-intl-era-monthcode/#table-eras
+   */
+  code: string;
 
-  /** Aliases, see https://tc39.es/proposal-intl-era-monthcode/#table-eras */
-  aliases?: string[];
+  /**
+   * Names are additionally accepted as alternate era codes on input, and the
+   * first name is also output in error messages (and may be the era code if
+   * desired.)
+   * See https://tc39.es/proposal-intl-era-monthcode/#table-eras
+   * If absent, this field defaults to a single element matching the code.
+   */
+  names?: string[];
 
   /**
    * Signed calendar year where this era begins.Will be
@@ -1475,11 +1484,20 @@ interface InputEra {
  * `adjustEras()`
  * */
 interface Era {
-  /** name of the era */
-  name: string;
+  /**
+   * Era code, used to populate the 'era' field of Temporal instances.
+   * See https://tc39.es/proposal-intl-era-monthcode/#table-eras
+   */
+  code: string;
 
-  /** Aliases, see https://tc39.es/proposal-intl-era-monthcode/#table-eras */
-  aliases: string[];
+  /**
+   * Names are additionally accepted as alternate era codes on input, and the
+   * first name is also output in error messages (and may be the era code if
+   * desired.)
+   * See https://tc39.es/proposal-intl-era-monthcode/#table-eras
+   * If absent, this field defaults to a single element matching the code.
+   */
+  names: string[];
 
   /**
    * alternate name of the era used in old versions of ICU data
@@ -1536,7 +1554,7 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
   if (eras.length === 1 && eras[0].reverseOf) {
     throw new RangeErrorCtor('Invalid era data: anchor era cannot count years backwards');
   }
-  if (eras.length === 1 && !eras[0].name) {
+  if (eras.length === 1 && !eras[0].code) {
     throw new RangeErrorCtor('Invalid era data: at least one named era is required');
   }
   if (ES.Call(ArrayPrototypeFilter, eras, [(e) => e.reverseOf != null]).length > 1) {
@@ -1553,7 +1571,7 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
         if (anchorEra) throw new RangeErrorCtor('Invalid era data: cannot have multiple anchor eras');
         anchorEra = e;
         e.anchorEpoch = { year: e.hasYearZero ? 0 : 1 };
-      } else if (!e.name) {
+      } else if (!e.code) {
         throw new RangeErrorCtor('If era name is blank, it must be the anchor era');
       }
     }
@@ -1563,7 +1581,7 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
   // with eras at all. For example, Japanese `year` is always the same as ISO
   // `year`.  So this "era" is the anchor era but isn't used for era matching.
   // Strip it from the list that's returned.
-  eras = ES.Call(ArrayPrototypeFilter, eras, [(e) => e.name]);
+  eras = ES.Call(ArrayPrototypeFilter, eras, [(e) => e.code]);
 
   ES.Call(ArrayPrototypeForEach, eras, [
     (e) => {
@@ -1572,7 +1590,7 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
       // that's reversed.
       const { reverseOf } = e;
       if (reverseOf) {
-        const reversedEra = ES.Call(ArrayPrototypeFind, eras, [(era) => era.name === reverseOf]);
+        const reversedEra = ES.Call(ArrayPrototypeFind, eras, [(era) => era.code === reverseOf]);
         if (reversedEra === undefined) {
           throw new RangeErrorCtor(`Invalid era data: unmatched reverseOf era: ${reverseOf}`);
         }
@@ -1700,14 +1718,17 @@ abstract class GregorianBaseHelper extends HelperBase {
   completeEraYear(
     calendarDate: FullCalendarDate
   ): FullCalendarDate & Required<Pick<FullCalendarDate, 'era' | 'eraYear'>> {
-    const checkField = (name: keyof FullCalendarDate, value: string | number | undefined, aliases?: string[]) => {
-      const currentValue = calendarDate[name];
+    const checkField = (property: keyof FullCalendarDate, value: string | number | undefined, names?: string[]) => {
+      const currentValue = calendarDate[property];
       if (
         currentValue != null &&
         currentValue != value &&
-        !ES.Call(ArrayPrototypeIncludes, aliases || [], [currentValue])
+        !ES.Call(ArrayPrototypeIncludes, names || [], [currentValue])
       ) {
-        throw new RangeErrorCtor(`Input ${name} ${currentValue} doesn't match calculated value ${value}`);
+        // Prefer displaying an era alias, instead of "gregory-inverse"
+        const preferredName = names?.[0];
+        const expected = preferredName ? `${value} (also called ${preferredName})` : value;
+        throw new RangeErrorCtor(`Input ${name} ${currentValue} doesn't match calculated value ${expected}`);
       }
     };
     const eraFromYear = (year: number) => {
@@ -1737,19 +1758,19 @@ abstract class GregorianBaseHelper extends HelperBase {
         }
       ]);
       if (!matchingEra) throw new RangeError(`Year ${year} was not matched by any era`);
-      return { eraYear: eraYear as unknown as number, era: matchingEra.name, eraAliases: matchingEra.aliases };
+      return { eraYear: eraYear as unknown as number, era: matchingEra.code, eraNames: matchingEra.names };
     };
 
     let { year, eraYear, era } = calendarDate;
     if (year != null) {
       const matchData = eraFromYear(year);
       ({ eraYear, era } = matchData);
-      checkField('era', era, matchData?.eraAliases);
+      checkField('era', era, matchData?.eraNames);
       checkField('eraYear', eraYear);
     } else if (eraYear != null) {
       if (era === undefined) throw new RangeErrorCtor('era and eraYear must be provided together');
       const matchingEra = ES.Call(ArrayPrototypeFind, this.eras, [
-        ({ name, aliases = [] }) => name === era || ES.Call(ArrayPrototypeIncludes, aliases, [era])
+        ({ code, names = [] }) => code === era || ES.Call(ArrayPrototypeIncludes, names, [era])
       ]);
       if (!matchingEra) throw new RangeErrorCtor(`Era ${era} (ISO year ${eraYear}) was not matched by any era`);
       if (eraYear < 1 && matchingEra.reverseOf) {
@@ -1873,8 +1894,8 @@ class EthioaaHelper extends OrthodoxBaseHelperFixedEpoch {
 class CopticHelper extends OrthodoxBaseHelper {
   constructor() {
     super('coptic', [
-      { name: 'coptic', isoEpoch: { year: 284, month: 8, day: 29 } },
-      { name: 'coptic-inverse', reverseOf: 'coptic' }
+      { code: 'coptic', isoEpoch: { year: 284, month: 8, day: 29 } },
+      { code: 'coptic-inverse', reverseOf: 'coptic' }
     ]);
   }
 }
@@ -1884,8 +1905,8 @@ class CopticHelper extends OrthodoxBaseHelper {
 class EthiopicHelper extends OrthodoxBaseHelper {
   constructor() {
     super('ethiopic', [
-      { name: 'ethioaa', aliases: ['ethiopic-amete-alem', 'mundi'], isoEpoch: { year: -5492, month: 7, day: 17 } },
-      { name: 'ethiopic', aliases: ['incar'], isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
+      { code: 'ethioaa', names: ['ethiopic-amete-alem', 'mundi'], isoEpoch: { year: -5492, month: 7, day: 17 } },
+      { code: 'ethiopic', names: ['incar'], isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
     ]);
   }
 }
@@ -1893,8 +1914,8 @@ class EthiopicHelper extends OrthodoxBaseHelper {
 class RocHelper extends SameMonthDayAsGregorianBaseHelper {
   constructor() {
     super('roc', [
-      { name: 'roc', aliases: ['minguo'], isoEpoch: { year: 1912, month: 1, day: 1 } },
-      { name: 'roc-inverse', aliases: ['before-roc'], reverseOf: 'roc' }
+      { code: 'roc', names: ['minguo'], isoEpoch: { year: 1912, month: 1, day: 1 } },
+      { code: 'roc-inverse', names: ['before-roc'], reverseOf: 'roc' }
     ]);
   }
 }
@@ -1908,8 +1929,8 @@ class BuddhistHelper extends GregorianBaseHelperFixedEpoch {
 class GregoryHelper extends SameMonthDayAsGregorianBaseHelper {
   constructor() {
     super('gregory', [
-      { name: 'gregory', aliases: ['ad', 'ce'], isoEpoch: { year: 1, month: 1, day: 1 } },
-      { name: 'gregory-inverse', aliases: ['be', 'bce'], reverseOf: 'gregory' }
+      { code: 'gregory', names: ['ad', 'ce'], isoEpoch: { year: 1, month: 1, day: 1 } },
+      { code: 'gregory-inverse', names: ['be', 'bce'], reverseOf: 'gregory' }
     ]);
   }
   override reviseIntlEra<T extends Partial<EraAndEraYear>>(calendarDate: T /*, isoDate: IsoDate*/): T {
@@ -1964,13 +1985,13 @@ class JapaneseHelper extends SameMonthDayAsGregorianBaseHelper {
     super('japanese', [
       // The Japanese calendar `year` is just the ISO year, because (unlike other
       // ICU calendars) there's no obvious "default era", we use the ISO year.
-      { name: 'reiwa', isoEpoch: { year: 2019, month: 5, day: 1 }, anchorEpoch: { year: 2019, month: 5, day: 1 } },
-      { name: 'heisei', isoEpoch: { year: 1989, month: 1, day: 8 }, anchorEpoch: { year: 1989, month: 1, day: 8 } },
-      { name: 'showa', isoEpoch: { year: 1926, month: 12, day: 25 }, anchorEpoch: { year: 1926, month: 12, day: 25 } },
-      { name: 'taisho', isoEpoch: { year: 1912, month: 7, day: 30 }, anchorEpoch: { year: 1912, month: 7, day: 30 } },
-      { name: 'meiji', isoEpoch: { year: 1868, month: 9, day: 8 }, anchorEpoch: { year: 1868, month: 9, day: 8 } },
-      { name: 'japanese', aliases: ['gregory', 'ad', 'ce'], isoEpoch: { year: 1, month: 1, day: 1 } },
-      { name: 'japanese-inverse', aliases: ['gregory-inverse', 'bc', 'bce'], reverseOf: 'japanese' }
+      { code: 'reiwa', isoEpoch: { year: 2019, month: 5, day: 1 }, anchorEpoch: { year: 2019, month: 5, day: 1 } },
+      { code: 'heisei', isoEpoch: { year: 1989, month: 1, day: 8 }, anchorEpoch: { year: 1989, month: 1, day: 8 } },
+      { code: 'showa', isoEpoch: { year: 1926, month: 12, day: 25 }, anchorEpoch: { year: 1926, month: 12, day: 25 } },
+      { code: 'taisho', isoEpoch: { year: 1912, month: 7, day: 30 }, anchorEpoch: { year: 1912, month: 7, day: 30 } },
+      { code: 'meiji', isoEpoch: { year: 1868, month: 9, day: 8 }, anchorEpoch: { year: 1868, month: 9, day: 8 } },
+      { code: 'japanese', names: ['japanese', 'gregory', 'ad', 'ce'], isoEpoch: { year: 1, month: 1, day: 1 } },
+      { code: 'japanese-inverse', names: ['japanese-inverse', 'gregory-inverse', 'bc', 'bce'], reverseOf: 'japanese' }
     ]);
   }
 
