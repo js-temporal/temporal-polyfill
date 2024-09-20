@@ -819,7 +819,7 @@ function ParseTemporalTimeZoneString(stringIdent: string): ReturnType<typeof Par
 }
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
-export function ParseTemporalDurationString(isoString: string) {
+export function ParseTemporalDurationStringRaw(isoString: string) {
   const match = Call(RegExpPrototypeExec, PARSE.duration, [isoString]);
   if (!match) throw new RangeErrorCtor(`invalid duration: ${isoString}`);
   if (Call(ArrayPrototypeEvery, match, [(part, i) => i < 2 || part === undefined])) {
@@ -870,6 +870,24 @@ export function ParseTemporalDurationString(isoString: string) {
 
   RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
+}
+
+function ParseTemporalDurationString(isoString: string) {
+  const { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
+    ParseTemporalDurationStringRaw(isoString);
+  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
+  return new TemporalDuration(
+    years,
+    months,
+    weeks,
+    days,
+    hours,
+    minutes,
+    seconds,
+    milliseconds,
+    microseconds,
+    nanoseconds
+  );
 }
 
 export function RegulateISODate(yearParam: number, monthParam: number, dayParam: number, overflow: Overflow) {
@@ -934,49 +952,6 @@ export function RegulateISOYearMonth(yearParam: number, monthParam: number, over
       break;
   }
   return { year, month };
-}
-
-function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
-  if (!IsObject(item)) {
-    return ParseTemporalDurationString(RequireString(item));
-  }
-  if (IsTemporalDuration(item)) {
-    return {
-      years: GetSlot(item, YEARS),
-      months: GetSlot(item, MONTHS),
-      weeks: GetSlot(item, WEEKS),
-      days: GetSlot(item, DAYS),
-      hours: GetSlot(item, HOURS),
-      minutes: GetSlot(item, MINUTES),
-      seconds: GetSlot(item, SECONDS),
-      milliseconds: GetSlot(item, MILLISECONDS),
-      microseconds: GetSlot(item, MICROSECONDS),
-      nanoseconds: GetSlot(item, NANOSECONDS)
-    };
-  }
-  const result = {
-    years: 0,
-    months: 0,
-    weeks: 0,
-    days: 0,
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-    milliseconds: 0,
-    microseconds: 0,
-    nanoseconds: 0
-  };
-  let partial = ToTemporalPartialDurationRecord(item);
-  for (let index = 0; index < DURATION_FIELDS.length; index++) {
-    const property = DURATION_FIELDS[index];
-    const value = partial[property];
-    if (value !== undefined) {
-      result[property] = value;
-    }
-  }
-  let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } = result;
-  RejectDuration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-  return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
 export function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.DurationLike | string) {
@@ -1664,20 +1639,41 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
 
 export function ToTemporalDuration(item: DurationParams['from'][0]) {
   if (IsTemporalDuration(item)) return item;
-  let { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
-    ToTemporalDurationRecord(item);
+  if (!IsObject(item)) {
+    return ParseTemporalDurationString(RequireString(item));
+  }
+  const result = {
+    years: 0,
+    months: 0,
+    weeks: 0,
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+    milliseconds: 0,
+    microseconds: 0,
+    nanoseconds: 0
+  };
+  let partial = ToTemporalPartialDurationRecord(item);
+  for (let index = 0; index < DURATION_FIELDS.length; index++) {
+    const property = DURATION_FIELDS[index];
+    const value = partial[property];
+    if (value !== undefined) {
+      result[property] = value;
+    }
+  }
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
   return new TemporalDuration(
-    years,
-    months,
-    weeks,
-    days,
-    hours,
-    minutes,
-    seconds,
-    milliseconds,
-    microseconds,
-    nanoseconds
+    result.years,
+    result.months,
+    result.weeks,
+    result.days,
+    result.hours,
+    result.minutes,
+    result.seconds,
+    result.milliseconds,
+    result.microseconds,
+    result.nanoseconds
   );
 }
 
