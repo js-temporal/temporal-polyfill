@@ -4384,10 +4384,7 @@ function RoundRelativeDuration(
     );
   }
 
-  let largestUnit: Temporal.TimeUnit =
-    IsCalendarUnit(largestUnitParam) || largestUnitParam === 'day' ? 'hour' : largestUnitParam;
-  const result = UnnormalizeDuration(duration, largestUnit);
-  return { duration: result, total: nudgeResult.total };
+  return { duration, total: nudgeResult.total };
 }
 
 export function DifferencePlainDateTimeWithRounding(
@@ -4416,9 +4413,8 @@ export function DifferencePlainDateTimeWithRounding(
   roundingMode: Temporal.RoundingMode
 ) {
   if (CompareISODateTime(y1, mon1, d1, h1, min1, s1, ms1, µs1, ns1, y2, mon2, d2, h2, min2, s2, ms2, µs2, ns2) == 0) {
-    const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
     return {
-      duration: new TemporalDuration(),
+      duration: { date: ZeroDateDuration(), norm: TimeDuration.ZERO },
       total: 0
     };
   }
@@ -4446,12 +4442,8 @@ export function DifferencePlainDateTimeWithRounding(
     largestUnit
   );
 
-  const roundingIsNoop = smallestUnit === 'nanosecond' && roundingIncrement === 1;
-  if (roundingIsNoop) {
-    return {
-      duration: UnnormalizeDuration(duration, largestUnit),
-      total: JSBI.toNumber(duration.norm.totalNs)
-    };
+  if (smallestUnit === 'nanosecond' && roundingIncrement === 1) {
+    return { duration, total: JSBI.toNumber(duration.norm.totalNs) };
   }
 
   const dateTime = {
@@ -4491,26 +4483,13 @@ export function DifferenceZonedDateTimeWithRounding(
 ) {
   if (!IsCalendarUnit(largestUnit) && largestUnit !== 'day') {
     // The user is only asking for a time difference, so return difference of instants.
-    const { duration, total } = DifferenceInstant(
-      ns1,
-      ns2,
-      roundingIncrement,
-      smallestUnit as Temporal.TimeUnit,
-      roundingMode
-    );
-    return {
-      duration: UnnormalizeDuration(duration, largestUnit),
-      total
-    };
+    return DifferenceInstant(ns1, ns2, roundingIncrement, smallestUnit as Temporal.TimeUnit, roundingMode);
   }
 
   const duration = DifferenceZonedDateTime(ns1, ns2, timeZone, calendar, largestUnit);
 
   if (smallestUnit === 'nanosecond' && roundingIncrement === 1) {
-    return {
-      duration: UnnormalizeDuration(duration, 'hour'),
-      total: JSBI.toNumber(duration.norm.totalNs)
-    };
+    return { duration, total: JSBI.toNumber(duration.norm.totalNs) };
   }
 
   const dateTime = GetISODateTimeFor(timeZone, ns1);
@@ -4642,8 +4621,7 @@ export function DifferenceTemporalPlainDate(
   const isoOther = TemporalObjectToISODateRecord(other);
   const dateDifference = CalendarDateUntil(calendar, isoDate, isoOther, settings.largestUnit);
 
-  const duration = { date: dateDifference, norm: TimeDuration.ZERO };
-  let result;
+  let duration = { date: dateDifference, norm: TimeDuration.ZERO };
   const roundingIsNoop = settings.smallestUnit === 'day' && settings.roundingIncrement === 1;
   if (!roundingIsNoop) {
     const dateTime = {
@@ -4656,7 +4634,7 @@ export function DifferenceTemporalPlainDate(
       nanosecond: 0
     };
     const destEpochNs = GetUTCEpochNanoseconds(isoOther.year, isoOther.month, isoOther.day, 0, 0, 0, 0, 0, 0);
-    result = RoundRelativeDuration(
+    duration = RoundRelativeDuration(
       duration,
       destEpochNs,
       dateTime,
@@ -4667,10 +4645,9 @@ export function DifferenceTemporalPlainDate(
       settings.smallestUnit,
       settings.roundingMode
     ).duration;
-  } else {
-    result = UnnormalizeDuration(duration, settings.largestUnit);
   }
 
+  let result = UnnormalizeDuration(duration, 'day');
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
   return result;
 }
@@ -4706,7 +4683,7 @@ export function DifferenceTemporalPlainDateTime(
     return new Duration();
   }
 
-  let result = DifferencePlainDateTimeWithRounding(
+  const { duration } = DifferencePlainDateTimeWithRounding(
     GetSlot(plainDateTime, ISO_YEAR),
     GetSlot(plainDateTime, ISO_MONTH),
     GetSlot(plainDateTime, ISO_DAY),
@@ -4730,8 +4707,9 @@ export function DifferenceTemporalPlainDateTime(
     settings.roundingIncrement,
     settings.smallestUnit,
     settings.roundingMode
-  ).duration;
+  );
 
+  let result = UnnormalizeDuration(duration, settings.largestUnit);
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
   return result;
 }
@@ -4809,8 +4787,7 @@ export function DifferenceTemporalPlainYearMonth(
   const otherDate = CalendarDateFromFields(calendar, otherFields, 'constrain');
 
   const dateDifference = CalendarDateUntil(calendar, thisDate, otherDate, settings.largestUnit);
-  const duration = { date: AdjustDateDurationRecord(dateDifference, 0, 0), norm: TimeDuration.ZERO };
-  let result;
+  let duration = { date: AdjustDateDurationRecord(dateDifference, 0, 0), norm: TimeDuration.ZERO };
   if (settings.smallestUnit !== 'month' || settings.roundingIncrement !== 1) {
     const dateTime = {
       year: thisDate.year,
@@ -4824,7 +4801,7 @@ export function DifferenceTemporalPlainYearMonth(
       nanosecond: 0
     };
     const destEpochNs = GetUTCEpochNanoseconds(otherDate.year, otherDate.month, otherDate.day, 0, 0, 0, 0, 0, 0);
-    result = RoundRelativeDuration(
+    duration = RoundRelativeDuration(
       duration,
       destEpochNs,
       dateTime,
@@ -4835,10 +4812,9 @@ export function DifferenceTemporalPlainYearMonth(
       settings.smallestUnit,
       settings.roundingMode
     ).duration;
-  } else {
-    result = UnnormalizeDuration(duration, settings.largestUnit);
   }
 
+  let result = UnnormalizeDuration(duration, 'day');
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
   return result;
 }
@@ -4891,7 +4867,7 @@ export function DifferenceTemporalZonedDateTime(
 
     if (JSBI.equal(ns1, ns2)) return new Duration();
 
-    result = DifferenceZonedDateTimeWithRounding(
+    const { duration } = DifferenceZonedDateTimeWithRounding(
       ns1,
       ns2,
       timeZone,
@@ -4900,7 +4876,8 @@ export function DifferenceTemporalZonedDateTime(
       settings.roundingIncrement,
       settings.smallestUnit,
       settings.roundingMode
-    ).duration;
+    );
+    result = UnnormalizeDuration(duration, 'hour');
   }
 
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
