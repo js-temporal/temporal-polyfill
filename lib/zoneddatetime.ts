@@ -268,14 +268,14 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
   add(temporalDurationLike: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.AddDurationToOrSubtractDurationFromZonedDateTime('add', this, temporalDurationLike, options);
+    return ES.AddDurationToZonedDateTime('add', this, temporalDurationLike, options);
   }
   subtract(
     temporalDurationLike: Params['subtract'][0],
     options: Params['subtract'][1] = undefined
   ): Return['subtract'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.AddDurationToOrSubtractDurationFromZonedDateTime('subtract', this, temporalDurationLike, options);
+    return ES.AddDurationToZonedDateTime('subtract', this, temporalDurationLike, options);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');

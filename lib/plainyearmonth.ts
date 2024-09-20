@@ -101,14 +101,14 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   }
   add(temporalDurationLike: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.AddDurationToOrSubtractDurationFromPlainYearMonth('add', this, temporalDurationLike, options);
+    return ES.AddDurationToYearMonth('add', this, temporalDurationLike, options);
   }
   subtract(
     temporalDurationLike: Params['subtract'][0],
     options: Params['subtract'][1] = undefined
   ): Return['subtract'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.AddDurationToOrSubtractDurationFromPlainYearMonth('subtract', this, temporalDurationLike, options);
+    return ES.AddDurationToYearMonth('subtract', this, temporalDurationLike, options);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeErrorCtor('invalid receiver');

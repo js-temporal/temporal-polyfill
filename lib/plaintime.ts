@@ -151,11 +151,11 @@ export class PlainTime implements Temporal.PlainTime {
   }
   add(temporalDurationLike: Params['add'][0]): Return['add'] {
     if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.AddDurationToOrSubtractDurationFromPlainTime('add', this, temporalDurationLike);
+    return ES.AddDurationToTime('add', this, temporalDurationLike);
   }
   subtract(temporalDurationLike: Params['subtract'][0]): Return['subtract'] {
     if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.AddDurationToOrSubtractDurationFromPlainTime('subtract', this, temporalDurationLike);
+    return ES.AddDurationToTime('subtract', this, temporalDurationLike);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
     if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');

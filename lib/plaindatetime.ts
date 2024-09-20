@@ -241,14 +241,14 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   }
   add(temporalDurationLike: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.AddDurationToOrSubtractDurationFromPlainDateTime('add', this, temporalDurationLike, options);
+    return ES.AddDurationToDateTime('add', this, temporalDurationLike, options);
   }
   subtract(
     temporalDurationLike: Params['subtract'][0],
     options: Params['subtract'][1] = undefined
   ): Return['subtract'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.AddDurationToOrSubtractDurationFromPlainDateTime('subtract', this, temporalDurationLike, options);
+    return ES.AddDurationToDateTime('subtract', this, temporalDurationLike, options);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
