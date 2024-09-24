@@ -4081,7 +4081,7 @@ function NudgeToCalendarUnit(
     (sign === 1 && (JSBI.greaterThan(startEpochNs, destEpochNs) || JSBI.greaterThan(destEpochNs, endEpochNs))) ||
     (sign === -1 && (JSBI.greaterThan(endEpochNs, destEpochNs) || JSBI.greaterThan(destEpochNs, startEpochNs)))
   ) {
-    throw new RangeErrorCtor(`custom calendar reported a ${unit} that is 0 days long`);
+    throw new ErrorCtor(`assertion failed: ${unit} cannot be 0 days long`);
   }
   if (JSBI.equal(endEpochNs, startEpochNs)) {
     throw new ErrorCtor('assertion failed: startEpochNs ≠ endEpochNs');
