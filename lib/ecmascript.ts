@@ -3093,28 +3093,24 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
 
 // ts-prune-ignore-next TODO: remove this after tests are converted to TS
 export function parseFromEnUsFormat(datetime: string) {
-  const parts = Call(StringPrototypeSplit, datetime, [/[^\w]+/]);
+  const splits = Call(StringPrototypeSplit, datetime, [/[^\w]+/]);
 
-  if (parts.length !== 7) {
+  if (splits.length !== 7) {
     throw new RangeError(`expected 7 parts in "${datetime}`);
   }
 
-  const month = +parts[0];
-  const day = +parts[1];
-  let year = +parts[2];
-  const era = Call(StringPrototypeToUpperCase, parts[3], []);
-  if (era === 'B' || era === 'BC') {
+  const month = +splits[0];
+  const day = +splits[1];
+  let year = +splits[2];
+  const era = splits[3];
+  if (era[0] === 'b' || era[0] === 'B') {
     year = -year + 1;
-  } else if (era !== 'A' && era !== 'AD') {
+  } else if (era[0] !== 'a' && era[0] !== 'A') {
     throw new RangeError(`Unknown era ${era} in "${datetime}`);
   }
-  let hour = +parts[4];
-  if (hour === 24) {
-    // bugs.chromium.org/p/chromium/issues/detail?id=1045791
-    hour = 0;
-  }
-  const minute = +parts[5];
-  const second = +parts[6];
+  const hour = splits[4] === '24' ? 0 : +splits[4]; // bugs.chromium.org/p/chromium/issues/detail?id=1045791
+  const minute = +splits[5];
+  const second = +splits[6];
 
   if (
     !NumberIsFinite(year) ||
@@ -3133,9 +3129,10 @@ export function parseFromEnUsFormat(datetime: string) {
 // ts-prune-ignore-next TODO: remove this after tests are converted to TS
 export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
   const formatter = getIntlDateTimeFormatEnUsForTimeZone(timeZone);
-  // Using `format` instead of `formatToParts` for compatibility with older clients
+  // Using `format` instead of `formatToParts` for compatibility with older
+  // clients and because it is twice as fast
   const boundFormat = Call(IntlDateTimeFormatPrototypeGetFormat, formatter, []);
-  const datetime = Call(boundFormat, formatter, [new DateCtor(epochMilliseconds)]);
+  const datetime = Call(boundFormat, formatter, [epochMilliseconds]);
   return parseFromEnUsFormat(datetime);
 }
 
