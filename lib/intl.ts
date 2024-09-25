@@ -1,6 +1,5 @@
 import {
   // error constructors
-  Error as ErrorCtor,
   RangeError as RangeErrorCtor,
   TypeError as TypeErrorCtor,
 
@@ -19,6 +18,7 @@ import {
   ReflectApply
 } from './primordials';
 
+import { assert } from './assert';
 import { BigIntFloorDiv, MILLION } from './bigintmath';
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
@@ -317,9 +317,7 @@ function formatRange(this: DateTimeFormatImpl, a: Params['formatRange'][0], b: P
     const { epochNs: aa, formatter: aformatter } = extractOverrides(a, this);
     const { epochNs: bb, formatter: bformatter } = extractOverrides(b, this);
     if (aformatter) {
-      if (bformatter !== aformatter) {
-        throw new ErrorCtor('assertion failed: formatters for same Temporal type should be identical');
-      }
+      assert(bformatter == aformatter, 'formatters for same Temporal type should be identical');
       formatter = aformatter;
       formatArgs = [epochNsToMs(aa), epochNsToMs(bb)];
     }
@@ -343,9 +341,7 @@ function formatRangeToParts(
     const { epochNs: aa, formatter: aformatter } = extractOverrides(a, this);
     const { epochNs: bb, formatter: bformatter } = extractOverrides(b, this);
     if (aformatter) {
-      if (bformatter !== aformatter) {
-        throw new ErrorCtor('assertion failed: formatters for same Temporal type should be identical');
-      }
+      assert(bformatter == aformatter, 'formatters for same Temporal type should be identical');
       formatter = aformatter;
       formatArgs = [epochNsToMs(aa), epochNsToMs(bb)];
     }

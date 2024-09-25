@@ -3,7 +3,6 @@ import {
   Number as NumberCtor,
 
   // error constructors
-  Error as ErrorCtor,
   RangeError as RangeErrorCtor,
 
   // class static functions and methods
@@ -18,6 +17,7 @@ import {
 
 import JSBI from 'jsbi';
 
+import { assert } from './assert';
 import {
   abs,
   BILLION,
@@ -47,13 +47,14 @@ export class TimeDuration {
   subsec: number;
 
   constructor(totalNs: bigint | JSBI) {
+    assert(typeof totalNs !== 'number', 'big integer required');
     this.totalNs = ensureJSBI(totalNs);
-    if (JSBI.greaterThan(abs(this.totalNs), TimeDuration.MAX)) throw new ErrorCtor('assertion failed: integer too big');
+    assert(JSBI.lessThanOrEqual(abs(this.totalNs), TimeDuration.MAX), 'integer too big');
 
     this.sec = JSBI.toNumber(JSBI.divide(this.totalNs, BILLION));
     this.subsec = JSBI.toNumber(JSBI.remainder(this.totalNs, BILLION));
-    if (!NumberIsSafeInteger(this.sec)) throw new ErrorCtor('assertion failed: seconds too big');
-    if (MathAbs(this.subsec) > 999_999_999) throw new ErrorCtor('assertion failed: subseconds too big');
+    assert(NumberIsSafeInteger(this.sec), 'seconds too big');
+    assert(MathAbs(this.subsec) <= 999_999_999, 'subseconds too big');
   }
 
   static #validateNew(totalNs: JSBI, operation: string) {
@@ -95,7 +96,7 @@ export class TimeDuration {
   }
 
   add24HourDays(days: number) {
-    if (!NumberIsInteger(days)) throw new ErrorCtor('assertion failed: days is an integer');
+    assert(NumberIsInteger(days), 'days must be an integer');
     return TimeDuration.#validateNew(JSBI.add(this.totalNs, JSBI.multiply(JSBI.BigInt(days), DAY_NANOS_JSBI)), 'sum');
   }
 
@@ -108,7 +109,7 @@ export class TimeDuration {
   }
 
   divmod(n: number) {
-    if (n === 0) throw new ErrorCtor('division by zero');
+    assert(n !== 0, 'division by zero');
     const { quotient, remainder } = divmod(this.totalNs, JSBI.BigInt(n));
     const q = JSBI.toNumber(quotient);
     const r = new TimeDuration(remainder);
@@ -117,7 +118,7 @@ export class TimeDuration {
 
   fdiv(nParam: JSBI | bigint) {
     const n = ensureJSBI(nParam);
-    if (JSBI.equal(n, ZERO)) throw new ErrorCtor('division by zero');
+    assert(!JSBI.equal(n, ZERO), 'division by zero');
     const nBigInt = JSBI.BigInt(n);
     let { quotient, remainder } = divmod(this.totalNs, nBigInt);
 
