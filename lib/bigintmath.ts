@@ -46,11 +46,3 @@ export function NonNegativeBigIntDivmod(x: JSBI, y: JSBI) {
   }
   return { quotient, remainder };
 }
-
-export function BigIntFloorDiv(left: JSBI, right: JSBI) {
-  const { quotient, remainder } = divmod(left, right);
-  if (!JSBI.equal(remainder, ZERO) && !JSBI.lessThan(left, ZERO) != !JSBI.lessThan(right, ZERO)) {
-    return JSBI.subtract(quotient, ONE);
-  }
-  return quotient;
-}

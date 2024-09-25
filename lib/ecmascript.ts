@@ -151,8 +151,8 @@ import {
   NANOSECONDS
 } from './slots';
 
-const DAY_SECONDS = 86400;
-const DAY_NANOS = DAY_SECONDS * 1e9;
+const DAY_MS = 86400_000;
+const DAY_NANOS = DAY_MS * 1e6;
 const MINUTE_NANOS = 60e9;
 // Instant range is 100 million days (inclusive) before or after epoch.
 const NS_MIN = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(-1e8));
@@ -165,7 +165,7 @@ const DATETIME_NS_MAX = JSBI.subtract(JSBI.add(NS_MAX, DAY_NANOS_JSBI), ONE);
 // The pattern of leap years in the ISO 8601 calendar repeats every 400 years.
 // The constant below is the number of nanoseconds in 400 years. It is used to
 // avoid overflows when dealing with values at the edge legacy Date's range.
-const NS_IN_400_YEAR_CYCLE = JSBI.multiply(JSBI.BigInt(400 * 365 + 97), DAY_NANOS_JSBI);
+const MS_IN_400_YEAR_CYCLE = (400 * 365 + 97) * DAY_MS;
 const YEAR_MIN = -271821;
 const YEAR_MAX = 275760;
 const BEFORE_FIRST_OFFSET_TRANSITION = JSBI.multiply(JSBI.BigInt(-388152), JSBI.BigInt(1e13)); // 1847-01-01T00:00:00Z
@@ -2910,10 +2910,15 @@ export function GetAvailableNamedTimeZoneIdentifier(
 }
 
 function GetNamedTimeZoneOffsetNanoseconds(id: string, epochNanoseconds: JSBI) {
-  const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } =
-    GetNamedTimeZoneDateTimeParts(id, epochNanoseconds);
-  const utc = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
-  return JSBI.toNumber(JSBI.subtract(utc, epochNanoseconds));
+  // Optimization: We get the offset nanoseconds only with millisecond
+  // resolution, assuming that time zone offset changes don't happen in the
+  // middle of a millisecond
+  const epochMilliseconds = epochNsToMs(epochNanoseconds, 'floor');
+  const { year, month, day, hour, minute, second } = GetFormatterParts(id, epochMilliseconds);
+  let millisecond = epochMilliseconds % 1000;
+  if (millisecond < 0) millisecond += 1000;
+  const utc = GetUTCEpochMilliseconds(year, month, day, hour, minute, second, millisecond);
+  return (utc - epochMilliseconds) * 1e6;
 }
 
 export function FormatOffsetTimeZoneIdentifier(offsetMinutes: number): string {
@@ -2930,16 +2935,14 @@ function FormatDateTimeUTCOffsetRounded(offsetNanosecondsParam: number): string 
   return FormatOffsetTimeZoneIdentifier(offsetNanoseconds / 60e9);
 }
 
-function GetUTCEpochNanoseconds(
+function GetUTCEpochMilliseconds(
   year: number,
   month: number,
   day: number,
   hour: number,
   minute: number,
   second: number,
-  millisecond: number,
-  microsecond: number,
-  nanosecond: number
+  millisecond: number
 ) {
   // The pattern of leap years in the ISO 8601 calendar repeats every 400
   // years. To avoid overflowing at the edges of the range, we reduce the year
@@ -2954,11 +2957,23 @@ function GetUTCEpochNanoseconds(
   Call(DatePrototypeSetUTCHours, legacyDate, [hour, minute, second, millisecond]);
   Call(DatePrototypeSetUTCFullYear, legacyDate, [reducedYear, month - 1, day]);
   const ms = Call(DatePrototypeGetTime, legacyDate, []);
-  let ns = JSBI.multiply(JSBI.BigInt(ms), MILLION);
-  ns = JSBI.add(ns, JSBI.multiply(JSBI.BigInt(microsecond), THOUSAND));
-  ns = JSBI.add(ns, JSBI.BigInt(nanosecond));
+  return ms + MS_IN_400_YEAR_CYCLE * yearCycles;
+}
 
-  return JSBI.add(ns, JSBI.multiply(NS_IN_400_YEAR_CYCLE, JSBI.BigInt(yearCycles)));
+function GetUTCEpochNanoseconds(
+  year: number,
+  month: number,
+  day: number,
+  hour: number,
+  minute: number,
+  second: number,
+  millisecond: number,
+  microsecond: number,
+  nanosecond: number
+) {
+  const ms = GetUTCEpochMilliseconds(year, month, day, hour, minute, second, millisecond);
+  const subMs = microsecond * 1e3 + nanosecond;
+  return JSBI.add(JSBI.multiply(JSBI.BigInt(ms), MILLION), JSBI.BigInt(subMs));
 }
 
 export function GetISOPartsFromEpoch(epochNanoseconds: JSBI) {
@@ -5316,6 +5331,16 @@ export function ToBigIntExternal(arg: unknown): ExternalBigInt {
   const jsbiBI = ToBigInt(arg);
   if (typeof (globalThis as any).BigInt !== 'undefined') return (globalThis as any).BigInt(jsbiBI.toString(10));
   return jsbiBI as unknown as ExternalBigInt;
+}
+
+// rounding modes supported: floor, ceil
+export function epochNsToMs(epochNanosecondsParam: JSBI | bigint, mode: 'floor' | 'ceil') {
+  const epochNanoseconds = ensureJSBI(epochNanosecondsParam);
+  const { quotient, remainder } = divmod(epochNanoseconds, MILLION);
+  let epochMilliseconds = JSBI.toNumber(quotient);
+  if (mode === 'floor' && JSBI.toNumber(remainder) < 0) epochMilliseconds -= 1;
+  if (mode === 'ceil' && JSBI.toNumber(remainder) > 0) epochMilliseconds += 1;
+  return epochMilliseconds;
 }
 
 export function ToBigInt(arg: unknown): JSBI {
