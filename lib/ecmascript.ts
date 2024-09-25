@@ -690,6 +690,7 @@ export function ParseTemporalTimeString(isoString: string) {
     if (z) throw new RangeErrorCtor('Z designator not supported for PlainTime');
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = time);
   }
+  RejectTime(hour, minute, second, millisecond, microsecond, nanosecond);
   // if it's a date-time string, OK
   if (Call(RegExpPrototypeTest, /[tT ][0-9][0-9]/, [isoString])) {
     return { hour, minute, second, millisecond, microsecond, nanosecond };
@@ -1819,7 +1820,6 @@ export function ToTemporalTime(item: PlainTimeParams['from'][0], options?: Plain
     ));
   } else {
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = ParseTemporalTimeString(RequireString(item)));
-    RejectTime(hour, minute, second, millisecond, microsecond, nanosecond);
     GetTemporalOverflowOption(GetOptionsObject(options));
   }
   return new TemporalPlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
