@@ -4,8 +4,8 @@ export const ZERO = JSBI.BigInt(0);
 export const ONE = JSBI.BigInt(1);
 export const TWO = JSBI.BigInt(2);
 export const TEN = JSBI.BigInt(10);
-export const TWENTY_FOUR = JSBI.BigInt(24);
-export const SIXTY = JSBI.BigInt(60);
+const TWENTY_FOUR = JSBI.BigInt(24);
+const SIXTY = JSBI.BigInt(60);
 export const THOUSAND = JSBI.BigInt(1e3);
 export const MILLION = JSBI.BigInt(1e6);
 export const BILLION = JSBI.BigInt(1e9);
@@ -35,14 +35,5 @@ export function compare(x: JSBI, y: JSBI): -1 | 0 | 1 {
 export function divmod(x: JSBI, y: JSBI): { quotient: JSBI; remainder: JSBI } {
   const quotient = JSBI.divide(x, y);
   const remainder = JSBI.remainder(x, y);
-  return { quotient, remainder };
-}
-
-export function NonNegativeBigIntDivmod(x: JSBI, y: JSBI) {
-  let { quotient, remainder } = divmod(x, y);
-  if (JSBI.lessThan(remainder, ZERO)) {
-    quotient = JSBI.subtract(quotient, ONE);
-    remainder = JSBI.add(remainder, y);
-  }
   return { quotient, remainder };
 }

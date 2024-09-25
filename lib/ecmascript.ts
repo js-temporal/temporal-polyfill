@@ -75,22 +75,7 @@ import JSBI from 'jsbi';
 
 import type { Temporal } from '..';
 import { assert, assertNotReached } from './assert';
-import {
-  abs,
-  compare,
-  DAY_NANOS_JSBI,
-  divmod,
-  ensureJSBI,
-  isEven,
-  MILLION,
-  NonNegativeBigIntDivmod,
-  ONE,
-  SIXTY,
-  THOUSAND,
-  TWENTY_FOUR,
-  TWO,
-  ZERO
-} from './bigintmath';
+import { abs, compare, DAY_NANOS_JSBI, divmod, ensureJSBI, isEven, MILLION, ONE, TWO, ZERO } from './bigintmath';
 import type {
   AnyTemporalLikeType,
   UnitSmallerThanOrEqualTo,
@@ -3336,40 +3321,67 @@ function BalanceTime(
   microsecondParam: number,
   nanosecondParam: number
 ) {
-  let hour = JSBI.BigInt(hourParam);
-  let minute = JSBI.BigInt(minuteParam);
-  let second = JSBI.BigInt(secondParam);
-  let millisecond = JSBI.BigInt(millisecondParam);
-  let microsecond = JSBI.BigInt(microsecondParam);
-  let nanosecond = JSBI.BigInt(nanosecondParam);
-  let quotient;
+  let hour = hourParam;
+  let minute = minuteParam;
+  let second = secondParam;
+  let millisecond = millisecondParam;
+  let microsecond = microsecondParam;
+  let nanosecond = nanosecondParam;
+  let div;
 
-  ({ quotient, remainder: nanosecond } = NonNegativeBigIntDivmod(nanosecond, THOUSAND));
-  microsecond = JSBI.add(microsecond, quotient);
+  ({ div, mod: nanosecond } = TruncatingDivModByPowerOf10(nanosecond, 3));
+  microsecond += div;
+  if (nanosecond < 0) {
+    microsecond -= 1;
+    nanosecond += 1000;
+  }
 
-  ({ quotient, remainder: microsecond } = NonNegativeBigIntDivmod(microsecond, THOUSAND));
-  millisecond = JSBI.add(millisecond, quotient);
+  ({ div, mod: microsecond } = TruncatingDivModByPowerOf10(microsecond, 3));
+  millisecond += div;
+  if (microsecond < 0) {
+    millisecond -= 1;
+    microsecond += 1000;
+  }
 
-  ({ quotient, remainder: millisecond } = NonNegativeBigIntDivmod(millisecond, THOUSAND));
-  second = JSBI.add(second, quotient);
+  second += MathTrunc(millisecond / 1000);
+  millisecond %= 1000;
+  if (millisecond < 0) {
+    second -= 1;
+    millisecond += 1000;
+  }
 
-  ({ quotient, remainder: second } = NonNegativeBigIntDivmod(second, SIXTY));
-  minute = JSBI.add(minute, quotient);
+  minute += MathTrunc(second / 60);
+  second %= 60;
+  if (second < 0) {
+    minute -= 1;
+    second += 60;
+  }
 
-  ({ quotient, remainder: minute } = NonNegativeBigIntDivmod(minute, SIXTY));
-  hour = JSBI.add(hour, quotient);
+  hour += MathTrunc(minute / 60);
+  minute %= 60;
+  if (minute < 0) {
+    hour -= 1;
+    minute += 60;
+  }
 
-  ({ quotient, remainder: hour } = NonNegativeBigIntDivmod(hour, TWENTY_FOUR));
+  let deltaDays = MathTrunc(hour / 24);
+  hour %= 24;
+  if (hour < 0) {
+    deltaDays -= 1;
+    hour += 24;
+  }
 
-  return {
-    deltaDays: JSBI.toNumber(quotient),
-    hour: JSBI.toNumber(hour),
-    minute: JSBI.toNumber(minute),
-    second: JSBI.toNumber(second),
-    millisecond: JSBI.toNumber(millisecond),
-    microsecond: JSBI.toNumber(microsecond),
-    nanosecond: JSBI.toNumber(nanosecond)
-  };
+  // Results are possibly -0 at this point, but these are mathematical values in
+  // the spec. Force -0 to +0.
+  deltaDays += 0;
+  hour += 0;
+  minute += 0;
+  second += 0;
+  millisecond += 0;
+  microsecond += 0;
+  nanosecond += 0;
+
+  return { deltaDays, hour, minute, second, millisecond, microsecond, nanosecond };
 }
 
 export function UnbalanceDateDurationRelative(dateDuration: DateDuration, plainRelativeTo: Temporal.PlainDate) {
