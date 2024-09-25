@@ -431,20 +431,6 @@ export class Duration implements Temporal.Duration {
     ES.ValueOfThrows('Duration');
   }
   static from(item: Params['from'][0]): Return['from'] {
-    if (ES.IsTemporalDuration(item)) {
-      return new Duration(
-        GetSlot(item, YEARS),
-        GetSlot(item, MONTHS),
-        GetSlot(item, WEEKS),
-        GetSlot(item, DAYS),
-        GetSlot(item, HOURS),
-        GetSlot(item, MINUTES),
-        GetSlot(item, SECONDS),
-        GetSlot(item, MILLISECONDS),
-        GetSlot(item, MICROSECONDS),
-        GetSlot(item, NANOSECONDS)
-      );
-    }
     return ES.ToTemporalDuration(item);
   }
   static compare(

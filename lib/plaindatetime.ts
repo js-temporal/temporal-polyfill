@@ -445,21 +445,6 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   }
 
   static from(item: Params['from'][0], options: Params['from'][1] = undefined): Return['from'] {
-    if (ES.IsTemporalDateTime(item)) {
-      ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
-      return ES.CreateTemporalDateTime(
-        GetSlot(item, ISO_YEAR),
-        GetSlot(item, ISO_MONTH),
-        GetSlot(item, ISO_DAY),
-        GetSlot(item, ISO_HOUR),
-        GetSlot(item, ISO_MINUTE),
-        GetSlot(item, ISO_SECOND),
-        GetSlot(item, ISO_MILLISECOND),
-        GetSlot(item, ISO_MICROSECOND),
-        GetSlot(item, ISO_NANOSECOND),
-        GetSlot(item, CALENDAR)
-      );
-    }
     return ES.ToTemporalDateTime(item, options);
   }
   static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {

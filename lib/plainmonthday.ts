@@ -103,15 +103,6 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   }
 
   static from(item: Params['from'][0], options: Params['from'][1] = undefined): Return['from'] {
-    if (ES.IsTemporalMonthDay(item)) {
-      ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
-      return ES.CreateTemporalMonthDay(
-        GetSlot(item, ISO_MONTH),
-        GetSlot(item, ISO_DAY),
-        GetSlot(item, CALENDAR),
-        GetSlot(item, ISO_YEAR)
-      );
-    }
     return ES.ToTemporalMonthDay(item, options);
   }
   [Symbol.toStringTag]!: 'Temporal.PlainMonthDay';

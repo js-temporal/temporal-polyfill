@@ -151,9 +151,6 @@ export class Instant implements Temporal.Instant {
     return new Instant(epochNanoseconds);
   }
   static from(item: Params['from'][0]): Return['from'] {
-    if (ES.IsTemporalInstant(item)) {
-      return new Instant(GetSlot(item, EPOCHNANOSECONDS));
-    }
     return ES.ToTemporalInstant(item);
   }
   static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {

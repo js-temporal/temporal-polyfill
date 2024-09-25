@@ -159,15 +159,6 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   }
 
   static from(item: Params['from'][0], options: Params['from'][1] = undefined): Return['from'] {
-    if (ES.IsTemporalYearMonth(item)) {
-      ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
-      return ES.CreateTemporalYearMonth(
-        GetSlot(item, ISO_YEAR),
-        GetSlot(item, ISO_MONTH),
-        GetSlot(item, CALENDAR),
-        GetSlot(item, ISO_DAY)
-      );
-    }
     return ES.ToTemporalYearMonth(item, options);
   }
   static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {

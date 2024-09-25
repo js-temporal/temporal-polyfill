@@ -550,17 +550,6 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
 
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
-    if (ES.IsTemporalZonedDateTime(item)) {
-      const options = ES.GetOptionsObject(optionsParam);
-      ES.GetTemporalDisambiguationOption(options); // validate and ignore
-      ES.GetTemporalOffsetOption(options, 'reject');
-      ES.GetTemporalOverflowOption(options);
-      return ES.CreateTemporalZonedDateTime(
-        GetSlot(item, EPOCHNANOSECONDS),
-        GetSlot(item, TIME_ZONE),
-        GetSlot(item, CALENDAR)
-      );
-    }
     return ES.ToTemporalZonedDateTime(item, optionsParam);
   }
   static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {
