@@ -19,7 +19,6 @@ import {
 } from './primordials';
 
 import { assert } from './assert';
-import { BigIntFloorDiv, MILLION } from './bigintmath';
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import {
@@ -51,7 +50,6 @@ import {
 } from './slots';
 import type { Temporal } from '..';
 import type { DateTimeFormatParams as Params, DateTimeFormatReturn as Return } from './internaltypes';
-import JSBI from 'jsbi';
 
 type LazySlot = typeof DATE | typeof YM | typeof MD | typeof TIME | typeof DATETIME | typeof INST;
 
@@ -263,10 +261,6 @@ function resolvedOptions(this: DateTimeFormatImpl): Return['resolvedOptions'] {
   return resolved;
 }
 
-function epochNsToMs(epochNs: JSBI) {
-  return JSBI.toNumber(BigIntFloorDiv(epochNs, MILLION));
-}
-
 // TODO: investigate why there's a rest parameter here. Does this function really need to accept extra params?
 // And if so, why doesn't formatRange also accept extra params?
 function format<P extends readonly unknown[]>(
@@ -278,7 +272,7 @@ function format<P extends readonly unknown[]>(
   let formatter, formatArgs: [Params['format'][0], ...unknown[]];
   if (overrides.formatter) {
     formatter = overrides.formatter;
-    formatArgs = [epochNsToMs(overrides.epochNs)];
+    formatArgs = [ES.epochNsToMs(overrides.epochNs, 'floor')];
   } else {
     formatter = GetSlot(this, ORIGINAL);
     formatArgs = [datetime, ...rest];
@@ -296,7 +290,7 @@ function formatToParts<P extends readonly unknown[]>(
   let formatter, formatArgs;
   if (overrides.formatter) {
     formatter = overrides.formatter;
-    formatArgs = [epochNsToMs(overrides.epochNs)];
+    formatArgs = [ES.epochNsToMs(overrides.epochNs, 'floor')];
   } else {
     formatter = GetSlot(this, ORIGINAL);
     formatArgs = [datetime, ...rest];
@@ -316,7 +310,7 @@ function formatRange(this: DateTimeFormatImpl, a: Params['formatRange'][0], b: P
     if (aformatter) {
       assert(bformatter == aformatter, 'formatters for same Temporal type should be identical');
       formatter = aformatter;
-      formatArgs = [epochNsToMs(aa), epochNsToMs(bb)];
+      formatArgs = [ES.epochNsToMs(aa, 'floor'), ES.epochNsToMs(bb, 'floor')];
     }
   } else {
     formatter = GetSlot(this, ORIGINAL);
@@ -340,7 +334,7 @@ function formatRangeToParts(
     if (aformatter) {
       assert(bformatter == aformatter, 'formatters for same Temporal type should be identical');
       formatter = aformatter;
-      formatArgs = [epochNsToMs(aa), epochNsToMs(bb)];
+      formatArgs = [ES.epochNsToMs(aa, 'floor'), ES.epochNsToMs(bb, 'floor')];
     }
   } else {
     formatter = GetSlot(this, ORIGINAL);

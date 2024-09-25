@@ -28,7 +28,7 @@ import { DateTimeFormat } from './intl';
 import type { BuiltinCalendarId, ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { MILLION, HOUR_NANOS, BigIntFloorDiv } from './bigintmath';
+import { HOUR_NANOS } from './bigintmath';
 
 const customResolvedOptions = DateTimeFormat.prototype.resolvedOptions as Intl.DateTimeFormat['resolvedOptions'];
 
@@ -113,7 +113,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   get epochMilliseconds(): Return['epochMilliseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
-    return JSBI.toNumber(BigIntFloorDiv(value, MILLION));
+    return ES.epochNsToMs(value, 'floor');
   }
   get epochNanoseconds(): Return['epochNanoseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');

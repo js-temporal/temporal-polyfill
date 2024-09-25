@@ -17,7 +17,7 @@ import { DateTimeFormat } from './intl';
 import type { InstantParams as Params, InstantReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { BigIntFloorDiv, MILLION } from './bigintmath';
+import { MILLION } from './bigintmath';
 
 export class Instant implements Temporal.Instant {
   constructor(epochNanoseconds: bigint | JSBI) {
@@ -47,7 +47,7 @@ export class Instant implements Temporal.Instant {
   get epochMilliseconds(): Return['epochMilliseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeErrorCtor('invalid receiver');
     const value = GetSlot(this, EPOCHNANOSECONDS);
-    return JSBI.toNumber(BigIntFloorDiv(value, MILLION));
+    return ES.epochNsToMs(value, 'floor');
   }
   get epochNanoseconds(): Return['epochNanoseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeErrorCtor('invalid receiver');
