@@ -3,7 +3,6 @@ import {
   IntlDurationFormat,
 
   // error constructors
-  Error as ErrorCtor,
   RangeError as RangeErrorCtor,
   TypeError as TypeErrorCtor,
 
@@ -17,6 +16,7 @@ import {
 } from './primordials';
 
 import { DEBUG } from './debug';
+import { assert } from './assert';
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import {
@@ -294,9 +294,7 @@ export class Duration implements Temporal.Duration {
     if (ES.IsCalendarUnit(largestUnit)) {
       throw new RangeErrorCtor(`a starting point is required for ${largestUnit}s balancing`);
     }
-    if (ES.IsCalendarUnit(smallestUnit)) {
-      throw new ErrorCtor('assertion failed: smallestUnit was larger than largestUnit');
-    }
+    assert(!ES.IsCalendarUnit(smallestUnit), 'smallestUnit was larger than largestUnit');
     let duration = ES.NormalizeDurationWith24HourDays(this);
     ({ duration } = ES.RoundTimeDuration(duration, roundingIncrement, smallestUnit, roundingMode));
     return ES.UnnormalizeDuration(duration, largestUnit);
@@ -328,7 +326,7 @@ export class Duration implements Temporal.Duration {
         unit,
         'trunc'
       );
-      if (NumberIsNaN(total)) throw new ErrorCtor('assertion failed: total hit unexpected code path');
+      assert(!NumberIsNaN(total), 'total went through NudgeToZonedTime code path');
       return total;
     }
 
@@ -367,7 +365,7 @@ export class Duration implements Temporal.Duration {
         unit,
         'trunc'
       );
-      if (NumberIsNaN(total)) throw new ErrorCtor('assertion failed: total hit unexpected code path');
+      assert(!NumberIsNaN(total), 'total went through NudgeToZonedTime code path');
       return total;
     }
 

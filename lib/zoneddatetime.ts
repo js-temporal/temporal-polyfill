@@ -1,6 +1,5 @@
 import {
   // error constructors
-  Error as ErrorCtor,
   RangeError as RangeErrorCtor,
   TypeError as TypeErrorCtor,
 
@@ -8,6 +7,7 @@ import {
   ObjectCreate
 } from './primordials';
 
+import { assert } from './assert';
 import * as ES from './ecmascript';
 import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
 import {
@@ -330,20 +330,16 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       const dtEnd = ES.BalanceISODate(year, month, day + 1);
 
       const startNs = ES.GetStartOfDay(timeZone, dtStart);
-      if (JSBI.lessThan(thisNs, startNs)) {
-        throw new ErrorCtor(
-          'assertion failure: cannot produce an instant during a day that ' +
-            'occurs before another instant it deems start-of-day'
-        );
-      }
+      assert(
+        JSBI.greaterThanOrEqual(thisNs, startNs),
+        'cannot produce an instant during a day that occurs before start-of-day instant'
+      );
 
       const endNs = ES.GetStartOfDay(timeZone, dtEnd);
-      if (JSBI.greaterThanOrEqual(thisNs, endNs)) {
-        throw new ErrorCtor(
-          'assertion failure: cannot produce an instant during a day that ' +
-            'occurs on or after another instant it deems end-of-day'
-        );
-      }
+      assert(
+        JSBI.lessThan(thisNs, endNs),
+        'cannot produce an instant during a day that occurs on or after end-of-day instant'
+      );
 
       const dayLengthNs = JSBI.subtract(endNs, startNs);
       const dayProgressNs = TimeDuration.fromEpochNsDiff(thisNs, startNs);

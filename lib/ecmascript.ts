@@ -9,7 +9,6 @@ import {
   Symbol as SymbolCtor,
 
   // error constructors
-  Error as ErrorCtor,
   RangeError as RangeErrorCtor,
   TypeError as TypeErrorCtor,
 
@@ -74,6 +73,7 @@ import { DEBUG, ENABLE_ASSERTS } from './debug';
 import JSBI from 'jsbi';
 
 import type { Temporal } from '..';
+import { assert, assertNotReached } from './assert';
 import {
   abs,
   compare,
@@ -808,7 +808,7 @@ function ParseTemporalTimeZoneString(stringIdent: string): ReturnType<typeof Par
   if (tzAnnotation) return ParseTimeZoneIdentifier(tzAnnotation);
   if (z) return ParseTimeZoneIdentifier('UTC');
   if (offset) return ParseTimeZoneIdentifier(offset);
-  throw new ErrorCtor('this line should not be reached');
+  /* c8 ignore next */ assertNotReached();
 }
 
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
@@ -1768,9 +1768,7 @@ export function ToTemporalMonthDay(item: PlainMonthDayParams['from'][0], options
 
   GetTemporalOverflowOption(GetOptionsObject(options));
   if (referenceISOYear === undefined) {
-    if (calendar !== 'iso8601') {
-      throw new ErrorCtor(`assertion failed: missing year with non-"iso8601" calendar identifier ${calendar}`);
-    }
+    assert(calendar === 'iso8601', `missing year with non-"iso8601" calendar identifier ${calendar}`);
     const isoCalendarReferenceYear = 1972; // First leap year after Unix epoch
     return CreateTemporalMonthDay(month, day, calendar, isoCalendarReferenceYear);
   }
@@ -1882,9 +1880,8 @@ export function InterpretISODateTimeOffset(
   // grammatically not possible to specify a UTC offset in that string, so the
   // behaviour collapses into ~WALL~, which is equivalent to offset: "ignore".
   if (time === 'start-of-day') {
-    if (offsetBehaviour !== 'wall' || offsetNs !== 0) {
-      throw new ErrorCtor('assertion failure: offset cannot be provided in YYYY-MM-DD[Zone] string');
-    }
+    assert(offsetBehaviour === 'wall', 'offset cannot be provided in YYYY-MM-DD[Zone] string');
+    assert(offsetNs === 0, 'offset cannot be provided in YYYY-MM-DD[Zone] string');
     return GetStartOfDay(timeZone, { year, month, day });
   }
 
@@ -2527,9 +2524,7 @@ function DisambiguatePossibleEpochNanoseconds(
   ValidateEpochNanoseconds(dayAfter);
   const offsetAfter = GetOffsetNanosecondsFor(timeZone, dayAfter);
   const nanoseconds = offsetAfter - offsetBefore;
-  if (MathAbs(nanoseconds) > DAY_NANOS) {
-    throw new ErrorCtor('assertion failure: UTC offset shift longer than 24 hours');
-  }
+  assert(MathAbs(nanoseconds) <= DAY_NANOS, 'UTC offset shift longer than 24 hours');
 
   switch (disambiguation) {
     case 'earlier': {
@@ -2584,9 +2579,7 @@ export function GetStartOfDay(timeZone: string, isoDate: ISODate) {
 
   // Otherwise, 00:00:00 lies within a DST gap. Compute an epochNs that's
   // guaranteed to be before the transition
-  if (IsOffsetTimeZoneIdentifier(timeZone)) {
-    throw new ErrorCtor('assertion failure: should only be reached with named time zone');
-  }
+  assert(!IsOffsetTimeZoneIdentifier(timeZone), 'should only be reached with named time zone');
 
   const utcns = GetUTCEpochNanoseconds(isoDate.year, isoDate.month, isoDate.day, 0, 0, 0, 0, 0, 0);
   const dayBefore = JSBI.subtract(utcns, DAY_NANOS_JSBI);
@@ -3689,7 +3682,7 @@ export function UnnormalizeDuration(normalizedDuration: InternalDuration, larges
       seconds = 0;
       break;
     default:
-      throw new ErrorCtor('assert not reached');
+      /* c8 ignore next */ assertNotReached();
   }
 
   const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
@@ -3799,9 +3792,7 @@ function DifferenceTime(
   const microseconds = µs2 - µs1;
   const nanoseconds = ns2 - ns1;
   const norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-
-  if (norm.abs().sec >= 86400) throw new ErrorCtor('assertion failure in DifferenceTime: _bt_.[[Days]] should be 0');
-
+  assert(norm.abs().sec < 86400, '_bt_.[[Days]] should be 0');
   return norm;
 }
 
@@ -3951,9 +3942,7 @@ function DifferenceZonedDateTime(
     }
   }
 
-  if (dayCorrection > maxDayCorrection) {
-    throw new ErrorCtor(`assertion failed: more than ${maxDayCorrection} day correction needed`);
-  }
+  assert(dayCorrection <= maxDayCorrection, `more than ${maxDayCorrection} day correction needed`);
 
   // Output of the above loop
   assertExists(intermediateDateTime);
@@ -4024,12 +4013,11 @@ function NudgeToCalendarUnit(
       break;
     }
     default:
-      throw new ErrorCtor('assert not reached');
+      /* c8 ignore next */ assertNotReached();
   }
 
-  if ((sign === 1 && (r1 < 0 || r1 >= r2)) || (sign === -1 && (r1 > 0 || r1 <= r2))) {
-    throw new ErrorCtor('assertion failed: ordering of r1, r2 according to sign');
-  }
+  if (sign === 1) assert(r1 >= 0 && r1 < r2, `positive ordering of r1, r2: 0 ≤ ${r1} < ${r2}`);
+  if (sign === -1) assert(r1 <= 0 && r1 > r2, `negative ordering of r1, r2: 0 ≥ ${r1} > ${r2}`);
 
   // Apply to origin, output PlainDateTimes
   const startDate = ISODateTimeToDateRecord(dateTime);
@@ -4069,15 +4057,19 @@ function NudgeToCalendarUnit(
   }
 
   // Round the smallestUnit within the epoch-nanosecond span
-  if (
-    (sign === 1 && (JSBI.greaterThan(startEpochNs, destEpochNs) || JSBI.greaterThan(destEpochNs, endEpochNs))) ||
-    (sign === -1 && (JSBI.greaterThan(endEpochNs, destEpochNs) || JSBI.greaterThan(destEpochNs, startEpochNs)))
-  ) {
-    throw new ErrorCtor(`assertion failed: ${unit} cannot be 0 days long`);
+  if (sign === 1) {
+    assert(
+      JSBI.lessThanOrEqual(startEpochNs, destEpochNs) && JSBI.lessThanOrEqual(destEpochNs, endEpochNs),
+      `${unit} was 0 days long`
+    );
   }
-  if (JSBI.equal(endEpochNs, startEpochNs)) {
-    throw new ErrorCtor('assertion failed: startEpochNs ≠ endEpochNs');
+  if (sign === -1) {
+    assert(
+      JSBI.lessThanOrEqual(endEpochNs, destEpochNs) && JSBI.lessThanOrEqual(destEpochNs, startEpochNs),
+      `${unit} was 0 days long`
+    );
   }
+  assert(!JSBI.equal(endEpochNs, startEpochNs), 'startEpochNs must ≠ endEpochNs');
   const numerator = TimeDuration.fromEpochNsDiff(destEpochNs, startEpochNs);
   const denominator = TimeDuration.fromEpochNsDiff(endEpochNs, startEpochNs);
   const unsignedRoundingMode = GetUnsignedRoundingMode(roundingMode, sign < 0 ? 'negative' : 'positive');
@@ -4098,9 +4090,7 @@ function NudgeToCalendarUnit(
     )
   );
   const total = fakeNumerator.fdiv(denominator.totalNs);
-  if (MathAbs(total) < MathAbs(r1) || MathAbs(total) > MathAbs(r2)) {
-    throw new ErrorCtor('assertion failed: r1 ≤ total ≤ r2');
-  }
+  assert(MathAbs(r1) <= MathAbs(total) && MathAbs(total) <= MathAbs(r2), 'r1 ≤ total ≤ r2');
 
   // Determine whether expanded or contracted
   const didExpandCalendarUnit = roundedUnit === MathAbs(r2);
@@ -4276,7 +4266,7 @@ function BubbleRelativeDuration(
         break;
       }
       default:
-        throw new ErrorCtor('assert not reached');
+        /* c8 ignore next */ assertNotReached();
     }
 
     // Compute end-of-unit in epoch-nanoseconds
@@ -5551,7 +5541,7 @@ function bisect(
       right = middle;
       rstate = mstate;
     } else {
-      throw new ErrorCtor(`invalid state in bisection ${lstate} - ${mstate} - ${rstate}`);
+      /* c8 ignore next */ assertNotReached(`invalid state in bisection ${lstate} - ${mstate} - ${rstate}`);
     }
   }
   return right;
