@@ -241,17 +241,6 @@ export class PlainTime implements Temporal.PlainTime {
   }
 
   static from(item: Params['from'][0], options: Params['from'][1] = undefined): Return['from'] {
-    if (ES.IsTemporalTime(item)) {
-      ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
-      return new PlainTime(
-        GetSlot(item, ISO_HOUR),
-        GetSlot(item, ISO_MINUTE),
-        GetSlot(item, ISO_SECOND),
-        GetSlot(item, ISO_MILLISECOND),
-        GetSlot(item, ISO_MICROSECOND),
-        GetSlot(item, ISO_NANOSECOND)
-      );
-    }
     return ES.ToTemporalTime(item, options);
   }
   static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {

@@ -261,15 +261,6 @@ export class PlainDate implements Temporal.PlainDate {
   }
 
   static from(item: Params['from'][0], options: Params['from'][1] = undefined): Return['from'] {
-    if (ES.IsTemporalDate(item)) {
-      ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
-      return ES.CreateTemporalDate(
-        GetSlot(item, ISO_YEAR),
-        GetSlot(item, ISO_MONTH),
-        GetSlot(item, ISO_DAY),
-        GetSlot(item, CALENDAR)
-      );
-    }
     return ES.ToTemporalDate(item, options);
   }
   static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {
