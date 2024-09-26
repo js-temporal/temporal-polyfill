@@ -2483,7 +2483,7 @@ export function GetEpochNanosecondsFor(
 function DisambiguatePossibleEpochNanoseconds(
   possibleEpochNs: JSBI[],
   timeZone: string,
-  isoDateTime: ISODate & Partial<ISODateTime>,
+  isoDateTime: ISODateTime,
   disambiguation: NonNullable<Temporal.ToInstantOptions['disambiguation']>
 ) {
   const numInstants = possibleEpochNs.length;
@@ -2504,17 +2504,7 @@ function DisambiguatePossibleEpochNanoseconds(
   }
 
   if (disambiguation === 'reject') throw new RangeErrorCtor('multiple instants found');
-  const {
-    year,
-    month,
-    day,
-    hour = 0,
-    minute = 0,
-    second = 0,
-    millisecond = 0,
-    microsecond = 0,
-    nanosecond = 0
-  } = isoDateTime;
+  const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = isoDateTime;
   const utcns = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
 
   const dayBefore = JSBI.subtract(utcns, DAY_NANOS_JSBI);
