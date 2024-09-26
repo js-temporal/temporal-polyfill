@@ -36,6 +36,7 @@ import {
   DatePrototypeGetUTCMilliseconds,
   DatePrototypeSetUTCFullYear,
   DatePrototypeSetUTCHours,
+  DateUTC,
   IntlDateTimeFormat,
   IntlDateTimeFormatPrototypeGetFormat,
   IntlDateTimeFormatPrototypeResolvedOptions,
@@ -155,6 +156,7 @@ const DAY_MS = 86400_000;
 const DAY_NANOS = DAY_MS * 1e6;
 const MINUTE_NANOS = 60e9;
 // Instant range is 100 million days (inclusive) before or after epoch.
+const MS_MAX = DAY_MS * 1e8;
 const NS_MIN = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(-1e8));
 const NS_MAX = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(1e8));
 // PlainDateTime range is 24 hours wider (exclusive) than the Instant range on
@@ -168,9 +170,7 @@ const DATETIME_NS_MAX = JSBI.subtract(JSBI.add(NS_MAX, DAY_NANOS_JSBI), ONE);
 const MS_IN_400_YEAR_CYCLE = (400 * 365 + 97) * DAY_MS;
 const YEAR_MIN = -271821;
 const YEAR_MAX = 275760;
-const BEFORE_FIRST_OFFSET_TRANSITION = JSBI.multiply(JSBI.BigInt(-388152), JSBI.BigInt(1e13)); // 1847-01-01T00:00:00Z
-const ABOUT_THREE_YEARS_NANOS = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(366 * 3));
-const TWO_WEEKS_NANOS = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(2 * 7));
+const BEFORE_FIRST_DST = DateUTC(1847, 0, 1); // 1847-01-01T00:00:00Z
 
 const BUILTIN_CALENDAR_IDS = [
   'iso8601',
@@ -2909,16 +2909,19 @@ export function GetAvailableNamedTimeZoneIdentifier(
   return { identifier: Call(ArrayPrototypeJoin, segments, ['/']), primaryIdentifier };
 }
 
-function GetNamedTimeZoneOffsetNanoseconds(id: string, epochNanoseconds: JSBI) {
-  // Optimization: We get the offset nanoseconds only with millisecond
-  // resolution, assuming that time zone offset changes don't happen in the
-  // middle of a millisecond
-  const epochMilliseconds = epochNsToMs(epochNanoseconds, 'floor');
+function GetNamedTimeZoneOffsetNanosecondsImpl(id: string, epochMilliseconds: number) {
   const { year, month, day, hour, minute, second } = GetFormatterParts(id, epochMilliseconds);
   let millisecond = epochMilliseconds % 1000;
   if (millisecond < 0) millisecond += 1000;
   const utc = GetUTCEpochMilliseconds(year, month, day, hour, minute, second, millisecond);
   return (utc - epochMilliseconds) * 1e6;
+}
+
+function GetNamedTimeZoneOffsetNanoseconds(id: string, epochNanoseconds: JSBI) {
+  // Optimization: We get the offset nanoseconds only with millisecond
+  // resolution, assuming that time zone offset changes don't happen in the
+  // middle of a millisecond
+  return GetNamedTimeZoneOffsetNanosecondsImpl(id, epochNsToMs(epochNanoseconds, 'floor'));
 }
 
 export function FormatOffsetTimeZoneIdentifier(offsetMinutes: number): string {
@@ -3007,48 +3010,58 @@ export function GetNamedTimeZoneDateTimeParts(id: string, epochNanoseconds: JSBI
 }
 
 export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSBI): JSBI | null {
-  if (JSBI.lessThan(epochNanoseconds, BEFORE_FIRST_OFFSET_TRANSITION)) {
-    return GetNamedTimeZoneNextTransition(id, BEFORE_FIRST_OFFSET_TRANSITION);
+  // Optimization: we floor the instant to the previous millisecond boundary
+  // so that we can do Number math instead of BigInt math. This assumes that
+  // time zone transitions don't happen in the middle of a millisecond.
+  const epochMilliseconds = epochNsToMs(epochNanoseconds, 'floor');
+  if (epochMilliseconds < BEFORE_FIRST_DST) {
+    return GetNamedTimeZoneNextTransition(id, JSBI.multiply(JSBI.BigInt(BEFORE_FIRST_DST), MILLION));
   }
+
   // Optimization: the farthest that we'll look for a next transition is 3 years
   // after the later of epochNanoseconds or the current time. If there are no
   // transitions found before then, we'll assume that there will not be any more
   // transitions after that.
-  const now = SystemUTCEpochNanoSeconds();
-  const base = JSBI.GT(epochNanoseconds, now) ? epochNanoseconds : now;
-  const uppercap = JSBI.add(base, ABOUT_THREE_YEARS_NANOS);
-  let leftNanos = epochNanoseconds;
-  let leftOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, leftNanos);
-  let rightNanos = leftNanos;
+  const now = DateNow();
+  const base = MathMax(epochMilliseconds, now);
+  const uppercap = base + DAY_MS * 366 * 3;
+  let leftMs = epochMilliseconds;
+  let leftOffsetNs = GetNamedTimeZoneOffsetNanosecondsImpl(id, leftMs);
+  let rightMs = leftMs;
   let rightOffsetNs = leftOffsetNs;
-  while (leftOffsetNs === rightOffsetNs && JSBI.lessThan(JSBI.BigInt(leftNanos), uppercap)) {
-    rightNanos = JSBI.add(leftNanos, TWO_WEEKS_NANOS);
-    if (JSBI.greaterThan(rightNanos, NS_MAX)) return null;
-    rightOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, rightNanos);
+  while (leftOffsetNs === rightOffsetNs && leftMs < uppercap) {
+    rightMs = leftMs + DAY_MS * 2 * 7;
+    if (rightMs > MS_MAX) return null;
+    rightOffsetNs = GetNamedTimeZoneOffsetNanosecondsImpl(id, rightMs);
     if (leftOffsetNs === rightOffsetNs) {
-      leftNanos = rightNanos;
+      leftMs = rightMs;
     }
   }
   if (leftOffsetNs === rightOffsetNs) return null;
   const result = bisect(
-    (epochNs: JSBI) => GetNamedTimeZoneOffsetNanoseconds(id, epochNs),
-    leftNanos,
-    rightNanos,
+    (epochMs: number) => GetNamedTimeZoneOffsetNanosecondsImpl(id, epochMs),
+    leftMs,
+    rightMs,
     leftOffsetNs,
     rightOffsetNs
   );
-  return result;
+  return JSBI.multiply(JSBI.BigInt(result), MILLION);
 }
 
 export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds: JSBI): JSBI | null {
+  // Optimization: we raise the instant to the next millisecond boundary so
+  // that we can do Number math instead of BigInt math. This assumes that time
+  // zone transitions don't happen in the middle of a millisecond.
+  const epochMilliseconds = epochNsToMs(epochNanoseconds, 'ceil');
+
   // Optimization: if the instant is more than 3 years in the future and there
   // are no transitions between the present day and 3 years from now, assume
   // there are none after.
-  const now = SystemUTCEpochNanoSeconds();
-  const lookahead = JSBI.add(now, ABOUT_THREE_YEARS_NANOS);
-  if (JSBI.greaterThan(epochNanoseconds, lookahead)) {
-    const prevBeforeLookahead = GetNamedTimeZonePreviousTransition(id, lookahead);
-    if (prevBeforeLookahead === null || JSBI.lessThan(prevBeforeLookahead, now)) {
+  const now = DateNow();
+  const lookahead = now + DAY_MS * 366 * 3;
+  if (epochMilliseconds > lookahead) {
+    const prevBeforeLookahead = GetNamedTimeZonePreviousTransition(id, JSBI.multiply(JSBI.BigInt(lookahead), MILLION));
+    if (prevBeforeLookahead === null || JSBI.lessThan(prevBeforeLookahead, JSBI.multiply(JSBI.BigInt(now), MILLION))) {
       return prevBeforeLookahead;
     }
   }
@@ -3061,34 +3074,34 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
   // the previous transition for an instant far in the future may take an
   // extremely long time as it loops backward 2 weeks at a time.
   if (id === 'Africa/Casablanca' || id === 'Africa/El_Aaiun') {
-    const lastPrecomputed = GetSlot(ToTemporalInstant('2088-01-01T00Z'), EPOCHNANOSECONDS);
-    if (JSBI.lessThan(lastPrecomputed, epochNanoseconds)) {
-      return GetNamedTimeZonePreviousTransition(id, lastPrecomputed);
+    const lastPrecomputed = DateUTC(2088, 0, 1); // 2088-01-01T00Z
+    if (lastPrecomputed < epochMilliseconds) {
+      return GetNamedTimeZonePreviousTransition(id, JSBI.multiply(JSBI.BigInt(lastPrecomputed), MILLION));
     }
   }
 
-  let rightNanos = JSBI.subtract(epochNanoseconds, ONE);
-  if (JSBI.lessThan(rightNanos, BEFORE_FIRST_OFFSET_TRANSITION)) return null;
-  const rightOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, rightNanos);
-  let leftNanos = rightNanos;
+  let rightMs = epochMilliseconds - 1;
+  if (rightMs < BEFORE_FIRST_DST) return null;
+  let rightOffsetNs = GetNamedTimeZoneOffsetNanosecondsImpl(id, rightMs);
+  let leftMs = rightMs;
   let leftOffsetNs = rightOffsetNs;
-  while (rightOffsetNs === leftOffsetNs && JSBI.greaterThan(rightNanos, BEFORE_FIRST_OFFSET_TRANSITION)) {
-    leftNanos = JSBI.subtract(rightNanos, TWO_WEEKS_NANOS);
-    if (JSBI.lessThan(leftNanos, BEFORE_FIRST_OFFSET_TRANSITION)) return null;
-    leftOffsetNs = GetNamedTimeZoneOffsetNanoseconds(id, leftNanos);
+  while (rightOffsetNs === leftOffsetNs && rightMs > BEFORE_FIRST_DST) {
+    leftMs = rightMs - DAY_MS * 2 * 7;
+    if (leftMs < BEFORE_FIRST_DST) return null;
+    leftOffsetNs = GetNamedTimeZoneOffsetNanosecondsImpl(id, leftMs);
     if (rightOffsetNs === leftOffsetNs) {
-      rightNanos = leftNanos;
+      rightMs = leftMs;
     }
   }
   if (rightOffsetNs === leftOffsetNs) return null;
   const result = bisect(
-    (epochNs: JSBI) => GetNamedTimeZoneOffsetNanoseconds(id, epochNs),
-    leftNanos,
-    rightNanos,
+    (epochMs: number) => GetNamedTimeZoneOffsetNanosecondsImpl(id, epochMs),
+    leftMs,
+    rightMs,
     leftOffsetNs,
     rightOffsetNs
   );
-  return result;
+  return JSBI.multiply(JSBI.BigInt(result), MILLION);
 }
 
 // ts-prune-ignore-next TODO: remove this after tests are converted to TS
@@ -5515,19 +5528,18 @@ const OFFSET = new RegExpCtor(`^${PARSE.offset.source}$`);
 const OFFSET_WITH_PARTS = new RegExpCtor(`^${PARSE.offsetWithParts.source}$`);
 
 function bisect(
-  getState: (epochNs: JSBI) => number,
-  leftParam: JSBI,
-  rightParam: JSBI,
-  lstateParam: number = getState(leftParam),
-  rstateParam: number = getState(rightParam)
+  getState: (epochMs: number) => number,
+  leftParam: number,
+  rightParam: number,
+  lstateParam = getState(leftParam),
+  rstateParam = getState(rightParam)
 ) {
-  // This doesn't make much sense - why do these get converted unnecessarily?
-  let left = JSBI.BigInt(leftParam);
-  let right = JSBI.BigInt(rightParam);
+  let left = leftParam;
+  let right = rightParam;
   let lstate = lstateParam;
   let rstate = rstateParam;
-  while (JSBI.greaterThan(JSBI.subtract(right, left), ONE)) {
-    const middle = JSBI.divide(JSBI.add(left, right), JSBI.BigInt(2));
+  while (right - left > 1) {
+    let middle = MathTrunc((left + right) / 2);
     const mstate = getState(middle);
     if (mstate === lstate) {
       left = middle;

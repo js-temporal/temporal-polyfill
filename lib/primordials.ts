@@ -54,7 +54,8 @@ export const {
     setUTCHours: DatePrototypeSetUTCHours,
     toLocaleDateString: DatePrototypeToLocaleDateString,
     valueOf: DatePrototypeValueOf
-  }
+  },
+  UTC: DateUTC
 } = Date;
 type MaybeDurationFormat = {
   new (locales: DurationParams['toLocaleString'][0], options: DurationParams['toLocaleString'][1]): MaybeDurationFormat;
