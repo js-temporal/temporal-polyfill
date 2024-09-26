@@ -1,4 +1,4 @@
-import { RangeError as RangeErrorCtor, TypeError as TypeErrorCtor } from './primordials';
+import { TypeError as TypeErrorCtor } from './primordials';
 
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
@@ -17,7 +17,7 @@ import {
 } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
-import type { BuiltinCalendarId, PlainDateParams as Params, PlainDateReturn as Return } from './internaltypes';
+import type { PlainDateParams as Params, PlainDateReturn as Return } from './internaltypes';
 
 export class PlainDate implements Temporal.PlainDate {
   constructor(
@@ -29,10 +29,7 @@ export class PlainDate implements Temporal.PlainDate {
     const isoYear = ES.ToIntegerWithTruncation(isoYearParam);
     const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);
     const isoDay = ES.ToIntegerWithTruncation(isoDayParam);
-    let calendar = calendarParam === undefined ? 'iso8601' : ES.RequireString(calendarParam);
-    if (!ES.IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`unknown calendar ${calendar}`);
-    calendar = ES.CanonicalizeCalendar(calendar);
-    ES.uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
+    const calendar = ES.CanonicalizeCalendar(calendarParam === undefined ? 'iso8601' : ES.RequireString(calendarParam));
 
     ES.CreateTemporalDateSlots(this, isoYear, isoMonth, isoDay, calendar);
   }

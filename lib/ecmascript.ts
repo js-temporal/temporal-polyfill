@@ -1316,7 +1316,6 @@ export function GetTemporalRelativeToOption(options: {
       );
     }
     if (!calendar) calendar = 'iso8601';
-    if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
     calendar = CanonicalizeCalendar(calendar);
   }
   if (timeZone === undefined) return { plainRelativeTo: CreateTemporalDate(year, month, day, calendar) };
@@ -1538,7 +1537,6 @@ export function ToTemporalDate(
   let { year, month, day, calendar, z } = ParseTemporalDateString(RequireString(item));
   if (z) throw new RangeErrorCtor('Z designator not supported for PlainDate');
   if (!calendar) calendar = 'iso8601';
-  if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
   calendar = CanonicalizeCalendar(calendar);
   uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
   GetTemporalOverflowOption(GetOptionsObject(options)); // validate and ignore
@@ -1643,7 +1641,6 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
       time.nanosecond
     );
     if (!calendar) calendar = 'iso8601';
-    if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
     calendar = CanonicalizeCalendar(calendar);
     GetTemporalOverflowOption(GetOptionsObject(options));
   }
@@ -1762,7 +1759,6 @@ export function ToTemporalMonthDay(item: PlainMonthDayParams['from'][0], options
 
   let { month, day, referenceISOYear, calendar } = ParseTemporalMonthDayString(RequireString(item));
   if (calendar === undefined) calendar = 'iso8601';
-  if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
   calendar = CanonicalizeCalendar(calendar);
   uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
 
@@ -1852,7 +1848,6 @@ export function ToTemporalYearMonth(
 
   let { year, month, referenceISODay, calendar } = ParseTemporalYearMonthString(RequireString(item));
   if (calendar === undefined) calendar = 'iso8601';
-  if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
   calendar = CanonicalizeCalendar(calendar);
   uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
 
@@ -1988,7 +1983,6 @@ export function ToTemporalZonedDateTime(
       offsetBehaviour = 'wall';
     }
     if (!calendar) calendar = 'iso8601';
-    if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
     calendar = CanonicalizeCalendar(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
     const options = GetOptionsObject(optionsParam);
@@ -2341,7 +2335,12 @@ export function ToTemporalCalendarIdentifier(calendarLike: Temporal.CalendarLike
     if (HasSlot(calendarLike, CALENDAR)) return GetSlot(calendarLike, CALENDAR);
   }
   const identifier = RequireString(calendarLike);
-  if (IsBuiltinCalendar(identifier)) return CanonicalizeCalendar(identifier);
+  try {
+    // Fast path: identifier is a calendar type, no ISO string parsing needed
+    return CanonicalizeCalendar(identifier);
+  } catch {
+    // fall through
+  }
   let calendar;
   try {
     ({ calendar } = ParseISODateTime(identifier));
@@ -2353,7 +2352,6 @@ export function ToTemporalCalendarIdentifier(calendarLike: Temporal.CalendarLike
     }
   }
   if (!calendar) calendar = 'iso8601';
-  if (!IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`invalid calendar identifier ${calendar}`);
   return CanonicalizeCalendar(calendar);
 }
 
@@ -5440,20 +5438,18 @@ function GetOption<
   return fallback;
 }
 
-export function IsBuiltinCalendar(id: string): id is BuiltinCalendarId {
-  return Call(ArrayPrototypeIncludes, BUILTIN_CALENDAR_IDS, [ASCIILowercase(id)]);
-}
-
 // This is a temporary implementation. Ideally we'd rely on Intl.DateTimeFormat
 // here, to provide the latest CLDR alias data, when implementations catch up to
 // the ECMA-402 change. The aliases below are taken from
 // https://github.com/unicode-org/cldr/blob/main/common/bcp47/calendar.xml
 export function CanonicalizeCalendar(idParam: string): BuiltinCalendarId {
   const id = ASCIILowercase(idParam);
-  uncheckedAssertNarrowedType<BuiltinCalendarId>(
-    id,
-    'ES.IsBuiltinCalendar may allow mixed-case IDs, they are only guaranteed to be built-in after being lowercased'
-  );
+
+  if (!Call(ArrayPrototypeIncludes, BUILTIN_CALENDAR_IDS, [ASCIILowercase(id)])) {
+    throw new RangeErrorCtor(`invalid calendar identifier ${id}`);
+  }
+  uncheckedAssertNarrowedType<BuiltinCalendarId>(id, 'above code throws out any non-calendar IDs');
+
   switch (id) {
     case 'ethiopic-amete-alem':
       // May need to be removed in the future.

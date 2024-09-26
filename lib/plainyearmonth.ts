@@ -1,15 +1,11 @@
-import { RangeError as RangeErrorCtor, TypeError as TypeErrorCtor } from './primordials';
+import { TypeError as TypeErrorCtor } from './primordials';
 
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import { ISO_YEAR, ISO_MONTH, ISO_DAY, CALENDAR, GetSlot } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
-import type {
-  BuiltinCalendarId,
-  PlainYearMonthParams as Params,
-  PlainYearMonthReturn as Return
-} from './internaltypes';
+import type { PlainYearMonthParams as Params, PlainYearMonthReturn as Return } from './internaltypes';
 
 export class PlainYearMonth implements Temporal.PlainYearMonth {
   constructor(
@@ -20,10 +16,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   ) {
     const isoYear = ES.ToIntegerWithTruncation(isoYearParam);
     const isoMonth = ES.ToIntegerWithTruncation(isoMonthParam);
-    let calendar = calendarParam === undefined ? 'iso8601' : ES.RequireString(calendarParam);
-    if (!ES.IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`unknown calendar ${calendar}`);
-    calendar = ES.CanonicalizeCalendar(calendar);
-    ES.uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
+    const calendar = ES.CanonicalizeCalendar(calendarParam === undefined ? 'iso8601' : ES.RequireString(calendarParam));
     const referenceISODay = ES.ToIntegerWithTruncation(referenceISODayParam);
 
     ES.CreateTemporalYearMonthSlots(this, isoYear, isoMonth, calendar, referenceISODay);

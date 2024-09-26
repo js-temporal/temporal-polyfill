@@ -50,10 +50,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     } else {
       timeZone = ES.FormatOffsetTimeZoneIdentifier(offsetMinutes);
     }
-    let calendar = calendarParam === undefined ? 'iso8601' : ES.RequireString(calendarParam);
-    if (!ES.IsBuiltinCalendar(calendar)) throw new RangeErrorCtor(`unknown calendar ${calendar}`);
-    calendar = ES.CanonicalizeCalendar(calendar);
-    ES.uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
+    const calendar = ES.CanonicalizeCalendar(calendarParam === undefined ? 'iso8601' : ES.RequireString(calendarParam));
 
     ES.CreateTemporalZonedDateTimeSlots(this, epochNanoseconds, timeZone, calendar);
   }
