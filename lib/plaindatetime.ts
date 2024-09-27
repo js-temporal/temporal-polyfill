@@ -359,13 +359,13 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     }
     return ES.CalendarEquals(GetSlot(this, CALENDAR), GetSlot(other, CALENDAR));
   }
-  toString(optionsParam: Params['toString'][0] = undefined): string {
+  toString(options: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    const options = ES.GetOptionsObject(optionsParam);
-    const showCalendar = ES.GetTemporalShowCalendarNameOption(options);
-    const digits = ES.GetTemporalFractionalSecondDigitsOption(options);
-    const roundingMode = ES.GetRoundingModeOption(options, 'trunc');
-    const smallestUnit = ES.GetTemporalUnitValuedOption(options, 'smallestUnit', 'time', undefined);
+    const resolvedOptions = ES.GetOptionsObject(options);
+    const showCalendar = ES.GetTemporalShowCalendarNameOption(resolvedOptions);
+    const digits = ES.GetTemporalFractionalSecondDigitsOption(resolvedOptions);
+    const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
+    const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour') throw new RangeErrorCtor('smallestUnit must be a time unit other than "hour"');
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     const result = ES.RoundISODateTime(
@@ -423,12 +423,12 @@ export class PlainDateTime implements Temporal.PlainDateTime {
 
   toZonedDateTime(
     temporalTimeZoneLike: Params['toZonedDateTime'][0],
-    optionsParam: Params['toZonedDateTime'][1] = undefined
+    options: Params['toZonedDateTime'][1] = undefined
   ): Return['toZonedDateTime'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
     const timeZone = ES.ToTemporalTimeZoneIdentifier(temporalTimeZoneLike);
-    const options = ES.GetOptionsObject(optionsParam);
-    const disambiguation = ES.GetTemporalDisambiguationOption(options);
+    const resolvedOptions = ES.GetOptionsObject(options);
+    const disambiguation = ES.GetTemporalDisambiguationOption(resolvedOptions);
     const isoDateTime = ES.PlainDateTimeToISODateTimeRecord(this);
     const epochNs = ES.GetEpochNanosecondsFor(timeZone, isoDateTime, disambiguation);
     return ES.CreateTemporalZonedDateTime(epochNs, timeZone, GetSlot(this, CALENDAR));

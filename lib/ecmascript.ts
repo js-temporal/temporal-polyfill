@@ -1923,7 +1923,7 @@ export function InterpretISODateTimeOffset(
 
 export function ToTemporalZonedDateTime(
   item: ZonedDateTimeParams['from'][0],
-  optionsParam?: ZonedDateTimeParams['from'][1]
+  options?: ZonedDateTimeParams['from'][1]
 ) {
   let year, month, day, time, timeZone, offset, calendar;
   let matchMinute = false;
@@ -1931,10 +1931,10 @@ export function ToTemporalZonedDateTime(
   let disambiguation, offsetOpt;
   if (IsObject(item)) {
     if (IsTemporalZonedDateTime(item)) {
-      const options = GetOptionsObject(optionsParam);
-      GetTemporalDisambiguationOption(options); // validate and ignore
-      GetTemporalOffsetOption(options, 'reject');
-      GetTemporalOverflowOption(options);
+      const resolvedOptions = GetOptionsObject(options);
+      GetTemporalDisambiguationOption(resolvedOptions); // validate and ignore
+      GetTemporalOffsetOption(resolvedOptions, 'reject');
+      GetTemporalOverflowOption(resolvedOptions);
       return CreateTemporalZonedDateTime(
         GetSlot(item, EPOCHNANOSECONDS),
         GetSlot(item, TIME_ZONE),
@@ -1953,10 +1953,10 @@ export function ToTemporalZonedDateTime(
     if (offset === undefined) {
       offsetBehaviour = 'wall';
     }
-    const options = GetOptionsObject(optionsParam);
-    disambiguation = GetTemporalDisambiguationOption(options);
-    offsetOpt = GetTemporalOffsetOption(options, 'reject');
-    const overflow = GetTemporalOverflowOption(options);
+    const resolvedOptions = GetOptionsObject(options);
+    disambiguation = GetTemporalDisambiguationOption(resolvedOptions);
+    offsetOpt = GetTemporalOffsetOption(resolvedOptions, 'reject');
+    const overflow = GetTemporalOverflowOption(resolvedOptions);
     ({ year, month, day, time } = InterpretTemporalDateTimeFields(calendar, fields, overflow));
   } else {
     let tzAnnotation, z;
@@ -1972,10 +1972,10 @@ export function ToTemporalZonedDateTime(
     if (!calendar) calendar = 'iso8601';
     calendar = CanonicalizeCalendar(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
-    const options = GetOptionsObject(optionsParam);
-    disambiguation = GetTemporalDisambiguationOption(options);
-    offsetOpt = GetTemporalOffsetOption(options, 'reject');
-    GetTemporalOverflowOption(options); // validate and ignore
+    const resolvedOptions = GetOptionsObject(options);
+    disambiguation = GetTemporalDisambiguationOption(resolvedOptions);
+    offsetOpt = GetTemporalOffsetOption(resolvedOptions, 'reject');
+    GetTemporalOverflowOption(resolvedOptions); // validate and ignore
   }
   let offsetNs = 0;
   if (offsetBehaviour === 'option') offsetNs = ParseDateTimeUTCOffset(castExists(offset));
@@ -4946,7 +4946,7 @@ export function AddDurationToDate(
   operation: AddSubtractOperation,
   plainDate: Temporal.PlainDate,
   durationLike: PlainDateParams['add'][0],
-  optionsParam: PlainDateParams['add'][1]
+  options: PlainDateParams['add'][1]
 ) {
   const isoDate = TemporalObjectToISODateRecord(plainDate);
   const calendar = GetSlot(plainDate, CALENDAR);
@@ -4955,8 +4955,8 @@ export function AddDurationToDate(
   if (operation === 'subtract') duration = CreateNegatedTemporalDuration(duration);
   const dateDuration = NormalizeDurationWithoutTime(duration);
 
-  const options = GetOptionsObject(optionsParam);
-  const overflow = GetTemporalOverflowOption(options);
+  const resolvedOptions = GetOptionsObject(options);
+  const overflow = GetTemporalOverflowOption(resolvedOptions);
 
   const addedDate = CalendarDateAdd(calendar, isoDate, dateDuration, overflow);
   return CreateTemporalDate(addedDate.year, addedDate.month, addedDate.day, calendar);
@@ -4966,12 +4966,12 @@ export function AddDurationToDateTime(
   operation: AddSubtractOperation,
   dateTime: Temporal.PlainDateTime,
   durationLike: PlainDateTimeParams['add'][0],
-  optionsParam: PlainDateTimeParams['add'][1]
+  options: PlainDateTimeParams['add'][1]
 ) {
   let duration = ToTemporalDuration(durationLike);
   if (operation === 'subtract') duration = CreateNegatedTemporalDuration(duration);
-  const options = GetOptionsObject(optionsParam);
-  const overflow = GetTemporalOverflowOption(options);
+  const resolvedOptions = GetOptionsObject(options);
+  const overflow = GetTemporalOverflowOption(resolvedOptions);
 
   const calendar = GetSlot(dateTime, CALENDAR);
 
@@ -5048,12 +5048,12 @@ export function AddDurationToYearMonth(
   operation: AddSubtractOperation,
   yearMonth: Temporal.PlainYearMonth,
   durationLike: PlainYearMonthParams['add'][0],
-  optionsParam: PlainYearMonthParams['add'][1]
+  options: PlainYearMonthParams['add'][1]
 ) {
   let duration = ToTemporalDuration(durationLike);
   if (operation === 'subtract') duration = CreateNegatedTemporalDuration(duration);
-  const options = GetOptionsObject(optionsParam);
-  const overflow = GetTemporalOverflowOption(options);
+  const resolvedOptions = GetOptionsObject(options);
+  const overflow = GetTemporalOverflowOption(resolvedOptions);
   const sign = DurationSign(duration);
 
   const calendar = GetSlot(yearMonth, CALENDAR);
@@ -5077,13 +5077,13 @@ export function AddDurationToZonedDateTime(
   operation: AddSubtractOperation,
   zonedDateTime: Temporal.ZonedDateTime,
   durationLike: ZonedDateTimeParams['add'][0],
-  optionsParam: ZonedDateTimeParams['add'][1]
+  options: ZonedDateTimeParams['add'][1]
 ) {
   let duration = ToTemporalDuration(durationLike);
   if (operation === 'subtract') duration = CreateNegatedTemporalDuration(duration);
 
-  const options = GetOptionsObject(optionsParam);
-  const overflow = GetTemporalOverflowOption(options);
+  const resolvedOptions = GetOptionsObject(options);
+  const overflow = GetTemporalOverflowOption(resolvedOptions);
   const timeZone = GetSlot(zonedDateTime, TIME_ZONE);
   const calendar = GetSlot(zonedDateTime, CALENDAR);
   const normalized = NormalizeDuration(duration);
