@@ -1285,10 +1285,8 @@ export function GetTemporalRelativeToOption(options: {
       []
     );
     ({ year, month, day, time } = InterpretTemporalDateTimeFields(calendar, fields, 'constrain'));
-    offset = fields.offset;
+    ({ offset, timeZone } = fields);
     if (offset === undefined) offsetBehaviour = 'wall';
-    timeZone = fields.timeZone;
-    if (timeZone !== undefined) timeZone = ToTemporalTimeZoneIdentifier(timeZone);
   } else {
     let tzAnnotation, z;
     ({ year, month, day, time, calendar, tzAnnotation, offset, z } = ParseISODateTime(RequireString(relativeTo)));
@@ -1951,8 +1949,7 @@ export function ToTemporalZonedDateTime(
       ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'offset', 'second', 'timeZone'],
       ['timeZone']
     );
-    timeZone = ToTemporalTimeZoneIdentifier(fields.timeZone);
-    offset = fields.offset;
+    ({ offset, timeZone } = fields);
     if (offset === undefined) {
       offsetBehaviour = 'wall';
     }
