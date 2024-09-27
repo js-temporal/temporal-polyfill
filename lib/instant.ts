@@ -100,14 +100,14 @@ export class Instant implements Temporal.Instant {
     const two = GetSlot(other, EPOCHNANOSECONDS);
     return JSBI.equal(JSBI.BigInt(one), JSBI.BigInt(two));
   }
-  toString(optionsParam: Params['toString'][0] = undefined): string {
+  toString(options: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalInstant(this)) throw new TypeErrorCtor('invalid receiver');
-    const options = ES.GetOptionsObject(optionsParam);
-    const digits = ES.GetTemporalFractionalSecondDigitsOption(options);
-    const roundingMode = ES.GetRoundingModeOption(options, 'trunc');
-    const smallestUnit = ES.GetTemporalUnitValuedOption(options, 'smallestUnit', 'time', undefined);
+    const resolvedOptions = ES.GetOptionsObject(options);
+    const digits = ES.GetTemporalFractionalSecondDigitsOption(resolvedOptions);
+    const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
+    const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour') throw new RangeErrorCtor('smallestUnit must be a time unit other than "hour"');
-    let timeZone = options.timeZone;
+    let timeZone = resolvedOptions.timeZone;
     if (timeZone !== undefined) timeZone = ES.ToTemporalTimeZoneIdentifier(timeZone);
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     const ns = GetSlot(this, EPOCHNANOSECONDS);

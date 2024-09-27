@@ -390,16 +390,16 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     if (!ES.TimeZoneEquals(GetSlot(this, TIME_ZONE), GetSlot(other, TIME_ZONE))) return false;
     return ES.CalendarEquals(GetSlot(this, CALENDAR), GetSlot(other, CALENDAR));
   }
-  toString(optionsParam: Params['toString'][0] = undefined): string {
+  toString(options: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    const options = ES.GetOptionsObject(optionsParam);
-    const showCalendar = ES.GetTemporalShowCalendarNameOption(options);
-    const digits = ES.GetTemporalFractionalSecondDigitsOption(options);
-    const showOffset = ES.GetTemporalShowOffsetOption(options);
-    const roundingMode = ES.GetRoundingModeOption(options, 'trunc');
-    const smallestUnit = ES.GetTemporalUnitValuedOption(options, 'smallestUnit', 'time', undefined);
+    const resolvedOptions = ES.GetOptionsObject(options);
+    const showCalendar = ES.GetTemporalShowCalendarNameOption(resolvedOptions);
+    const digits = ES.GetTemporalFractionalSecondDigitsOption(resolvedOptions);
+    const showOffset = ES.GetTemporalShowOffsetOption(resolvedOptions);
+    const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
+    const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour') throw new RangeErrorCtor('smallestUnit must be a time unit other than "hour"');
-    const showTimeZone = ES.GetTemporalShowTimeZoneNameOption(options);
+    const showTimeZone = ES.GetTemporalShowTimeZoneNameOption(resolvedOptions);
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     return ES.TemporalZonedDateTimeToString(this, precision, showCalendar, showTimeZone, showOffset, {
       unit,
@@ -409,19 +409,19 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
   toLocaleString(
     locales: Params['toLocaleString'][0] = undefined,
-    optionsParam: Params['toLocaleString'][1] = undefined
+    options: Params['toLocaleString'][1] = undefined
   ): string {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    const options = ES.GetOptionsObject(optionsParam);
+    const resolvedOptions = ES.GetOptionsObject(options);
 
     // This is not quite per specification, but this polyfill's DateTimeFormat
     // already doesn't match the InitializeDateTimeFormat operation, and the
     // access order might change anyway;
     // see https://github.com/tc39/ecma402/issues/747
     const optionsCopy = ObjectCreate(null);
-    ES.CopyDataProperties(optionsCopy, options, ['timeZone']);
+    ES.CopyDataProperties(optionsCopy, resolvedOptions, ['timeZone']);
 
-    if (options.timeZone !== undefined) {
+    if (resolvedOptions.timeZone !== undefined) {
       throw new TypeErrorCtor('ZonedDateTime toLocaleString does not accept a timeZone option');
     }
 

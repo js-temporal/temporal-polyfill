@@ -381,12 +381,12 @@ export class Duration implements Temporal.Duration {
     const { total } = ES.RoundTimeDuration(duration, 1, unit, 'trunc');
     return total;
   }
-  toString(optionsParam: Params['toString'][0] = undefined): string {
+  toString(options: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
-    const options = ES.GetOptionsObject(optionsParam);
-    const digits = ES.GetTemporalFractionalSecondDigitsOption(options);
-    const roundingMode = ES.GetRoundingModeOption(options, 'trunc');
-    const smallestUnit = ES.GetTemporalUnitValuedOption(options, 'smallestUnit', 'time', undefined);
+    const resolvedOptions = ES.GetOptionsObject(options);
+    const digits = ES.GetTemporalFractionalSecondDigitsOption(resolvedOptions);
+    const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
+    const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour' || smallestUnit === 'minute') {
       throw new RangeErrorCtor('smallestUnit must be a time unit other than "hours" or "minutes"');
     }
@@ -428,12 +428,12 @@ export class Duration implements Temporal.Duration {
   static compare(
     oneParam: Params['compare'][0],
     twoParam: Params['compare'][1],
-    optionsParam: Params['compare'][2] = undefined
+    options: Params['compare'][2] = undefined
   ) {
     const one = ES.ToTemporalDuration(oneParam);
     const two = ES.ToTemporalDuration(twoParam);
-    const options = ES.GetOptionsObject(optionsParam);
-    const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption(options);
+    const resolvedOptions = ES.GetOptionsObject(options);
+    const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption(resolvedOptions);
 
     if (
       GetSlot(one, YEARS) === GetSlot(two, YEARS) &&
