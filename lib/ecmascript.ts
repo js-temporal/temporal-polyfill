@@ -996,13 +996,6 @@ function ZeroDateDuration() {
   return { years: 0, months: 0, weeks: 0, days: 0 };
 }
 
-function ZeroNormalizedDuration() {
-  return {
-    date: ZeroDateDuration(),
-    norm: TimeDuration.ZERO
-  };
-}
-
 export function TemporalObjectToISODateRecord(
   temporalObject: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.PlainYearMonth | Temporal.PlainMonthDay
 ) {
@@ -3852,7 +3845,7 @@ function DifferenceZonedDateTime(
   largestUnit: Temporal.DateTimeUnit
 ) {
   const nsDiff = JSBI.subtract(ns2, ns1);
-  if (JSBI.equal(nsDiff, ZERO)) return ZeroNormalizedDuration();
+  if (JSBI.equal(nsDiff, ZERO)) return { date: ZeroDateDuration(), norm: TimeDuration.ZERO };
   const sign = JSBI.lessThan(nsDiff, ZERO) ? -1 : 1;
 
   // Convert start/end instants to datetimes
