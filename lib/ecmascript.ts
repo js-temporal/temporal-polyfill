@@ -1037,13 +1037,11 @@ export function CombineISODateAndTimeRecord(date: ISODate, time: TimeRecord) {
   return { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond };
 }
 
-export function GetTemporalOverflowOption(options: Temporal.AssignmentOptions | undefined) {
-  if (options === undefined) return 'constrain';
+export function GetTemporalOverflowOption(options: Temporal.AssignmentOptions) {
   return GetOption(options, 'overflow', ['constrain', 'reject'], 'constrain');
 }
 
-export function GetTemporalDisambiguationOption(options: Temporal.ToInstantOptions | undefined) {
-  if (options === undefined) return 'compatible';
+export function GetTemporalDisambiguationOption(options: Temporal.ToInstantOptions) {
   return GetOption(options, 'disambiguation', ['compatible', 'earlier', 'later', 'reject'], 'compatible');
 }
 
@@ -1075,10 +1073,9 @@ function NegateRoundingMode(roundingMode: Temporal.RoundingMode) {
 }
 
 export function GetTemporalOffsetOption(
-  options: Temporal.OffsetDisambiguationOptions | undefined,
+  options: Temporal.OffsetDisambiguationOptions,
   fallback: Required<Temporal.OffsetDisambiguationOptions>['offset']
 ) {
-  if (options === undefined) return fallback;
   return GetOption(options, 'offset', ['prefer', 'use', 'ignore', 'reject'], fallback);
 }
 
