@@ -1773,9 +1773,6 @@ abstract class GregorianBaseHelper extends HelperBase {
         ({ code, names = [] }) => code === era || ES.Call(ArrayPrototypeIncludes, names, [era])
       ]);
       if (!matchingEra) throw new RangeErrorCtor(`Era ${era} (ISO year ${eraYear}) was not matched by any era`);
-      if (eraYear < 1 && matchingEra.reverseOf) {
-        throw new RangeErrorCtor(`Years in ${era} era must be positive, not ${year}`);
-      }
       if (matchingEra.reverseOf) {
         year = matchingEra.anchorEpoch.year - eraYear;
       } else {
