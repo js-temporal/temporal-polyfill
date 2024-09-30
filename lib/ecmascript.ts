@@ -3391,8 +3391,8 @@ export function UnbalanceDateDurationRelative(dateDuration: DateDuration, plainR
   // balance years, months, and weeks down to days
   const isoDate = TemporalObjectToISODateRecord(plainRelativeTo);
   const later = CalendarDateAdd(GetSlot(plainRelativeTo, CALENDAR), isoDate, yearsMonthsWeeksDuration, 'constrain');
-  const epochDaysEarlier = ISODateToEpochDays(isoDate.year, isoDate.month, isoDate.day);
-  const epochDaysLater = ISODateToEpochDays(later.year, later.month, later.day);
+  const epochDaysEarlier = ISODateToEpochDays(isoDate.year, isoDate.month - 1, isoDate.day);
+  const epochDaysLater = ISODateToEpochDays(later.year, later.month - 1, later.day);
   const yearsMonthsWeeksInDays = epochDaysLater - epochDaysEarlier;
   return dateDuration.days + yearsMonthsWeeksInDays;
 }
@@ -3721,10 +3721,9 @@ function CombineDateAndNormalizedTimeDuration(dateDuration: DateDuration, norm: 
   return { date: dateDuration, norm };
 }
 
+// Caution: month is 0-based
 function ISODateToEpochDays(y: number, m: number, d: number) {
-  // This is inefficient, but we use GetUTCEpochNanoseconds to avoid duplicating
-  // the workarounds for legacy Date. (see that function for explanation)
-  return JSBI.toNumber(JSBI.divide(GetUTCEpochNanoseconds(y, m, d, 0, 0, 0, 0, 0, 0), DAY_NANOS_JSBI));
+  return GetUTCEpochMilliseconds(y, m + 1, d, 0, 0, 0, 0) / DAY_MS;
 }
 
 export function DifferenceISODate<Allowed extends Temporal.DateTimeUnit>(
@@ -3773,7 +3772,8 @@ export function DifferenceISODate<Allowed extends Temporal.DateTimeUnit>(
   const constrained = ConstrainISODate(intermediate.year, intermediate.month, d1);
 
   let weeks = 0;
-  let days = ISODateToEpochDays(y2, m2, d2) - ISODateToEpochDays(constrained.year, constrained.month, constrained.day);
+  let days =
+    ISODateToEpochDays(y2, m2 - 1, d2) - ISODateToEpochDays(constrained.year, constrained.month - 1, constrained.day);
 
   if (largestUnit === 'week') {
     weeks = MathTrunc(days / 7);
