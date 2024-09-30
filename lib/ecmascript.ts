@@ -1696,10 +1696,31 @@ export function ToTemporalInstant(itemParam: InstantParams['from'][0]) {
   } = time === 'start-of-day' ? {} : time;
 
   // ParseTemporalInstantString ensures that either `z` is true or or `offset` is non-undefined
-  const offsetNanoseconds = z ? 0 : ParseDateTimeUTCOffset((assertExists(offset), offset));
-  const epochNanoseconds = JSBI.subtract(
-    GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond),
-    JSBI.BigInt(offsetNanoseconds)
+  const offsetNanoseconds = z ? 0 : ParseDateTimeUTCOffset(castExists(offset));
+  const balanced = BalanceISODateTime(
+    year,
+    month,
+    day,
+    hour,
+    minute,
+    second,
+    millisecond,
+    microsecond,
+    nanosecond - offsetNanoseconds
+  );
+  if (MathAbs(ISODateToEpochDays(balanced.year, balanced.month - 1, balanced.day)) > 1e8) {
+    throw new RangeErrorCtor('date/time value is outside the supported range');
+  }
+  const epochNanoseconds = GetUTCEpochNanoseconds(
+    balanced.year,
+    balanced.month,
+    balanced.day,
+    balanced.hour,
+    balanced.minute,
+    balanced.second,
+    balanced.millisecond,
+    balanced.microsecond,
+    balanced.nanosecond
   );
   ValidateEpochNanoseconds(epochNanoseconds);
   return new TemporalInstant(epochNanoseconds);
