@@ -4035,7 +4035,9 @@ function DifferenceZonedDateTime(
 
   // Similar to what happens in DifferenceISODateTime with date parts only:
   const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit) as Temporal.DateUnit;
-  const dateDifference = CalendarDateUntil(calendar, isoDtStart, intermediateDateTime, dateLargestUnit);
+  const isoStartDate = ISODateTimeToDateRecord(isoDtStart);
+  const isoIntermediateDate = ISODateTimeToDateRecord(intermediateDateTime);
+  const dateDifference = CalendarDateUntil(calendar, isoStartDate, isoIntermediateDate, dateLargestUnit);
   return CombineDateAndNormalizedTimeDuration(dateDifference, norm);
 }
 
@@ -5090,7 +5092,8 @@ export function AddZonedDateTime(
   // RFC 5545 requires the date portion to be added in calendar days and the
   // time portion to be added in exact time.
   const dt = GetISODateTimeFor(timeZone, epochNs);
-  const addedDate = CalendarDateAdd(calendar, dt, duration.date, overflow);
+  const datePart = ISODateTimeToDateRecord(dt);
+  const addedDate = CalendarDateAdd(calendar, datePart, duration.date, overflow);
   const dtIntermediate = CombineISODateAndTimeRecord(addedDate, dt);
 
   // Note that 'compatible' is used below because this disambiguation behavior
