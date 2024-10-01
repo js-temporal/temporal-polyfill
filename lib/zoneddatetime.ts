@@ -316,23 +316,22 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     // first, round the underlying DateTime fields
     const timeZone = GetSlot(this, TIME_ZONE);
     const thisNs = GetSlot(this, EPOCHNANOSECONDS);
-    const iso = ES.GetISODateTimeFor(timeZone, thisNs);
+    const iso = dateTime(this);
     let epochNanoseconds;
 
     if (smallestUnit === 'day') {
       // Compute Instants for start-of-day and end-of-day
       // Determine how far the current instant has progressed through this span.
-      const { year, month, day } = iso;
-      const dtStart = { year, month, day };
-      const dtEnd = ES.BalanceISODate(year, month, day + 1);
+      const dateStart = ES.ISODateTimeToDateRecord(iso);
+      const dateEnd = ES.BalanceISODate(dateStart.year, dateStart.month, dateStart.day + 1);
 
-      const startNs = ES.GetStartOfDay(timeZone, dtStart);
+      const startNs = ES.GetStartOfDay(timeZone, dateStart);
       assert(
         JSBI.greaterThanOrEqual(thisNs, startNs),
         'cannot produce an instant during a day that occurs before start-of-day instant'
       );
 
-      const endNs = ES.GetStartOfDay(timeZone, dtEnd);
+      const endNs = ES.GetStartOfDay(timeZone, dateEnd);
       assert(
         JSBI.lessThan(thisNs, endNs),
         'cannot produce an instant during a day that occurs on or after end-of-day instant'
@@ -480,10 +479,10 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   startOfDay(): Return['startOfDay'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
     const timeZone = GetSlot(this, TIME_ZONE);
-    const calendar = GetSlot(this, CALENDAR);
-    const { year, month, day } = ES.GetISODateTimeFor(timeZone, GetSlot(this, EPOCHNANOSECONDS));
-    const epochNanoseconds = ES.GetStartOfDay(timeZone, { year, month, day });
-    return ES.CreateTemporalZonedDateTime(epochNanoseconds, timeZone, calendar);
+    const isoDateTime = dateTime(this);
+    const isoDate = ES.ISODateTimeToDateRecord(isoDateTime);
+    const epochNanoseconds = ES.GetStartOfDay(timeZone, isoDate);
+    return ES.CreateTemporalZonedDateTime(epochNanoseconds, timeZone, GetSlot(this, CALENDAR));
   }
   getTimeZoneTransition(directionParam: Params['getTimeZoneTransition'][0]): Return['getTimeZoneTransition'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');

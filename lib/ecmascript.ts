@@ -1005,7 +1005,7 @@ export function PlainDateTimeToISODateTimeRecord(plainDateTime: Temporal.PlainDa
   };
 }
 
-function ISODateTimeToDateRecord({ year, month, day }: ISODateTime) {
+export function ISODateTimeToDateRecord({ year, month, day }: ISODateTime) {
   return { year, month, day };
 }
 
