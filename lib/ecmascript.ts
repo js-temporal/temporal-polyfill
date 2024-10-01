@@ -2530,14 +2530,38 @@ function GetPossibleEpochNanoseconds(timeZone: string, isoDateTime: ISODateTime)
   const { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond } = isoDateTime;
   const offsetMinutes = ParseTimeZoneIdentifier(timeZone).offsetMinutes;
   if (offsetMinutes !== undefined) {
-    return [
-      JSBI.subtract(
-        GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond),
-        JSBI.BigInt(offsetMinutes * 60e9)
-      )
-    ];
+    const balanced = BalanceISODateTime(
+      year,
+      month,
+      day,
+      hour,
+      minute - offsetMinutes,
+      second,
+      millisecond,
+      microsecond,
+      nanosecond
+    );
+    if (MathAbs(ISODateToEpochDays(balanced.year, balanced.month - 1, balanced.day)) > 1e8) {
+      throw new RangeErrorCtor('date/time value is outside the supported range');
+    }
+    const epochNs = GetUTCEpochNanoseconds(
+      balanced.year,
+      balanced.month,
+      balanced.day,
+      balanced.hour,
+      balanced.minute,
+      balanced.second,
+      balanced.millisecond,
+      balanced.microsecond,
+      balanced.nanosecond
+    );
+    ValidateEpochNanoseconds(epochNs);
+    return [epochNs];
   }
 
+  if (MathAbs(ISODateToEpochDays(year, month - 1, day)) > 1e8) {
+    throw new RangeErrorCtor('date/time value is outside the supported range');
+  }
   return GetNamedTimeZoneEpochNanoseconds(
     timeZone,
     year,
@@ -3205,6 +3229,7 @@ function GetNamedTimeZoneEpochNanoseconds(
       ) {
         return undefined;
       }
+      ValidateEpochNanoseconds(epochNanoseconds);
       return epochNanoseconds;
     }
   ]);
