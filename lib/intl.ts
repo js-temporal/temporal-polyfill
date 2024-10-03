@@ -414,7 +414,7 @@ function yearMonthAmend(optionsParam: OptionsType<Temporal.PlainYearMonth>) {
     delete options.dateStyle;
     ObjectAssign(options, dateStyleHacks[style]);
   }
-  if (!('year' in options || 'month' in options)) {
+  if (!('year' in options || 'month' in options || 'era' in options)) {
     options = ObjectAssign(options, { year: 'numeric', month: 'numeric' });
   }
   return options;
@@ -499,12 +499,24 @@ function instantAmend(optionsParam: OptionsType<Temporal.Instant>) {
 }
 
 function hasDateOptions(options: OptionsType<TypesWithToLocaleString>) {
-  return 'year' in options || 'month' in options || 'day' in options || 'weekday' in options || 'dateStyle' in options;
+  return (
+    'year' in options ||
+    'month' in options ||
+    'day' in options ||
+    'weekday' in options ||
+    'dateStyle' in options ||
+    'era' in options
+  );
 }
 
 function hasTimeOptions(options: OptionsType<TypesWithToLocaleString>) {
   return (
-    'hour' in options || 'minute' in options || 'second' in options || 'timeStyle' in options || 'dayPeriod' in options
+    'hour' in options ||
+    'minute' in options ||
+    'second' in options ||
+    'timeStyle' in options ||
+    'dayPeriod' in options ||
+    'fractionalSecondDigits' in options
   );
 }
 
