@@ -2574,8 +2574,8 @@ export function TemporalZonedDateTimeToString(
   return dateTimeString;
 }
 
-export function IsOffsetTimeZoneIdentifier(string: string): boolean {
-  return Call(RegExpPrototypeTest, OFFSET, [string]);
+export function IsOffsetTimeZoneIdentifier(string: string) {
+  return Call(RegExpPrototypeTest, OFFSET_IDENTIFIER, [string]);
 }
 
 export function ParseDateTimeUTCOffset(string: string): number {
