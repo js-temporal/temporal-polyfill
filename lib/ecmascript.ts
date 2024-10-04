@@ -3491,7 +3491,7 @@ export function ConstrainToRange(value: number | undefined, min: number, max: nu
   // used for optional params in the method below.
   return MathMin(max, MathMax(min, value as number));
 }
-function ConstrainISODate(year: number, monthParam: number, dayParam?: number) {
+export function ConstrainISODate(year: number, monthParam: number, dayParam?: number) {
   const month = ConstrainToRange(monthParam, 1, 12);
   const day = ConstrainToRange(dayParam, 1, ISODaysInMonth(year, month));
   return { year, month, day };
@@ -3631,11 +3631,6 @@ export function RejectDuration(
   if (!NumberIsSafeInteger(totalSec)) {
     throw new RangeErrorCtor('total of duration time units cannot exceed 9007199254740991.999999999 s');
   }
-}
-
-function ISODateSurpasses(sign: -1 | 1, y1: number, m1: number, d1: number, y2: number, m2: number, d2: number) {
-  const cmp = CompareISODate(y1, m1, d1, y2, m2, d2);
-  return sign * cmp === 1;
 }
 
 export function NormalizeDuration(duration: Temporal.Duration) {
@@ -3795,65 +3790,8 @@ function CombineDateAndNormalizedTimeDuration(dateDuration: DateDuration, norm: 
 }
 
 // Caution: month is 0-based
-function ISODateToEpochDays(y: number, m: number, d: number) {
+export function ISODateToEpochDays(y: number, m: number, d: number) {
   return GetUTCEpochMilliseconds(y, m + 1, d, 0, 0, 0, 0) / DAY_MS;
-}
-
-export function DifferenceISODate<Allowed extends Temporal.DateTimeUnit>(
-  y1: number,
-  m1: number,
-  d1: number,
-  y2: number,
-  m2: number,
-  d2: number,
-  largestUnit: Allowed
-) {
-  const sign = -CompareISODate(y1, m1, d1, y2, m2, d2);
-  if (sign === 0) return ZeroDateDuration();
-  uncheckedAssertNarrowedType<-1 | 1>(sign, "the - operator's return type is number");
-
-  let years = 0;
-  let months = 0;
-  let intermediate;
-  if (largestUnit === 'year' || largestUnit === 'month') {
-    // We can skip right to the neighbourhood of the correct number of years,
-    // it'll be at least one less than y2 - y1 (unless it's zero)
-    let candidateYears = y2 - y1;
-    if (candidateYears !== 0) candidateYears -= sign;
-    // loops at most twice
-    while (!ISODateSurpasses(sign, y1 + candidateYears, m1, d1, y2, m2, d2)) {
-      years = candidateYears;
-      candidateYears += sign;
-    }
-
-    let candidateMonths = sign;
-    intermediate = BalanceISOYearMonth(y1 + years, m1 + candidateMonths);
-    // loops at most 12 times
-    while (!ISODateSurpasses(sign, intermediate.year, intermediate.month, d1, y2, m2, d2)) {
-      months = candidateMonths;
-      candidateMonths += sign;
-      intermediate = BalanceISOYearMonth(intermediate.year, intermediate.month + sign);
-    }
-
-    if (largestUnit === 'month') {
-      months += years * 12;
-      years = 0;
-    }
-  }
-
-  intermediate = BalanceISOYearMonth(y1 + years, m1 + months);
-  const constrained = ConstrainISODate(intermediate.year, intermediate.month, d1);
-
-  let weeks = 0;
-  let days =
-    ISODateToEpochDays(y2, m2 - 1, d2) - ISODateToEpochDays(constrained.year, constrained.month - 1, constrained.day);
-
-  if (largestUnit === 'week') {
-    weeks = MathTrunc(days / 7);
-    days %= 7;
-  }
-
-  return { years, months, weeks, days };
 }
 
 function DifferenceTime(
