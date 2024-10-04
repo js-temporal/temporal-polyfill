@@ -76,6 +76,7 @@ import JSBI from 'jsbi';
 import type { Temporal } from '..';
 import { assert, assertNotReached } from './assert';
 import { abs, compare, DAY_NANOS_JSBI, divmod, ensureJSBI, isEven, MILLION, ONE, TWO, ZERO } from './bigintmath';
+import type { CalendarImpl } from './calendar';
 import type {
   AnyTemporalLikeType,
   UnitSmallerThanOrEqualTo,
@@ -2374,7 +2375,9 @@ export function CalendarEquals(one: BuiltinCalendarId, two: BuiltinCalendarId) {
 }
 
 export function CalendarDateFromFields(calendar: BuiltinCalendarId, fields: CalendarFieldsRecord, overflow: Overflow) {
-  const result = GetIntrinsic('%calendarImpl%')(calendar).dateFromFields(fields, overflow);
+  const calendarImpl: CalendarImpl = GetIntrinsic('%calendarImpl%')(calendar);
+  calendarImpl.resolveFields(fields, 'date');
+  const result = calendarImpl.dateToISO(fields, overflow);
   RejectDateRange(result.year, result.month, result.day);
   return result;
 }
@@ -2384,7 +2387,10 @@ export function CalendarYearMonthFromFields(
   fields: CalendarFieldsRecord,
   overflow: Overflow
 ) {
-  const result = GetIntrinsic('%calendarImpl%')(calendar).yearMonthFromFields(fields, overflow);
+  const calendarImpl: CalendarImpl = GetIntrinsic('%calendarImpl%')(calendar);
+  calendarImpl.resolveFields(fields, 'year-month');
+  fields.day = 1;
+  const result = calendarImpl.dateToISO(fields, overflow);
   RejectYearMonthRange(result.year, result.month);
   return result;
 }
@@ -2394,7 +2400,9 @@ export function CalendarMonthDayFromFields(
   fields: MonthDayFromFieldsObject,
   overflow: Overflow
 ) {
-  return GetIntrinsic('%calendarImpl%')(calendar).monthDayFromFields(fields, overflow);
+  const calendarImpl: CalendarImpl = GetIntrinsic('%calendarImpl%')(calendar);
+  calendarImpl.resolveFields(fields, 'month-day');
+  return calendarImpl.monthDayToISOReferenceDate(fields, overflow);
 }
 
 export function ToTemporalTimeZoneIdentifier(temporalTimeZoneLike: unknown): string {

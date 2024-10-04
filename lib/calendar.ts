@@ -27,6 +27,7 @@ import {
   MathMax,
   NumberIsNaN,
   MathSign,
+  ObjectAssign,
   ObjectEntries,
   ReflectApply,
   RegExpPrototypeExec,
@@ -155,6 +156,15 @@ interface CalendarDateRecord {
   inLeapYear: boolean;
 }
 
+type ResolveFieldsReturn<Type extends ISODateToFieldsType> = Resolve<
+  CalendarFieldsRecord & {
+    year: Type extends 'date' ? number : never;
+    month: number;
+    monthCode: string;
+    day: number;
+  }
+>;
+
 /**
  * Shape of internal implementation of each built-in calendar. Note that
  * parameter types are simpler than CalendarProtocol because the `Calendar`
@@ -177,9 +187,12 @@ export interface CalendarImpl {
   ): T;
   getFirstDayOfWeek(): number | undefined;
   getMinimalDaysInFirstWeek(): number | undefined;
-  dateFromFields(fields: CalendarFieldsRecord, overflow: 'constrain' | 'reject'): ISODate;
-  yearMonthFromFields(fields: CalendarFieldsRecord, overflow: 'constrain' | 'reject'): ISODate;
-  monthDayFromFields(fields: MonthDayFromFieldsObject, overflow: 'constrain' | 'reject'): ISODate;
+  resolveFields<Type extends ISODateToFieldsType>(
+    fields: CalendarFieldsRecord,
+    type: Type
+  ): asserts fields is ResolveFieldsReturn<Type>;
+  dateToISO(fields: ResolveFieldsReturn<'date'>, overflow: Overflow): ISODate;
+  monthDayToISOReferenceDate(fields: ResolveFieldsReturn<'month-day'>, overflow: Overflow): ISODate;
   dateAdd(date: ISODate, duration: Partial<DateDuration>, overflow: Overflow): ISODate;
   dateUntil(one: ISODate, two: ISODate, largestUnit: 'year' | 'month' | 'week' | 'day'): DateDuration;
   extraFields(): FieldKey[];
@@ -204,21 +217,21 @@ const impl: CalendarImplementations = {} as unknown as CalendarImplementations;
  * without Intl (ECMA-402) support.
  */
 impl['iso8601'] = {
-  dateFromFields(fields, overflow) {
-    requireFields(fields, ['year', 'day']);
-    let { year, month, day } = resolveNonLunisolarMonth(fields);
-    return ES.RegulateISODate(year, month, day, overflow);
+  resolveFields(fields, type) {
+    if ((type === 'date' || type === 'year-month') && fields.year === undefined) {
+      throw new TypeErrorCtor('year is required');
+    }
+    if ((type === 'date' || type === 'month-day') && fields.day === undefined) {
+      throw new TypeErrorCtor('day is required');
+    }
+    ObjectAssign(fields, resolveNonLunisolarMonth(fields));
   },
-  yearMonthFromFields(fields, overflow) {
-    requireFields(fields, ['year']);
-    let { year, month } = resolveNonLunisolarMonth(fields);
-    return ES.RegulateISODate(year, month, 1, overflow);
+  dateToISO(fields, overflow) {
+    return ES.RegulateISODate(fields.year, fields.month, fields.day, overflow);
   },
-  monthDayFromFields(fields, overflow) {
-    requireFields(fields, ['day']);
+  monthDayToISOReferenceDate(fields, overflow) {
     const referenceISOYear = 1972;
-    let { month, day, year } = resolveNonLunisolarMonth(fields);
-    ({ month, day } = ES.RegulateISODate(year ?? referenceISOYear, month, day, overflow));
+    const { month, day } = ES.RegulateISODate(fields.year ?? referenceISOYear, fields.month, fields.day, overflow);
     return { month, day, year: referenceISOYear };
   },
   extraFields() {
@@ -407,26 +420,6 @@ function monthCodeNumberPart(monthCode: string) {
 
 function buildMonthCode(month: number | string, leap = false) {
   return `M${Call(StringPrototypePadStart, `${month}`, [2, '0'])}${leap ? 'L' : ''}`;
-}
-
-type CalendarKey = 'era' | 'eraYear' | 'year' | 'month' | 'monthCode' | 'day';
-
-type WithRequired<T, K extends keyof T> = T & { [P in K]-?: T[P] };
-
-function requireFields<T extends CalendarFieldsRecord, RequiredFields extends ReadonlyArray<CalendarKey>>(
-  fields: T,
-  // Constrains the Required keys to be a subset of the given field keys
-  // This could have been written directly into the parameter type, but that
-  // causes an unintended effect where the required fields are added to the list
-  // of field keys, even if that key isn't present in 'fields'.
-  requiredFieldNames: RequiredFields
-): asserts fields is Resolve<WithRequired<T, RequiredFields[number]>> {
-  for (let index = 0; index < requiredFieldNames.length; index++) {
-    const fieldName = requiredFieldNames[index];
-    if (fields[fieldName] === undefined) {
-      throw new TypeErrorCtor(`${fieldName} is required`);
-    }
-  }
 }
 
 /**
@@ -2271,32 +2264,21 @@ class NonIsoCalendar implements CalendarImpl {
     if (type === 'month-day') return [];
     return ['era', 'eraYear'];
   }
-  dateFromFields(fields: CalendarFieldsRecord, overflow: Overflow): ISODate {
-    const cache = new OneObjectCache();
+  resolveFields(fields: CalendarFieldsRecord /* , type */) {
     if (this.helper.calendarType !== 'lunisolar') {
+      const cache = new OneObjectCache();
       const largestMonth = this.helper.monthsInYear({ year: fields.year ?? 1972 }, cache);
       resolveNonLunisolarMonth(fields, undefined, largestMonth);
     }
+  }
+  dateToISO(fields: CalendarDateFields, overflow: Overflow) {
+    const cache = new OneObjectCache();
     const result = this.helper.calendarToIsoDate(fields, overflow, cache);
     cache.setObject(result);
     return result;
   }
-  yearMonthFromFields(fields: CalendarFieldsRecord, overflow: Overflow): ISODate {
+  monthDayToISOReferenceDate(fields: MonthDayFromFieldsObject, overflow: Overflow) {
     const cache = new OneObjectCache();
-    if (this.helper.calendarType !== 'lunisolar') {
-      const largestMonth = this.helper.monthsInYear({ year: fields.year ?? 1972 }, cache);
-      resolveNonLunisolarMonth(fields, undefined, largestMonth);
-    }
-    const result = this.helper.calendarToIsoDate({ ...fields, day: 1 }, overflow, cache);
-    cache.setObject(result);
-    return result;
-  }
-  monthDayFromFields(fields: MonthDayFromFieldsObject, overflow: Overflow): ISODate {
-    const cache = new OneObjectCache();
-    if (this.helper.calendarType !== 'lunisolar') {
-      const largestMonth = this.helper.monthsInYear({ year: fields.year ?? 1972 }, cache);
-      resolveNonLunisolarMonth(fields, undefined, largestMonth);
-    }
     const result = this.helper.monthDayFromFields(fields, overflow, cache);
     // result.year is a reference year where this month/day exists in this calendar
     cache.setObject(result);
