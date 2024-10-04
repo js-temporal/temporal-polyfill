@@ -82,8 +82,11 @@ function calendarDateWeekOfYear(
   }
   const calendar = impl[id];
   let yow = isoDate.year;
-  const dayOfWeek = calendar.dayOfWeek(isoDate);
-  const dayOfYear = calendar.dayOfYear(isoDate);
+  const { dayOfWeek, dayOfYear, daysInYear } = calendar.isoToDate(isoDate, {
+    dayOfWeek: true,
+    dayOfYear: true,
+    daysInYear: true
+  });
   const fdow = calendar.getFirstDayOfWeek();
   const mdow = calendar.getMinimalDaysInFirstWeek();
   ES.uncheckedAssertNarrowedType<number>(fdow, 'guaranteed to exist for iso8601/gregory');
@@ -104,7 +107,10 @@ function calendarDateWeekOfYear(
   if (woy == 0) {
     // Check for last week of previous year; if true, handle the case for
     // first week of next year
-    let prevDoy = dayOfYear + calendar.daysInYear(calendar.dateAdd(isoDate, { years: -1 }, 'constrain'));
+    const prevYearCalendar = calendar.isoToDate(calendar.dateAdd(isoDate, { years: -1 }, 'constrain'), {
+      daysInYear: true
+    });
+    let prevDoy = dayOfYear + prevYearCalendar.daysInYear;
     woy = weekNumber(fdow, mdow, prevDoy, dayOfWeek);
     yow--;
   } else {
@@ -112,7 +118,7 @@ function calendarDateWeekOfYear(
     //          L-5                  L
     // doy: 359 360 361 362 363 364 365 001
     // dow:      1   2   3   4   5   6   7
-    let lastDoy = calendar.daysInYear(isoDate);
+    let lastDoy = daysInYear;
     if (dayOfYear >= lastDoy - 5) {
       let lastRelDow = (relDow + lastDoy - dayOfYear) % 7;
       if (lastRelDow < 0) {
@@ -132,6 +138,23 @@ function ISODateSurpasses(sign: -1 | 0 | 1, y1: number, m1: number, d1: number, 
   return sign * cmp === 1;
 }
 
+interface CalendarDateRecord {
+  era: string | undefined;
+  eraYear: number | undefined;
+  year: number;
+  month: number;
+  monthCode: string;
+  day: number;
+  dayOfWeek: number;
+  dayOfYear: number;
+  weekOfYear: { week: number; year: number } | { week: undefined; year: undefined };
+  daysInWeek: number;
+  daysInMonth: number;
+  daysInYear: number;
+  monthsInYear: number;
+  inLeapYear: boolean;
+}
+
 /**
  * Shape of internal implementation of each built-in calendar. Note that
  * parameter types are simpler than CalendarProtocol because the `Calendar`
@@ -143,21 +166,17 @@ function ISODateSurpasses(sign: -1 | 0 | 1, y1: number, m1: number, d1: number, 
  * latter is cloned for each non-ISO calendar at the end of this file.
  */
 export interface CalendarImpl {
-  year(isoDate: ISODate): number;
-  month(isoDate: ISODate): number;
-  monthCode(isoDate: ISODate): string;
-  day(isoDate: ISODate): number;
-  era(isoDate: ISODate): string | undefined;
-  eraYear(isoDate: ISODate): number | undefined;
-  dayOfWeek(isoDate: ISODate): number;
-  dayOfYear(isoDate: ISODate): number;
+  isoToDate<
+    Request extends Partial<Record<keyof CalendarDateRecord, true>>,
+    T extends {
+      [Field in keyof CalendarDateRecord]: Request extends { [K in Field]: true } ? CalendarDateRecord[Field] : never;
+    }
+  >(
+    isoDate: ISODate,
+    requestedFields: Request
+  ): T;
   getFirstDayOfWeek(): number | undefined;
   getMinimalDaysInFirstWeek(): number | undefined;
-  daysInWeek(isoDate: ISODate): number;
-  daysInMonth(isoDate: Omit<ISODate, 'day'>): number;
-  daysInYear(isoDate: ISODate): number;
-  monthsInYear(isoDate: ISODate): number;
-  inLeapYear(isoDate: ISODate): boolean;
   dateFromFields(fields: CalendarFieldsRecord, overflow: 'constrain' | 'reject'): ISODate;
   yearMonthFromFields(fields: CalendarFieldsRecord, overflow: 'constrain' | 'reject'): ISODate;
   monthDayFromFields(fields: MonthDayFromFieldsObject, overflow: 'constrain' | 'reject'): ISODate;
@@ -276,62 +295,56 @@ impl['iso8601'] = {
 
     return { years, months, weeks, days };
   },
-  year({ year }) {
-    return year;
-  },
-  era() {
-    return undefined;
-  },
-  eraYear() {
-    return undefined;
-  },
-  month({ month }) {
-    return month;
-  },
-  monthCode({ month }) {
-    return buildMonthCode(month);
-  },
-  day({ day }) {
-    return day;
-  },
-  dayOfWeek({ year, month, day }) {
-    const m = month + (month < 3 ? 10 : -2);
-    const Y = year - (month < 3 ? 1 : 0);
-
-    const c = MathFloor(Y / 100);
-    const y = Y - c * 100;
-    const d = day;
-
-    const pD = d;
-    const pM = MathFloor(2.6 * m - 0.2);
-    const pY = y + MathFloor(y / 4);
-    const pC = MathFloor(c / 4) - 2 * c;
-
-    const dow = (pD + pM + pY + pC) % 7;
-
-    return dow + (dow <= 0 ? 7 : 0);
-  },
-  dayOfYear({ year, month, day }) {
-    let days = day;
-    for (let m = month - 1; m > 0; m--) {
-      days += this.daysInMonth({ year, month: m });
+  isoToDate<
+    Request extends Partial<Record<keyof CalendarDateRecord, true>>,
+    T extends {
+      [Field in keyof CalendarDateRecord]: Request extends { [K in Field]: true } ? CalendarDateRecord[Field] : never;
     }
-    return days;
-  },
-  daysInWeek() {
-    return 7;
-  },
-  daysInMonth({ year, month }) {
-    return ES.ISODaysInMonth(year, month);
-  },
-  daysInYear(isoDate) {
-    return this.inLeapYear(isoDate) ? 366 : 365;
-  },
-  monthsInYear() {
-    return 12;
-  },
-  inLeapYear({ year }) {
-    return ES.LeapYear(year);
+  >({ year, month, day }: ISODate, requestedFields: Request): T {
+    // requestedFields parameter is not part of the spec text. It's an
+    // illustration of one way implementations may choose to optimize this
+    // operation.
+    const date: Partial<CalendarDateRecord> = {
+      era: undefined,
+      eraYear: undefined,
+      year,
+      month,
+      day,
+      daysInWeek: 7,
+      monthsInYear: 12
+    };
+    if (requestedFields.monthCode) date.monthCode = buildMonthCode(month);
+    if (requestedFields.dayOfWeek) {
+      const m = month + (month < 3 ? 10 : -2);
+      const Y = year - (month < 3 ? 1 : 0);
+
+      const c = MathFloor(Y / 100);
+      const y = Y - c * 100;
+      const d = day;
+
+      const pD = d;
+      const pM = MathFloor(2.6 * m - 0.2);
+      const pY = y + MathFloor(y / 4);
+      const pC = MathFloor(c / 4) - 2 * c;
+
+      const dow = (pD + pM + pY + pC) % 7;
+
+      date.dayOfWeek = dow + (dow <= 0 ? 7 : 0);
+    }
+    if (requestedFields.dayOfYear) {
+      let days = day;
+      for (let m = month - 1; m > 0; m--) {
+        days += ES.ISODaysInMonth(year, m);
+      }
+      date.dayOfYear = days;
+    }
+    if (requestedFields.weekOfYear) date.weekOfYear = calendarDateWeekOfYear('iso8601', { year, month, day });
+    if (requestedFields.daysInMonth) date.daysInMonth = ES.ISODaysInMonth(year, month);
+    if (requestedFields.daysInYear || requestedFields.inLeapYear) {
+      date.inLeapYear = ES.LeapYear(year);
+      date.daysInYear = date.inLeapYear ? 366 : 365;
+    }
+    return date as T;
   },
   getFirstDayOfWeek() {
     return 1;
@@ -2352,75 +2365,33 @@ class NonIsoCalendar implements CalendarImpl {
     const result = this.helper.untilCalendar(calendarOne, calendarTwo, largestUnit, cacheOne);
     return result;
   }
-  year(date: ISODate): number {
-    const cache = OneObjectCache.getCacheForObject(date);
-    const calendarDate = this.helper.isoToCalendarDate(date, cache);
-    return calendarDate.year;
-  }
-  month(date: ISODate): number {
-    const cache = OneObjectCache.getCacheForObject(date);
-    const calendarDate = this.helper.isoToCalendarDate(date, cache);
-    return calendarDate.month;
-  }
-  day(date: ISODate): number {
-    const cache = OneObjectCache.getCacheForObject(date);
-    const calendarDate = this.helper.isoToCalendarDate(date, cache);
-    return calendarDate.day;
-  }
-  era(date: ISODate): string | undefined {
-    if (!this.helper.hasEra) return undefined;
-    const cache = OneObjectCache.getCacheForObject(date);
-    const calendarDate = this.helper.isoToCalendarDate(date, cache);
-    return calendarDate.era;
-  }
-  eraYear(date: ISODate): number | undefined {
-    if (!this.helper.hasEra) return undefined;
-    const cache = OneObjectCache.getCacheForObject(date);
-    const calendarDate = this.helper.isoToCalendarDate(date, cache);
-    return calendarDate.eraYear;
-  }
-  monthCode(date: ISODate): string {
-    const cache = OneObjectCache.getCacheForObject(date);
-    const calendarDate = this.helper.isoToCalendarDate(date, cache);
-    return calendarDate.monthCode;
-  }
-  dayOfWeek(isoDate: ISODate) {
-    return impl['iso8601'].dayOfWeek(isoDate);
-  }
-  dayOfYear(isoDate: ISODate) {
+  isoToDate<
+    Request extends Partial<Record<keyof CalendarDateRecord, true>>,
+    T extends {
+      [Field in keyof CalendarDateRecord]: Request extends { [K in Field]: true } ? CalendarDateRecord[Field] : never;
+    }
+  >(isoDate: ISODate, requestedFields: Request): T {
     const cache = OneObjectCache.getCacheForObject(isoDate);
-    const calendarDate = this.helper.isoToCalendarDate(isoDate, cache);
-    const startOfYear = this.helper.startOfCalendarYear(calendarDate);
-    const diffDays = this.helper.calendarDaysUntil(startOfYear, calendarDate, cache);
-    return diffDays + 1;
-  }
-  daysInWeek(date: ISODate): number {
-    return impl['iso8601'].daysInWeek(date);
-  }
-  daysInMonth(date: ISODate): number {
-    const cache = OneObjectCache.getCacheForObject(date);
-    const calendarDate = this.helper.isoToCalendarDate(date, cache);
-    return this.helper.daysInMonth(calendarDate, cache);
-  }
-  daysInYear(isoDate: ISODate) {
-    const cache = OneObjectCache.getCacheForObject(isoDate);
-    const calendarDate = this.helper.isoToCalendarDate(isoDate, cache);
-    const startOfYearCalendar = this.helper.startOfCalendarYear(calendarDate);
-    const startOfNextYearCalendar = this.helper.addCalendar(startOfYearCalendar, { years: 1 }, 'constrain', cache);
-    const result = this.helper.calendarDaysUntil(startOfYearCalendar, startOfNextYearCalendar, cache);
-    return result;
-  }
-  monthsInYear(date: ISODate): number {
-    const cache = OneObjectCache.getCacheForObject(date);
-    const calendarDate = this.helper.isoToCalendarDate(date, cache);
-    const result = this.helper.monthsInYear(calendarDate, cache);
-    return result;
-  }
-  inLeapYear(date: ISODate) {
-    const cache = OneObjectCache.getCacheForObject(date);
-    const calendarDate = this.helper.isoToCalendarDate(date, cache);
-    const result = this.helper.inLeapYear(calendarDate, cache);
-    return result;
+    const calendarDate: Partial<CalendarDateRecord> & FullCalendarDate = this.helper.isoToCalendarDate(isoDate, cache);
+    if (requestedFields.dayOfWeek) {
+      calendarDate.dayOfWeek = impl['iso8601'].isoToDate(isoDate, { dayOfWeek: true }).dayOfWeek;
+    }
+    if (requestedFields.dayOfYear) {
+      const startOfYear = this.helper.startOfCalendarYear(calendarDate);
+      const diffDays = this.helper.calendarDaysUntil(startOfYear, calendarDate, cache);
+      calendarDate.dayOfYear = diffDays + 1;
+    }
+    if (requestedFields.weekOfYear) calendarDate.weekOfYear = calendarDateWeekOfYear(this.helper.id, isoDate);
+    calendarDate.daysInWeek = 7;
+    if (requestedFields.daysInMonth) calendarDate.daysInMonth = this.helper.daysInMonth(calendarDate, cache);
+    if (requestedFields.daysInYear) {
+      const startOfYearCalendar = this.helper.startOfCalendarYear(calendarDate);
+      const startOfNextYearCalendar = this.helper.addCalendar(startOfYearCalendar, { years: 1 }, 'constrain', cache);
+      calendarDate.daysInYear = this.helper.calendarDaysUntil(startOfYearCalendar, startOfNextYearCalendar, cache);
+    }
+    if (requestedFields.monthsInYear) calendarDate.monthsInYear = this.helper.monthsInYear(calendarDate, cache);
+    if (requestedFields.inLeapYear) calendarDate.inLeapYear = this.helper.inLeapYear(calendarDate, cache);
+    return calendarDate as T;
   }
   getFirstDayOfWeek(): number | undefined {
     return this.helper.getFirstDayOfWeek();
