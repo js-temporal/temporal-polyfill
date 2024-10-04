@@ -2372,7 +2372,9 @@ export function CalendarEquals(one: BuiltinCalendarId, two: BuiltinCalendarId) {
 }
 
 export function CalendarDateFromFields(calendar: BuiltinCalendarId, fields: CalendarFieldsRecord, overflow: Overflow) {
-  return GetIntrinsic('%calendarImpl%')(calendar).dateFromFields(fields, overflow);
+  const result = GetIntrinsic('%calendarImpl%')(calendar).dateFromFields(fields, overflow);
+  RejectDateRange(result.year, result.month, result.day);
+  return result;
 }
 
 export function CalendarYearMonthFromFields(
@@ -2380,7 +2382,9 @@ export function CalendarYearMonthFromFields(
   fields: CalendarFieldsRecord,
   overflow: Overflow
 ) {
-  return GetIntrinsic('%calendarImpl%')(calendar).yearMonthFromFields(fields, overflow);
+  const result = GetIntrinsic('%calendarImpl%')(calendar).yearMonthFromFields(fields, overflow);
+  RejectYearMonthRange(result.year, result.month);
+  return result;
 }
 
 export function CalendarMonthDayFromFields(
@@ -3573,7 +3577,7 @@ export function ValidateEpochNanoseconds(epochNanoseconds: JSBI) {
   }
 }
 
-export function RejectYearMonthRange(year: number, month: number) {
+function RejectYearMonthRange(year: number, month: number) {
   RejectToRange(year, YEAR_MIN, YEAR_MAX);
   if (year === YEAR_MIN) {
     RejectToRange(month, 4, 12);
