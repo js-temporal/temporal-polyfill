@@ -917,21 +917,6 @@ export function RegulateTime(
   return { hour, minute, second, millisecond, microsecond, nanosecond };
 }
 
-export function RegulateISOYearMonth(yearParam: number, monthParam: number, overflow: Overflow) {
-  let year = yearParam;
-  let month = monthParam;
-  const referenceISODay = 1;
-  switch (overflow) {
-    case 'reject':
-      RejectISODate(year, month, referenceISODay);
-      break;
-    case 'constrain':
-      ({ year, month } = ConstrainISODate(year, month));
-      break;
-  }
-  return { year, month };
-}
-
 export function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.DurationLike | string) {
   if (!IsObject(temporalDurationLike)) {
     throw new TypeErrorCtor('invalid duration-like');
