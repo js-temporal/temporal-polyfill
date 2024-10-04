@@ -2263,7 +2263,9 @@ export function CalendarDateAdd(
   dateDuration: Partial<DateDuration>,
   overflow: Overflow
 ) {
-  return GetIntrinsic('%calendarImpl%')(calendar).dateAdd(isoDate, dateDuration, overflow);
+  const result = GetIntrinsic('%calendarImpl%')(calendar).dateAdd(isoDate, dateDuration, overflow);
+  RejectDateRange(result.year, result.month, result.day);
+  return result;
 }
 
 function CalendarDateUntil(
@@ -3512,7 +3514,7 @@ function RejectISODate(year: number, month: number, day: number) {
   RejectToRange(day, 1, ISODaysInMonth(year, month));
 }
 
-export function RejectDateRange(year: number, month: number, day: number) {
+function RejectDateRange(year: number, month: number, day: number) {
   // Noon avoids trouble at edges of DateTime range (excludes midnight)
   RejectDateTimeRange(year, month, day, 12, 0, 0, 0, 0, 0);
 }
