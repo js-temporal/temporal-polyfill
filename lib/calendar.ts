@@ -134,9 +134,15 @@ function calendarDateWeekOfYear(
   return { week: woy, year: yow };
 }
 
-function ISODateSurpasses(sign: -1 | 0 | 1, y1: number, m1: number, d1: number, y2: number, m2: number, d2: number) {
-  const cmp = ES.CompareISODate(y1, m1, d1, y2, m2, d2);
-  return sign * cmp === 1;
+function ISODateSurpasses(sign: -1 | 0 | 1, y1: number, m1: number, d1: number, isoDate2: ISODate) {
+  if (y1 !== isoDate2.year) {
+    if (sign * (y1 - isoDate2.year) > 0) return true;
+  } else if (m1 !== isoDate2.month) {
+    if (sign * (m1 - isoDate2.month) > 0) return true;
+  } else if (d1 !== isoDate2.day) {
+    if (sign * (d1 - isoDate2.day) > 0) return true;
+  }
+  return false;
 }
 
 interface CalendarDateRecord {
@@ -260,7 +266,7 @@ impl['iso8601'] = {
     return ES.BalanceISODate(year, month, day);
   },
   dateUntil(one, two, largestUnit) {
-    const sign = -ES.CompareISODate(one.year, one.month, one.day, two.year, two.month, two.day);
+    const sign = -ES.CompareISODate(one, two);
     if (sign === 0) return { years: 0, months: 0, weeks: 0, days: 0 };
     ES.uncheckedAssertNarrowedType<-1 | 1>(sign, "the - operator's return type is number");
 
@@ -273,7 +279,7 @@ impl['iso8601'] = {
       let candidateYears = two.year - one.year;
       if (candidateYears !== 0) candidateYears -= sign;
       // loops at most twice
-      while (!ISODateSurpasses(sign, one.year + candidateYears, one.month, one.day, two.year, two.month, two.day)) {
+      while (!ISODateSurpasses(sign, one.year + candidateYears, one.month, one.day, two)) {
         years = candidateYears;
         candidateYears += sign;
       }
@@ -281,7 +287,7 @@ impl['iso8601'] = {
       let candidateMonths = sign;
       intermediate = ES.BalanceISOYearMonth(one.year + years, one.month + candidateMonths);
       // loops at most 12 times
-      while (!ISODateSurpasses(sign, intermediate.year, intermediate.month, one.day, two.year, two.month, two.day)) {
+      while (!ISODateSurpasses(sign, intermediate.year, intermediate.month, one.day, two)) {
         months = candidateMonths;
         candidateMonths += sign;
         intermediate = ES.BalanceISOYearMonth(intermediate.year, intermediate.month + sign);
