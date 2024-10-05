@@ -2610,7 +2610,7 @@ function FormatFractionalSeconds(
   return `.${fraction}`;
 }
 
-export function FormatTimeString(
+function FormatTimeString(
   hour: number,
   minute: number,
   second: number,
@@ -2713,6 +2713,14 @@ export function TemporalDateToString(
   const day = ISODateTimePartString(GetSlot(date, ISO_DAY));
   const calendar = FormatCalendarAnnotation(GetSlot(date, CALENDAR), showCalendar);
   return `${year}-${month}-${day}${calendar}`;
+}
+
+export function TimeRecordToString(
+  { hour, minute, second, millisecond, microsecond, nanosecond }: TimeRecord,
+  precision: SecondsStringPrecisionRecord['precision']
+) {
+  const subSecondNanoseconds = millisecond * 1e6 + microsecond * 1e3 + nanosecond;
+  return FormatTimeString(hour, minute, second, subSecondNanoseconds, precision);
 }
 
 export function TemporalDateTimeToString(
