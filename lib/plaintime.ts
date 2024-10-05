@@ -236,19 +236,23 @@ export class PlainTime implements Temporal.PlainTime {
   static compare(oneParam: Params['compare'][0], twoParam: Params['compare'][1]): Return['compare'] {
     const one = ES.ToTemporalTime(oneParam);
     const two = ES.ToTemporalTime(twoParam);
-    return ES.CompareTemporalTime(
-      GetSlot(one, ISO_HOUR),
-      GetSlot(one, ISO_MINUTE),
-      GetSlot(one, ISO_SECOND),
-      GetSlot(one, ISO_MILLISECOND),
-      GetSlot(one, ISO_MICROSECOND),
-      GetSlot(one, ISO_NANOSECOND),
-      GetSlot(two, ISO_HOUR),
-      GetSlot(two, ISO_MINUTE),
-      GetSlot(two, ISO_SECOND),
-      GetSlot(two, ISO_MILLISECOND),
-      GetSlot(two, ISO_MICROSECOND),
-      GetSlot(two, ISO_NANOSECOND)
+    return ES.CompareTimeRecord(
+      {
+        hour: GetSlot(one, ISO_HOUR),
+        minute: GetSlot(one, ISO_MINUTE),
+        second: GetSlot(one, ISO_SECOND),
+        millisecond: GetSlot(one, ISO_MILLISECOND),
+        microsecond: GetSlot(one, ISO_MICROSECOND),
+        nanosecond: GetSlot(one, ISO_NANOSECOND)
+      },
+      {
+        hour: GetSlot(two, ISO_HOUR),
+        minute: GetSlot(two, ISO_MINUTE),
+        second: GetSlot(two, ISO_SECOND),
+        millisecond: GetSlot(two, ISO_MILLISECOND),
+        microsecond: GetSlot(two, ISO_MICROSECOND),
+        nanosecond: GetSlot(two, ISO_NANOSECOND)
+      }
     );
   }
   [Symbol.toStringTag]!: 'Temporal.PlainTime';
