@@ -3752,26 +3752,13 @@ export function ISODateToEpochDays(y: number, m: number, d: number) {
   return GetUTCEpochMilliseconds(y, m + 1, d, 0, 0, 0, 0) / DAY_MS;
 }
 
-function DifferenceTime(
-  h1: number,
-  min1: number,
-  s1: number,
-  ms1: number,
-  µs1: number,
-  ns1: number,
-  h2: number,
-  min2: number,
-  s2: number,
-  ms2: number,
-  µs2: number,
-  ns2: number
-) {
-  const hours = h2 - h1;
-  const minutes = min2 - min1;
-  const seconds = s2 - s1;
-  const milliseconds = ms2 - ms1;
-  const microseconds = µs2 - µs1;
-  const nanoseconds = ns2 - ns1;
+function DifferenceTime(time1: TimeRecord, time2: TimeRecord) {
+  const hours = time2.hour - time1.hour;
+  const minutes = time2.minute - time1.minute;
+  const seconds = time2.second - time1.second;
+  const milliseconds = time2.millisecond - time1.millisecond;
+  const microseconds = time2.microsecond - time1.microsecond;
+  const nanoseconds = time2.nanosecond - time1.nanosecond;
   const norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   assert(norm.abs().sec < 86400, '_bt_.[[Days]] should be 0');
   return norm;
@@ -3789,18 +3776,18 @@ function DifferenceInstant(
 }
 
 function DifferenceISODateTime(
-  y1Param: number,
-  mon1Param: number,
-  d1Param: number,
+  y1: number,
+  mon1: number,
+  d1: number,
   h1: number,
   min1: number,
   s1: number,
   ms1: number,
   µs1: number,
   ns1: number,
-  y2Param: number,
-  mon2Param: number,
-  d2Param: number,
+  y2: number,
+  mon2: number,
+  d2: number,
   h2: number,
   min2: number,
   s2: number,
@@ -3810,14 +3797,10 @@ function DifferenceISODateTime(
   calendar: BuiltinCalendarId,
   largestUnit: Temporal.DateTimeUnit
 ) {
-  let y1 = y1Param;
-  let mon1 = mon1Param;
-  let d1 = d1Param;
-  let y2 = y2Param;
-  let mon2 = mon2Param;
-  let d2 = d2Param;
-
-  let timeDuration = DifferenceTime(h1, min1, s1, ms1, µs1, ns1, h2, min2, s2, ms2, µs2, ns2);
+  let timeDuration = DifferenceTime(
+    { hour: h1, minute: min1, second: s1, millisecond: ms1, microsecond: µs1, nanosecond: ns1 },
+    { hour: h2, minute: min2, second: s2, millisecond: ms2, microsecond: µs2, nanosecond: ns2 }
+  );
 
   const timeSign = timeDuration.sign();
   const isoDate1 = { year: y1, month: mon1, day: d1 };
@@ -3877,20 +3860,7 @@ function DifferenceZonedDateTime(
   // Detect ISO wall-clock overshoot.
   // If the diff of the ISO wall-clock times is opposite to the overall diff's sign,
   // we are guaranteed to need at least one day correction.
-  let timeDuration = DifferenceTime(
-    isoDtStart.hour,
-    isoDtStart.minute,
-    isoDtStart.second,
-    isoDtStart.millisecond,
-    isoDtStart.microsecond,
-    isoDtStart.nanosecond,
-    isoDtEnd.hour,
-    isoDtEnd.minute,
-    isoDtEnd.second,
-    isoDtEnd.millisecond,
-    isoDtEnd.microsecond,
-    isoDtEnd.nanosecond
-  );
+  let timeDuration = DifferenceTime(isoDtStart, isoDtEnd);
   if (timeDuration.sign() === -sign) {
     dayCorrection++;
   }
@@ -4798,18 +4768,22 @@ export function DifferenceTemporalPlainTime(
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'time', [], 'nanosecond', 'hour');
 
   let norm = DifferenceTime(
-    GetSlot(plainTime, ISO_HOUR),
-    GetSlot(plainTime, ISO_MINUTE),
-    GetSlot(plainTime, ISO_SECOND),
-    GetSlot(plainTime, ISO_MILLISECOND),
-    GetSlot(plainTime, ISO_MICROSECOND),
-    GetSlot(plainTime, ISO_NANOSECOND),
-    GetSlot(other, ISO_HOUR),
-    GetSlot(other, ISO_MINUTE),
-    GetSlot(other, ISO_SECOND),
-    GetSlot(other, ISO_MILLISECOND),
-    GetSlot(other, ISO_MICROSECOND),
-    GetSlot(other, ISO_NANOSECOND)
+    {
+      hour: GetSlot(plainTime, ISO_HOUR),
+      minute: GetSlot(plainTime, ISO_MINUTE),
+      second: GetSlot(plainTime, ISO_SECOND),
+      millisecond: GetSlot(plainTime, ISO_MILLISECOND),
+      microsecond: GetSlot(plainTime, ISO_MICROSECOND),
+      nanosecond: GetSlot(plainTime, ISO_NANOSECOND)
+    },
+    {
+      hour: GetSlot(other, ISO_HOUR),
+      minute: GetSlot(other, ISO_MINUTE),
+      second: GetSlot(other, ISO_SECOND),
+      millisecond: GetSlot(other, ISO_MILLISECOND),
+      microsecond: GetSlot(other, ISO_MICROSECOND),
+      nanosecond: GetSlot(other, ISO_NANOSECOND)
+    }
   );
   let duration = { date: ZeroDateDuration(), norm };
   if (settings.smallestUnit !== 'nanosecond' || settings.roundingIncrement !== 1) {
