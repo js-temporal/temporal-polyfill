@@ -2039,7 +2039,7 @@ export function CreateTemporalDateSlots(
   calendar: BuiltinCalendarId
 ) {
   RejectISODate(isoYear, isoMonth, isoDay);
-  RejectDateRange(isoYear, isoMonth, isoDay);
+  RejectDateRange({ year: isoYear, month: isoMonth, day: isoDay });
 
   CreateSlots(result);
   SetSlot(result, ISO_YEAR, isoYear);
@@ -2080,7 +2080,18 @@ export function CreateTemporalDateTimeSlots(
   calendar: BuiltinCalendarId
 ) {
   RejectDateTime(isoYear, isoMonth, isoDay, h, min, s, ms, µs, ns);
-  RejectDateTimeRange(isoYear, isoMonth, isoDay, h, min, s, ms, µs, ns);
+  const iso = {
+    year: isoYear,
+    month: isoMonth,
+    day: isoDay,
+    hour: h,
+    minute: min,
+    second: s,
+    millisecond: ms,
+    microsecond: µs,
+    nanosecond: ns
+  };
+  RejectDateTimeRange(iso);
 
   CreateSlots(result);
   SetSlot(result, ISO_YEAR, isoYear);
@@ -2095,17 +2106,6 @@ export function CreateTemporalDateTimeSlots(
   SetSlot(result, CALENDAR, calendar);
 
   if (DEBUG) {
-    const iso = {
-      year: isoYear,
-      month: isoMonth,
-      day: isoDay,
-      hour: h,
-      minute: min,
-      second: s,
-      millisecond: ms,
-      microsecond: µs,
-      nanosecond: ns
-    };
     let repr = TemporalDateTimeToString(iso, calendar, 'auto');
     ObjectDefineProperty(result, '_repr_', {
       value: `Temporal.PlainDateTime <${repr}>`,
@@ -2142,7 +2142,7 @@ export function CreateTemporalMonthDaySlots(
   referenceISOYear: number
 ) {
   RejectISODate(referenceISOYear, isoMonth, isoDay);
-  RejectDateRange(referenceISOYear, isoMonth, isoDay);
+  RejectDateRange({ year: referenceISOYear, month: isoMonth, day: isoDay });
 
   CreateSlots(result);
   SetSlot(result, ISO_MONTH, isoMonth);
@@ -2283,7 +2283,7 @@ export function CalendarDateAdd(
   overflow: Overflow
 ) {
   const result = calendarImplForID(calendar).dateAdd(isoDate, dateDuration, overflow);
-  RejectDateRange(result.year, result.month, result.day);
+  RejectDateRange(result);
   return result;
 }
 
@@ -2336,7 +2336,7 @@ export function CalendarDateFromFields(calendar: BuiltinCalendarId, fields: Cale
   const calendarImpl: CalendarImpl = calendarImplForID(calendar);
   calendarImpl.resolveFields(fields, 'date');
   const result = calendarImpl.dateToISO(fields, overflow);
-  RejectDateRange(result.year, result.month, result.day);
+  RejectDateRange(result);
   return result;
 }
 
@@ -3480,9 +3480,10 @@ function RejectISODate(year: number, month: number, day: number) {
   RejectToRange(day, 1, ISODaysInMonth(year, month));
 }
 
-function RejectDateRange(year: number, month: number, day: number) {
+function RejectDateRange(isoDate: ISODate) {
   // Noon avoids trouble at edges of DateTime range (excludes midnight)
-  RejectDateTimeRange(year, month, day, 12, 0, 0, 0, 0, 0);
+  const noon = { hour: 12, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
+  RejectDateTimeRange(CombineISODateAndTimeRecord(isoDate, noon));
 }
 
 export function RejectTime(
@@ -3516,17 +3517,17 @@ function RejectDateTime(
   RejectTime(hour, minute, second, millisecond, microsecond, nanosecond);
 }
 
-export function RejectDateTimeRange(
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-  second: number,
-  millisecond: number,
-  microsecond: number,
-  nanosecond: number
-) {
+export function RejectDateTimeRange({
+  year,
+  month,
+  day,
+  hour,
+  minute,
+  second,
+  millisecond,
+  microsecond,
+  nanosecond
+}: ISODateTime) {
   const ns = GetUTCEpochNanoseconds(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   if (JSBI.lessThan(ns, DATETIME_NS_MIN) || JSBI.greaterThan(ns, DATETIME_NS_MAX)) {
     // Because PlainDateTime's range is wider than Instant's range, the line
@@ -5164,7 +5165,7 @@ export function AddDurationToYearMonth(
     startDate = BalanceISODate(nextMonth.year, nextMonth.month, nextMonth.day - 1);
   }
   const durationToAdd = NormalizeDurationWithoutTime(duration);
-  RejectDateRange(startDate.year, startDate.month, startDate.day);
+  RejectDateRange(startDate);
   const addedDate = CalendarDateAdd(calendar, startDate, durationToAdd, overflow);
   const addedDateFields = ISODateToFields(calendar, addedDate, 'year-month');
 
