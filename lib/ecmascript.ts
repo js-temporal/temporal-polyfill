@@ -5237,18 +5237,13 @@ export function RoundISODateTime(
   unit: UnitSmallerThanOrEqualTo<'day'>,
   roundingMode: Temporal.RoundingMode
 ) {
-  const time = RoundTime(hour, minute, second, millisecond, microsecond, nanosecond, increment, unit, roundingMode);
+  const time = RoundTime({ hour, minute, second, millisecond, microsecond, nanosecond }, increment, unit, roundingMode);
   const isoDate = BalanceISODate(year, month, day + time.deltaDays);
   return CombineISODateAndTimeRecord(isoDate, time);
 }
 
 export function RoundTime(
-  hour: number,
-  minute: number,
-  second: number,
-  millisecond: number,
-  microsecond: number,
-  nanosecond: number,
+  { hour, minute, second, millisecond, microsecond, nanosecond }: TimeRecord,
   increment: number,
   unit: TimeUnitOrDay,
   roundingMode: Temporal.RoundingMode

@@ -156,23 +156,19 @@ export class PlainTime implements Temporal.PlainTime {
     };
     ES.ValidateTemporalRoundingIncrement(roundingIncrement, MAX_INCREMENTS[smallestUnit], false);
 
-    let hour = GetSlot(this, ISO_HOUR);
-    let minute = GetSlot(this, ISO_MINUTE);
-    let second = GetSlot(this, ISO_SECOND);
-    let millisecond = GetSlot(this, ISO_MILLISECOND);
-    let microsecond = GetSlot(this, ISO_MICROSECOND);
-    let nanosecond = GetSlot(this, ISO_NANOSECOND);
-    ({ hour, minute, second, millisecond, microsecond, nanosecond } = ES.RoundTime(
-      hour,
-      minute,
-      second,
-      millisecond,
-      microsecond,
-      nanosecond,
+    const { hour, minute, second, millisecond, microsecond, nanosecond } = ES.RoundTime(
+      {
+        hour: GetSlot(this, ISO_HOUR),
+        minute: GetSlot(this, ISO_MINUTE),
+        second: GetSlot(this, ISO_SECOND),
+        millisecond: GetSlot(this, ISO_MILLISECOND),
+        microsecond: GetSlot(this, ISO_MICROSECOND),
+        nanosecond: GetSlot(this, ISO_NANOSECOND)
+      },
       roundingIncrement,
       smallestUnit,
       roundingMode
-    ));
+    );
 
     return new PlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
   }
@@ -195,12 +191,14 @@ export class PlainTime implements Temporal.PlainTime {
     if (smallestUnit === 'hour') throw new RangeErrorCtor('smallestUnit must be a time unit other than "hour"');
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     const time = ES.RoundTime(
-      GetSlot(this, ISO_HOUR),
-      GetSlot(this, ISO_MINUTE),
-      GetSlot(this, ISO_SECOND),
-      GetSlot(this, ISO_MILLISECOND),
-      GetSlot(this, ISO_MICROSECOND),
-      GetSlot(this, ISO_NANOSECOND),
+      {
+        hour: GetSlot(this, ISO_HOUR),
+        minute: GetSlot(this, ISO_MINUTE),
+        second: GetSlot(this, ISO_SECOND),
+        millisecond: GetSlot(this, ISO_MILLISECOND),
+        microsecond: GetSlot(this, ISO_MICROSECOND),
+        nanosecond: GetSlot(this, ISO_NANOSECOND)
+      },
       increment,
       unit,
       roundingMode
