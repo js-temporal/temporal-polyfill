@@ -250,7 +250,10 @@ export class Duration implements Temporal.Duration {
 
     if (plainRelativeTo) {
       let duration = ES.NormalizeDurationWith24HourDays(this);
-      const targetTime = ES.AddTime(0, 0, 0, 0, 0, 0, duration.norm);
+      const targetTime = ES.AddTime(
+        { hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 },
+        duration.norm
+      );
 
       // Delegate the date part addition to the calendar
       const isoRelativeToDate = ES.TemporalObjectToISODateRecord(plainRelativeTo);
@@ -320,7 +323,10 @@ export class Duration implements Temporal.Duration {
 
     if (plainRelativeTo) {
       const duration = ES.NormalizeDurationWith24HourDays(this);
-      let targetTime = ES.AddTime(0, 0, 0, 0, 0, 0, duration.norm);
+      let targetTime = ES.AddTime(
+        { hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 },
+        duration.norm
+      );
 
       // Delegate the date part addition to the calendar
       const isoRelativeToDate = ES.TemporalObjectToISODateRecord(plainRelativeTo);
