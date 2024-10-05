@@ -5232,15 +5232,7 @@ export function RoundTemporalInstant(
 }
 
 export function RoundISODateTime(
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-  second: number,
-  millisecond: number,
-  microsecond: number,
-  nanosecond: number,
+  { year, month, day, hour, minute, second, millisecond, microsecond, nanosecond }: ISODateTime,
   increment: number,
   unit: UnitSmallerThanOrEqualTo<'day'>,
   roundingMode: Temporal.RoundingMode
