@@ -1347,6 +1347,17 @@ export function TemporalObjectToFields(
   return ISODateToFields(calendar, isoDate, type);
 }
 
+export function calendarImplForObj(
+  temporalObj:
+    | Temporal.PlainDate
+    | Temporal.PlainDateTime
+    | Temporal.PlainMonthDay
+    | Temporal.PlainYearMonth
+    | Temporal.ZonedDateTime
+) {
+  return GetIntrinsic('%calendarImpl%')(GetSlot(temporalObj, CALENDAR));
+}
+
 type ISODateToFieldsReturn<Type extends ISODateToFieldsType> = Resolve<{
   year: Type extends 'date' | 'year-month' ? number : never;
   monthCode: string;
@@ -1361,12 +1372,15 @@ export function ISODateToFields<T extends ISODateToFieldsType>(
 ): ISODateToFieldsReturn<T>;
 export function ISODateToFields(calendar: BuiltinCalendarId, isoDate: ISODate, type = 'date') {
   const fields = ObjectCreate(null);
-  fields.monthCode = CalendarMonthCode(calendar, isoDate);
+  const calendarImpl = GetIntrinsic('%calendarImpl%')(calendar);
+  const calendarDate = calendarImpl.isoToDate(isoDate, { year: true, monthCode: true, day: true });
+
+  fields.monthCode = calendarDate.monthCode;
   if (type === 'month-day' || type === 'date') {
-    fields.day = CalendarDay(calendar, isoDate);
+    fields.day = calendarDate.day;
   }
   if (type === 'year-month' || type === 'date') {
-    fields.year = CalendarYear(calendar, isoDate);
+    fields.year = calendarDate.year;
   }
   return fields;
 }
@@ -2276,66 +2290,6 @@ function CalendarDateUntil(
   largestUnit: Temporal.DateUnit
 ) {
   return GetIntrinsic('%calendarImpl%')(calendar).dateUntil(isoDate, isoOtherDate, largestUnit);
-}
-
-export function CalendarYear(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { year: true }).year;
-}
-
-export function CalendarMonth(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { month: true }).month;
-}
-
-export function CalendarMonthCode(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { monthCode: true }).monthCode;
-}
-
-export function CalendarDay(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { day: true }).day;
-}
-
-export function CalendarEra(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { era: true }).era;
-}
-
-export function CalendarEraYear(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { eraYear: true }).eraYear;
-}
-
-export function CalendarDayOfWeek(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { dayOfWeek: true }).dayOfWeek;
-}
-
-export function CalendarDayOfYear(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { dayOfYear: true }).dayOfYear;
-}
-
-export function CalendarWeekOfYear(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { weekOfYear: true }).weekOfYear.week;
-}
-
-export function CalendarYearOfWeek(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { weekOfYear: true }).weekOfYear.year;
-}
-
-export function CalendarDaysInWeek(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { daysInWeek: true }).daysInWeek;
-}
-
-export function CalendarDaysInMonth(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { daysInMonth: true }).daysInMonth;
-}
-
-export function CalendarDaysInYear(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { daysInYear: true }).daysInYear;
-}
-
-export function CalendarMonthsInYear(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { monthsInYear: true }).monthsInYear;
-}
-
-export function CalendarInLeapYear(calendar: BuiltinCalendarId, isoDate: ISODate) {
-  return GetIntrinsic('%calendarImpl%')(calendar).isoToDate(isoDate, { inLeapYear: true }).inLeapYear;
 }
 
 export function ToTemporalCalendarIdentifier(calendarLike: Temporal.CalendarLike): BuiltinCalendarId {

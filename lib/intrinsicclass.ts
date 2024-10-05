@@ -12,7 +12,7 @@ import {
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type { CalendarImpl } from './calendar';
-import type { BuiltinCalendarId, ISODate } from './internaltypes';
+import type { BuiltinCalendarId } from './internaltypes';
 
 import { DEBUG } from './debug';
 
@@ -50,7 +50,6 @@ type TemporalIntrinsicPrototypeRegisteredKeys = {
 
 type OtherIntrinsics = {
   calendarImpl: (id: BuiltinCalendarId) => CalendarImpl;
-  calendarDateWeekOfYear: (id: BuiltinCalendarId, isoDate: ISODate) => { week?: number; year?: number };
 };
 type OtherIntrinsicKeys = { [key in keyof OtherIntrinsics as `%${key}%`]: OtherIntrinsics[key] };
 
