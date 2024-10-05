@@ -64,19 +64,19 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
   get year(): Return['year'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarYear(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { year: true }).year;
   }
   get month(): Return['month'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarMonth(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { month: true }).month;
   }
   get monthCode(): Return['monthCode'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarMonthCode(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { monthCode: true }).monthCode;
   }
   get day(): Return['day'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarDay(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { day: true }).day;
   }
   get hour(): Return['hour'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
@@ -104,11 +104,11 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
   get era(): Return['era'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarEra(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { era: true }).era;
   }
   get eraYear(): Return['eraYear'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarEraYear(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { eraYear: true }).eraYear;
   }
   get epochMilliseconds(): Return['epochMilliseconds'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
@@ -121,19 +121,19 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
   get dayOfWeek(): Return['dayOfWeek'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarDayOfWeek(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { dayOfWeek: true }).dayOfWeek;
   }
   get dayOfYear(): Return['dayOfYear'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarDayOfYear(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { dayOfYear: true }).dayOfYear;
   }
   get weekOfYear(): Return['weekOfYear'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarWeekOfYear(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { weekOfYear: true }).weekOfYear.week;
   }
   get yearOfWeek(): Return['yearOfWeek'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarYearOfWeek(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { weekOfYear: true }).weekOfYear.year;
   }
   get hoursInDay(): Return['hoursInDay'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
@@ -147,23 +147,23 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
   get daysInWeek(): Return['daysInWeek'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarDaysInWeek(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { daysInWeek: true }).daysInWeek;
   }
   get daysInMonth(): Return['daysInMonth'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarDaysInMonth(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { daysInMonth: true }).daysInMonth;
   }
   get daysInYear(): Return['daysInYear'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarDaysInYear(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { daysInYear: true }).daysInYear;
   }
   get monthsInYear(): Return['monthsInYear'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarMonthsInYear(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { monthsInYear: true }).monthsInYear;
   }
   get inLeapYear(): Return['inLeapYear'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    return ES.CalendarInLeapYear(GetSlot(this, CALENDAR), date(this));
+    return ES.calendarImplForObj(this).isoToDate(date(this), { inLeapYear: true }).inLeapYear;
   }
   get offset(): Return['offset'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
