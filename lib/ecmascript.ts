@@ -1950,7 +1950,7 @@ export function InterpretISODateTimeOffset(
   // zone and date/time.
   if (offsetOpt === 'reject') {
     const offsetStr = FormatUTCOffsetNanoseconds(offsetNs);
-    const dtStr = TemporalDateTimeToString(dt, 'iso8601', 'auto');
+    const dtStr = ISODateTimeToString(dt, 'iso8601', 'auto');
     throw new RangeErrorCtor(`Offset ${offsetStr} is invalid for ${dtStr} in ${timeZone}`);
   }
   // fall through: offsetOpt === 'prefer', but the offset doesn't match
@@ -2106,7 +2106,7 @@ export function CreateTemporalDateTimeSlots(
   SetSlot(result, CALENDAR, calendar);
 
   if (DEBUG) {
-    let repr = TemporalDateTimeToString(iso, calendar, 'auto');
+    let repr = ISODateTimeToString(iso, calendar, 'auto');
     ObjectDefineProperty(result, '_repr_', {
       value: `Temporal.PlainDateTime <${repr}>`,
       writable: false,
@@ -2634,7 +2634,7 @@ export function TemporalInstantToString(
   if (outputTimeZone === undefined) outputTimeZone = 'UTC';
   const epochNs = GetSlot(instant, EPOCHNANOSECONDS);
   const iso = GetISODateTimeFor(outputTimeZone, epochNs);
-  const dateTimeString = TemporalDateTimeToString(iso, 'iso8601', precision, 'never');
+  const dateTimeString = ISODateTimeToString(iso, 'iso8601', precision, 'never');
   let timeZoneString = 'Z';
   if (timeZone !== undefined) {
     const offsetNs = GetOffsetNanosecondsFor(outputTimeZone, epochNs);
@@ -2723,7 +2723,7 @@ export function TimeRecordToString(
   return FormatTimeString(hour, minute, second, subSecondNanoseconds, precision);
 }
 
-export function TemporalDateTimeToString(
+export function ISODateTimeToString(
   isoDateTime: ISODateTime,
   calendar: BuiltinCalendarId,
   precision: SecondsStringPrecisionRecord['precision'],
@@ -2791,7 +2791,7 @@ export function TemporalZonedDateTimeToString(
   const tz = GetSlot(zdt, TIME_ZONE);
   const offsetNs = GetOffsetNanosecondsFor(tz, epochNs);
   const iso = GetISODateTimeFor(tz, epochNs);
-  let dateTimeString = TemporalDateTimeToString(iso, 'iso8601', precision, 'never');
+  let dateTimeString = ISODateTimeToString(iso, 'iso8601', precision, 'never');
   if (showOffset !== 'never') {
     dateTimeString += FormatDateTimeUTCOffsetRounded(offsetNs);
   }
