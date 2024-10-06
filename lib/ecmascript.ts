@@ -4400,7 +4400,15 @@ export function DifferencePlainDateTimeWithRounding(
   smallestUnit: Temporal.DateTimeUnit,
   roundingMode: Temporal.RoundingMode
 ) {
-  if (CompareISODateTime(y1, mon1, d1, h1, min1, s1, ms1, µs1, ns1, y2, mon2, d2, h2, min2, s2, ms2, µs2, ns2) == 0) {
+  const isoDateTime1 = {
+    isoDate: { year: y1, month: mon1, day: d1 },
+    time: { hour: h1, minute: min1, second: s1, millisecond: ms1, microsecond: µs1, nanosecond: ns1 }
+  };
+  const isoDateTime2 = {
+    isoDate: { year: y2, month: mon2, day: d2 },
+    time: { hour: h2, minute: min2, second: s2, millisecond: ms2, microsecond: µs2, nanosecond: ns2 }
+  };
+  if (CompareISODateTime(isoDateTime1, isoDateTime2) == 0) {
     return { date: ZeroDateDuration(), norm: TimeDuration.ZERO };
   }
 
@@ -4429,15 +4437,11 @@ export function DifferencePlainDateTimeWithRounding(
 
   if (smallestUnit === 'nanosecond' && roundingIncrement === 1) return duration;
 
-  const isoDateTime = {
-    isoDate: { year: y1, month: mon1, day: d1 },
-    time: { hour: h1, minute: min1, second: s1, millisecond: ms1, microsecond: µs1, nanosecond: ns1 }
-  };
   const destEpochNs = GetUTCEpochNanoseconds(y2, mon2, d2, h2, min2, s2, ms2, µs2, ns2);
   return RoundRelativeDuration(
     duration,
     destEpochNs,
-    isoDateTime,
+    isoDateTime1,
     null,
     calendar,
     largestUnit,
@@ -4469,7 +4473,15 @@ export function DifferencePlainDateTimeWithTotal(
   calendar: BuiltinCalendarId,
   unit: Temporal.DateTimeUnit
 ) {
-  if (CompareISODateTime(y1, mon1, d1, h1, min1, s1, ms1, µs1, ns1, y2, mon2, d2, h2, min2, s2, ms2, µs2, ns2) == 0) {
+  const isoDateTime1 = {
+    isoDate: { year: y1, month: mon1, day: d1 },
+    time: { hour: h1, minute: min1, second: s1, millisecond: ms1, microsecond: µs1, nanosecond: ns1 }
+  };
+  const isoDateTime2 = {
+    isoDate: { year: y2, month: mon2, day: d2 },
+    time: { hour: h2, minute: min2, second: s2, millisecond: ms2, microsecond: µs2, nanosecond: ns2 }
+  };
+  if (CompareISODateTime(isoDateTime1, isoDateTime2) == 0) {
     return 0;
   }
 
@@ -4498,12 +4510,8 @@ export function DifferencePlainDateTimeWithTotal(
 
   if (unit === 'nanosecond') return JSBI.toNumber(duration.norm.totalNs);
 
-  const isoDateTime = {
-    isoDate: { year: y1, month: mon1, day: d1 },
-    time: { hour: h1, minute: min1, second: s1, millisecond: ms1, microsecond: µs1, nanosecond: ns1 }
-  };
   const destEpochNs = GetUTCEpochNanoseconds(y2, mon2, d2, h2, min2, s2, ms2, µs2, ns2);
-  return TotalRelativeDuration(duration, destEpochNs, isoDateTime, null, calendar, unit);
+  return TotalRelativeDuration(duration, destEpochNs, isoDateTime1, null, calendar, unit);
 }
 
 export function DifferenceZonedDateTimeWithRounding(
@@ -5303,32 +5311,10 @@ export function CompareTimeRecord(time1: TimeRecord, time2: TimeRecord) {
   return 0;
 }
 
-export function CompareISODateTime(
-  y1: number,
-  m1: number,
-  d1: number,
-  h1: number,
-  min1: number,
-  s1: number,
-  ms1: number,
-  µs1: number,
-  ns1: number,
-  y2: number,
-  m2: number,
-  d2: number,
-  h2: number,
-  min2: number,
-  s2: number,
-  ms2: number,
-  µs2: number,
-  ns2: number
-) {
-  const dateResult = CompareISODate({ year: y1, month: m1, day: d1 }, { year: y2, month: m2, day: d2 });
+export function CompareISODateTime(isoDateTime1: ISODateTime, isoDateTime2: ISODateTime) {
+  const dateResult = CompareISODate(isoDateTime1.isoDate, isoDateTime2.isoDate);
   if (dateResult !== 0) return dateResult;
-  return CompareTimeRecord(
-    { hour: h1, minute: min1, second: s1, millisecond: ms1, microsecond: µs1, nanosecond: ns1 },
-    { hour: h2, minute: min2, second: s2, millisecond: ms2, microsecond: µs2, nanosecond: ns2 }
-  );
+  return CompareTimeRecord(isoDateTime1.time, isoDateTime2.time);
 }
 
 // Defaults to native bigint, or something "native bigint-like".
