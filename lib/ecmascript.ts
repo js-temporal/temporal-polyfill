@@ -2175,7 +2175,8 @@ export function CreateTemporalYearMonthSlots(
   referenceISODay: number
 ) {
   RejectISODate(isoYear, isoMonth, referenceISODay);
-  RejectYearMonthRange(isoYear, isoMonth);
+  const isoDate = { year: isoYear, month: isoMonth, day: referenceISODay };
+  RejectYearMonthRange(isoDate);
 
   CreateSlots(result);
   SetSlot(result, ISO_YEAR, isoYear);
@@ -2342,7 +2343,7 @@ export function CalendarYearMonthFromFields(
   calendarImpl.resolveFields(fields, 'year-month');
   fields.day = 1;
   const result = calendarImpl.dateToISO(fields, overflow);
-  RejectYearMonthRange(result.year, result.month);
+  RejectYearMonthRange(result);
   return result;
 }
 
@@ -3562,7 +3563,7 @@ export function ValidateEpochNanoseconds(epochNanoseconds: JSBI) {
   }
 }
 
-function RejectYearMonthRange(year: number, month: number) {
+function RejectYearMonthRange({ year, month }: Omit<ISODate, 'day'>) {
   RejectToRange(year, YEAR_MIN, YEAR_MAX);
   if (year === YEAR_MIN) {
     RejectToRange(month, 4, 12);
