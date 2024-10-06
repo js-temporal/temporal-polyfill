@@ -205,15 +205,8 @@ export interface ISODate {
 export type TimeRecord = Required<Temporal.PlainTimeLike>;
 
 export interface ISODateTime {
-  year: number;
-  month: number;
-  day: number;
-  hour: number;
-  minute: number;
-  second: number;
-  millisecond: number;
-  microsecond: number;
-  nanosecond: number;
+  isoDate: ISODate;
+  time: TimeRecord;
 }
 
 export interface DateDuration {
