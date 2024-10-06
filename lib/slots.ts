@@ -11,22 +11,23 @@ import {
 
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
-import type { BuiltinCalendarId, AnySlottedType, FormatterOrAmender } from './internaltypes';
+import type {
+  BuiltinCalendarId,
+  AnySlottedType,
+  FormatterOrAmender,
+  ISODate,
+  ISODateTime,
+  TimeRecord
+} from './internaltypes';
 import type { DateTimeFormatImpl } from './intl';
 
 // Instant
 export const EPOCHNANOSECONDS = 'slot-epochNanoSeconds';
 
 // DateTime, Date, Time, YearMonth, MonthDay
-export const ISO_YEAR = 'slot-year';
-export const ISO_MONTH = 'slot-month';
-export const ISO_DAY = 'slot-day';
-export const ISO_HOUR = 'slot-hour';
-export const ISO_MINUTE = 'slot-minute';
-export const ISO_SECOND = 'slot-second';
-export const ISO_MILLISECOND = 'slot-millisecond';
-export const ISO_MICROSECOND = 'slot-microsecond';
-export const ISO_NANOSECOND = 'slot-nanosecond';
+export const ISO_DATE = 'slot-iso-date';
+export const ISO_DATE_TIME = 'slot-iso-date-time';
+export const TIME = 'slot-time';
 export const CALENDAR = 'slot-calendar';
 // Date, YearMonth, and MonthDay all have the same slots, disambiguation needed:
 export const DATE_BRAND = 'slot-date-brand';
@@ -52,7 +53,7 @@ export const NANOSECONDS = 'slot-nanoseconds';
 export const DATE = 'date';
 export const YM = 'ym';
 export const MD = 'md';
-export const TIME = 'time';
+export const TIME_FMT = 'time';
 export const DATETIME = 'datetime';
 export const INST = 'instant';
 export const ORIGINAL = 'original';
@@ -76,15 +77,9 @@ interface Slots extends SlotInfoRecord {
   [EPOCHNANOSECONDS]: SlotInfo<JSBI, Temporal.Instant | Temporal.ZonedDateTime>; // number? JSBI?
 
   // DateTime, Date, Time, YearMonth, MonthDay
-  [ISO_YEAR]: SlotInfo<number, TypesWithCalendarUnits>;
-  [ISO_MONTH]: SlotInfo<number, TypesWithCalendarUnits>;
-  [ISO_DAY]: SlotInfo<number, TypesWithCalendarUnits>;
-  [ISO_HOUR]: SlotInfo<number, TypesWithCalendarUnits>;
-  [ISO_MINUTE]: SlotInfo<number, TypesWithCalendarUnits>;
-  [ISO_SECOND]: SlotInfo<number, TypesWithCalendarUnits>;
-  [ISO_MILLISECOND]: SlotInfo<number, TypesWithCalendarUnits>;
-  [ISO_MICROSECOND]: SlotInfo<number, TypesWithCalendarUnits>;
-  [ISO_NANOSECOND]: SlotInfo<number, TypesWithCalendarUnits>;
+  [ISO_DATE]: SlotInfo<ISODate, Temporal.PlainDate | Temporal.PlainMonthDay | Temporal.PlainYearMonth>;
+  [ISO_DATE_TIME]: SlotInfo<ISODateTime, Temporal.PlainDateTime>;
+  [TIME]: SlotInfo<TimeRecord, Temporal.PlainTime>;
   [CALENDAR]: SlotInfo<BuiltinCalendarId, TypesWithCalendarUnits>;
 
   // Date, YearMonth, MonthDay common slots
@@ -111,7 +106,7 @@ interface Slots extends SlotInfoRecord {
   [DATE]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
   [YM]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
   [MD]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
-  [TIME]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
+  [TIME_FMT]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
   [DATETIME]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
   [INST]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
   [ORIGINAL]: SlotInfo<globalThis.Intl.DateTimeFormat, DateTimeFormatImpl>;
@@ -125,7 +120,6 @@ interface Slots extends SlotInfoRecord {
 type TypesWithCalendarUnits =
   | Temporal.PlainDateTime
   | Temporal.PlainDate
-  | Temporal.PlainTime
   | Temporal.PlainYearMonth
   | Temporal.PlainMonthDay
   | Temporal.ZonedDateTime;
@@ -135,15 +129,9 @@ interface SlotsToTypes {
   [EPOCHNANOSECONDS]: Temporal.Instant;
 
   // DateTime, Date, Time, YearMonth, MonthDay
-  [ISO_YEAR]: TypesWithCalendarUnits;
-  [ISO_MONTH]: TypesWithCalendarUnits;
-  [ISO_DAY]: TypesWithCalendarUnits;
-  [ISO_HOUR]: TypesWithCalendarUnits;
-  [ISO_MINUTE]: TypesWithCalendarUnits;
-  [ISO_SECOND]: TypesWithCalendarUnits;
-  [ISO_MILLISECOND]: TypesWithCalendarUnits;
-  [ISO_MICROSECOND]: TypesWithCalendarUnits;
-  [ISO_NANOSECOND]: TypesWithCalendarUnits;
+  [ISO_DATE]: Temporal.PlainDate | Temporal.PlainYearMonth | Temporal.PlainMonthDay;
+  [ISO_DATE_TIME]: Temporal.PlainDateTime;
+  [TIME]: Temporal.PlainTime;
   [CALENDAR]: TypesWithCalendarUnits;
 
   // Date, YearMonth, MonthDay common slots
@@ -170,7 +158,7 @@ interface SlotsToTypes {
   [DATE]: DateTimeFormatImpl;
   [YM]: DateTimeFormatImpl;
   [MD]: DateTimeFormatImpl;
-  [TIME]: DateTimeFormatImpl;
+  [TIME_FMT]: DateTimeFormatImpl;
   [DATETIME]: DateTimeFormatImpl;
   [INST]: DateTimeFormatImpl;
   [ORIGINAL]: DateTimeFormatImpl;
