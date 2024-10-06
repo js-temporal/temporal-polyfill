@@ -31,12 +31,8 @@ import {
   HasSlot,
   EPOCHNANOSECONDS,
   INST,
-  ISO_HOUR,
-  ISO_MINUTE,
-  ISO_SECOND,
-  ISO_MILLISECOND,
-  ISO_MICROSECOND,
-  ISO_NANOSECOND,
+  ISO_DATE,
+  ISO_DATE_TIME,
   LOCALE,
   MD,
   OPTIONS,
@@ -44,6 +40,7 @@ import {
   ResetSlot,
   SetSlot,
   TIME,
+  TIME_FMT,
   TZ_CANONICAL,
   TZ_ORIGINAL,
   YM
@@ -51,7 +48,7 @@ import {
 import type { Temporal } from '..';
 import type { DateTimeFormatParams as Params, DateTimeFormatReturn as Return } from './internaltypes';
 
-type LazySlot = typeof DATE | typeof YM | typeof MD | typeof TIME | typeof DATETIME | typeof INST;
+type LazySlot = typeof DATE | typeof YM | typeof MD | typeof TIME_FMT | typeof DATETIME | typeof INST;
 
 // Construction of built-in Intl.DateTimeFormat objects is sloooooow,
 // so we'll only create those instances when we need them.
@@ -153,7 +150,7 @@ function createDateTimeFormat(
   SetSlot(dtf, DATE, dateAmend);
   SetSlot(dtf, YM, yearMonthAmend);
   SetSlot(dtf, MD, monthDayAmend);
-  SetSlot(dtf, TIME, timeAmend);
+  SetSlot(dtf, TIME_FMT, timeAmend);
   SetSlot(dtf, DATETIME, datetimeAmend);
   SetSlot(dtf, INST, instantAmend);
 
@@ -557,18 +554,11 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
   if (ES.IsTemporalTime(temporalObj)) {
     const isoDateTime = {
       isoDate: { year: 1970, month: 1, day: 1 },
-      time: {
-        hour: GetSlot(temporalObj, ISO_HOUR),
-        minute: GetSlot(temporalObj, ISO_MINUTE),
-        second: GetSlot(temporalObj, ISO_SECOND),
-        millisecond: GetSlot(temporalObj, ISO_MILLISECOND),
-        microsecond: GetSlot(temporalObj, ISO_MICROSECOND),
-        nanosecond: GetSlot(temporalObj, ISO_NANOSECOND)
-      }
+      time: GetSlot(temporalObj, TIME)
     };
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
-      formatter: getSlotLazy(main, TIME)
+      formatter: getSlotLazy(main, TIME_FMT)
     };
   }
 
@@ -580,8 +570,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
         `cannot format PlainYearMonth with calendar ${calendar} in locale with calendar ${mainCalendar}`
       );
     }
-    const isoDate = ES.TemporalObjectToISODateRecord(temporalObj);
-    const isoDateTime = ES.CombineISODateAndTimeRecord(isoDate, ES.NoonTimeRecord());
+    const isoDateTime = ES.CombineISODateAndTimeRecord(GetSlot(temporalObj, ISO_DATE), ES.NoonTimeRecord());
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
       formatter: getSlotLazy(main, YM)
@@ -596,8 +585,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
         `cannot format PlainMonthDay with calendar ${calendar} in locale with calendar ${mainCalendar}`
       );
     }
-    const isoDate = ES.TemporalObjectToISODateRecord(temporalObj);
-    const isoDateTime = ES.CombineISODateAndTimeRecord(isoDate, ES.NoonTimeRecord());
+    const isoDateTime = ES.CombineISODateAndTimeRecord(GetSlot(temporalObj, ISO_DATE), ES.NoonTimeRecord());
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
       formatter: getSlotLazy(main, MD)
@@ -612,8 +600,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
         `cannot format PlainDate with calendar ${calendar} in locale with calendar ${mainCalendar}`
       );
     }
-    const isoDate = ES.TemporalObjectToISODateRecord(temporalObj);
-    const isoDateTime = ES.CombineISODateAndTimeRecord(isoDate, ES.NoonTimeRecord());
+    const isoDateTime = ES.CombineISODateAndTimeRecord(GetSlot(temporalObj, ISO_DATE), ES.NoonTimeRecord());
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
       formatter: getSlotLazy(main, DATE)
@@ -628,7 +615,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
         `cannot format PlainDateTime with calendar ${calendar} in locale with calendar ${mainCalendar}`
       );
     }
-    const isoDateTime = ES.PlainDateTimeToISODateTimeRecord(temporalObj);
+    const isoDateTime = GetSlot(temporalObj, ISO_DATE_TIME);
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
       formatter: getSlotLazy(main, DATETIME)
