@@ -213,9 +213,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const newDateTime = ES.InterpretTemporalDateTimeFields(calendar, fields, overflow);
     const newOffsetNs = ES.ParseDateTimeUTCOffset(fields.offset);
     const epochNanoseconds = ES.InterpretISODateTimeOffset(
-      newDateTime.isoDate.year,
-      newDateTime.isoDate.month,
-      newDateTime.isoDate.day,
+      newDateTime.isoDate,
       newDateTime.time,
       'option',
       newOffsetNs,
@@ -351,9 +349,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       // disambiguation algorithm will be used.
       const offsetNs = ES.GetOffsetNanosecondsFor(timeZone, thisNs);
       epochNanoseconds = ES.InterpretISODateTimeOffset(
-        roundedDateTime.isoDate.year,
-        roundedDateTime.isoDate.month,
-        roundedDateTime.isoDate.day,
+        roundedDateTime.isoDate,
         roundedDateTime.time,
         'option',
         offsetNs,
