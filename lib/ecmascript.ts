@@ -999,6 +999,14 @@ export function CombineISODateAndTimeRecord(isoDate: ISODate, time: TimeRecord) 
   return { isoDate, time };
 }
 
+export function MidnightTimeRecord() {
+  return { deltaDays: 0, hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
+}
+
+export function NoonTimeRecord() {
+  return { deltaDays: 0, hour: 12, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
+}
+
 export function GetTemporalOverflowOption(options: Temporal.AssignmentOptions) {
   return GetOption(options, 'overflow', ['constrain', 'reject'], 'constrain');
 }
@@ -1606,9 +1614,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
     let z;
     ({ year, month, day, time, calendar, z } = ParseTemporalDateTimeString(RequireString(item)));
     if (z) throw new RangeErrorCtor('Z designator not supported for PlainDateTime');
-    if (time === 'start-of-day') {
-      time = { hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
-    }
+    if (time === 'start-of-day') time = MidnightTimeRecord();
     RejectDateTime(
       year,
       month,
@@ -2517,8 +2523,7 @@ function GetPossibleEpochNanoseconds(timeZone: string, isoDateTime: ISODateTime)
 }
 
 export function GetStartOfDay(timeZone: string, isoDate: ISODate) {
-  const midnight = { hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
-  const isoDateTime = CombineISODateAndTimeRecord(isoDate, midnight);
+  const isoDateTime = CombineISODateAndTimeRecord(isoDate, MidnightTimeRecord());
   const possibleEpochNs = GetPossibleEpochNanoseconds(timeZone, isoDateTime);
   // If not a DST gap, return the single or earlier epochNs
   if (possibleEpochNs.length) return possibleEpochNs[0];
@@ -3427,8 +3432,7 @@ function RejectISODate(year: number, month: number, day: number) {
 
 function RejectDateRange(isoDate: ISODate) {
   // Noon avoids trouble at edges of DateTime range (excludes midnight)
-  const noon = { hour: 12, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
-  RejectDateTimeRange(CombineISODateAndTimeRecord(isoDate, noon));
+  RejectDateTimeRange(CombineISODateAndTimeRecord(isoDate, NoonTimeRecord()));
 }
 
 export function RejectTime(
@@ -4450,9 +4454,8 @@ export function DifferenceTemporalPlainDate(
   let duration = { date: dateDifference, norm: TimeDuration.ZERO };
   const roundingIsNoop = settings.smallestUnit === 'day' && settings.roundingIncrement === 1;
   if (!roundingIsNoop) {
-    const midnight = { hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
-    const isoDateTime = CombineISODateAndTimeRecord(isoDate, midnight);
-    const isoDateTimeOther = CombineISODateAndTimeRecord(isoOther, midnight);
+    const isoDateTime = CombineISODateAndTimeRecord(isoDate, MidnightTimeRecord());
+    const isoDateTimeOther = CombineISODateAndTimeRecord(isoOther, MidnightTimeRecord());
     const destEpochNs = GetUTCEpochNanoseconds(isoDateTimeOther);
     duration = RoundRelativeDuration(
       duration,
@@ -4582,9 +4585,8 @@ export function DifferenceTemporalPlainYearMonth(
   const dateDifference = CalendarDateUntil(calendar, thisDate, otherDate, settings.largestUnit);
   let duration = { date: AdjustDateDurationRecord(dateDifference, 0, 0), norm: TimeDuration.ZERO };
   if (settings.smallestUnit !== 'month' || settings.roundingIncrement !== 1) {
-    const midnight = { hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
-    const isoDateTime = CombineISODateAndTimeRecord(thisDate, midnight);
-    const isoDateTimeOther = CombineISODateAndTimeRecord(otherDate, midnight);
+    const isoDateTime = CombineISODateAndTimeRecord(thisDate, MidnightTimeRecord());
+    const isoDateTimeOther = CombineISODateAndTimeRecord(otherDate, MidnightTimeRecord());
     const destEpochNs = GetUTCEpochNanoseconds(isoDateTimeOther);
     duration = RoundRelativeDuration(
       duration,

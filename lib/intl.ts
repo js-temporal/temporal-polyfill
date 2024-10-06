@@ -544,8 +544,6 @@ function sameTemporalType(x: unknown, y: unknown) {
   return true;
 }
 
-const noon = { hour: 12, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
-
 type TypesWithToLocaleString =
   | Temporal.PlainDateTime
   | Temporal.PlainDate
@@ -583,7 +581,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
       );
     }
     const isoDate = ES.TemporalObjectToISODateRecord(temporalObj);
-    const isoDateTime = ES.CombineISODateAndTimeRecord(isoDate, noon);
+    const isoDateTime = ES.CombineISODateAndTimeRecord(isoDate, ES.NoonTimeRecord());
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
       formatter: getSlotLazy(main, YM)
@@ -599,7 +597,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
       );
     }
     const isoDate = ES.TemporalObjectToISODateRecord(temporalObj);
-    const isoDateTime = ES.CombineISODateAndTimeRecord(isoDate, noon);
+    const isoDateTime = ES.CombineISODateAndTimeRecord(isoDate, ES.NoonTimeRecord());
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
       formatter: getSlotLazy(main, MD)
@@ -615,7 +613,7 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
       );
     }
     const isoDate = ES.TemporalObjectToISODateRecord(temporalObj);
-    const isoDateTime = ES.CombineISODateAndTimeRecord(isoDate, noon);
+    const isoDateTime = ES.CombineISODateAndTimeRecord(isoDate, ES.NoonTimeRecord());
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
       formatter: getSlotLazy(main, DATE)
