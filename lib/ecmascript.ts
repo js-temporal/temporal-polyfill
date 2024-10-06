@@ -3800,46 +3800,25 @@ function DifferenceInstant(
 }
 
 function DifferenceISODateTime(
-  y1: number,
-  mon1: number,
-  d1: number,
-  h1: number,
-  min1: number,
-  s1: number,
-  ms1: number,
-  µs1: number,
-  ns1: number,
-  y2: number,
-  mon2: number,
-  d2: number,
-  h2: number,
-  min2: number,
-  s2: number,
-  ms2: number,
-  µs2: number,
-  ns2: number,
+  isoDateTime1: ISODateTime,
+  isoDateTime2: ISODateTime,
   calendar: BuiltinCalendarId,
   largestUnit: Temporal.DateTimeUnit
 ) {
-  let timeDuration = DifferenceTime(
-    { hour: h1, minute: min1, second: s1, millisecond: ms1, microsecond: µs1, nanosecond: ns1 },
-    { hour: h2, minute: min2, second: s2, millisecond: ms2, microsecond: µs2, nanosecond: ns2 }
-  );
+  let timeDuration = DifferenceTime(isoDateTime1.time, isoDateTime2.time);
 
   const timeSign = timeDuration.sign();
-  const isoDate1 = { year: y1, month: mon1, day: d1 };
-  const isoDate2 = { year: y2, month: mon2, day: d2 };
-  const dateSign = CompareISODate(isoDate2, isoDate1);
+  const dateSign = CompareISODate(isoDateTime2.isoDate, isoDateTime1.isoDate);
 
   // back-off a day from date2 so that the signs of the date and time diff match
-  let adjustedDate = isoDate2;
+  let adjustedDate = isoDateTime2.isoDate;
   if (dateSign === -timeSign) {
     adjustedDate = BalanceISODate(adjustedDate.year, adjustedDate.month, adjustedDate.day + timeSign);
     timeDuration = timeDuration.add24HourDays(-timeSign);
   }
 
   const dateLargestUnit = LargerOfTwoTemporalUnits('day', largestUnit) as Temporal.DateUnit;
-  const dateDifference = CalendarDateUntil(calendar, isoDate1, adjustedDate, dateLargestUnit);
+  const dateDifference = CalendarDateUntil(calendar, isoDateTime1.isoDate, adjustedDate, dateLargestUnit);
   if (largestUnit !== dateLargestUnit) {
     // largestUnit < days, so add the days in to the normalized duration
     timeDuration = timeDuration.add24HourDays(dateDifference.days);
@@ -4412,28 +4391,7 @@ export function DifferencePlainDateTimeWithRounding(
     return { date: ZeroDateDuration(), norm: TimeDuration.ZERO };
   }
 
-  const duration = DifferenceISODateTime(
-    y1,
-    mon1,
-    d1,
-    h1,
-    min1,
-    s1,
-    ms1,
-    µs1,
-    ns1,
-    y2,
-    mon2,
-    d2,
-    h2,
-    min2,
-    s2,
-    ms2,
-    µs2,
-    ns2,
-    calendar,
-    largestUnit
-  );
+  const duration = DifferenceISODateTime(isoDateTime1, isoDateTime2, calendar, largestUnit);
 
   if (smallestUnit === 'nanosecond' && roundingIncrement === 1) return duration;
 
@@ -4485,28 +4443,7 @@ export function DifferencePlainDateTimeWithTotal(
     return 0;
   }
 
-  const duration = DifferenceISODateTime(
-    y1,
-    mon1,
-    d1,
-    h1,
-    min1,
-    s1,
-    ms1,
-    µs1,
-    ns1,
-    y2,
-    mon2,
-    d2,
-    h2,
-    min2,
-    s2,
-    ms2,
-    µs2,
-    ns2,
-    calendar,
-    unit
-  );
+  const duration = DifferenceISODateTime(isoDateTime1, isoDateTime2, calendar, unit);
 
   if (unit === 'nanosecond') return JSBI.toNumber(duration.norm.totalNs);
 
