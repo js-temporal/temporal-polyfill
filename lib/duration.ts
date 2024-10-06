@@ -250,8 +250,7 @@ export class Duration implements Temporal.Duration {
 
     if (plainRelativeTo) {
       let duration = ES.NormalizeDurationWith24HourDays(this);
-      const midnight = { hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
-      const targetTime = ES.AddTime(midnight, duration.norm);
+      const targetTime = ES.AddTime(ES.MidnightTimeRecord(), duration.norm);
 
       // Delegate the date part addition to the calendar
       const isoRelativeToDate = ES.TemporalObjectToISODateRecord(plainRelativeTo);
@@ -259,7 +258,7 @@ export class Duration implements Temporal.Duration {
       const dateDuration = ES.AdjustDateDurationRecord(duration.date, targetTime.deltaDays);
       const targetDate = ES.CalendarDateAdd(calendar, isoRelativeToDate, dateDuration, 'constrain');
 
-      const isoDateTime = ES.CombineISODateAndTimeRecord(isoRelativeToDate, midnight);
+      const isoDateTime = ES.CombineISODateAndTimeRecord(isoRelativeToDate, ES.MidnightTimeRecord());
       const targetDateTime = ES.CombineISODateAndTimeRecord(targetDate, targetTime);
       duration = ES.DifferencePlainDateTimeWithRounding(
         isoDateTime,
@@ -307,8 +306,7 @@ export class Duration implements Temporal.Duration {
 
     if (plainRelativeTo) {
       const duration = ES.NormalizeDurationWith24HourDays(this);
-      const midnight = { hour: 0, minute: 0, second: 0, millisecond: 0, microsecond: 0, nanosecond: 0 };
-      let targetTime = ES.AddTime(midnight, duration.norm);
+      let targetTime = ES.AddTime(ES.MidnightTimeRecord(), duration.norm);
 
       // Delegate the date part addition to the calendar
       const isoRelativeToDate = ES.TemporalObjectToISODateRecord(plainRelativeTo);
@@ -316,7 +314,7 @@ export class Duration implements Temporal.Duration {
       const dateDuration = ES.AdjustDateDurationRecord(duration.date, targetTime.deltaDays);
       const targetDate = ES.CalendarDateAdd(calendar, isoRelativeToDate, dateDuration, 'constrain');
 
-      const isoDateTime = ES.CombineISODateAndTimeRecord(isoRelativeToDate, midnight);
+      const isoDateTime = ES.CombineISODateAndTimeRecord(isoRelativeToDate, ES.MidnightTimeRecord());
       const targetDateTime = ES.CombineISODateAndTimeRecord(targetDate, targetTime);
       return ES.DifferencePlainDateTimeWithTotal(isoDateTime, targetDateTime, calendar, unit);
     }
