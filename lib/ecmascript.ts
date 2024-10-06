@@ -2487,22 +2487,18 @@ function DisambiguatePossibleEpochNanoseconds(
 }
 
 function GetPossibleEpochNanoseconds(timeZone: string, isoDateTime: ISODateTime) {
-  const {
-    isoDate: { year, month, day },
-    time: { hour, minute, second, millisecond, microsecond, nanosecond }
-  } = isoDateTime;
   const offsetMinutes = ParseTimeZoneIdentifier(timeZone).offsetMinutes;
   if (offsetMinutes !== undefined) {
     const balanced = BalanceISODateTime(
-      year,
-      month,
-      day,
-      hour,
-      minute - offsetMinutes,
-      second,
-      millisecond,
-      microsecond,
-      nanosecond
+      isoDateTime.isoDate.year,
+      isoDateTime.isoDate.month,
+      isoDateTime.isoDate.day,
+      isoDateTime.time.hour,
+      isoDateTime.time.minute - offsetMinutes,
+      isoDateTime.time.second,
+      isoDateTime.time.millisecond,
+      isoDateTime.time.microsecond,
+      isoDateTime.time.nanosecond
     );
     if (MathAbs(ISODateToEpochDays(balanced.isoDate.year, balanced.isoDate.month - 1, balanced.isoDate.day)) > 1e8) {
       throw new RangeErrorCtor('date/time value is outside the supported range');
@@ -2512,21 +2508,12 @@ function GetPossibleEpochNanoseconds(timeZone: string, isoDateTime: ISODateTime)
     return [epochNs];
   }
 
-  if (MathAbs(ISODateToEpochDays(year, month - 1, day)) > 1e8) {
+  if (
+    MathAbs(ISODateToEpochDays(isoDateTime.isoDate.year, isoDateTime.isoDate.month - 1, isoDateTime.isoDate.day)) > 1e8
+  ) {
     throw new RangeErrorCtor('date/time value is outside the supported range');
   }
-  return GetNamedTimeZoneEpochNanoseconds(
-    timeZone,
-    year,
-    month,
-    day,
-    hour,
-    minute,
-    second,
-    millisecond,
-    microsecond,
-    nanosecond
-  );
+  return GetNamedTimeZoneEpochNanoseconds(timeZone, isoDateTime);
 }
 
 export function GetStartOfDay(timeZone: string, isoDate: ISODate) {
@@ -3149,24 +3136,10 @@ export function GetFormatterParts(timeZone: string, epochMilliseconds: number) {
 // be only one match. But for repeated clock times after backwards transitions
 // (like when DST ends) there may be two matches. And for skipped clock times
 // after forward transitions, there will be no matches.
-function GetNamedTimeZoneEpochNanoseconds(
-  id: string,
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-  second: number,
-  millisecond: number,
-  microsecond: number,
-  nanosecond: number
-) {
+function GetNamedTimeZoneEpochNanoseconds(id: string, isoDateTime: ISODateTime) {
   // Get the offset of one day before and after the requested calendar date and
   // clock time, avoiding overflows if near the edge of the Instant range.
-  let ns = GetUTCEpochNanoseconds({
-    isoDate: { year, month, day },
-    time: { hour, minute, second, millisecond, microsecond, nanosecond }
-  });
+  let ns = GetUTCEpochNanoseconds(isoDateTime);
   let nsEarlier = JSBI.subtract(ns, DAY_NANOS_JSBI);
   if (JSBI.lessThan(nsEarlier, NS_MIN)) nsEarlier = ns;
   let nsLater = JSBI.add(ns, DAY_NANOS_JSBI);
@@ -3184,19 +3157,7 @@ function GetNamedTimeZoneEpochNanoseconds(
     (offsetNanoseconds) => {
       const epochNanoseconds = JSBI.subtract(ns, JSBI.BigInt(offsetNanoseconds));
       const parts = GetNamedTimeZoneDateTimeParts(id, epochNanoseconds);
-      if (
-        year !== parts.isoDate.year ||
-        month !== parts.isoDate.month ||
-        day !== parts.isoDate.day ||
-        hour !== parts.time.hour ||
-        minute !== parts.time.minute ||
-        second !== parts.time.second ||
-        millisecond !== parts.time.millisecond ||
-        microsecond !== parts.time.microsecond ||
-        nanosecond !== parts.time.nanosecond
-      ) {
-        return undefined;
-      }
+      if (CompareISODateTime(isoDateTime, parts) !== 0) return undefined;
       ValidateEpochNanoseconds(epochNanoseconds);
       return epochNanoseconds;
     }
