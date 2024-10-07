@@ -173,10 +173,10 @@ export class PlainDate implements Temporal.PlainDate {
   valueOf(): never {
     ES.ValueOfThrows('PlainDate');
   }
-  toPlainDateTime(temporalTimeParam: Params['toPlainDateTime'][0] = undefined): Return['toPlainDateTime'] {
+  toPlainDateTime(temporalTime: Params['toPlainDateTime'][0] = undefined): Return['toPlainDateTime'] {
     if (!ES.IsTemporalDate(this)) throw new TypeErrorCtor('invalid receiver');
-    const temporalTime = ES.ToTemporalTimeOrMidnight(temporalTimeParam);
-    const isoDateTime = ES.CombineISODateAndTimeRecord(GetSlot(this, ISO_DATE), GetSlot(temporalTime, TIME));
+    const time = ES.ToTimeRecordOrMidnight(temporalTime);
+    const isoDateTime = ES.CombineISODateAndTimeRecord(GetSlot(this, ISO_DATE), time);
     return ES.CreateTemporalDateTime(isoDateTime, GetSlot(this, CALENDAR));
   }
   toZonedDateTime(item: Params['toZonedDateTime'][0]): Return['toZonedDateTime'] {

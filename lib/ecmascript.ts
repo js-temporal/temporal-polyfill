@@ -1687,10 +1687,9 @@ export function ToTemporalTime(item: PlainTimeParams['from'][0], options?: Plain
   return CreateTemporalTime(time);
 }
 
-export function ToTemporalTimeOrMidnight(item: string | Temporal.PlainTime | Temporal.PlainTimeLike | undefined) {
-  const TemporalPlainTime = GetIntrinsic('%Temporal.PlainTime%');
-  if (item === undefined) return new TemporalPlainTime();
-  return ToTemporalTime(item);
+export function ToTimeRecordOrMidnight(item: PlainTimeParams['from'][0] | undefined) {
+  if (item === undefined) return MidnightTimeRecord();
+  return GetSlot(ToTemporalTime(item), TIME);
 }
 
 export function ToTemporalYearMonth(

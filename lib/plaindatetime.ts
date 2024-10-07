@@ -3,7 +3,7 @@ import { RangeError as RangeErrorCtor, TypeError as TypeErrorCtor } from './prim
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 
-import { CALENDAR, GetSlot, ISO_DATE_TIME, TIME } from './slots';
+import { CALENDAR, GetSlot, ISO_DATE_TIME } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { PlainDateTimeParams as Params, PlainDateTimeReturn as Return } from './internaltypes';
@@ -174,13 +174,10 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     const newDateTime = ES.InterpretTemporalDateTimeFields(calendar, fields, overflow);
     return ES.CreateTemporalDateTime(newDateTime, calendar);
   }
-  withPlainTime(temporalTimeParam: Params['withPlainTime'][0] = undefined): Return['withPlainTime'] {
+  withPlainTime(temporalTime: Params['withPlainTime'][0] = undefined): Return['withPlainTime'] {
     if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    const temporalTime = ES.ToTemporalTimeOrMidnight(temporalTimeParam);
-    const isoDateTime = ES.CombineISODateAndTimeRecord(
-      GetSlot(this, ISO_DATE_TIME).isoDate,
-      GetSlot(temporalTime, TIME)
-    );
+    const time = ES.ToTimeRecordOrMidnight(temporalTime);
+    const isoDateTime = ES.CombineISODateAndTimeRecord(GetSlot(this, ISO_DATE_TIME).isoDate, time);
     return ES.CreateTemporalDateTime(isoDateTime, GetSlot(this, CALENDAR));
   }
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
