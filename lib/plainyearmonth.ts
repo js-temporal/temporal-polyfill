@@ -79,7 +79,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     ES.RejectTemporalLikeObject(temporalYearMonthLike);
 
     const calendar = GetSlot(this, CALENDAR);
-    let fields = ES.TemporalObjectToFields(this);
+    let fields = ES.ISODateToFields(calendar, GetSlot(this, ISO_DATE), 'year-month');
     const partialYearMonth = ES.PrepareCalendarFields(
       calendar,
       temporalYearMonthLike,
@@ -143,7 +143,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     if (!ES.IsObject(item)) throw new TypeErrorCtor('argument should be an object');
     const calendar = GetSlot(this, CALENDAR);
 
-    const fields = ES.TemporalObjectToFields(this);
+    const fields = ES.ISODateToFields(calendar, GetSlot(this, ISO_DATE), 'year-month');
     const inputFields = ES.PrepareCalendarFields(calendar, item, ['day'], [], []);
     const mergedFields = ES.CalendarMergeFields(calendar, fields, inputFields);
     const isoDate = ES.CalendarDateFromFields(calendar, mergedFields, 'constrain');
