@@ -1347,6 +1347,10 @@ export function TemporalObjectToFields(
   return ISODateToFields(calendar, isoDate, type);
 }
 
+function calendarImplForID(calendar: BuiltinCalendarId) {
+  return GetIntrinsic('%calendarImpl%')(calendar);
+}
+
 export function calendarImplForObj(
   temporalObj:
     | Temporal.PlainDate
@@ -1372,7 +1376,7 @@ export function ISODateToFields<T extends ISODateToFieldsType>(
 ): ISODateToFieldsReturn<T>;
 export function ISODateToFields(calendar: BuiltinCalendarId, isoDate: ISODate, type = 'date') {
   const fields = ObjectCreate(null);
-  const calendarImpl = GetIntrinsic('%calendarImpl%')(calendar);
+  const calendarImpl = calendarImplForID(calendar);
   const calendarDate = calendarImpl.isoToDate(isoDate, { year: true, monthCode: true, day: true });
 
   fields.monthCode = calendarDate.monthCode;
@@ -1416,7 +1420,7 @@ export function PrepareCalendarFields<
   nonCalendarFieldNames: Array<FieldKeys>,
   requiredFields: RequiredFields
 ): PrepareCalendarFieldsReturn<FieldKeys, RequiredFields> {
-  const extraFieldNames = GetIntrinsic('%calendarImpl%')(calendar).extraFields();
+  const extraFieldNames = calendarImplForID(calendar).extraFields();
   const fields: FieldKeys[] = Call(ArrayPrototypeConcat, calendarFieldNames, [nonCalendarFieldNames, extraFieldNames]);
   const result: Partial<Record<AnyTemporalKey, unknown>> = ObjectCreate(null);
   let any = false;
@@ -2255,7 +2259,7 @@ export function CalendarMergeFields<Base extends Record<string, unknown>, ToAdd 
   additionalFields: ToAdd
 ) {
   const additionalKeys = CalendarFieldKeysPresent(additionalFields);
-  const overriddenKeys = GetIntrinsic('%calendarImpl%')(calendar).fieldKeysToIgnore(additionalKeys);
+  const overriddenKeys = calendarImplForID(calendar).fieldKeysToIgnore(additionalKeys);
   const merged = ObjectCreate(null);
   const fieldsKeys = CalendarFieldKeysPresent(fields);
   for (let ix = 0; ix < CALENDAR_FIELD_KEYS.length; ix++) {
@@ -2278,7 +2282,7 @@ export function CalendarDateAdd(
   dateDuration: Partial<DateDuration>,
   overflow: Overflow
 ) {
-  const result = GetIntrinsic('%calendarImpl%')(calendar).dateAdd(isoDate, dateDuration, overflow);
+  const result = calendarImplForID(calendar).dateAdd(isoDate, dateDuration, overflow);
   RejectDateRange(result.year, result.month, result.day);
   return result;
 }
@@ -2289,7 +2293,7 @@ function CalendarDateUntil(
   isoOtherDate: ISODate,
   largestUnit: Temporal.DateUnit
 ) {
-  return GetIntrinsic('%calendarImpl%')(calendar).dateUntil(isoDate, isoOtherDate, largestUnit);
+  return calendarImplForID(calendar).dateUntil(isoDate, isoOtherDate, largestUnit);
 }
 
 export function ToTemporalCalendarIdentifier(calendarLike: Temporal.CalendarLike): BuiltinCalendarId {
@@ -2329,7 +2333,7 @@ export function CalendarEquals(one: BuiltinCalendarId, two: BuiltinCalendarId) {
 }
 
 export function CalendarDateFromFields(calendar: BuiltinCalendarId, fields: CalendarFieldsRecord, overflow: Overflow) {
-  const calendarImpl: CalendarImpl = GetIntrinsic('%calendarImpl%')(calendar);
+  const calendarImpl: CalendarImpl = calendarImplForID(calendar);
   calendarImpl.resolveFields(fields, 'date');
   const result = calendarImpl.dateToISO(fields, overflow);
   RejectDateRange(result.year, result.month, result.day);
@@ -2341,7 +2345,7 @@ export function CalendarYearMonthFromFields(
   fields: CalendarFieldsRecord,
   overflow: Overflow
 ) {
-  const calendarImpl: CalendarImpl = GetIntrinsic('%calendarImpl%')(calendar);
+  const calendarImpl: CalendarImpl = calendarImplForID(calendar);
   calendarImpl.resolveFields(fields, 'year-month');
   fields.day = 1;
   const result = calendarImpl.dateToISO(fields, overflow);
@@ -2354,7 +2358,7 @@ export function CalendarMonthDayFromFields(
   fields: MonthDayFromFieldsObject,
   overflow: Overflow
 ) {
-  const calendarImpl: CalendarImpl = GetIntrinsic('%calendarImpl%')(calendar);
+  const calendarImpl: CalendarImpl = calendarImplForID(calendar);
   calendarImpl.resolveFields(fields, 'month-day');
   return calendarImpl.monthDayToISOReferenceDate(fields, overflow);
 }
