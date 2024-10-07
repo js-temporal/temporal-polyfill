@@ -189,8 +189,12 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     fields = ES.CalendarMergeFields(calendar, fields, partialDateTime);
 
     const overflow = ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
-    const { year, month, day, time } = ES.InterpretTemporalDateTimeFields(calendar, fields, overflow);
-    const { hour, minute, second, millisecond, microsecond, nanosecond } = time;
+    const {
+      year,
+      month,
+      day,
+      time: { hour, minute, second, millisecond, microsecond, nanosecond }
+    } = ES.InterpretTemporalDateTimeFields(calendar, fields, overflow);
 
     return ES.CreateTemporalDateTime(
       year,
