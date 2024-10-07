@@ -888,14 +888,12 @@ export function RegulateTime(
       RejectTime(hour, minute, second, millisecond, microsecond, nanosecond);
       break;
     case 'constrain':
-      ({ hour, minute, second, millisecond, microsecond, nanosecond } = ConstrainTime(
-        hour,
-        minute,
-        second,
-        millisecond,
-        microsecond,
-        nanosecond
-      ));
+      hour = ConstrainToRange(hour, 0, 23);
+      minute = ConstrainToRange(minute, 0, 59);
+      second = ConstrainToRange(second, 0, 59);
+      millisecond = ConstrainToRange(millisecond, 0, 999);
+      microsecond = ConstrainToRange(microsecond, 0, 999);
+      nanosecond = ConstrainToRange(nanosecond, 0, 999);
       break;
   }
   return { hour, minute, second, millisecond, microsecond, nanosecond };
@@ -3232,23 +3230,6 @@ export function ConstrainISODate(year: number, monthParam: number, dayParam?: nu
   const month = ConstrainToRange(monthParam, 1, 12);
   const day = ConstrainToRange(dayParam, 1, ISODaysInMonth(year, month));
   return { year, month, day };
-}
-
-function ConstrainTime(
-  hourParam: number,
-  minuteParam: number,
-  secondParam: number,
-  millisecondParam: number,
-  microsecondParam: number,
-  nanosecondParam: number
-) {
-  const hour = ConstrainToRange(hourParam, 0, 23);
-  const minute = ConstrainToRange(minuteParam, 0, 59);
-  const second = ConstrainToRange(secondParam, 0, 59);
-  const millisecond = ConstrainToRange(millisecondParam, 0, 999);
-  const microsecond = ConstrainToRange(microsecondParam, 0, 999);
-  const nanosecond = ConstrainToRange(nanosecondParam, 0, 999);
-  return { hour, minute, second, millisecond, microsecond, nanosecond };
 }
 
 export function RejectToRange(value: number, min: number, max: number) {
