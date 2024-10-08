@@ -164,8 +164,8 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     const partialDateTime = ES.PrepareCalendarFields(
       calendar,
       temporalDateTimeLike,
-      ['day', 'month', 'monthCode', 'year'],
-      ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second'],
+      ['year', 'month', 'monthCode', 'day'],
+      ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'],
       'partial'
     );
     fields = ES.CalendarMergeFields(calendar, fields, partialDateTime);

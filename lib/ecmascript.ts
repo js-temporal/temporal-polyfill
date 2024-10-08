@@ -1230,8 +1230,8 @@ export function GetTemporalRelativeToOption(options: {
     const fields = PrepareCalendarFields(
       calendar,
       relativeTo,
-      ['day', 'month', 'monthCode', 'year'],
-      ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'offset', 'second', 'timeZone'],
+      ['year', 'month', 'monthCode', 'day'],
+      ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond', 'offset', 'timeZone'],
       []
     );
     ({ isoDate, time } = InterpretTemporalDateTimeFields(calendar, fields, 'constrain'));
@@ -1458,7 +1458,7 @@ export function ToTemporalDate(
       return CreateTemporalDate(GetSlot(item, ISO_DATE_TIME).isoDate, GetSlot(item, CALENDAR));
     }
     const calendar = GetTemporalCalendarIdentifierWithISODefault(item);
-    const fields = PrepareCalendarFields(calendar, item, ['day', 'month', 'monthCode', 'year'], [], []);
+    const fields = PrepareCalendarFields(calendar, item, ['year', 'month', 'monthCode', 'day'], [], []);
     const overflow = GetTemporalOverflowOption(GetOptionsObject(options));
     const isoDate = CalendarDateFromFields(calendar, fields, overflow);
     return CreateTemporalDate(isoDate, calendar);
@@ -1515,8 +1515,8 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
     const fields = PrepareCalendarFields(
       calendar,
       item,
-      ['day', 'month', 'monthCode', 'year'],
-      ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second'],
+      ['year', 'month', 'monthCode', 'day'],
+      ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond'],
       []
     );
     const overflow = GetTemporalOverflowOption(GetOptionsObject(options));
@@ -1655,7 +1655,7 @@ export function ToTemporalMonthDay(item: PlainMonthDayParams['from'][0], options
       if (calendar === undefined) calendar = 'iso8601';
       calendar = ToTemporalCalendarIdentifier(calendar);
     }
-    const fields = PrepareCalendarFields(calendar, item, ['day', 'month', 'monthCode', 'year'], [], []);
+    const fields = PrepareCalendarFields(calendar, item, ['year', 'month', 'monthCode', 'day'], [], []);
     const overflow = GetTemporalOverflowOption(GetOptionsObject(options));
     const isoDate = CalendarMonthDayFromFields(calendar, fields, overflow);
     return CreateTemporalMonthDay(isoDate, calendar);
@@ -1718,7 +1718,7 @@ export function ToTemporalYearMonth(
       return CreateTemporalYearMonth(GetSlot(item, ISO_DATE), GetSlot(item, CALENDAR));
     }
     const calendar = GetTemporalCalendarIdentifierWithISODefault(item);
-    const fields = PrepareCalendarFields(calendar, item, ['month', 'monthCode', 'year'], [], []);
+    const fields = PrepareCalendarFields(calendar, item, ['year', 'month', 'monthCode'], [], []);
     const overflow = GetTemporalOverflowOption(GetOptionsObject(options));
     const isoDate = CalendarYearMonthFromFields(calendar, fields, overflow);
     return CreateTemporalYearMonth(isoDate, calendar);
@@ -1840,8 +1840,8 @@ export function ToTemporalZonedDateTime(
     const fields = PrepareCalendarFields(
       calendar,
       item,
-      ['day', 'month', 'monthCode', 'year'],
-      ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'offset', 'second', 'timeZone'],
+      ['year', 'month', 'monthCode', 'day'],
+      ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond', 'offset', 'timeZone'],
       ['timeZone']
     );
     ({ offset, timeZone } = fields);
