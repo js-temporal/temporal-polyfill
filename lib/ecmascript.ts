@@ -3171,7 +3171,7 @@ function BalanceTime(
   return { deltaDays, hour, minute, second, millisecond, microsecond, nanosecond };
 }
 
-export function UnbalanceDateDurationRelative(dateDuration: DateDuration, plainRelativeTo: Temporal.PlainDate) {
+export function DateDurationDays(dateDuration: DateDuration, plainRelativeTo: Temporal.PlainDate) {
   const yearsMonthsWeeksDuration = AdjustDateDurationRecord(dateDuration, 0);
   if (DateDurationSign(yearsMonthsWeeksDuration) === 0) return dateDuration.days;
 
