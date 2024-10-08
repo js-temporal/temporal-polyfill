@@ -154,12 +154,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     const isoDateTime = GetSlot(this, ISO_DATE_TIME);
     let fields = {
       ...ES.ISODateToFields(calendar, isoDateTime.isoDate),
-      hour: isoDateTime.time.hour,
-      minute: isoDateTime.time.minute,
-      second: isoDateTime.time.second,
-      millisecond: isoDateTime.time.millisecond,
-      microsecond: isoDateTime.time.microsecond,
-      nanosecond: isoDateTime.time.nanosecond
+      ...isoDateTime.time
     };
     const partialDateTime = ES.PrepareCalendarFields(
       calendar,
