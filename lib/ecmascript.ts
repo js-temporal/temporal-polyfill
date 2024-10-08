@@ -2712,7 +2712,7 @@ function GetNamedTimeZoneOffsetNanosecondsImpl(id: string, epochMilliseconds: nu
   const { year, month, day, hour, minute, second } = GetFormatterParts(id, epochMilliseconds);
   let millisecond = epochMilliseconds % 1000;
   if (millisecond < 0) millisecond += 1000;
-  const utc = GetUTCEpochMilliseconds(year, month, day, hour, minute, second, millisecond);
+  const utc = GetUTCEpochMilliseconds({ isoDate: { year, month, day }, time: { hour, minute, second, millisecond } });
   return (utc - epochMilliseconds) * 1e6;
 }
 
@@ -2737,15 +2737,13 @@ function FormatDateTimeUTCOffsetRounded(offsetNanosecondsParam: number): string 
   return FormatOffsetTimeZoneIdentifier(offsetNanoseconds / 60e9);
 }
 
-function GetUTCEpochMilliseconds(
-  year: number,
-  month: number,
-  day: number,
-  hour: number,
-  minute: number,
-  second: number,
-  millisecond: number
-) {
+function GetUTCEpochMilliseconds({
+  isoDate: { year, month, day },
+  time: { hour, minute, second, millisecond }
+}: {
+  isoDate: ISODate;
+  time: Omit<TimeRecord, 'microsecond' | 'nanosecond'>;
+}) {
   // The pattern of leap years in the ISO 8601 calendar repeats every 400
   // years. To avoid overflowing at the edges of the range, we reduce the year
   // to the remainder after dividing by 400, and then add back all the
@@ -2762,12 +2760,9 @@ function GetUTCEpochMilliseconds(
   return ms + MS_IN_400_YEAR_CYCLE * yearCycles;
 }
 
-function GetUTCEpochNanoseconds({
-  isoDate: { year, month, day },
-  time: { hour, minute, second, millisecond, microsecond, nanosecond }
-}: ISODateTime) {
-  const ms = GetUTCEpochMilliseconds(year, month, day, hour, minute, second, millisecond);
-  const subMs = microsecond * 1e3 + nanosecond;
+function GetUTCEpochNanoseconds(isoDateTime: ISODateTime) {
+  const ms = GetUTCEpochMilliseconds(isoDateTime);
+  const subMs = isoDateTime.time.microsecond * 1e3 + isoDateTime.time.nanosecond;
   return JSBI.add(JSBI.multiply(JSBI.BigInt(ms), MILLION), JSBI.BigInt(subMs));
 }
 
@@ -3482,8 +3477,13 @@ function CombineDateAndNormalizedTimeDuration(dateDuration: DateDuration, norm: 
 }
 
 // Caution: month is 0-based
-export function ISODateToEpochDays(y: number, m: number, d: number) {
-  return GetUTCEpochMilliseconds(y, m + 1, d, 0, 0, 0, 0) / DAY_MS;
+export function ISODateToEpochDays(year: number, month: number, day: number) {
+  return (
+    GetUTCEpochMilliseconds({
+      isoDate: { year, month: month + 1, day },
+      time: { hour: 0, minute: 0, second: 0, millisecond: 0 }
+    }) / DAY_MS
+  );
 }
 
 // This is needed before calling GetUTCEpochNanoseconds, because it uses MakeDay
