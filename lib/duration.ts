@@ -246,7 +246,7 @@ export class Duration implements Temporal.Duration {
         roundingMode
       );
       if (ES.TemporalUnitCategory(largestUnit) === 'date') largestUnit = 'hour';
-      return ES.UnnormalizeDuration(duration, largestUnit);
+      return ES.TemporalDurationFromInternal(duration, largestUnit);
     }
 
     if (plainRelativeTo) {
@@ -270,7 +270,7 @@ export class Duration implements Temporal.Duration {
         smallestUnit,
         roundingMode
       );
-      return ES.UnnormalizeDuration(duration, largestUnit);
+      return ES.TemporalDurationFromInternal(duration, largestUnit);
     }
 
     // No reference date to calculate difference relative to
@@ -283,7 +283,7 @@ export class Duration implements Temporal.Duration {
     assert(!ES.IsCalendarUnit(smallestUnit), 'smallestUnit was larger than largestUnit');
     let duration = ES.ToInternalDurationRecordWith24HourDays(this);
     duration = ES.RoundTimeDuration(duration, roundingIncrement, smallestUnit, roundingMode);
-    return ES.UnnormalizeDuration(duration, largestUnit);
+    return ES.TemporalDurationFromInternal(duration, largestUnit);
   }
   total(optionsParam: Params['total'][0]): Return['total'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
@@ -351,7 +351,10 @@ export class Duration implements Temporal.Duration {
     const largestUnit = ES.DefaultTemporalLargestUnit(this);
     let duration = ES.ToInternalDurationRecord(this);
     duration = ES.RoundTimeDuration(duration, increment, unit, roundingMode);
-    const roundedDuration = ES.UnnormalizeDuration(duration, ES.LargerOfTwoTemporalUnits(largestUnit, 'second'));
+    const roundedDuration = ES.TemporalDurationFromInternal(
+      duration,
+      ES.LargerOfTwoTemporalUnits(largestUnit, 'second')
+    );
     return ES.TemporalDurationToString(roundedDuration, precision);
   }
   toJSON(): Return['toJSON'] {

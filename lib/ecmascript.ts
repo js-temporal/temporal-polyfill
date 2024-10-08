@@ -3374,7 +3374,7 @@ function ToDateDurationRecordWithoutTime(duration: Temporal.Duration) {
   return { ...internalDuration.date, days };
 }
 
-export function UnnormalizeDuration(internalDuration: InternalDuration, largestUnit: Temporal.DateTimeUnit) {
+export function TemporalDurationFromInternal(internalDuration: InternalDuration, largestUnit: Temporal.DateTimeUnit) {
   const sign = internalDuration.norm.sign();
   let nanoseconds = internalDuration.norm.abs().subsec;
   let microseconds = 0;
@@ -4222,7 +4222,7 @@ export function DifferenceTemporalInstant(
     settings.smallestUnit,
     settings.roundingMode
   );
-  let result = UnnormalizeDuration(duration, settings.largestUnit);
+  let result = TemporalDurationFromInternal(duration, settings.largestUnit);
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
   return result;
 }
@@ -4269,7 +4269,7 @@ export function DifferenceTemporalPlainDate(
     );
   }
 
-  let result = UnnormalizeDuration(duration, 'day');
+  let result = TemporalDurationFromInternal(duration, 'day');
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
   return result;
 }
@@ -4305,7 +4305,7 @@ export function DifferenceTemporalPlainDateTime(
     settings.roundingMode
   );
 
-  let result = UnnormalizeDuration(duration, settings.largestUnit);
+  let result = TemporalDurationFromInternal(duration, settings.largestUnit);
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
   return result;
 }
@@ -4327,7 +4327,7 @@ export function DifferenceTemporalPlainTime(
     duration = RoundTimeDuration(duration, settings.roundingIncrement, settings.smallestUnit, settings.roundingMode);
   }
 
-  let result = UnnormalizeDuration(duration, settings.largestUnit);
+  let result = TemporalDurationFromInternal(duration, settings.largestUnit);
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
   return result;
 }
@@ -4379,7 +4379,7 @@ export function DifferenceTemporalPlainYearMonth(
     );
   }
 
-  let result = UnnormalizeDuration(duration, 'day');
+  let result = TemporalDurationFromInternal(duration, 'day');
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
   return result;
 }
@@ -4415,7 +4415,7 @@ export function DifferenceTemporalZonedDateTime(
       settings.smallestUnit as Temporal.TimeUnit,
       settings.roundingMode
     );
-    result = UnnormalizeDuration(duration, settings.largestUnit);
+    result = TemporalDurationFromInternal(duration, settings.largestUnit);
   } else {
     const timeZone = GetSlot(zonedDateTime, TIME_ZONE);
     if (!TimeZoneEquals(timeZone, GetSlot(other, TIME_ZONE))) {
@@ -4437,7 +4437,7 @@ export function DifferenceTemporalZonedDateTime(
       settings.smallestUnit,
       settings.roundingMode
     );
-    result = UnnormalizeDuration(duration, 'hour');
+    result = TemporalDurationFromInternal(duration, 'hour');
   }
 
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
@@ -4513,7 +4513,7 @@ export function AddDurations(
   const d1 = ToInternalDurationRecordWith24HourDays(duration);
   const d2 = ToInternalDurationRecordWith24HourDays(other);
   const result = CombineDateAndNormalizedTimeDuration(ZeroDateDuration(), d1.norm.add(d2.norm));
-  return UnnormalizeDuration(result, largestUnit);
+  return TemporalDurationFromInternal(result, largestUnit);
 }
 
 export function AddDurationToInstant(
