@@ -177,12 +177,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const isoDateTime = dateTime(this);
     let fields = {
       ...ES.ISODateToFields(calendar, isoDateTime.isoDate),
-      hour: isoDateTime.time.hour,
-      minute: isoDateTime.time.minute,
-      second: isoDateTime.time.second,
-      millisecond: isoDateTime.time.millisecond,
-      microsecond: isoDateTime.time.microsecond,
-      nanosecond: isoDateTime.time.nanosecond,
+      ...isoDateTime.time,
       offset: ES.FormatUTCOffsetNanoseconds(offsetNs)
     };
     const partialZonedDateTime = ES.PrepareCalendarFields(
