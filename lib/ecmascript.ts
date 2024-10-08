@@ -3842,7 +3842,7 @@ function NudgeToDayOrTime(
   let remainder = roundedNorm;
   if (TemporalUnitCategory(largestUnit) === 'date') {
     days = roundedWholeDays;
-    remainder = roundedNorm.subtract(TimeDuration.fromComponents(roundedWholeDays * 24, 0, 0, 0, 0, 0));
+    remainder = roundedNorm.add(TimeDuration.fromComponents(-roundedWholeDays * 24, 0, 0, 0, 0, 0));
   }
 
   const dateDuration = AdjustDateDurationRecord(duration.date, days);
