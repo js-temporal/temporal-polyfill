@@ -218,7 +218,7 @@ export interface DateDuration {
 
 export interface InternalDuration {
   date: DateDuration;
-  norm: TimeDuration;
+  time: TimeDuration;
 }
 
 // Signal to TypeScript that not everything should be exported by default
