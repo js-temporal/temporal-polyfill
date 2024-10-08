@@ -1381,7 +1381,7 @@ export function PrepareCalendarFields<
   nonCalendarFieldNames: Array<FieldKeys>,
   requiredFields: RequiredFields
 ): PrepareCalendarFieldsReturn<FieldKeys, RequiredFields> {
-  const extraFieldNames = calendarImplForID(calendar).extraFields();
+  const extraFieldNames = calendarImplForID(calendar).extraFields(calendarFieldNames);
   const fields: FieldKeys[] = Call(ArrayPrototypeConcat, calendarFieldNames, [nonCalendarFieldNames, extraFieldNames]);
   const result: Partial<Record<AnyTemporalKey, unknown>> = ObjectCreate(null);
   let any = false;
