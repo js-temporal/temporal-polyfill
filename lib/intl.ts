@@ -72,7 +72,7 @@ function getSlotLazy(obj: DateTimeFormatImpl, slot: LazySlot) {
 
 function createDateTimeFormat(
   dtf: DateTimeFormatImpl,
-  locale: Params['constructor'][0],
+  locale: Intl.LocalesArgument,
   optionsParam: Params['constructor'][1]
 ) {
   const hasOptions = typeof optionsParam !== 'undefined';
@@ -115,7 +115,7 @@ function createDateTimeFormat(
   } else {
     options = ObjectCreate(null);
   }
-  const original = new IntlDateTimeFormat(locale, options);
+  const original = new IntlDateTimeFormat(locale as Params['constructor'][0], options);
   const ro = ES.Call(IntlDateTimeFormatPrototypeResolvedOptions, original, []);
 
   CreateSlots(dtf);
@@ -177,7 +177,7 @@ function createDateTimeFormat(
 }
 
 class DateTimeFormatImpl {
-  constructor(locales: Params['constructor'][0] = undefined, options: Params['constructor'][1] = undefined) {
+  constructor(locales: Intl.LocalesArgument = undefined, options: Params['constructor'][1] = undefined) {
     createDateTimeFormat(this, locales, options);
   }
 
@@ -229,15 +229,15 @@ if (!('formatRangeToParts' in IntlDateTimeFormat.prototype)) {
 export type { DateTimeFormatImpl };
 
 interface DateTimeFormatInterface {
-  (locales: Params['constructor'][0], options: Params['constructor'][1]): DateTimeFormatImpl;
-  new (locales: Params['constructor'][0], options: Params['constructor'][1]): DateTimeFormatImpl;
+  (locales: Intl.LocalesArgument, options: Params['constructor'][1]): DateTimeFormatImpl;
+  new (locales: Intl.LocalesArgument, options: Params['constructor'][1]): DateTimeFormatImpl;
   supportedLocalesOf: typeof Intl.DateTimeFormat.supportedLocalesOf;
 }
 
 // A non-class constructor is needed because Intl.DateTimeFormat must be able to
 // be called without 'new'
 export const DateTimeFormat = function (
-  locales: Params['constructor'][0] = undefined,
+  locales: Intl.LocalesArgument = undefined,
   options: Params['constructor'][1] = undefined
 ): DateTimeFormatImpl {
   return new DateTimeFormatImpl(locales, options);
