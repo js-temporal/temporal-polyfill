@@ -17,7 +17,6 @@ import { DateTimeFormat } from './intl';
 import type { BuiltinCalendarId, ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { HOUR_NANOS } from './bigintmath';
 
 const customResolvedOptions = DateTimeFormat.prototype.resolvedOptions as Intl.DateTimeFormat['resolvedOptions'];
 
@@ -132,7 +131,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const todayNs = ES.GetStartOfDay(timeZone, today);
     const tomorrowNs = ES.GetStartOfDay(timeZone, tomorrow);
     const diff = TimeDuration.fromEpochNsDiff(tomorrowNs, todayNs);
-    return diff.fdiv(HOUR_NANOS);
+    return ES.TotalTimeDuration(diff, 'hour');
   }
   get daysInWeek(): Return['daysInWeek'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
