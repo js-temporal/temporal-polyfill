@@ -16,7 +16,6 @@ import {
 
 import { DEBUG } from './debug';
 import { assert } from './assert';
-import { DAY_NANOS_JSBI } from './bigintmath';
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import {
@@ -287,7 +286,7 @@ export class Duration implements Temporal.Duration {
     if (smallestUnit === 'day') {
       // First convert time units up to days
       const { quotient, remainder } = internalDuration.time.divmod(ES.DAY_NANOS);
-      let days = internalDuration.date.days + quotient + remainder.fdiv(DAY_NANOS_JSBI);
+      let days = internalDuration.date.days + quotient + ES.TotalTimeDuration(remainder, 'day');
       days = ES.RoundNumberToIncrement(days, roundingIncrement, roundingMode);
       const dateDuration = { years: 0, months: 0, weeks: 0, days };
       internalDuration = ES.CombineDateAndTimeDuration(dateDuration, TimeDuration.ZERO);
