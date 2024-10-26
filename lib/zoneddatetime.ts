@@ -311,7 +311,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
 
       const dayLengthNs = JSBI.subtract(endNs, startNs);
       const dayProgressNs = TimeDuration.fromEpochNsDiff(thisNs, startNs);
-      epochNanoseconds = dayProgressNs.round(dayLengthNs, roundingMode).add(new TimeDuration(startNs)).totalNs;
+      const roundedDayNs = dayProgressNs.round(dayLengthNs, roundingMode);
+      epochNanoseconds = roundedDayNs.addToEpochNs(startNs);
     } else {
       // smallestUnit < day
       // Round based on ISO-calendar time units
