@@ -16,6 +16,7 @@ import {
 
 import { DEBUG } from './debug';
 import { assert } from './assert';
+import { DAY_NANOS_JSBI } from './bigintmath';
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import {
@@ -37,6 +38,7 @@ import {
   SetSlot,
   TIME_ZONE
 } from './slots';
+import { TimeDuration } from './timeduration';
 import type { Temporal } from '..';
 import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
 import JSBI from 'jsbi';
@@ -281,9 +283,19 @@ export class Duration implements Temporal.Duration {
       throw new RangeErrorCtor(`a starting point is required for ${largestUnit}s balancing`);
     }
     assert(!ES.IsCalendarUnit(smallestUnit), 'smallestUnit was larger than largestUnit');
-    let duration = ES.ToInternalDurationRecordWith24HourDays(this);
-    duration = ES.RoundTimeDuration(duration, roundingIncrement, smallestUnit, roundingMode);
-    return ES.TemporalDurationFromInternal(duration, largestUnit);
+    let internalDuration = ES.ToInternalDurationRecordWith24HourDays(this);
+    if (smallestUnit === 'day') {
+      // First convert time units up to days
+      const { quotient, remainder } = internalDuration.time.divmod(ES.DAY_NANOS);
+      let days = internalDuration.date.days + quotient + remainder.fdiv(DAY_NANOS_JSBI);
+      days = ES.RoundNumberToIncrement(days, roundingIncrement, roundingMode);
+      const dateDuration = { years: 0, months: 0, weeks: 0, days };
+      internalDuration = ES.CombineDateAndTimeDuration(dateDuration, TimeDuration.ZERO);
+    } else {
+      const timeDuration = ES.RoundTimeDuration(internalDuration.time, roundingIncrement, smallestUnit, roundingMode);
+      internalDuration = ES.CombineDateAndTimeDuration(ES.ZeroDateDuration(), timeDuration);
+    }
+    return ES.TemporalDurationFromInternal(internalDuration, largestUnit);
   }
   total(optionsParam: Params['total'][0]): Return['total'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
@@ -349,10 +361,11 @@ export class Duration implements Temporal.Duration {
     if (unit === 'nanosecond' && increment === 1) return ES.TemporalDurationToString(this, precision);
 
     const largestUnit = ES.DefaultTemporalLargestUnit(this);
-    let duration = ES.ToInternalDurationRecord(this);
-    duration = ES.RoundTimeDuration(duration, increment, unit, roundingMode);
+    let internalDuration = ES.ToInternalDurationRecord(this);
+    const timeDuration = ES.RoundTimeDuration(internalDuration.time, increment, unit, roundingMode);
+    internalDuration = ES.CombineDateAndTimeDuration(internalDuration.date, timeDuration);
     const roundedDuration = ES.TemporalDurationFromInternal(
-      duration,
+      internalDuration,
       ES.LargerOfTwoTemporalUnits(largestUnit, 'second')
     );
     return ES.TemporalDurationToString(roundedDuration, precision);

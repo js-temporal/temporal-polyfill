@@ -134,7 +134,7 @@ import {
 } from './slots';
 
 const DAY_MS = 86400_000;
-const DAY_NANOS = DAY_MS * 1e6;
+export const DAY_NANOS = DAY_MS * 1e6;
 const MINUTE_NANOS = 60e9;
 // Instant range is 100 million days (inclusive) before or after epoch.
 const MS_MAX = DAY_MS * 1e8;
@@ -960,7 +960,7 @@ export function AdjustDateDurationRecord(
   };
 }
 
-function ZeroDateDuration() {
+export function ZeroDateDuration() {
   return { years: 0, months: 0, weeks: 0, days: 0 };
 }
 
@@ -3467,7 +3467,7 @@ export function TemporalDurationFromInternal(internalDuration: InternalDuration,
   );
 }
 
-function CombineDateAndTimeDuration(dateDuration: DateDuration, timeDuration: TimeDuration) {
+export function CombineDateAndTimeDuration(dateDuration: DateDuration, timeDuration: TimeDuration) {
   const dateSign = DateDurationSign(dateDuration);
   const timeSign = timeDuration.sign();
   if (dateSign !== 0 && timeSign !== 0 && dateSign !== timeSign) {
@@ -3512,11 +3512,12 @@ function DifferenceInstant(
   ns1: JSBI,
   ns2: JSBI,
   increment: number,
-  smallestUnit: TimeUnitOrDay,
+  smallestUnit: Temporal.TimeUnit,
   roundingMode: Temporal.RoundingMode
 ) {
-  const diff = { date: ZeroDateDuration(), time: TimeDuration.fromEpochNsDiff(ns2, ns1) };
-  return RoundTimeDuration(diff, increment, smallestUnit, roundingMode);
+  let timeDuration = TimeDuration.fromEpochNsDiff(ns2, ns1);
+  timeDuration = RoundTimeDuration(timeDuration, increment, smallestUnit, roundingMode);
+  return CombineDateAndTimeDuration(ZeroDateDuration(), timeDuration);
 }
 
 function DifferenceISODateTime(
@@ -4318,10 +4319,13 @@ export function DifferenceTemporalPlainTime(
   const settings = GetDifferenceSettings(operation, resolvedOptions, 'time', [], 'nanosecond', 'hour');
 
   let timeDuration = DifferenceTime(GetSlot(plainTime, TIME), GetSlot(other, TIME));
-  let duration = { date: ZeroDateDuration(), time: timeDuration };
-  if (settings.smallestUnit !== 'nanosecond' || settings.roundingIncrement !== 1) {
-    duration = RoundTimeDuration(duration, settings.roundingIncrement, settings.smallestUnit, settings.roundingMode);
-  }
+  timeDuration = RoundTimeDuration(
+    timeDuration,
+    settings.roundingIncrement,
+    settings.smallestUnit,
+    settings.roundingMode
+  );
+  const duration = CombineDateAndTimeDuration(ZeroDateDuration(), timeDuration);
 
   let result = TemporalDurationFromInternal(duration, settings.largestUnit);
   if (operation === 'since') result = CreateNegatedTemporalDuration(result);
@@ -4760,24 +4764,14 @@ export function RoundTime(
 }
 
 export function RoundTimeDuration(
-  duration: InternalDuration,
+  timeDuration: TimeDuration,
   increment: number,
-  unit: Temporal.TimeUnit | 'day',
+  unit: Temporal.TimeUnit,
   roundingMode: Temporal.RoundingMode
 ) {
-  // unit must not be a calendar unit
-  if (unit === 'day') {
-    // First convert time units up to days
-    const { quotient, remainder } = duration.time.divmod(DAY_NANOS);
-    let days = duration.date.days + quotient + remainder.fdiv(DAY_NANOS_JSBI);
-    days = RoundNumberToIncrement(days, increment, roundingMode);
-    const dateDuration = AdjustDateDurationRecord(duration.date, days);
-    return CombineDateAndTimeDuration(dateDuration, TimeDuration.ZERO);
-  }
-
+  // unit must be a time unit
   const divisor = Call(MapPrototypeGet, NS_PER_TIME_UNIT, [unit]);
-  const timeDuration = duration.time.round(JSBI.BigInt(divisor * increment), roundingMode);
-  return CombineDateAndTimeDuration(duration.date, timeDuration);
+  return timeDuration.round(JSBI.BigInt(divisor * increment), roundingMode);
 }
 
 export function TotalTimeDuration(timeDuration: TimeDuration, unit: TimeUnitOrDay) {
