@@ -18,3 +18,6 @@ intl402/DateTimeFormat/prototype/resolvedOptions/offset-timezone-change.js
 
 # https://github.com/tc39/ecma402/issues/402
 intl402/DateTimeFormat/prototype/resolvedOptions/hourCycle-default.js
+
+# Fails until CLDR 46 (released 2024-10-24) makes its way into a Node.js release
+staging/Intl402/Temporal/old/non-iso-calendars.js
