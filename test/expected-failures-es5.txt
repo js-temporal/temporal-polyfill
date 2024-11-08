@@ -1,6 +1,7 @@
 # Failures in this file only apply to the optimized and transpiled polyfill
 # sources.
 
+built-ins/Date/prototype/toTemporalInstant/not-a-constructor.js
 built-ins/Temporal/Duration/compare/builtin.js
 built-ins/Temporal/Duration/compare/not-a-constructor.js
 built-ins/Temporal/Duration/from/builtin.js
