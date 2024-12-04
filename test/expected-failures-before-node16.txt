@@ -18,6 +18,20 @@ intl402/Temporal/PlainYearMonth/from/canonicalize-era-codes.js
 intl402/Temporal/PlainYearMonth/from/reference-day-chinese.js
 intl402/Temporal/PlainYearMonth/from/reference-day-gregory.js
 intl402/Temporal/PlainYearMonth/from/reference-day-hebrew.js
+intl402/Temporal/PlainYearMonth/prototype/with/minimum-valid-year-month.js
 intl402/Temporal/ZonedDateTime/construct-non-utc-non-iso.js
 intl402/Temporal/ZonedDateTime/supported-values-of.js
 staging/Intl402/Temporal/old/japanese-era.js
+
+# Bug where -u-ca- in locale identifier is not honored
+intl402/DateTimeFormat/prototype/format/temporal-objects-not-overlapping-options.js
+intl402/DateTimeFormat/prototype/formatRange/temporal-objects-not-overlapping-options.js
+intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-objects-not-overlapping-options.js
+intl402/DateTimeFormat/prototype/formatToParts/temporal-objects-not-overlapping-options.js
+intl402/Temporal/PlainMonthDay/prototype/toLocaleString/default-does-not-include-year-time-and-time-zone-name.js
+intl402/Temporal/PlainMonthDay/prototype/toLocaleString/lone-options-accepted.js
+intl402/Temporal/PlainYearMonth/prototype/toLocaleString/default-does-not-include-day-time-and-time-zone-name.js
+intl402/Temporal/PlainYearMonth/prototype/toLocaleString/lone-options-accepted.js
+
+# Bug where lone dayPeriod pulls in default date options
+intl402/Temporal/PlainTime/prototype/toLocaleString/lone-options-accepted.js
