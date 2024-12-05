@@ -13,8 +13,10 @@ import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type { CalendarImpl } from './calendar';
 import type { BuiltinCalendarId } from './internaltypes';
+import type { DateTimeFormatImpl } from './intl';
 
 import { DEBUG } from './debug';
+import { GetSlot, ORIGINAL } from './slots';
 
 type OmitConstructor<T> = { [P in keyof T as T[P] extends new (...args: any[]) => any ? P : never]: T[P] };
 
@@ -57,16 +59,22 @@ const INTRINSICS = {} as TemporalIntrinsicRegisteredKeys &
   TemporalIntrinsicPrototypeRegisteredKeys &
   OtherIntrinsicKeys;
 
+type StylizeOption = (value: unknown, type: 'number' | 'special') => string;
+
 type customFormatFunction<T> = (
   this: T & { _repr_: string }, // _repr_ is present if DEBUG
   depth: number,
-  options: { stylize: (value: unknown, type: 'number' | 'special') => string }
+  options: { stylize: StylizeOption },
+  inspect: (object: T, options?: { depth: number; stylize: StylizeOption }) => string
 ) => string;
 const customUtilInspectFormatters: Partial<{
   [key in keyof TemporalIntrinsicRegistrations]: customFormatFunction<
     InstanceType<TemporalIntrinsicRegistrations[key]>
   >;
 }> = {
+  ['Intl.DateTimeFormat'](depth, options, inspect) {
+    return inspect(GetSlot(this as DateTimeFormatImpl, ORIGINAL), { depth, ...options });
+  },
   ['Temporal.Duration'](depth, options) {
     const descr = options.stylize(this._repr_, 'special');
     if (depth < 1) return descr;
