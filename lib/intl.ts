@@ -296,10 +296,18 @@ function formatToParts<P extends readonly unknown[]>(
   return ES.Call(IntlDateTimeFormatPrototypeFormatToParts, formatter, formatArgs as [number | Date | undefined]);
 }
 
-function formatRange(this: DateTimeFormatImpl, a: Params['formatRange'][0], b: Params['formatRange'][1]) {
+function formatRange(this: DateTimeFormatImpl, aParam: Params['formatRange'][0], bParam: Params['formatRange'][1]) {
+  if (aParam === undefined || bParam === undefined) {
+    throw new TypeErrorCtor('Intl.DateTimeFormat.formatRange requires two values');
+  }
+  const a = toDateTimeFormattable(aParam);
+  const b = toDateTimeFormattable(bParam);
   let formatArgs = [a, b] as const;
   let formatter;
-  if (isTemporalObject(a) || isTemporalObject(b)) {
+  if (isTemporalObject(a) !== isTemporalObject(b)) {
+    throw new TypeErrorCtor('Intl.DateTimeFormat.formatRange accepts two values of the same type');
+  }
+  if (isTemporalObject(a)) {
     if (!sameTemporalType(a, b)) {
       throw new TypeErrorCtor('Intl.DateTimeFormat.formatRange accepts two values of the same type');
     }
@@ -313,17 +321,25 @@ function formatRange(this: DateTimeFormatImpl, a: Params['formatRange'][0], b: P
   } else {
     formatter = GetSlot(this, ORIGINAL);
   }
-  return ES.Call(IntlDateTimeFormatPrototypeFormatRange, formatter, formatArgs);
+  return ES.Call(IntlDateTimeFormatPrototypeFormatRange, formatter, formatArgs as [number, number]);
 }
 
 function formatRangeToParts(
   this: DateTimeFormatImpl,
-  a: Params['formatRangeToParts'][0],
-  b: Params['formatRangeToParts'][1]
+  aParam: Params['formatRangeToParts'][0],
+  bParam: Params['formatRangeToParts'][1]
 ) {
+  if (aParam === undefined || bParam === undefined) {
+    throw new TypeErrorCtor('Intl.DateTimeFormat.formatRange requires two values');
+  }
+  const a = toDateTimeFormattable(aParam);
+  const b = toDateTimeFormattable(bParam);
   let formatArgs = [a, b] as const;
   let formatter;
-  if (isTemporalObject(a) || isTemporalObject(b)) {
+  if (isTemporalObject(a) !== isTemporalObject(b)) {
+    throw new TypeErrorCtor('Intl.DateTimeFormat.formatRangeToParts accepts two values of the same type');
+  }
+  if (isTemporalObject(a)) {
     if (!sameTemporalType(a, b)) {
       throw new TypeErrorCtor('Intl.DateTimeFormat.formatRangeToParts accepts two values of the same type');
     }
@@ -337,7 +353,7 @@ function formatRangeToParts(
   } else {
     formatter = GetSlot(this, ORIGINAL);
   }
-  return ES.Call(IntlDateTimeFormatPrototypeFormatRangeToParts, formatter, formatArgs);
+  return ES.Call(IntlDateTimeFormatPrototypeFormatRangeToParts, formatter, formatArgs as [number, number]);
 }
 
 // "false" is a signal to delete this option
@@ -575,6 +591,11 @@ function isTemporalObject(
     ES.IsTemporalMonthDay(obj) ||
     ES.IsTemporalInstant(obj)
   );
+}
+
+function toDateTimeFormattable(value: unknown) {
+  if (isTemporalObject(value)) return value;
+  return ES.ToNumber(value);
 }
 
 function sameTemporalType(x: unknown, y: unknown) {
