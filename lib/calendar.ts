@@ -567,6 +567,7 @@ abstract class HelperBase {
   abstract monthsInYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache): number;
   abstract maximumMonthLength(calendarDate?: CalendarYM): number;
   abstract minimumMonthLength(calendarDate?: CalendarYM): number;
+  abstract maxLengthOfMonthCodeInAnyYear(monthCode: string): number;
   abstract estimateIsoDate(calendarDate: CalendarYMD): ISODate;
   abstract inLeapYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache): boolean;
   abstract calendarType: 'solar' | 'lunar' | 'lunisolar';
@@ -1159,6 +1160,17 @@ abstract class HelperBase {
       if (roundTripCalendarDate.monthCode === monthCode && roundTripCalendarDate.day === day) {
         return { month: isoMonth, day: isoDay, year: isoYear };
       } else if (overflow === 'constrain') {
+        // If the requested day is never present in any instance of this month
+        // code, and the round trip date is an instance of this month code with
+        // the most possible days, we are as close as we can get.
+        const maxDayForMonthCode = this.maxLengthOfMonthCodeInAnyYear(roundTripCalendarDate.monthCode);
+        if (
+          roundTripCalendarDate.monthCode === monthCode &&
+          roundTripCalendarDate.day === maxDayForMonthCode &&
+          day > maxDayForMonthCode
+        ) {
+          return { month: isoMonth, day: isoDay, year: isoYear };
+        }
         // non-ISO constrain algorithm tries to find the closest date in a matching month
         if (
           closestCalendar === undefined ||
@@ -1234,6 +1246,9 @@ class HebrewHelper extends HelperBase {
     if (monthInfo === undefined) throw new RangeErrorCtor(`unmatched Hebrew month: ${month}`);
     const daysInMonth = monthInfo[1].days;
     return typeof daysInMonth === 'number' ? daysInMonth : daysInMonth[minOrMax];
+  }
+  maxLengthOfMonthCodeInAnyYear(monthCode: string) {
+    return ['M04', 'M06', 'M08', 'M10', 'M12'].includes(monthCode) ? 29 : 30;
   }
   /** Take a guess at what ISO date a particular calendar date corresponds to */
   estimateIsoDate(calendarDate: CalendarYMD) {
@@ -1361,6 +1376,9 @@ abstract class IslamicBaseHelper extends HelperBase {
   maximumMonthLength(/* calendarDate */) {
     return 30;
   }
+  maxLengthOfMonthCodeInAnyYear(/* monthCode */) {
+    return 30;
+  }
   DAYS_PER_ISLAMIC_YEAR = 354 + 11 / 30;
   DAYS_PER_ISO_YEAR = 365.2425;
   estimateIsoDate(calendarDate: CalendarYMD) {
@@ -1411,6 +1429,10 @@ class PersianHelper extends HelperBase {
     if (month === 12) return 30;
     return month <= 6 ? 31 : 30;
   }
+  maxLengthOfMonthCodeInAnyYear(monthCode: string) {
+    const month = monthCodeNumberPart(monthCode);
+    return month <= 6 ? 31 : 30;
+  }
   estimateIsoDate(calendarDate: CalendarYMD) {
     const { year } = this.adjustCalendarDate(calendarDate);
     return { year: year + 621, month: 1, day: 1 };
@@ -1450,6 +1472,12 @@ class IndianHelper extends HelperBase {
   }
   maximumMonthLength(calendarDate: CalendarYM) {
     return this.getMonthInfo(calendarDate).length;
+  }
+  maxLengthOfMonthCodeInAnyYear(monthCode: string) {
+    const month = monthCodeNumberPart(monthCode);
+    let monthInfo = this.months[month];
+    monthInfo = monthInfo.leap ?? monthInfo;
+    return monthInfo.length;
   }
   // Indian months always start at the same well-known Gregorian month and
   // day. So this conversion is easy and fast. See
@@ -1750,6 +1778,10 @@ abstract class GregorianBaseHelperFixedEpoch extends HelperBase {
   maximumMonthLength(calendarDate: CalendarYM): number {
     return this.minimumMonthLength(calendarDate);
   }
+  maxLengthOfMonthCodeInAnyYear(monthCode: string) {
+    const month = monthCodeNumberPart(monthCode);
+    return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
+  }
   estimateIsoDate(calendarDateParam: CalendarYMD) {
     const calendarDate = this.adjustCalendarDate(calendarDateParam);
     return ES.RegulateISODate(
@@ -1792,6 +1824,10 @@ abstract class GregorianBaseHelper extends HelperBase {
   }
   maximumMonthLength(calendarDate: CalendarYM): number {
     return this.minimumMonthLength(calendarDate);
+  }
+  maxLengthOfMonthCodeInAnyYear(monthCode: string) {
+    const month = monthCodeNumberPart(monthCode);
+    return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
   }
   /** Fill in missing parts of the (year, era, eraYear) tuple */
   completeEraYear(
@@ -1934,6 +1970,9 @@ const OrthodoxOps = {
   },
   maximumMonthLength(calendarDate: CalendarYM) {
     return this.minimumMonthLength(calendarDate);
+  },
+  maxLengthOfMonthCodeInAnyYear(monthCode: string) {
+    return monthCode === 'M13' ? 6 : 30;
   }
 };
 abstract class OrthodoxBaseHelperFixedEpoch extends GregorianBaseHelperFixedEpoch {
@@ -1944,6 +1983,7 @@ abstract class OrthodoxBaseHelperFixedEpoch extends GregorianBaseHelperFixedEpoc
   override monthsInYear = OrthodoxOps.monthsInYear;
   override minimumMonthLength = OrthodoxOps.minimumMonthLength;
   override maximumMonthLength = OrthodoxOps.maximumMonthLength;
+  override maxLengthOfMonthCodeInAnyYear = OrthodoxOps.maxLengthOfMonthCodeInAnyYear;
 }
 abstract class OrthodoxBaseHelper extends GregorianBaseHelper {
   constructor(id: BuiltinCalendarId, originalEras: InputEra[]) {
@@ -1953,6 +1993,7 @@ abstract class OrthodoxBaseHelper extends GregorianBaseHelper {
   override monthsInYear = OrthodoxOps.monthsInYear;
   override minimumMonthLength = OrthodoxOps.minimumMonthLength;
   override maximumMonthLength = OrthodoxOps.maximumMonthLength;
+  override maxLengthOfMonthCodeInAnyYear = OrthodoxOps.maxLengthOfMonthCodeInAnyYear;
 }
 
 // `coptic` and `ethiopic` calendars are very similar to `ethioaa` calendar,
@@ -2106,39 +2147,32 @@ abstract class ChineseBaseHelper extends HelperBase {
   maximumMonthLength(/* calendarDate */) {
     return 30;
   }
+  maxLengthOfMonthCodeInAnyYear(monthCode: string) {
+    // See note below about ICU4C vs ICU4X. It is possible this override should
+    // always return 30.
+    return ['M01L', 'M09L', 'M10L', 'M11L', 'M12L'].includes(monthCode) ? 29 : 30;
+  }
   override monthDaySearchStartYear(monthCode: string, day: number) {
     // Note that ICU4C actually has _no_ years in which leap months M01L and
     // M09L through M12L have 30 days. The values marked with (*) here are years
     // in which the leap month occurs with 29 days. ICU4C disagrees with ICU4X
     // here and it is not clear which is correct.
-    switch (monthCode) {
-      case 'M01L':
-        return 1651; // *
-      case 'M02L':
-        return day < 30 ? 1947 : 1765;
-      case 'M03L':
-        return day < 30 ? 1966 : 1955;
-      case 'M04L':
-        return day < 30 ? 1963 : 1944;
-      case 'M05L':
-        return day < 30 ? 1971 : 1952;
-      case 'M06L':
-        return day < 30 ? 1960 : 1941;
-      case 'M07L':
-        return day < 30 ? 1968 : 1938;
-      case 'M08L':
-        return day < 30 ? 1957 : 1718;
-      case 'M09L':
-        return 1832; // *
-      case 'M10L':
-        return 1870; // *
-      case 'M11L':
-        return 1814; // *
-      case 'M12L':
-        return 1890; // *
-      default:
-        return 1972;
-    }
+    const monthMap: Record<string, [number, number]> = {
+      M01L: [1651, 1651], // *
+      M02L: [1947, 1765],
+      M03L: [1966, 1955],
+      M04L: [1963, 1944],
+      M05L: [1971, 1952],
+      M06L: [1960, 1941],
+      M07L: [1968, 1938],
+      M08L: [1957, 1718],
+      M09L: [1832, 1832], // *
+      M10L: [1870, 1870], // *
+      M11L: [1814, 1814], // *
+      M12L: [1890, 1890] // *
+    };
+    const years = monthMap[monthCode] ?? [1972, 1972];
+    return day < 30 ? years[0] : years[1];
   }
   getMonthList(calendarYear: number, cache: OneObjectCache): ChineseMonthInfo {
     if (calendarYear === undefined) {
