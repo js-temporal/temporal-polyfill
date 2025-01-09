@@ -1,7 +1,7 @@
 # timeZoneName: 'shortOffset' is only available starting in Node 18
 intl402/DateTimeFormat/constructor-options-timeZoneName-valid.js
 
-# Intl.supportedValuesOf("timeZone") is only available starting in Node 18
+# Intl.supportedValuesOf is only available starting in Node 18
 intl402/Temporal/ZonedDateTime/from/timezone-case-insensitive.js
 intl402/Temporal/ZonedDateTime/prototype/equals/canonical-not-equal.js
 intl402/Temporal/ZonedDateTime/prototype/equals/timezone-case-insensitive.js
@@ -9,9 +9,14 @@ intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/transition-at-ins
 intl402/Temporal/ZonedDateTime/supported-values-of.js
 intl402/Temporal/ZonedDateTime/timezone-case-insensitive.js
 intl402/DateTimeFormat/timezone-case-insensitive.js
+staging/sm/Temporal/Calendar/compare-to-datetimeformat.js
+staging/sm/Temporal/PlainDate/withCalendar.js
 
 intl402/Temporal/PlainDate/prototype/toLocaleString/calendar-mismatch.js
 intl402/Temporal/PlainDateTime/prototype/toLocaleString/calendar-mismatch.js
 intl402/Temporal/PlainMonthDay/prototype/toLocaleString/calendar-mismatch.js
 intl402/Temporal/PlainYearMonth/prototype/toLocaleString/calendar-mismatch.js
 intl402/Temporal/ZonedDateTime/prototype/toLocaleString/calendar-mismatch.js
+
+# America/Ciudad_Juarez added
+staging/sm/Temporal/ZonedDateTime/zones-and-links.js
