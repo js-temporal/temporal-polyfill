@@ -24,6 +24,8 @@ intl402/Temporal/ZonedDateTime/supported-values-of.js
 staging/Intl402/Temporal/old/japanese-era.js
 
 # Bug where -u-ca- in locale identifier is not honored
+built-ins/Temporal/PlainMonthDay/prototype/toLocaleString/return-string.js
+built-ins/Temporal/PlainYearMonth/prototype/toLocaleString/return-string.js
 intl402/DateTimeFormat/prototype/format/temporal-objects-not-overlapping-options.js
 intl402/DateTimeFormat/prototype/formatRange/temporal-objects-not-overlapping-options.js
 intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-objects-not-overlapping-options.js

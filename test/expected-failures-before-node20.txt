@@ -1,3 +1,6 @@
 # Bug prior to Node 20
 intl402/DateTimeFormat/prototype/formatRange/date-x-greater-than-y-not-throws.js
 intl402/DateTimeFormat/prototype/formatRangeToParts/date-x-greater-than-y-not-throws.js
+
+# Link Asia/Choibalsan - Asia/Ulaanbaatar
+staging/sm/Temporal/ZonedDateTime/zones-and-links.js
