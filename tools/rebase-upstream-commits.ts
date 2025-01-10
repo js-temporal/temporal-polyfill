@@ -217,11 +217,19 @@ function editSequenceFile(file: string) {
 }
 
 function getConflictHash() {
-  const REBASE_CONFLICT_HASH_FILE = `${currentExecOpts.repository}/.git/rebase-merge/stopped-sha`;
-  if (!fs.existsSync(REBASE_CONFLICT_HASH_FILE)) {
+  // This is easily available from .git/rebase-merge/stopped-sha if there is a
+  // merge conflict, but we may also be stopped in the middle of an exec step,
+  // where that file doesn't exist. Instead, get it from the 'done' list.
+  const REBASE_DONE_FILE = `${currentExecOpts.repository}/.git/rebase-merge/done`;
+  if (!fs.existsSync(REBASE_DONE_FILE)) {
     return undefined;
   }
-  return String(fs.readFileSync(REBASE_CONFLICT_HASH_FILE)).trim();
+  const doneEntries = String(fs.readFileSync(REBASE_DONE_FILE)).trim().split('\n');
+  const lastEntry = doneEntries[doneEntries.length - 1];
+  const [action, sha] = lastEntry.split(' ', 3);
+  if (action === 'edit') return sha;
+  if (action === 'exec') return 'exec';
+  return undefined;
 }
 
 function continueRebasing() {
@@ -230,6 +238,14 @@ function continueRebasing() {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     currentConflict = getConflictHash();
+    if (currentConflict === 'exec') {
+      if (shouldRetest()) {
+        console.error('To continue, first run tests with "trt exec".');
+        return;
+      }
+      gitContinue();
+      return;
+    }
     if (!currentConflict) {
       log('No conflict - done!');
       if (!inRebase()) cleanupConfigDir();
