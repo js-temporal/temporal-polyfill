@@ -1665,13 +1665,15 @@ export function ToTemporalMonthDay(item: PlainMonthDayParams['from'][0], options
   uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
 
   GetTemporalOverflowOption(GetOptionsObject(options));
-  if (referenceISOYear === undefined) {
-    assert(calendar === 'iso8601', `missing year with non-"iso8601" calendar identifier ${calendar}`);
+  if (calendar === 'iso8601') {
     const isoCalendarReferenceYear = 1972; // First leap year after Unix epoch
     return CreateTemporalMonthDay({ year: isoCalendarReferenceYear, month, day }, calendar);
   }
-  const result = ISODateToFields(calendar, { year: referenceISOYear, month, day }, 'month-day');
-  const isoDate = CalendarMonthDayFromFields(calendar, result, 'constrain');
+  assertExists(referenceISOYear);
+  let isoDate = { year: referenceISOYear, month, day };
+  RejectDateRange(isoDate);
+  const result = ISODateToFields(calendar, isoDate, 'month-day');
+  isoDate = CalendarMonthDayFromFields(calendar, result, 'constrain');
   return CreateTemporalMonthDay(isoDate, calendar);
 }
 
