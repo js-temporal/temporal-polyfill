@@ -1727,9 +1727,11 @@ export function ToTemporalYearMonth(
   calendar = CanonicalizeCalendar(calendar);
   uncheckedAssertNarrowedType<BuiltinCalendarId>(calendar, 'lowercased and canonicalized');
 
-  const result = ISODateToFields(calendar, { year, month, day: referenceISODay }, 'year-month');
   GetTemporalOverflowOption(GetOptionsObject(options));
-  const isoDate = CalendarYearMonthFromFields(calendar, result, 'constrain');
+  let isoDate = { year, month, day: referenceISODay };
+  RejectYearMonthRange(isoDate);
+  const result = ISODateToFields(calendar, isoDate, 'year-month');
+  isoDate = CalendarYearMonthFromFields(calendar, result, 'constrain');
   return CreateTemporalYearMonth(isoDate, calendar);
 }
 
