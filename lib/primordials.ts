@@ -61,6 +61,7 @@ export const {
 export type MaybeDurationFormat = {
   new (locales: DurationParams['toLocaleString'][0], options: DurationParams['toLocaleString'][1]): MaybeDurationFormat;
   format(d: Temporal.Duration): string;
+  formatToParts(d: Temporal.Duration): object;
   resolvedOptions(): object;
 };
 export const {
@@ -83,6 +84,7 @@ export const {
 export const IntlDurationFormatPrototype = IntlDurationFormat?.prototype ?? ObjectCreate(null);
 export const {
   format: IntlDurationFormatPrototypeFormat,
+  formatToParts: IntlDurationFormatPrototypeFormatToParts,
   resolvedOptions: IntlDurationFormatPrototypeResolvedOptions
 } = IntlDurationFormatPrototype as MaybeDurationFormat;
 export const { stringify: JSONStringify } = JSON;

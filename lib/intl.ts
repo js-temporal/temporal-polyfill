@@ -10,7 +10,9 @@ import {
   IntlDateTimeFormatPrototypeFormatRangeToParts,
   IntlDateTimeFormatPrototypeFormatToParts,
   IntlDateTimeFormatPrototypeResolvedOptions,
+  IntlDurationFormatPrototype,
   IntlDurationFormatPrototypeFormat,
+  IntlDurationFormatPrototypeFormatToParts,
   IntlDurationFormatPrototypeResolvedOptions,
   ObjectAssign,
   ObjectCreate,
@@ -743,4 +745,17 @@ export function ModifiedIntlDurationFormatPrototypeFormat(
   const duration = ES.ToTemporalDuration(durationLike);
   const record = temporalDurationToCompatibilityRecord(duration);
   return ES.Call(IntlDurationFormatPrototypeFormat, this, [record]);
+}
+
+if (IntlDurationFormatPrototype) {
+  IntlDurationFormatPrototype.format = ModifiedIntlDurationFormatPrototypeFormat;
+  IntlDurationFormatPrototype.formatToParts = function formatToParts(
+    this: MaybeDurationFormat,
+    durationLike: Temporal.DurationLike
+  ) {
+    ES.Call(IntlDurationFormatPrototypeResolvedOptions, this, []); // brand check
+    const duration = ES.ToTemporalDuration(durationLike);
+    const record = temporalDurationToCompatibilityRecord(duration);
+    return ES.Call(IntlDurationFormatPrototypeFormatToParts, this, [record]);
+  };
 }
