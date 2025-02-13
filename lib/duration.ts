@@ -17,6 +17,7 @@ import {
 import { DEBUG } from './debug';
 import { assert } from './assert';
 import * as ES from './ecmascript';
+import { ModifiedIntlDurationFormatPrototypeFormat } from './intl';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import {
   YEARS,
@@ -379,7 +380,8 @@ export class Duration implements Temporal.Duration {
   ): string {
     if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
     if (typeof IntlDurationFormat === 'function') {
-      return new IntlDurationFormat(locales, options).format(this);
+      const formatter = new IntlDurationFormat(locales, options);
+      return ES.Call(ModifiedIntlDurationFormatPrototypeFormat, formatter, [this]);
     }
     warn('Temporal.Duration.prototype.toLocaleString() requires Intl.DurationFormat.');
     return ES.TemporalDurationToString(this, 'auto');

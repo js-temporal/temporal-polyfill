@@ -58,9 +58,10 @@ export const {
   },
   UTC: DateUTC
 } = Date;
-type MaybeDurationFormat = {
+export type MaybeDurationFormat = {
   new (locales: DurationParams['toLocaleString'][0], options: DurationParams['toLocaleString'][1]): MaybeDurationFormat;
   format(d: Temporal.Duration): string;
+  resolvedOptions(): object;
 };
 export const {
   supportedValuesOf: IntlSupportedValuesOf,
@@ -79,6 +80,11 @@ export const {
   formatToParts: IntlDateTimeFormatPrototypeFormatToParts,
   resolvedOptions: IntlDateTimeFormatPrototypeResolvedOptions
 } = IntlDateTimeFormat?.prototype || ObjectCreate(null);
+export const IntlDurationFormatPrototype = IntlDurationFormat?.prototype ?? ObjectCreate(null);
+export const {
+  format: IntlDurationFormatPrototypeFormat,
+  resolvedOptions: IntlDurationFormatPrototypeResolvedOptions
+} = IntlDurationFormatPrototype as MaybeDurationFormat;
 export const { stringify: JSONStringify } = JSON;
 export const {
   prototype: { get: MapPrototypeGet, has: MapPrototypeHas, set: MapPrototypeSet }

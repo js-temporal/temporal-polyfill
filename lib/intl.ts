@@ -10,13 +10,16 @@ import {
   IntlDateTimeFormatPrototypeFormatRangeToParts,
   IntlDateTimeFormatPrototypeFormatToParts,
   IntlDateTimeFormatPrototypeResolvedOptions,
+  IntlDurationFormatPrototypeFormat,
+  IntlDurationFormatPrototypeResolvedOptions,
   ObjectAssign,
   ObjectCreate,
   ObjectDefineProperties,
   ObjectDefineProperty,
   ObjectKeys,
   ObjectPrototypeHasOwnProperty,
-  ReflectApply
+  ReflectApply,
+  type MaybeDurationFormat
 } from './primordials';
 
 import { assert } from './assert';
@@ -28,22 +31,32 @@ import {
   CreateSlots,
   DATE,
   DATETIME,
+  DAYS,
+  EPOCHNANOSECONDS,
   GetSlot,
   HasSlot,
-  EPOCHNANOSECONDS,
+  HOURS,
   INST,
   ISO_DATE,
   ISO_DATE_TIME,
   LOCALE,
   MD,
+  MICROSECONDS,
+  MILLISECONDS,
+  MINUTES,
+  MONTHS,
+  NANOSECONDS,
   OPTIONS,
   ORIGINAL,
   ResetSlot,
+  SECONDS,
   SetSlot,
   TIME,
   TIME_FMT,
   TZ_CANONICAL,
   TZ_ORIGINAL,
+  WEEKS,
+  YEARS,
   YM
 } from './slots';
 import type { Temporal } from '..';
@@ -705,4 +718,29 @@ function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormat
   }
 
   return {};
+}
+
+function temporalDurationToCompatibilityRecord(duration: Temporal.Duration) {
+  const record = ObjectCreate(null);
+  record.years = GetSlot(duration, YEARS);
+  record.months = GetSlot(duration, MONTHS);
+  record.weeks = GetSlot(duration, WEEKS);
+  record.days = GetSlot(duration, DAYS);
+  record.hours = GetSlot(duration, HOURS);
+  record.minutes = GetSlot(duration, MINUTES);
+  record.seconds = GetSlot(duration, SECONDS);
+  record.milliseconds = GetSlot(duration, MILLISECONDS);
+  record.microseconds = GetSlot(duration, MICROSECONDS);
+  record.nanoseconds = GetSlot(duration, NANOSECONDS);
+  return record;
+}
+
+export function ModifiedIntlDurationFormatPrototypeFormat(
+  this: MaybeDurationFormat,
+  durationLike: Temporal.DurationLike
+) {
+  ES.Call(IntlDurationFormatPrototypeResolvedOptions, this, []); // brand check
+  const duration = ES.ToTemporalDuration(durationLike);
+  const record = temporalDurationToCompatibilityRecord(duration);
+  return ES.Call(IntlDurationFormatPrototypeFormat, this, [record]);
 }
