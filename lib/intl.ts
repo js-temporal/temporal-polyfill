@@ -154,6 +154,11 @@ function createDateTimeFormat(
         delete clonedResolved[prop as keyof typeof clonedResolved];
       }
     }
+    // hour12/hourCycle don't show up in resolvedOptions() unless the chosen
+    // format includes an hour component, so copy them explicitly in case they
+    // would otherwise be lost
+    clonedResolved.hour12 = options.hour12;
+    clonedResolved.hourCycle = options.hourCycle;
     SetSlot(dtf, OPTIONS, clonedResolved);
   } else {
     SetSlot(dtf, OPTIONS, options);
