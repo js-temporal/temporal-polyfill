@@ -657,9 +657,9 @@ export function ParseTemporalDateString(isoString: string) {
 // ts-prune-ignore-next TODO: remove if test/validStrings is converted to TS.
 export function ParseTemporalTimeString(isoString: string) {
   const match = Call(RegExpPrototypeExec, PARSE.time, [isoString]);
-  let hour, minute, second, millisecond, microsecond, nanosecond;
+  let hour, minute, second, millisecond, microsecond, nanosecond, calendar;
   if (match) {
-    processAnnotations(match[10]); // ignore found calendar
+    calendar = processAnnotations(match[10]);
     hour = +(match[1] ?? 0);
     minute = +(match[2] ?? match[5] ?? 0);
     second = +(match[3] ?? match[6] ?? 0);
@@ -670,7 +670,8 @@ export function ParseTemporalTimeString(isoString: string) {
     nanosecond = +Call(StringPrototypeSlice, fraction, [6, 9]);
     if (match[8]) throw new RangeErrorCtor('Z designator not supported for PlainTime');
   } else {
-    const { time, z } = ParseISODateTime(isoString);
+    let time, z;
+    ({ time, z, calendar } = ParseISODateTime(isoString));
     if (time === 'start-of-day') throw new RangeErrorCtor(`time is missing in string: ${isoString}`);
     if (z) throw new RangeErrorCtor('Z designator not supported for PlainTime');
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = time);
@@ -678,7 +679,7 @@ export function ParseTemporalTimeString(isoString: string) {
   RejectTime(hour, minute, second, millisecond, microsecond, nanosecond);
   // if it's a date-time string, OK
   if (Call(RegExpPrototypeTest, /[tT ][0-9][0-9]/, [isoString])) {
-    return { hour, minute, second, millisecond, microsecond, nanosecond };
+    return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
   }
   try {
     const { month, day } = ParseTemporalMonthDayString(isoString);
@@ -688,7 +689,7 @@ export function ParseTemporalTimeString(isoString: string) {
       const { year, month } = ParseTemporalYearMonthString(isoString);
       RejectISODate(year, month, 1);
     } catch {
-      return { hour, minute, second, millisecond, microsecond, nanosecond };
+      return { hour, minute, second, millisecond, microsecond, nanosecond, calendar };
     }
   }
   throw new RangeErrorCtor(`invalid RFC 9557 time-only string ${isoString}; may need a T prefix`);
@@ -2120,9 +2121,13 @@ export function ToTemporalCalendarIdentifier(calendarLike: Temporal.CalendarLike
     ({ calendar } = ParseISODateTime(identifier));
   } catch {
     try {
-      ({ calendar } = ParseTemporalYearMonthString(identifier));
+      ({ calendar } = ParseTemporalTimeString(identifier));
     } catch {
-      ({ calendar } = ParseTemporalMonthDayString(identifier));
+      try {
+        ({ calendar } = ParseTemporalYearMonthString(identifier));
+      } catch {
+        ({ calendar } = ParseTemporalMonthDayString(identifier));
+      }
     }
   }
   if (!calendar) calendar = 'iso8601';
