@@ -1,6 +1,7 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
 import { DefineIntrinsic, GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
+import { TimeZoneMethodRecord } from './methodrecord';
 import {
   TIMEZONE_ID,
   EPOCHNANOSECONDS,
@@ -66,7 +67,8 @@ export class TimeZone implements Temporal.TimeZone {
   getOffsetStringFor(instantParam: Params['getOffsetStringFor'][0]): Return['getOffsetStringFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const instant = ES.ToTemporalInstant(instantParam);
-    return ES.GetOffsetStringFor(this, instant);
+    const timeZoneRec = new TimeZoneMethodRecord(this, ['getOffsetNanosecondsFor']);
+    return ES.GetOffsetStringFor(timeZoneRec, instant);
   }
   getPlainDateTimeFor(
     instantParam: Params['getPlainDateTimeFor'][0],
@@ -75,7 +77,8 @@ export class TimeZone implements Temporal.TimeZone {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');
     const instant = ES.ToTemporalInstant(instantParam);
     const calendar = ES.ToTemporalCalendarSlotValue(calendarParam);
-    return ES.GetPlainDateTimeFor(this, instant, calendar);
+    const timeZoneRec = new TimeZoneMethodRecord(this, ['getOffsetNanosecondsFor']);
+    return ES.GetPlainDateTimeFor(timeZoneRec, instant, calendar);
   }
   getInstantFor(
     dateTimeParam: Params['getInstantFor'][0],
@@ -85,7 +88,8 @@ export class TimeZone implements Temporal.TimeZone {
     const dateTime = ES.ToTemporalDateTime(dateTimeParam);
     const options = ES.GetOptionsObject(optionsParam);
     const disambiguation = ES.ToTemporalDisambiguation(options);
-    return ES.GetInstantFor(this, dateTime, disambiguation);
+    const timeZoneRec = new TimeZoneMethodRecord(this, ['getPossibleInstantsFor']);
+    return ES.GetInstantFor(timeZoneRec, dateTime, disambiguation);
   }
   getPossibleInstantsFor(dateTimeParam: Params['getPossibleInstantsFor'][0]): Return['getPossibleInstantsFor'] {
     if (!ES.IsTemporalTimeZone(this)) throw new TypeError('invalid receiver');

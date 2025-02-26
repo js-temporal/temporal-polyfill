@@ -198,8 +198,8 @@ export interface TimeZoneReturn extends MethodReturn<typeof Temporal.TimeZone> {
 export interface ZonedDateTimeReturn extends MethodReturn<typeof Temporal.ZonedDateTime> {}
 
 export interface CalendarProtocolParams extends InterfaceParams<Temporal.CalendarProtocol> {}
-export interface TimeZoneProtocolParams extends InterfaceParams<Temporal.TimeZoneProtocol> {}
 // UNUSED, BUT MAY USE LATER
+// export interface TimeZoneProtocolParams extends InterfaceParams<Temporal.TimeZoneProtocol> {}
 // export interface TimeZoneProtocolReturn extends InterfaceReturn<Temporal.TimeZoneProtocol> {}
 // export interface CalendarProtocolReturn extends InterfaceReturn<Temporal.CalendarProtocol> {}
 
