@@ -15,3 +15,6 @@ intl402/DateTimeFormat/prototype/format/offset-timezone-gmt-same.js
 intl402/DateTimeFormat/prototype/formatToParts/offset-timezone-correct.js
 intl402/DateTimeFormat/prototype/resolvedOptions/offset-timezone-basic.js
 intl402/DateTimeFormat/prototype/resolvedOptions/offset-timezone-change.js
+
+# https://github.com/tc39/ecma402/issues/402
+intl402/DateTimeFormat/prototype/resolvedOptions/hourCycle-default.js
