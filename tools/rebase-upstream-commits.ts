@@ -289,6 +289,9 @@ function continueRebasing() {
     if (unresolvedFiles.match(/^spec\//gm)) {
       runInRepository('git rm -rf spec/');
     }
+    if (unresolvedFiles.match(/^meetings\//gm)) {
+      runInRepository('git rm -rf meetings/');
+    }
     if (unresolvedFiles.match(/^spec\.html/gm)) {
       runInRepository('git rm -f spec.html');
     }
