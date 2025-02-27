@@ -30,6 +30,7 @@ yargs(hideBin(process.argv))
       const nodeVersion = parseInt(process.versions.node.split('.')[0]);
       if (nodeVersion < 18) expectedFailureFiles.push('test/expected-failures-before-node18.txt');
       if (nodeVersion < 16) expectedFailureFiles.push('test/expected-failures-before-node16.txt');
+      if (nodeVersion < 20) expectedFailureFiles.push('test/expected-failures-before-node20.txt');
       // Eventually this should be fixed and this condition should be updated.
       if (nodeVersion >= 18) expectedFailureFiles.push('test/expected-failures-cldr42.txt');
 
