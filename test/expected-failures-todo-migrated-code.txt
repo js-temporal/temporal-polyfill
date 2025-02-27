@@ -25,10 +25,8 @@ intl402/DateTimeFormat/prototype/format/prop-desc.js
 intl402/DateTimeFormat/prototype/format/taint-Object-prototype.js
 intl402/DateTimeFormat/prototype/format/timedatestyle-en.js
 intl402/DateTimeFormat/prototype/formatRange/builtin.js
-intl402/DateTimeFormat/prototype/formatRange/date-x-greater-than-y-not-throws.js
 intl402/DateTimeFormat/prototype/formatRange/prop-desc.js
 intl402/DateTimeFormat/prototype/formatRangeToParts/builtin.js
-intl402/DateTimeFormat/prototype/formatRangeToParts/date-x-greater-than-y-not-throws.js
 intl402/DateTimeFormat/prototype/formatRangeToParts/prop-desc.js
 intl402/DateTimeFormat/prototype/formatToParts/formatToParts.js
 intl402/DateTimeFormat/prototype/resolvedOptions/builtin.js
