@@ -23,7 +23,6 @@ intl402/DateTimeFormat/prototype/format/name.js
 intl402/DateTimeFormat/prototype/format/no-instanceof.js
 intl402/DateTimeFormat/prototype/format/prop-desc.js
 intl402/DateTimeFormat/prototype/format/taint-Object-prototype.js
-intl402/DateTimeFormat/prototype/format/timedatestyle-en.js
 intl402/DateTimeFormat/prototype/formatRange/builtin.js
 intl402/DateTimeFormat/prototype/formatRange/prop-desc.js
 intl402/DateTimeFormat/prototype/formatRangeToParts/builtin.js
