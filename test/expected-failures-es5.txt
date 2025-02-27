@@ -22,7 +22,6 @@ built-ins/Temporal/Instant/fromEpochSeconds/not-a-constructor.js
 built-ins/Temporal/Now/instant/not-a-constructor.js
 built-ins/Temporal/Now/plainDateTime/not-a-constructor.js
 built-ins/Temporal/Now/plainDateTimeISO/not-a-constructor.js
-built-ins/Temporal/Now/timeZone/not-a-constructor.js
 built-ins/Temporal/Now/zonedDateTime/not-a-constructor.js
 built-ins/Temporal/Now/zonedDateTimeISO/not-a-constructor.js
 built-ins/Temporal/PlainDate/compare/builtin.js
@@ -68,7 +67,6 @@ built-ins/Temporal/Calendar/prototype/daysInWeek/not-a-constructor.js
 built-ins/Temporal/Calendar/prototype/daysInYear/builtin.js
 built-ins/Temporal/Calendar/prototype/daysInYear/not-a-constructor.js
 built-ins/Temporal/Calendar/prototype/fields/builtin.js
-EXPECTED built-ins/Temporal/Calendar/prototype/fields/long-input.js
 built-ins/Temporal/Calendar/prototype/fields/not-a-constructor.js
 built-ins/Temporal/Calendar/prototype/inLeapYear/builtin.js
 built-ins/Temporal/Calendar/prototype/inLeapYear/not-a-constructor.js
