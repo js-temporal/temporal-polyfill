@@ -43,7 +43,7 @@ export class Instant implements Temporal.Instant {
   }
   get epochMilliseconds(): Return['epochMilliseconds'] {
     if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
-    const value = JSBI.BigInt(GetSlot(this, EPOCHNANOSECONDS));
+    const value = GetSlot(this, EPOCHNANOSECONDS);
     return JSBI.toNumber(BigIntFloorDiv(value, MILLION));
   }
   get epochMicroseconds(): Return['epochMicroseconds'] {
