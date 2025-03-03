@@ -50,8 +50,12 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
       'mergeFields',
       'monthDayFromFields'
     ]);
-    const fieldNames = ES.CalendarFields(calendarRec, ['day', 'month', 'monthCode', 'year']);
-    let fields = ES.PrepareTemporalFields(this, fieldNames, []);
+    let { fields, fieldNames } = ES.PrepareCalendarFieldsAndFieldNames(calendarRec, this, [
+      'day',
+      'month',
+      'monthCode',
+      'year'
+    ]);
     const partialMonthDay = ES.PrepareTemporalFields(temporalMonthDayLike, fieldNames, 'partial');
     fields = ES.CalendarMergeFields(calendarRec, fields, partialMonthDay);
     fields = ES.PrepareTemporalFields(fields, fieldNames, []);
@@ -69,7 +73,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   toString(optionsParam: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     const options = ES.GetOptionsObject(optionsParam);
-    const showCalendar = ES.ToCalendarNameOption(options);
+    const showCalendar = ES.GetTemporalShowCalendarNameOption(options);
     return ES.TemporalMonthDayToString(this, showCalendar);
   }
   toJSON(): Return['toJSON'] {
@@ -91,11 +95,15 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     if (!ES.IsObject(item)) throw new TypeError('argument should be an object');
     const calendarRec = new CalendarMethodRecord(GetSlot(this, CALENDAR), ['dateFromFields', 'fields', 'mergeFields']);
 
-    const receiverFieldNames = ES.CalendarFields(calendarRec, ['day', 'monthCode']);
-    const fields = ES.PrepareTemporalFields(this, receiverFieldNames, []);
-
-    const inputFieldNames = ES.CalendarFields(calendarRec, ['year']);
-    const inputFields = ES.PrepareTemporalFields(item, inputFieldNames, []);
+    const { fields, fieldNames: receiverFieldNames } = ES.PrepareCalendarFieldsAndFieldNames(calendarRec, this, [
+      'day',
+      'monthCode'
+    ]);
+    const { fields: inputFields, fieldNames: inputFieldNames } = ES.PrepareCalendarFieldsAndFieldNames(
+      calendarRec,
+      item,
+      ['year']
+    );
     let mergedFields = ES.CalendarMergeFields(calendarRec, fields, inputFields);
     const concatenatedFieldNames: FieldKey[] = ES.Call(ArrayPrototypeConcat, receiverFieldNames, inputFieldNames);
     mergedFields = ES.PrepareTemporalFields(mergedFields, concatenatedFieldNames, [], [], 'ignore');
@@ -118,7 +126,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);
     if (ES.IsTemporalMonthDay(item)) {
-      ES.ToTemporalOverflow(options); // validate and ignore
+      ES.GetTemporalOverflowOption(options); // validate and ignore
       return ES.CreateTemporalMonthDay(
         GetSlot(item, ISO_MONTH),
         GetSlot(item, ISO_DAY),

@@ -1,7 +1,7 @@
 import { GetIntrinsic } from './intrinsicclass';
 import { CALENDAR, GetSlot } from './slots';
 import type { Temporal } from '..';
-import type { CalendarParams } from './internaltypes';
+import type { BuiltinCalendarId, CalendarParams } from './internaltypes';
 import type { TimeZonePrototypeKeys } from './intrinsicclass';
 
 // Not all calendar protocol methods need to be able to be cached
@@ -19,12 +19,14 @@ type CalendarRecordInfo = {
   Name: 'Calendar';
   Protocol: Temporal.CalendarProtocol;
   MethodName: CalendarRecordMethodNames;
+  IDType: BuiltinCalendarId;
 };
 
 type TimeZoneRecordInfo = {
   Name: 'TimeZone';
   Protocol: Temporal.TimeZoneProtocol;
   MethodName: TimeZonePrototypeKeys;
+  IDType: string;
 };
 
 // We switch off type checking when accessing the cached methods on this object.
@@ -33,7 +35,7 @@ type TimeZoneRecordInfo = {
 // spend a lot of effort on it.
 class MethodRecord<T extends TimeZoneRecordInfo | CalendarRecordInfo> {
   recordType: T['Name'];
-  receiver: string | T['Protocol'];
+  receiver: T['IDType'] | T['Protocol'];
 
   constructor(recordType: T['Name'], receiver: string | T['Protocol'], methodNames: T['MethodName'][]) {
     this.recordType = recordType;

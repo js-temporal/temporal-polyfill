@@ -449,6 +449,60 @@ describe('ECMAScript', () => {
     });
   });
 
+  describe('RoundNumberToIncrement', () => {
+    const increment = 100;
+    const testValues = [-150, -100, -80, -50, -30, 0, 30, 50, 80, 100, 150];
+    const expectations = {
+      ceil: [-100, -100, -0, -0, -0, 0, 100, 100, 100, 100, 200],
+      floor: [-200, -100, -100, -100, -100, 0, 0, 0, 0, 100, 100],
+      trunc: [-100, -100, -0, -0, -0, 0, 0, 0, 0, 100, 100],
+      expand: [-200, -100, -100, -100, -100, 0, 100, 100, 100, 100, 200],
+      halfCeil: [-100, -100, -100, -0, -0, 0, 0, 100, 100, 100, 200],
+      halfFloor: [-200, -100, -100, -100, -0, 0, 0, 0, 100, 100, 100],
+      halfTrunc: [-100, -100, -100, -0, -0, 0, 0, 0, 100, 100, 100],
+      halfExpand: [-200, -100, -100, -100, -0, 0, 0, 100, 100, 100, 200],
+      halfEven: [-200, -100, -100, -0, -0, 0, 0, 0, 100, 100, 200]
+    };
+    for (const roundingMode of Object.keys(expectations)) {
+      describe(roundingMode, () => {
+        testValues.forEach((value, ix) => {
+          const expected = expectations[roundingMode][ix];
+          it(`rounds ${value} to ${expected}`, () => {
+            const result = ES.RoundNumberToIncrement(value, increment, roundingMode);
+            equal(result, expected);
+          });
+        });
+      });
+    }
+  });
+
+  describe('RoundNumberToIncrementAsIfPositive', () => {
+    const increment = 100n;
+    const testValues = [-150, -100, -80, -50, -30, 0, 30, 50, 80, 100, 150];
+    const expectations = {
+      ceil: [-100, -100, -0, -0, -0, 0, 100, 100, 100, 100, 200],
+      expand: [-100, -100, -0, -0, -0, 0, 100, 100, 100, 100, 200],
+      floor: [-200, -100, -100, -100, -100, 0, 0, 0, 0, 100, 100],
+      trunc: [-200, -100, -100, -100, -100, 0, 0, 0, 0, 100, 100],
+      halfCeil: [-100, -100, -100, -0, -0, 0, 0, 100, 100, 100, 200],
+      halfExpand: [-100, -100, -100, -0, -0, 0, 0, 100, 100, 100, 200],
+      halfFloor: [-200, -100, -100, -100, -0, 0, 0, 0, 100, 100, 100],
+      halfTrunc: [-200, -100, -100, -100, -0, 0, 0, 0, 100, 100, 100],
+      halfEven: [-200, -100, -100, -0, -0, 0, 0, 0, 100, 100, 200]
+    };
+    for (const roundingMode of Object.keys(expectations)) {
+      describe(roundingMode, () => {
+        testValues.forEach((value, ix) => {
+          const expected = expectations[roundingMode][ix];
+          it(`rounds ${value} to ${expected}`, () => {
+            const result = ES.RoundNumberToIncrementAsIfPositive(BigInt(value), increment, roundingMode);
+            equal(Number(String(result)), Number(BigInt(expected)));
+          });
+        });
+      });
+    }
+  });
+
   describe('GetAvailableNamedTimeZoneIdentifier', () => {
     // Some environments don't support Intl.supportedValuesOf.
     const itOrSkipIfNoIntlSupportedValuesOf = () => (Intl?.supportedValuesOf ? it : it.skip);
@@ -507,15 +561,15 @@ describe('ECMAScript', () => {
     });
   });
 
-  describe('ToRelativeTemporalObject', () => {
+  describe('GetTemporalRelativeToOption', () => {
     it('bare date-time string', () => {
-      const { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject({ relativeTo: '2019-11-01T00:00' });
+      const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption({ relativeTo: '2019-11-01T00:00' });
       equal(`${plainRelativeTo}`, '2019-11-01');
       equal(zonedRelativeTo, undefined);
     });
 
     it('bare date-time property bag', () => {
-      const { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject({
+      const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption({
         relativeTo: { year: 2019, month: 11, day: 1 }
       });
       equal(`${plainRelativeTo}`, '2019-11-01');
@@ -523,7 +577,7 @@ describe('ECMAScript', () => {
     });
 
     it('date-time + offset string', () => {
-      const { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject({
+      const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption({
         relativeTo: '2019-11-01T00:00-07:00'
       });
       equal(`${plainRelativeTo}`, '2019-11-01');
@@ -531,7 +585,7 @@ describe('ECMAScript', () => {
     });
 
     it('date-time + offset property bag', () => {
-      const { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject({
+      const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption({
         relativeTo: { year: 2019, month: 11, day: 1, offset: '-07:00' }
       });
       equal(`${plainRelativeTo}`, '2019-11-01');
@@ -539,7 +593,7 @@ describe('ECMAScript', () => {
     });
 
     it('date-time + annotation string', () => {
-      const { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject({
+      const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption({
         relativeTo: '2019-11-01T00:00[-07:00]'
       });
       equal(plainRelativeTo, undefined);
@@ -547,7 +601,7 @@ describe('ECMAScript', () => {
     });
 
     it('date-time + annotation property bag', () => {
-      const { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject({
+      const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption({
         relativeTo: { year: 2019, month: 11, day: 1, timeZone: '-07:00' }
       });
       equal(plainRelativeTo, undefined);
@@ -555,7 +609,7 @@ describe('ECMAScript', () => {
     });
 
     it('date-time + offset + annotation string', () => {
-      const { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject({
+      const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption({
         relativeTo: '2019-11-01T00:00+00:00[UTC]'
       });
       equal(plainRelativeTo, undefined);
@@ -563,7 +617,7 @@ describe('ECMAScript', () => {
     });
 
     it('date-time + offset + annotation property bag', () => {
-      const { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject({
+      const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption({
         relativeTo: { year: 2019, month: 11, day: 1, offset: '+00:00', timeZone: 'UTC' }
       });
       equal(plainRelativeTo, undefined);
@@ -571,7 +625,7 @@ describe('ECMAScript', () => {
     });
 
     it('date-time + Z + offset', () => {
-      const { plainRelativeTo, zonedRelativeTo } = ES.ToRelativeTemporalObject({
+      const { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption({
         relativeTo: '2019-11-01T00:00Z[-07:00]'
       });
       equal(plainRelativeTo, undefined);
@@ -579,17 +633,17 @@ describe('ECMAScript', () => {
     });
 
     it('date-time + Z', () => {
-      throws(() => ES.ToRelativeTemporalObject({ relativeTo: '2019-11-01T00:00Z' }), RangeError);
+      throws(() => ES.GetTemporalRelativeToOption({ relativeTo: '2019-11-01T00:00Z' }), RangeError);
     });
 
     it('string offset does not agree', () => {
-      throws(() => ES.ToRelativeTemporalObject({ relativeTo: '2019-11-01T00:00+04:15[UTC]' }), RangeError);
+      throws(() => ES.GetTemporalRelativeToOption({ relativeTo: '2019-11-01T00:00+04:15[UTC]' }), RangeError);
     });
 
     it('property bag offset does not agree', () => {
       throws(
         () =>
-          ES.ToRelativeTemporalObject({
+          ES.GetTemporalRelativeToOption({
             relativeTo: { year: 2019, month: 11, day: 1, offset: '+04:15', timeZone: 'UTC' }
           }),
         RangeError
