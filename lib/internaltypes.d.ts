@@ -55,7 +55,6 @@ export type CalendarSlot = string | Temporal.CalendarProtocol;
 export type TimeZoneSlot = string | Temporal.TimeZoneProtocol;
 
 // Used in AnyTemporalLikeType
-// ts-prune-ignore-next
 type AllTemporalLikeTypes = [
   Temporal.DurationLike,
   Temporal.PlainDateLike,
@@ -78,7 +77,6 @@ export type FieldKey = Exclude<AnyTemporalKey, Keys<Temporal.DurationLike>>;
 // `timeZone` and `calendar` are not on the list because they have special methods to set them.
 
 // Used in PrimitiveFieldsOf
-// ts-prune-ignore-next
 type PrimitivePropertyNames =
   | 'year'
   | 'month'
@@ -126,16 +124,9 @@ export type UnitSmallerThanOrEqualTo<T extends Temporal.DateTimeUnit> = T extend
   ? 'nanosecond'
   : never;
 
-// ts-prune complains about the type definitions below, even though they're used
-// by exported types Not sure why and don't have time to investigate, so just
-// disabling the warnings for now.
-
-// ts-prune-ignore-next
 type Method = (...args: any) => any;
-// ts-prune-ignore-next
 type NonObjectKeys<T> = Exclude<keyof T, 'toString' | 'toLocaleString' | 'prototype'>;
 
-// ts-prune-ignore-next
 type MethodParams<Type extends new (...args: any) => any> = {
   // constructor parameters
   constructor: ConstructorParameters<Type>;
@@ -149,7 +140,6 @@ type MethodParams<Type extends new (...args: any) => any> = {
     : never;
 };
 
-// ts-prune-ignore-next
 type MethodReturn<Type extends new (...args: any) => any> = {
   constructor: InstanceType<Type>;
 } & {
@@ -166,7 +156,6 @@ type InterfaceReturn<Type> = {
 };
 */
 
-// ts-prune-ignore-next
 type InterfaceParams<Type> = {
   [Key in keyof Type]: Type[Key] extends Method ? Parameters<Type[Key]> : never;
 };
@@ -209,11 +198,10 @@ export interface CalendarProtocolParams extends InterfaceParams<Temporal.Calenda
 export interface DateTimeFormatParams extends MethodParams<typeof Intl.DateTimeFormat> {}
 export interface DateTimeFormatReturn extends MethodReturn<typeof Intl.DateTimeFormat> {}
 
-// ts-prune-ignore-next
 type OptionsAmenderFunction = (options: Intl.DateTimeFormatOptions) => globalThis.Intl.DateTimeFormatOptions;
-type FormatterOrAmender = globalThis.Intl.DateTimeFormat | OptionsAmenderFunction;
+export type FormatterOrAmender = globalThis.Intl.DateTimeFormat | OptionsAmenderFunction;
 
-interface ISODateTime {
+export interface ISODateTime {
   year: number;
   month: number;
   day: number;
@@ -225,10 +213,13 @@ interface ISODateTime {
   nanosecond: number;
 }
 
-interface InternalDuration {
+export interface InternalDuration {
   years: number;
   months: number;
   weeks: number;
   days: number;
   norm: TimeDuration;
 }
+
+// Signal to TypeScript that not everything should be exported by default
+export {};
