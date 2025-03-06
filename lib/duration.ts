@@ -162,23 +162,7 @@ export class Duration implements Temporal.Duration {
   }
   with(durationLike: Params['with'][0]): Return['with'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
-    const partialDuration = ES.PrepareTemporalFields(
-      durationLike,
-      // NOTE: Field order here is important.
-      [
-        'days',
-        'hours',
-        'microseconds',
-        'milliseconds',
-        'minutes',
-        'months',
-        'nanoseconds',
-        'seconds',
-        'weeks',
-        'years'
-      ],
-      'partial'
-    );
+    const partialDuration = ES.ToTemporalPartialDurationRecord(durationLike);
     const {
       years = GetSlot(this, YEARS),
       months = GetSlot(this, MONTHS),

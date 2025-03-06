@@ -405,10 +405,6 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       isoYear: GetSlot(this, ISO_YEAR)
     };
   }
-  getCalendar(): Return['getCalendar'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
-    return ES.ToTemporalCalendarObject(GetSlot(this, CALENDAR));
-  }
 
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);

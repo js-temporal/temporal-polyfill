@@ -20,7 +20,6 @@ const NumberIsSafeInteger = Number.isSafeInteger;
 const NumberMaxSafeInteger = Number.MAX_SAFE_INTEGER;
 const ObjectCreate = Object.create;
 const ObjectDefineProperty = Object.defineProperty;
-const ObjectGetOwnPropertyDescriptor = Object.getOwnPropertyDescriptor;
 const ReflectApply = Reflect.apply;
 const ReflectOwnKeys = Reflect.ownKeys;
 const SetPrototypeHas = Set.prototype.has;
@@ -147,6 +146,7 @@ const BUILTIN_CALENDAR_IDS = [
   'persian',
   'ethiopic',
   'ethioaa',
+  'ethiopic-amete-alem',
   'coptic',
   'chinese',
   'dangi',
@@ -368,16 +368,6 @@ const BUILTIN_CASTS = new Map<AnyTemporalKey, BuiltinCastFunction>([
   ['millisecond', ToIntegerWithTruncation],
   ['microsecond', ToIntegerWithTruncation],
   ['nanosecond', ToIntegerWithTruncation],
-  ['years', ToIntegerIfIntegral],
-  ['months', ToIntegerIfIntegral],
-  ['weeks', ToIntegerIfIntegral],
-  ['days', ToIntegerIfIntegral],
-  ['hours', ToIntegerIfIntegral],
-  ['minutes', ToIntegerIfIntegral],
-  ['seconds', ToIntegerIfIntegral],
-  ['milliseconds', ToIntegerIfIntegral],
-  ['microseconds', ToIntegerIfIntegral],
-  ['nanoseconds', ToIntegerIfIntegral],
   ['offset', ToPrimitiveAndRequireString]
 ]);
 
@@ -574,7 +564,6 @@ function ParseISODateTime(isoString: string) {
   if (!match) throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
   const calendar = processAnnotations(match[16]);
   let yearString = match[1];
-  if (yearString[0] === '\u2212') yearString = `-${yearString.slice(1)}`;
   if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
   const year = +yearString;
   const month = +(match[2] ?? match[4] ?? 1);
@@ -686,7 +675,6 @@ export function ParseTemporalYearMonthString(isoString: string) {
   if (match) {
     calendar = processAnnotations(match[3]);
     let yearString = match[1];
-    if (yearString[0] === '\u2212') yearString = `-${yearString.slice(1)}`;
     if (yearString === '-000000') throw new RangeError(`invalid ISO 8601 string: ${isoString}`);
     year = +yearString;
     month = +match[2];
@@ -787,7 +775,7 @@ export function ParseTemporalDurationString(isoString: string) {
   if (match.slice(2).every((element) => element === undefined)) {
     throw new RangeError(`invalid duration: ${isoString}`);
   }
-  const sign = match[1] === '-' || match[1] === '\u2212' ? -1 : 1;
+  const sign = match[1] === '-' ? -1 : 1;
   const years = match[2] === undefined ? 0 : ToIntegerWithTruncation(match[2]) * sign;
   const months = match[3] === undefined ? 0 : ToIntegerWithTruncation(match[3]) * sign;
   const weeks = match[4] === undefined ? 0 : ToIntegerWithTruncation(match[4]) * sign;
@@ -949,7 +937,7 @@ function ToTemporalDurationRecord(item: Temporal.DurationLike | string) {
   return { years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds };
 }
 
-function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.DurationLike | string) {
+export function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.DurationLike | string) {
   if (!IsObject(temporalDurationLike)) {
     throw new TypeError('invalid duration-like');
   }
@@ -1050,6 +1038,10 @@ export function GetTemporalShowTimeZoneNameOption(options: Temporal.ZonedDateTim
 
 export function GetTemporalShowOffsetOption(options: Temporal.ZonedDateTimeToStringOptions) {
   return GetOption(options, 'offset', ['auto', 'never'], 'auto');
+}
+
+export function GetDirectionOption(options: { direction?: 'next' | 'previous' }) {
+  return GetOption(options, 'direction', ['next', 'previous'], REQUIRED);
 }
 
 export function GetTemporalRoundingIncrementOption(options: { roundingIncrement?: number }) {
@@ -1303,7 +1295,7 @@ export function GetTemporalRelativeToOption(options: {
     }
     if (!calendar) calendar = 'iso8601';
     if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
-    calendar = ASCIILowercase(calendar);
+    calendar = CanonicalizeCalendar(calendar);
   }
   if (timeZone === undefined) return { plainRelativeTo: CreateTemporalDate(year, month, day, calendar) };
   const timeZoneRec = new TimeZoneMethodRecord(timeZone, ['getOffsetNanosecondsFor', 'getPossibleInstantsFor']);
@@ -1376,9 +1368,6 @@ export function IsCalendarUnit(unit: Temporal.DateTimeUnit): unit is Exclude<Tem
 }
 
 type FieldCompleteness = 'complete' | 'partial';
-interface FieldPrepareOptions {
-  emptySourceErrorMessage: string;
-}
 
 // Returns all potential owners from all Temporal Like-types for a given union
 // of keys in K.
@@ -1464,8 +1453,7 @@ export function PrepareTemporalFields<
   fields: Array<FieldKeys>,
   requiredFields: RequiredFields,
   extraFieldDescriptors: CalendarFieldDescriptor[] = [],
-  duplicateBehaviour: 'throw' | 'ignore' = 'throw',
-  { emptySourceErrorMessage }: FieldPrepareOptions = { emptySourceErrorMessage: 'no supported properties found' }
+  duplicateBehaviour: 'throw' | 'ignore' = 'throw'
 ): PrepareTemporalFieldsReturn<FieldKeys, RequiredFields, Owner<FieldKeys>> {
   const result: Partial<Record<AnyTemporalKey, unknown>> = ObjectCreate(null);
   let any = false;
@@ -1514,7 +1502,7 @@ export function PrepareTemporalFields<
     previousProperty = property;
   }
   if (requiredFields === 'partial' && !any) {
-    throw new TypeError(emptySourceErrorMessage);
+    throw new TypeError('no supported properties found');
   }
   return result as unknown as PrepareTemporalFieldsReturn<FieldKeys, RequiredFields, Owner<FieldKeys>>;
 }
@@ -1590,19 +1578,19 @@ export function ToTemporalTimeRecord(
 ): Partial<TimeRecord> {
   // NOTE: Field order is sorted to make the sort in PrepareTemporalFields more efficient.
   const fields: (keyof TimeRecord)[] = ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'second'];
-  const partial = PrepareTemporalFields(bag, fields, 'partial', undefined, undefined, {
-    emptySourceErrorMessage: 'invalid time-like'
-  });
-  const result: Partial<TimeRecord> = {};
+  let any = false;
+  const result: Partial<TimeRecord> = ObjectCreate(null);
   for (let index = 0; index < fields.length; index++) {
     const field = fields[index];
-    const valueDesc = ObjectGetOwnPropertyDescriptor(partial, field);
-    if (valueDesc !== undefined) {
-      result[field] = valueDesc.value;
+    const value = bag[field];
+    if (value !== undefined) {
+      result[field] = ToIntegerWithTruncation(value);
+      any = true;
     } else if (completeness === 'complete') {
       result[field] = 0;
     }
   }
+  if (!any) throw new TypeError('invalid time-like');
   return result;
 }
 
@@ -1646,7 +1634,7 @@ export function ToTemporalDate(
   if (z) throw new RangeError('Z designator not supported for PlainDate');
   if (!calendar) calendar = 'iso8601';
   if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
-  calendar = ASCIILowercase(calendar);
+  calendar = CanonicalizeCalendar(calendar);
   GetTemporalOverflowOption(options); // validate and ignore
   return CreateTemporalDate(year, month, day, calendar);
 }
@@ -1734,7 +1722,7 @@ export function ToTemporalDateTime(item: PlainDateTimeParams['from'][0], options
     RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
     if (!calendar) calendar = 'iso8601';
     if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
-    calendar = ASCIILowercase(calendar);
+    calendar = CanonicalizeCalendar(calendar);
     GetTemporalOverflowOption(resolvedOptions); // validate and ignore
   }
   return CreateTemporalDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond, calendar);
@@ -1819,15 +1807,15 @@ export function ToTemporalMonthDay(
   let { month, day, referenceISOYear, calendar } = ParseTemporalMonthDayString(RequireString(item));
   if (calendar === undefined) calendar = 'iso8601';
   if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
-  calendar = ASCIILowercase(calendar);
+  calendar = CanonicalizeCalendar(calendar);
   GetTemporalOverflowOption(options); // validate and ignore
 
   if (referenceISOYear === undefined) {
     if (calendar !== 'iso8601') {
       throw new Error(`assertion failed: missing year with non-"iso8601" calendar identifier ${calendar}`);
     }
-    RejectISODate(1972, month, day);
-    return CreateTemporalMonthDay(month, day, calendar);
+    const isoCalendarReferenceYear = 1972; // First leap year after Unix epoch
+    return CreateTemporalMonthDay(month, day, calendar, isoCalendarReferenceYear);
   }
   const result = CreateTemporalMonthDay(month, day, calendar, referenceISOYear);
   const calendarRec = new CalendarMethodRecord(calendar, ['monthDayFromFields']);
@@ -1898,7 +1886,7 @@ export function ToTemporalYearMonth(
   let { year, month, referenceISODay, calendar } = ParseTemporalYearMonthString(RequireString(item));
   if (calendar === undefined) calendar = 'iso8601';
   if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
-  calendar = ASCIILowercase(calendar);
+  calendar = CanonicalizeCalendar(calendar);
   GetTemporalOverflowOption(options); // validate and ignore
 
   const result = CreateTemporalYearMonth(year, month, calendar, referenceISODay);
@@ -1990,10 +1978,8 @@ export function InterpretISODateTimeOffset(
       : typeof timeZoneRec.receiver === 'string'
         ? timeZoneRec.receiver
         : 'time zone';
-    // The tsc emit for this line rewrites to invoke the PlainDateTime's valueOf method, NOT
-    // toString (which is invoked by Node when using template literals directly).
-    // See https://github.com/microsoft/TypeScript/issues/39744 for the proposed fix in tsc emit
-    throw new RangeError(`Offset ${offsetStr} is invalid for ${dt.toString()} in ${timeZoneString}`);
+    const dtStr = TemporalDateTimeToString(dt, 'auto');
+    throw new RangeError(`Offset ${offsetStr} is invalid for ${dtStr} in ${timeZoneString}`);
   }
   // fall through: offsetOpt === 'prefer', but the offset doesn't match
   // so fall back to use the time zone instead.
@@ -2070,7 +2056,7 @@ export function ToTemporalZonedDateTime(
     }
     if (!calendar) calendar = 'iso8601';
     if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
-    calendar = ASCIILowercase(calendar);
+    calendar = CanonicalizeCalendar(calendar);
     matchMinute = true; // ISO strings may specify offset with less precision
     disambiguation = GetTemporalDisambiguationOption(resolvedOptions);
     offsetOpt = GetTemporalOffsetOption(resolvedOptions, 'reject');
@@ -2242,8 +2228,8 @@ export function CreateTemporalMonthDaySlots(
 export function CreateTemporalMonthDay(
   isoMonth: number,
   isoDay: number,
-  calendar: CalendarSlot = 'iso8601',
-  referenceISOYear = 1972
+  calendar: CalendarSlot,
+  referenceISOYear: number
 ) {
   const TemporalPlainMonthDay = GetIntrinsic('%Temporal.PlainMonthDay%');
   const result = ObjectCreate(TemporalPlainMonthDay.prototype);
@@ -2287,8 +2273,8 @@ export function CreateTemporalYearMonthSlots(
 export function CreateTemporalYearMonth(
   isoYear: number,
   isoMonth: number,
-  calendar: CalendarSlot = 'iso8601',
-  referenceISODay = 1
+  calendar: CalendarSlot,
+  referenceISODay: number
 ) {
   const TemporalPlainYearMonth = GetIntrinsic('%Temporal.PlainYearMonth%');
   const result = ObjectCreate(TemporalPlainYearMonth.prototype);
@@ -2683,7 +2669,7 @@ export function ToTemporalCalendarSlotValue(calendarLike: CalendarParams['from']
     return calendarLike;
   }
   const identifier = RequireString(calendarLike);
-  if (IsBuiltinCalendar(identifier)) return ASCIILowercase(identifier);
+  if (IsBuiltinCalendar(identifier)) return CanonicalizeCalendar(identifier);
   let calendar;
   try {
     ({ calendar } = ParseISODateTime(identifier));
@@ -2696,7 +2682,7 @@ export function ToTemporalCalendarSlotValue(calendarLike: CalendarParams['from']
   }
   if (!calendar) calendar = 'iso8601';
   if (!IsBuiltinCalendar(calendar)) throw new RangeError(`invalid calendar identifier ${calendar}`);
-  return ASCIILowercase(calendar);
+  return CanonicalizeCalendar(calendar);
 }
 
 function GetTemporalCalendarSlotValueWithISODefault(item: { calendar?: Temporal.CalendarLike }): CalendarSlot {
@@ -3289,7 +3275,7 @@ export function ParseDateTimeUTCOffset(string: string): number {
   if (!match) {
     throw new RangeError(`invalid time zone offset: ${string}`);
   }
-  const sign = match[1] === '-' || match[1] === '\u2212' ? -1 : +1;
+  const sign = match[1] === '-' ? -1 : +1;
   const hours = +match[2];
   const minutes = +(match[3] || 0);
   const seconds = +(match[4] || 0);
@@ -4479,7 +4465,7 @@ function NudgeToCalendarUnit(
       const years = RoundNumberToIncrement(duration.years, increment, 'trunc');
       r1 = years;
       r2 = years + increment * sign;
-      startDuration = { years: r1, months: 0, weeks: 0, days: 0, norm: TimeDuration.ZERO };
+      startDuration = { years: r1, months: 0, weeks: 0, days: 0 };
       endDuration = { ...startDuration, years: r2 };
       break;
     }
@@ -4487,7 +4473,7 @@ function NudgeToCalendarUnit(
       const months = RoundNumberToIncrement(duration.months, increment, 'trunc');
       r1 = months;
       r2 = months + increment * sign;
-      startDuration = { ...duration, months: r1, weeks: 0, days: 0, norm: TimeDuration.ZERO };
+      startDuration = { years: duration.years, months: r1, weeks: 0, days: 0 };
       endDuration = { ...startDuration, months: r2 };
       break;
     }
@@ -4505,7 +4491,7 @@ function NudgeToCalendarUnit(
       const weeks = RoundNumberToIncrement(duration.weeks + GetSlot(untilResult, WEEKS), increment, 'trunc');
       r1 = weeks;
       r2 = weeks + increment * sign;
-      startDuration = { ...duration, weeks: r1, days: 0, norm: TimeDuration.ZERO };
+      startDuration = { years: duration.years, months: duration.months, weeks: r1, days: 0 };
       endDuration = { ...startDuration, weeks: r2 };
       break;
     }
@@ -4513,7 +4499,7 @@ function NudgeToCalendarUnit(
       const days = RoundNumberToIncrement(duration.days, increment, 'trunc');
       r1 = days;
       r2 = days + increment * sign;
-      startDuration = { ...duration, days: r1, norm: TimeDuration.ZERO };
+      startDuration = { years: duration.years, months: duration.months, weeks: duration.weeks, days: r1 };
       endDuration = { ...startDuration, days: r2 };
       break;
     }
@@ -4526,92 +4512,72 @@ function NudgeToCalendarUnit(
   }
 
   // Apply to origin, output PlainDateTimes
-  const start = AddDateTime(
-    dateTime.year,
-    dateTime.month,
-    dateTime.day,
-    dateTime.hour,
-    dateTime.minute,
-    dateTime.second,
-    dateTime.millisecond,
-    dateTime.microsecond,
-    dateTime.nanosecond,
+  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
+  const startDate = CreateTemporalDate(dateTime.year, dateTime.month, dateTime.day, calendarRec.receiver);
+  const start = AddDate(
     calendarRec,
-    startDuration.years,
-    startDuration.months,
-    startDuration.weeks,
-    startDuration.days,
-    startDuration.norm
+    startDate,
+    new TemporalDuration(startDuration.years, startDuration.months, startDuration.weeks, startDuration.days)
   );
-  const end = AddDateTime(
-    dateTime.year,
-    dateTime.month,
-    dateTime.day,
-    dateTime.hour,
-    dateTime.minute,
-    dateTime.second,
-    dateTime.millisecond,
-    dateTime.microsecond,
-    dateTime.nanosecond,
+  // TODO: Eliminate this extra PlainDate object when removing calendar user calls
+  const endDate = CreateTemporalDate(dateTime.year, dateTime.month, dateTime.day, calendarRec.receiver);
+  const end = AddDate(
     calendarRec,
-    endDuration.years,
-    endDuration.months,
-    endDuration.weeks,
-    endDuration.days,
-    endDuration.norm
+    endDate,
+    new TemporalDuration(endDuration.years, endDuration.months, endDuration.weeks, endDuration.days)
   );
 
   // Convert to epoch-nanoseconds
   let startEpochNs, endEpochNs;
   if (timeZoneRec) {
     const startDateTime = CreateTemporalDateTime(
-      start.year,
-      start.month,
-      start.day,
-      start.hour,
-      start.minute,
-      start.second,
-      start.millisecond,
-      start.microsecond,
-      start.nanosecond,
+      GetSlot(start, ISO_YEAR),
+      GetSlot(start, ISO_MONTH),
+      GetSlot(start, ISO_DAY),
+      dateTime.hour,
+      dateTime.minute,
+      dateTime.second,
+      dateTime.millisecond,
+      dateTime.microsecond,
+      dateTime.nanosecond,
       calendarRec.receiver
     );
     startEpochNs = GetSlot(GetInstantFor(timeZoneRec, startDateTime, 'compatible'), EPOCHNANOSECONDS);
     const endDateTime = CreateTemporalDateTime(
-      end.year,
-      end.month,
-      end.day,
-      end.hour,
-      end.minute,
-      end.second,
-      end.millisecond,
-      end.microsecond,
-      end.nanosecond,
+      GetSlot(end, ISO_YEAR),
+      GetSlot(end, ISO_MONTH),
+      GetSlot(end, ISO_DAY),
+      dateTime.hour,
+      dateTime.minute,
+      dateTime.second,
+      dateTime.millisecond,
+      dateTime.microsecond,
+      dateTime.nanosecond,
       calendarRec.receiver
     );
     endEpochNs = GetSlot(GetInstantFor(timeZoneRec, endDateTime, 'compatible'), EPOCHNANOSECONDS);
   } else {
     startEpochNs = GetUTCEpochNanoseconds(
-      start.year,
-      start.month,
-      start.day,
-      start.hour,
-      start.minute,
-      start.second,
-      start.millisecond,
-      start.microsecond,
-      start.nanosecond
+      GetSlot(start, ISO_YEAR),
+      GetSlot(start, ISO_MONTH),
+      GetSlot(start, ISO_DAY),
+      dateTime.hour,
+      dateTime.minute,
+      dateTime.second,
+      dateTime.millisecond,
+      dateTime.microsecond,
+      dateTime.nanosecond
     );
     endEpochNs = GetUTCEpochNanoseconds(
-      end.year,
-      end.month,
-      end.day,
-      end.hour,
-      end.minute,
-      end.second,
-      end.millisecond,
-      end.microsecond,
-      end.nanosecond
+      GetSlot(end, ISO_YEAR),
+      GetSlot(end, ISO_MONTH),
+      GetSlot(end, ISO_DAY),
+      dateTime.hour,
+      dateTime.minute,
+      dateTime.second,
+      dateTime.millisecond,
+      dateTime.microsecond,
+      dateTime.nanosecond
     );
   }
 
@@ -4648,7 +4614,7 @@ function NudgeToCalendarUnit(
 
   // Determine whether expanded or contracted
   const didExpandCalendarUnit = roundedUnit === MathAbs(r2);
-  duration = didExpandCalendarUnit ? endDuration : startDuration;
+  duration = { ...(didExpandCalendarUnit ? endDuration : startDuration), norm: TimeDuration.ZERO };
 
   return {
     duration,
@@ -4675,46 +4641,36 @@ function NudgeToZonedTime(
   let duration = durationParam;
 
   // Apply to origin, output start/end of the day as PlainDateTimes
-  const start = AddDateTime(
-    dateTime.year,
-    dateTime.month,
-    dateTime.day,
+  const date = CreateTemporalDate(dateTime.year, dateTime.month, dateTime.day, calendarRec.receiver);
+  const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
+  const start = AddDate(
+    calendarRec,
+    date,
+    new TemporalDuration(duration.years, duration.months, duration.weeks, duration.days)
+  );
+  const startDateTime = CreateTemporalDateTime(
+    GetSlot(start, ISO_YEAR),
+    GetSlot(start, ISO_MONTH),
+    GetSlot(start, ISO_DAY),
     dateTime.hour,
     dateTime.minute,
     dateTime.second,
     dateTime.millisecond,
     dateTime.microsecond,
     dateTime.nanosecond,
-    calendarRec,
-    duration.years,
-    duration.months,
-    duration.weeks,
-    duration.days,
-    TimeDuration.ZERO
-  );
-  const startDateTime = CreateTemporalDateTime(
-    start.year,
-    start.month,
-    start.day,
-    start.hour,
-    start.minute,
-    start.second,
-    start.millisecond,
-    start.microsecond,
-    start.nanosecond,
     calendarRec.receiver
   );
-  const endDate = BalanceISODate(start.year, start.month, start.day + sign);
+  const endDate = BalanceISODate(GetSlot(start, ISO_YEAR), GetSlot(start, ISO_MONTH), GetSlot(start, ISO_DAY) + sign);
   const endDateTime = CreateTemporalDateTime(
     endDate.year,
     endDate.month,
     endDate.day,
-    start.hour,
-    start.minute,
-    start.second,
-    start.millisecond,
-    start.microsecond,
-    start.nanosecond,
+    dateTime.hour,
+    dateTime.minute,
+    dateTime.second,
+    dateTime.millisecond,
+    dateTime.microsecond,
+    dateTime.nanosecond,
     calendarRec.receiver
   );
 
@@ -4785,7 +4741,7 @@ function NudgeToDayOrTime(
 
   // Determine if whole days expanded
   const { quotient: wholeDays } = norm.divmod(DAY_NANOS);
-  const { quotient: roundedWholeDays, remainder: roundedDaysRemainder } = roundedNorm.divmod(DAY_NANOS);
+  const { quotient: roundedWholeDays } = roundedNorm.divmod(DAY_NANOS);
   const didExpandDays = MathSign(roundedWholeDays - wholeDays) === norm.sign();
 
   const nudgedEpochNs = diffNorm.addToEpochNs(destEpochNs);
@@ -4794,7 +4750,7 @@ function NudgeToDayOrTime(
   let remainder = roundedNorm;
   if (LargerOfTwoTemporalUnits(largestUnit, 'day') === largestUnit) {
     days = roundedWholeDays;
-    remainder = roundedDaysRemainder;
+    remainder = roundedNorm.subtract(TimeDuration.normalize(roundedWholeDays * 24, 0, 0, 0, 0, 0));
   }
 
   duration = { ...duration, days, norm: remainder };
@@ -4845,22 +4801,22 @@ function BubbleRelativeDuration(
     switch (unit) {
       case 'year': {
         const years = duration.years + sign;
-        endDuration = { years, months: 0, weeks: 0, days: 0, norm: TimeDuration.ZERO };
+        endDuration = { years, months: 0, weeks: 0, days: 0 };
         break;
       }
       case 'month': {
         const months = duration.months + sign;
-        endDuration = { ...duration, months, weeks: 0, days: 0, norm: TimeDuration.ZERO };
+        endDuration = { years: duration.years, months, weeks: 0, days: 0 };
         break;
       }
       case 'week': {
         const weeks = duration.weeks + sign;
-        endDuration = { ...duration, weeks, days: 0, norm: TimeDuration.ZERO };
+        endDuration = { years: duration.years, months: duration.months, weeks, days: 0 };
         break;
       }
       case 'day': {
         const days = duration.days + sign;
-        endDuration = { ...duration, days, norm: TimeDuration.ZERO };
+        endDuration = { years: duration.years, months: duration.months, weeks: duration.weeks, days };
         break;
       }
       default:
@@ -4868,49 +4824,39 @@ function BubbleRelativeDuration(
     }
 
     // Compute end-of-unit in epoch-nanoseconds
-    const end = AddDateTime(
-      plainDateTime.year,
-      plainDateTime.month,
-      plainDateTime.day,
-      plainDateTime.hour,
-      plainDateTime.minute,
-      plainDateTime.second,
-      plainDateTime.millisecond,
-      plainDateTime.microsecond,
-      plainDateTime.nanosecond,
+    const date = CreateTemporalDate(plainDateTime.year, plainDateTime.month, plainDateTime.day, calendarRec.receiver);
+    const TemporalDuration = GetIntrinsic('%Temporal.Duration%');
+    const end = AddDate(
       calendarRec,
-      endDuration.years,
-      endDuration.months,
-      endDuration.weeks,
-      endDuration.days,
-      TimeDuration.ZERO
+      date,
+      new TemporalDuration(endDuration.years, endDuration.months, endDuration.weeks, endDuration.days)
     );
     let endEpochNs;
     if (timeZoneRec) {
       const endDateTime = CreateTemporalDateTime(
-        end.year,
-        end.month,
-        end.day,
-        end.hour,
-        end.minute,
-        end.second,
-        end.millisecond,
-        end.microsecond,
-        end.nanosecond,
+        GetSlot(end, ISO_YEAR),
+        GetSlot(end, ISO_MONTH),
+        GetSlot(end, ISO_DAY),
+        plainDateTime.hour,
+        plainDateTime.minute,
+        plainDateTime.second,
+        plainDateTime.millisecond,
+        plainDateTime.microsecond,
+        plainDateTime.nanosecond,
         calendarRec.receiver
       );
       endEpochNs = GetSlot(GetInstantFor(timeZoneRec, endDateTime, 'compatible'), EPOCHNANOSECONDS);
     } else {
       endEpochNs = GetUTCEpochNanoseconds(
-        end.year,
-        end.month,
-        end.day,
-        end.hour,
-        end.minute,
-        end.second,
-        end.millisecond,
-        end.microsecond,
-        end.nanosecond
+        GetSlot(end, ISO_YEAR),
+        GetSlot(end, ISO_MONTH),
+        GetSlot(end, ISO_DAY),
+        plainDateTime.hour,
+        plainDateTime.minute,
+        plainDateTime.second,
+        plainDateTime.millisecond,
+        plainDateTime.microsecond,
+        plainDateTime.nanosecond
       );
     }
 
@@ -4919,7 +4865,7 @@ function BubbleRelativeDuration(
     // Is nudgedEpochNs at the end-of-unit? This means it should bubble-up to
     // the next highest unit (and possibly further...)
     if (didExpandToEnd) {
-      duration = endDuration;
+      duration = { ...endDuration, norm: TimeDuration.ZERO };
     } else {
       // NOT at end-of-unit. Stop looking for bubbling
       break;
@@ -6348,15 +6294,17 @@ function DaysUntil(
   earlier: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.ZonedDateTime,
   later: Temporal.PlainDate | Temporal.PlainDateTime | Temporal.ZonedDateTime
 ) {
-  return DifferenceISODate(
+  const epochDaysEarlier = ISODateToEpochDays(
     GetSlot(earlier, ISO_YEAR),
     GetSlot(earlier, ISO_MONTH),
-    GetSlot(earlier, ISO_DAY),
+    GetSlot(earlier, ISO_DAY)
+  );
+  const epochDaysLater = ISODateToEpochDays(
     GetSlot(later, ISO_YEAR),
     GetSlot(later, ISO_MONTH),
-    GetSlot(later, ISO_DAY),
-    'day'
-  ).days;
+    GetSlot(later, ISO_DAY)
+  );
+  return epochDaysLater - epochDaysEarlier;
 }
 
 export function RoundTimeDuration(
@@ -6541,7 +6489,7 @@ function GetOption<P extends StringlyTypedKeys<O>, O extends Partial<Record<P, u
 function GetOption<
   P extends StringlyTypedKeys<O>,
   O extends Partial<Record<P, unknown>>,
-  Fallback extends Required<O>[P] | undefined
+  Fallback extends Required<O>[P] | typeof REQUIRED | undefined
 >(
   options: O,
   property: P,
@@ -6566,6 +6514,7 @@ function GetOption<
     }
     return value;
   }
+  if (fallback === REQUIRED) throw new RangeError(`${property} option is required`);
   return fallback;
 }
 
@@ -6573,7 +6522,32 @@ export function IsBuiltinCalendar(id: string): id is BuiltinCalendarId {
   return BUILTIN_CALENDAR_IDS.includes(ASCIILowercase(id));
 }
 
-export function ASCIILowercase<T extends string>(str: T): T {
+// This is a temporary implementation. Ideally we'd rely on Intl.DateTimeFormat
+// here, to provide the latest CLDR alias data, when implementations catch up to
+// the ECMA-402 change. The aliases below are taken from
+// https://github.com/unicode-org/cldr/blob/main/common/bcp47/calendar.xml
+export function CanonicalizeCalendar(idParam: string): BuiltinCalendarId {
+  const id = ASCIILowercase(idParam);
+  uncheckedAssertNarrowedType<BuiltinCalendarId>(
+    id,
+    'ES.IsBuiltinCalendar may allow mixed-case IDs, they are only guaranteed to be built-in after being lowercased'
+  );
+  switch (id) {
+    case 'ethiopic-amete-alem':
+      // May need to be removed in the future.
+      // See https://github.com/tc39/ecma402/issues/285
+      return 'ethioaa';
+    // case 'gregorian':
+    // (Skip 'gregorian'. It isn't a valid identifier as it's a single
+    // subcomponent longer than 8 letters. It can only be used with the old
+    // @key=value syntax.)
+    case 'islamicc':
+      return 'islamic-civil';
+  }
+  return id;
+}
+
+function ASCIILowercase<T extends string>(str: T): T {
   // The spec defines this operation distinct from String.prototype.lowercase,
   // so we'll follow the spec here. Note that nasty security issues that can
   // happen for some use cases if you're comparing case-modified non-ASCII

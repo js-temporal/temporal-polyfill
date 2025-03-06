@@ -161,10 +161,6 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
       isoYear: GetSlot(this, ISO_YEAR)
     };
   }
-  getCalendar(): Return['getCalendar'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    return ES.ToTemporalCalendarObject(GetSlot(this, CALENDAR));
-  }
 
   static from(item: Params['from'][0], optionsParam: Params['from'][1] = undefined): Return['from'] {
     const options = ES.GetOptionsObject(optionsParam);

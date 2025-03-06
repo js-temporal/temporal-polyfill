@@ -489,6 +489,11 @@ export namespace Temporal {
     relativeTo?: Temporal.ZonedDateTime | Temporal.PlainDateTime | ZonedDateTimeLike | PlainDateTimeLike | string;
   }
 
+  /**
+   * Options to control behaviour of `ZonedDateTime.prototype.getTimeZoneTransition()`
+   */
+  export type TransitionDirection = 'next' | 'previous' | { direction: 'next' | 'previous' };
+
   export type DurationLike = {
     years?: number;
     months?: number;
@@ -807,7 +812,6 @@ export namespace Temporal {
     readonly monthCode: string;
     readonly day: number;
     readonly calendarId: string;
-    getCalendar(): CalendarProtocol;
     readonly dayOfWeek: number;
     readonly dayOfYear: number;
     readonly weekOfYear: number | undefined;
@@ -923,7 +927,6 @@ export namespace Temporal {
     readonly microsecond: number;
     readonly nanosecond: number;
     readonly calendarId: string;
-    getCalendar(): CalendarProtocol;
     readonly dayOfWeek: number;
     readonly dayOfYear: number;
     readonly weekOfYear: number | undefined;
@@ -994,7 +997,6 @@ export namespace Temporal {
     readonly monthCode: string;
     readonly day: number;
     readonly calendarId: string;
-    getCalendar(): CalendarProtocol;
     equals(other: Temporal.PlainMonthDay | PlainMonthDayLike | string): boolean;
     with(monthDayLike: PlainMonthDayLike, options?: AssignmentOptions): Temporal.PlainMonthDay;
     toPlainDate(year: { year: number }): Temporal.PlainDate;
@@ -1094,8 +1096,6 @@ export namespace Temporal {
       dateTime: Temporal.PlainDateTime | PlainDateTimeLike | string,
       options?: ToInstantOptions
     ): Temporal.Instant;
-    getNextTransition?(startingPoint: Temporal.Instant | string): Temporal.Instant | null;
-    getPreviousTransition?(startingPoint: Temporal.Instant | string): Temporal.Instant | null;
     getPossibleInstantsFor(dateTime: Temporal.PlainDateTime | PlainDateTimeLike | string): Temporal.Instant[];
     toString?(): string;
     toJSON?(): string;
@@ -1124,7 +1124,6 @@ export namespace Temporal {
     static from(timeZone: TimeZoneLike): Temporal.TimeZone | TimeZoneProtocol;
     constructor(timeZoneIdentifier: string);
     readonly id: string;
-    equals(timeZone: TimeZoneLike): boolean;
     getOffsetNanosecondsFor(instant: Temporal.Instant | string): number;
     getOffsetStringFor(instant: Temporal.Instant | string): string;
     getPlainDateTimeFor(instant: Temporal.Instant | string, calendar?: CalendarLike): Temporal.PlainDateTime;
@@ -1132,8 +1131,6 @@ export namespace Temporal {
       dateTime: Temporal.PlainDateTime | PlainDateTimeLike | string,
       options?: ToInstantOptions
     ): Temporal.Instant;
-    getNextTransition(startingPoint: Temporal.Instant | string): Temporal.Instant | null;
-    getPreviousTransition(startingPoint: Temporal.Instant | string): Temporal.Instant | null;
     getPossibleInstantsFor(dateTime: Temporal.PlainDateTime | PlainDateTimeLike | string): Temporal.Instant[];
     toString(): string;
     toJSON(): string;
@@ -1172,7 +1169,6 @@ export namespace Temporal {
     readonly month: number;
     readonly monthCode: string;
     readonly calendarId: string;
-    getCalendar(): CalendarProtocol;
     readonly daysInMonth: number;
     readonly daysInYear: number;
     readonly monthsInYear: number;
@@ -1257,9 +1253,7 @@ export namespace Temporal {
     readonly microsecond: number;
     readonly nanosecond: number;
     readonly timeZoneId: string;
-    getTimeZone(): TimeZoneProtocol;
     readonly calendarId: string;
-    getCalendar(): CalendarProtocol;
     readonly dayOfWeek: number;
     readonly dayOfYear: number;
     readonly weekOfYear: number | undefined;
@@ -1300,6 +1294,7 @@ export namespace Temporal {
       roundTo: RoundTo<'day' | 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'>
     ): Temporal.ZonedDateTime;
     startOfDay(): Temporal.ZonedDateTime;
+    getTimeZoneTransition(direction: TransitionDirection): Temporal.ZonedDateTime | null;
     toInstant(): Temporal.Instant;
     toPlainDateTime(): Temporal.PlainDateTime;
     toPlainDate(): Temporal.PlainDate;

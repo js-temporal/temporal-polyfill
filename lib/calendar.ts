@@ -1,5 +1,6 @@
 import { DEBUG } from './debug';
 import * as ES from './ecmascript';
+import { Call, ToObject, ToString } from './ecmascript';
 import { GetIntrinsic, MakeIntrinsicClass, DefineIntrinsic } from './intrinsicclass';
 import {
   CALENDAR_ID,
@@ -194,19 +195,15 @@ const impl: CalendarImplementations = {} as unknown as CalendarImplementations;
  */
 export class Calendar implements Temporal.Calendar {
   constructor(id: Params['constructor'][0]) {
-    let stringId = ES.RequireString(id);
+    const stringId = ES.RequireString(id);
     if (!ES.IsBuiltinCalendar(stringId)) throw new RangeError(`invalid calendar identifier ${stringId}`);
     CreateSlots(this);
-    stringId = ES.ASCIILowercase(stringId);
-    ES.uncheckedAssertNarrowedType<BuiltinCalendarId>(
-      stringId,
-      'ES.IsBuiltinCalendar may allow mixed-case IDs, they are only guaranteed to be built-in after being lowercased'
-    );
-    SetSlot(this, CALENDAR_ID, stringId);
+    const canonicalizedStringId = ES.CanonicalizeCalendar(stringId);
+    SetSlot(this, CALENDAR_ID, canonicalizedStringId);
 
     if (DEBUG) {
       Object.defineProperty(this, '_repr_', {
-        value: `Temporal.Calendar <${stringId}>`,
+        value: `Temporal.Calendar <${canonicalizedStringId}>`,
         writable: false,
         enumerable: false,
         configurable: false
@@ -261,8 +258,8 @@ export class Calendar implements Temporal.Calendar {
   }
   mergeFields(fields: Params['mergeFields'][0], additionalFields: Params['mergeFields'][1]): Return['mergeFields'] {
     if (!ES.IsTemporalCalendar(this)) throw new TypeError('invalid receiver');
-    const fieldsCopy = ES.SnapshotOwnProperties(ES.ToObject(fields), null, [], [undefined]);
-    const additionalFieldsCopy = ES.SnapshotOwnProperties(ES.ToObject(additionalFields), null, [], [undefined]);
+    const fieldsCopy = ES.SnapshotOwnProperties(ToObject(fields), null, [], [undefined]);
+    const additionalFieldsCopy = ES.SnapshotOwnProperties(ToObject(additionalFields), null, [], [undefined]);
     const additionalKeys = ReflectOwnKeys(additionalFieldsCopy) as (keyof typeof additionalFields)[];
     const overriddenKeys = impl[GetSlot(this, CALENDAR_ID)].fieldKeysToIgnore(additionalKeys);
     const merged = ObjectCreate(null);
@@ -271,7 +268,7 @@ export class Calendar implements Temporal.Calendar {
     for (let ix = 0; ix < fieldsKeys.length; ix++) {
       const key = fieldsKeys[ix];
       let propValue = undefined;
-      if (ES.Call(ArrayIncludes, overriddenKeys, [key])) propValue = additionalFieldsCopy[key];
+      if (Call(ArrayIncludes, overriddenKeys, [key])) propValue = additionalFieldsCopy[key];
       else propValue = fieldsCopy[key];
       if (propValue !== undefined) merged[key] = propValue;
     }
@@ -489,11 +486,11 @@ impl['iso8601'] = {
     const result = new OriginalSet<string>();
     for (let ix = 0; ix < keys.length; ix++) {
       const key = keys[ix];
-      ES.Call(SetPrototypeAdd, result, [key]);
+      Call(SetPrototypeAdd, result, [key]);
       if (key === 'month') {
-        ES.Call(SetPrototypeAdd, result, ['monthCode']);
+        Call(SetPrototypeAdd, result, ['monthCode']);
       } else if (key === 'monthCode') {
-        ES.Call(SetPrototypeAdd, result, ['month']);
+        Call(SetPrototypeAdd, result, ['month']);
       }
     }
     return arrayFromSet(result);
@@ -1871,7 +1868,7 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
   // Ensure that the latest epoch is first in the array. This lets us try to
   // match eras in index order, with the last era getting the remaining older
   // years. Any reverse-signed era must be at the end.
-  ES.Call(ArrayPrototypeSort, eras, [
+  Call(ArrayPrototypeSort, eras, [
     (e1, e2) => {
       if (e1.reverseOf) return 1;
       if (e2.reverseOf) return -1;
@@ -2410,7 +2407,7 @@ class NonIsoCalendar implements CalendarImpl {
     let fieldDescriptors = [] as CalendarFieldDescriptor[];
     if (type !== 'month-day') {
       fieldDescriptors = [
-        { property: 'era', conversion: ES.ToString, required: false },
+        { property: 'era', conversion: ToString, required: false },
         { property: 'eraYear', conversion: ES.ToIntegerWithTruncation, required: false }
       ];
     }
@@ -2468,8 +2465,8 @@ class NonIsoCalendar implements CalendarImpl {
     // Note that `fields` is a new array created by the caller of this method,
     // not the original input passed by the original caller. So it's safe to
     // mutate it here because the mutation is not observable.
-    if (ES.Call(ArrayIncludes, fields, ['year'])) {
-      ES.Call(ArrayPrototypePush, fields, ['era', 'eraYear']);
+    if (Call(ArrayIncludes, fields, ['year'])) {
+      Call(ArrayPrototypePush, fields, ['era', 'eraYear']);
     }
     return fields;
   }
@@ -2479,39 +2476,39 @@ class NonIsoCalendar implements CalendarImpl {
     const result = new OriginalSet<(typeof keys)[number]>();
     for (let ix = 0; ix < keys.length; ix++) {
       const key = keys[ix];
-      ES.Call(SetPrototypeAdd, result, [key]);
+      Call(SetPrototypeAdd, result, [key]);
       switch (key) {
         case 'era':
-          ES.Call(SetPrototypeAdd, result, ['eraYear']);
-          ES.Call(SetPrototypeAdd, result, ['year']);
+          Call(SetPrototypeAdd, result, ['eraYear']);
+          Call(SetPrototypeAdd, result, ['year']);
           break;
         case 'eraYear':
-          ES.Call(SetPrototypeAdd, result, ['era']);
-          ES.Call(SetPrototypeAdd, result, ['year']);
+          Call(SetPrototypeAdd, result, ['era']);
+          Call(SetPrototypeAdd, result, ['year']);
           break;
         case 'year':
-          ES.Call(SetPrototypeAdd, result, ['era']);
-          ES.Call(SetPrototypeAdd, result, ['eraYear']);
+          Call(SetPrototypeAdd, result, ['era']);
+          Call(SetPrototypeAdd, result, ['eraYear']);
           break;
         case 'month':
-          ES.Call(SetPrototypeAdd, result, ['monthCode']);
+          Call(SetPrototypeAdd, result, ['monthCode']);
           // See https://github.com/tc39/proposal-temporal/issues/1784
           if (this.helper.erasBeginMidYear) {
-            ES.Call(SetPrototypeAdd, result, ['era']);
-            ES.Call(SetPrototypeAdd, result, ['eraYear']);
+            Call(SetPrototypeAdd, result, ['era']);
+            Call(SetPrototypeAdd, result, ['eraYear']);
           }
           break;
         case 'monthCode':
-          ES.Call(SetPrototypeAdd, result, ['month']);
+          Call(SetPrototypeAdd, result, ['month']);
           if (this.helper.erasBeginMidYear) {
-            ES.Call(SetPrototypeAdd, result, ['era']);
-            ES.Call(SetPrototypeAdd, result, ['eraYear']);
+            Call(SetPrototypeAdd, result, ['era']);
+            Call(SetPrototypeAdd, result, ['eraYear']);
           }
           break;
         case 'day':
           if (this.helper.erasBeginMidYear) {
-            ES.Call(SetPrototypeAdd, result, ['era']);
-            ES.Call(SetPrototypeAdd, result, ['eraYear']);
+            Call(SetPrototypeAdd, result, ['era']);
+            Call(SetPrototypeAdd, result, ['eraYear']);
           }
           break;
       }
