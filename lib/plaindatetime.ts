@@ -453,7 +453,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
       GetSlot(two, ISO_NANOSECOND)
     );
   }
-  [Symbol.toStringTag]!: 'Temporal.PlainDateTime';
+  [Symbol.toStringTag]: 'Temporal.PlainDateTime';
 }
 
 MakeIntrinsicClass(PlainDateTime, 'Temporal.PlainDateTime');

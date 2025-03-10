@@ -753,7 +753,7 @@ export class Duration implements Temporal.Duration {
     const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2).add24HourDays(d2);
     return norm1.cmp(norm2);
   }
-  [Symbol.toStringTag]!: 'Temporal.Duration';
+  [Symbol.toStringTag]: 'Temporal.Duration';
 }
 
 MakeIntrinsicClass(Duration, 'Temporal.Duration');

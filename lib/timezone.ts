@@ -170,7 +170,7 @@ export class TimeZone implements Temporal.TimeZone {
     const timeZoneSlotValue = ES.ToTemporalTimeZoneSlotValue(item);
     return ES.ToTemporalTimeZoneObject(timeZoneSlotValue);
   }
-  [Symbol.toStringTag]!: 'Temporal.TimeZone';
+  [Symbol.toStringTag]: 'Temporal.TimeZone';
 }
 
 MakeIntrinsicClass(TimeZone, 'Temporal.TimeZone');

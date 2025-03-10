@@ -277,7 +277,7 @@ export class PlainTime implements Temporal.PlainTime {
       GetSlot(two, ISO_NANOSECOND)
     );
   }
-  [Symbol.toStringTag]!: 'Temporal.PlainTime';
+  [Symbol.toStringTag]: 'Temporal.PlainTime';
 }
 
 MakeIntrinsicClass(PlainTime, 'Temporal.PlainTime');

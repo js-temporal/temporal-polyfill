@@ -157,7 +157,7 @@ export class Instant implements Temporal.Instant {
     if (JSBI.greaterThan(oneNs, twoNs)) return 1;
     return 0;
   }
-  [Symbol.toStringTag]!: 'Temporal.Instant';
+  [Symbol.toStringTag]: 'Temporal.Instant';
 }
 
 MakeIntrinsicClass(Instant, 'Temporal.Instant');

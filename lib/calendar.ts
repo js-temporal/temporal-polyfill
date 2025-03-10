@@ -423,7 +423,7 @@ export class Calendar implements Temporal.Calendar {
     const calendarSlotValue = ES.ToTemporalCalendarSlotValue(item);
     return ES.ToTemporalCalendarObject(calendarSlotValue);
   }
-  [Symbol.toStringTag]!: 'Temporal.Calendar';
+  [Symbol.toStringTag]: 'Temporal.Calendar';
 }
 
 MakeIntrinsicClass(Calendar, 'Temporal.Calendar');

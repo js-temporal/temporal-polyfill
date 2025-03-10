@@ -191,7 +191,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
       GetSlot(two, ISO_DAY)
     );
   }
-  [Symbol.toStringTag]!: 'Temporal.PlainYearMonth';
+  [Symbol.toStringTag]: 'Temporal.PlainYearMonth';
 }
 
 MakeIntrinsicClass(PlainYearMonth, 'Temporal.PlainYearMonth');
