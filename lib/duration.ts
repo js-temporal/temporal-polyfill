@@ -212,17 +212,7 @@ export class Duration implements Temporal.Duration {
     let microseconds = GetSlot(this, MICROSECONDS);
     let nanoseconds = GetSlot(this, NANOSECONDS);
 
-    const existingLargestUnit = ES.DefaultTemporalLargestUnit(
-      years,
-      months,
-      weeks,
-      days,
-      hours,
-      minutes,
-      seconds,
-      milliseconds,
-      microseconds
-    );
+    const existingLargestUnit = ES.DefaultTemporalLargestUnit(this);
     const roundTo =
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
@@ -263,6 +253,13 @@ export class Duration implements Temporal.Duration {
     } as { [k in Temporal.DateTimeUnit]?: number };
     const maximum = maximumIncrements[smallestUnit];
     if (maximum !== undefined) ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximum, false);
+    if (
+      roundingIncrement > 1 &&
+      (ES.IsCalendarUnit(smallestUnit) || smallestUnit === 'day') &&
+      largestUnit !== smallestUnit
+    ) {
+      throw new RangeError('For calendar units with roundingIncrement > 1, use largestUnit = smallestUnit');
+    }
 
     let norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
 
@@ -270,13 +267,19 @@ export class Duration implements Temporal.Duration {
       const timeZone = GetSlot(zonedRelativeTo, TIME_ZONE);
       const calendar = GetSlot(zonedRelativeTo, CALENDAR);
       const relativeEpochNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
-      const targetEpochNs = ES.AddZonedDateTime(relativeEpochNs, timeZone, calendar, years, months, weeks, days, norm);
+      const targetEpochNs = ES.AddZonedDateTime(relativeEpochNs, timeZone, calendar, {
+        years,
+        months,
+        weeks,
+        days,
+        norm
+      });
       ({ years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds } =
         ES.DifferenceZonedDateTimeWithRounding(
           relativeEpochNs,
           targetEpochNs,
-          calendar,
           timeZone,
+          calendar,
           largestUnit,
           roundingIncrement,
           smallestUnit,
@@ -286,7 +289,6 @@ export class Duration implements Temporal.Duration {
       let targetTime = ES.AddTime(0, 0, 0, 0, 0, 0, norm);
 
       // Delegate the date part addition to the calendar
-      ES.RejectDuration(years, months, weeks, days + targetTime.deltaDays, 0, 0, 0, 0, 0, 0);
       const isoRelativeToDate = ES.TemporalObjectToISODateRecord(plainRelativeTo);
       const calendar = GetSlot(plainRelativeTo, CALENDAR);
       const dateDuration = { years, months, weeks, days: days + targetTime.deltaDays };
@@ -364,12 +366,18 @@ export class Duration implements Temporal.Duration {
       const timeZone = GetSlot(zonedRelativeTo, TIME_ZONE);
       const calendar = GetSlot(zonedRelativeTo, CALENDAR);
       const relativeEpochNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
-      const targetEpochNs = ES.AddZonedDateTime(relativeEpochNs, timeZone, calendar, years, months, weeks, days, norm);
+      const targetEpochNs = ES.AddZonedDateTime(relativeEpochNs, timeZone, calendar, {
+        years,
+        months,
+        weeks,
+        days,
+        norm
+      });
       const { total } = ES.DifferenceZonedDateTimeWithRounding(
         relativeEpochNs,
         targetEpochNs,
-        calendar,
         timeZone,
+        calendar,
         unit,
         1,
         unit,
@@ -383,7 +391,6 @@ export class Duration implements Temporal.Duration {
       let targetTime = ES.AddTime(0, 0, 0, 0, 0, 0, norm);
 
       // Delegate the date part addition to the calendar
-      ES.RejectDuration(years, months, weeks, days + targetTime.deltaDays, 0, 0, 0, 0, 0, 0);
       const isoRelativeToDate = ES.TemporalObjectToISODateRecord(plainRelativeTo);
       const calendar = GetSlot(plainRelativeTo, CALENDAR);
       const dateDuration = { years, months, weeks, days: days + targetTime.deltaDays };
@@ -457,17 +464,7 @@ export class Duration implements Temporal.Duration {
 
     if (unit !== 'nanosecond' || increment !== 1) {
       let norm = TimeDuration.normalize(hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
-      const largestUnit = ES.DefaultTemporalLargestUnit(
-        years,
-        months,
-        weeks,
-        days,
-        hours,
-        minutes,
-        seconds,
-        milliseconds,
-        microseconds
-      );
+      const largestUnit = ES.DefaultTemporalLargestUnit(this);
       ({ norm } = ES.RoundTimeDuration(0, norm, increment, unit, roundingMode));
       let deltaDays;
       ({
@@ -607,9 +604,11 @@ export class Duration implements Temporal.Duration {
       const epochNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
 
       const norm1 = TimeDuration.normalize(h1, min1, s1, ms1, µs1, ns1);
+      const duration1 = { years: y1, months: mon1, weeks: w1, days: d1, norm: norm1 };
       const norm2 = TimeDuration.normalize(h2, min2, s2, ms2, µs2, ns2);
-      const after1 = ES.AddZonedDateTime(epochNs, timeZone, calendar, y1, mon1, w1, d1, norm1);
-      const after2 = ES.AddZonedDateTime(epochNs, timeZone, calendar, y2, mon2, w2, d2, norm2);
+      const duration2 = { years: y2, months: mon2, weeks: w2, days: d2, norm: norm2 };
+      const after1 = ES.AddZonedDateTime(epochNs, timeZone, calendar, duration1);
+      const after2 = ES.AddZonedDateTime(epochNs, timeZone, calendar, duration2);
       return ES.ComparisonResult(JSBI.toNumber(JSBI.subtract(after1, after2)));
     }
 

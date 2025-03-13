@@ -24,9 +24,12 @@ built-ins/Temporal/PlainYearMonth/prototype/toLocaleString/builtin-calendar-no-o
 built-ins/Temporal/PlainMonthDay/prototype/toLocaleString/builtin-calendar-no-observable-calls.js
 
 # Tests using Object.hasOwn which is not available in Node 14
+intl402/Temporal/PlainDate/from/calendar-not-supporting-eras.js
 intl402/Temporal/PlainDate/prototype/with/gregorian-mutually-exclusive-fields.js
 intl402/Temporal/PlainDate/prototype/with/japanese-mutually-exclusive-fields.js
+intl402/Temporal/PlainDateTime/from/calendar-not-supporting-eras.js
 intl402/Temporal/PlainYearMonth/from/argument-object.js
+intl402/Temporal/PlainYearMonth/from/calendar-not-supporting-eras.js
 intl402/Temporal/PlainYearMonth/from/reference-day-chinese.js
 intl402/Temporal/PlainYearMonth/from/reference-day-gregory.js
 intl402/Temporal/PlainYearMonth/from/reference-day-hebrew.js
