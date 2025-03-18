@@ -1728,7 +1728,7 @@ abstract class GregorianBaseHelper extends HelperBase {
         // Prefer displaying an era alias, instead of "gregory-inverse"
         const preferredName = names?.[0];
         const expected = preferredName ? `${value} (also called ${preferredName})` : value;
-        throw new RangeErrorCtor(`Input ${name} ${currentValue} doesn't match calculated value ${expected}`);
+        throw new RangeErrorCtor(`Input ${property} ${currentValue} doesn't match calculated value ${expected}`);
       }
     };
     const eraFromYear = (year: number) => {
