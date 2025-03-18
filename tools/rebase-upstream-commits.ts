@@ -167,6 +167,7 @@ try running this tool's "rebasehelp" command.
       // We want this to show up in the same TTY that this tool was launched in.
       stdio: 'inherit',
       env: {
+        ...process.env,
         GIT_SEQUENCE_EDITOR: gitSequenceEditorCmd,
         PATH: process.env['PATH']
       }
