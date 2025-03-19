@@ -1,5 +1,3 @@
-import { RangeError as RangeErrorCtor, TypeError as TypeErrorCtor } from './primordials';
-
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 
@@ -41,110 +39,110 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     );
   }
   get calendarId(): Return['calendarId'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, CALENDAR);
   }
   get year(): Return['year'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { year: true }).year;
   }
   get month(): Return['month'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { month: true }).month;
   }
   get monthCode(): Return['monthCode'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { monthCode: true }).monthCode;
   }
   get day(): Return['day'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { day: true }).day;
   }
   get hour(): Return['hour'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, ISO_DATE_TIME).time.hour;
   }
   get minute(): Return['minute'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, ISO_DATE_TIME).time.minute;
   }
   get second(): Return['second'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, ISO_DATE_TIME).time.second;
   }
   get millisecond(): Return['millisecond'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, ISO_DATE_TIME).time.millisecond;
   }
   get microsecond(): Return['microsecond'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, ISO_DATE_TIME).time.microsecond;
   }
   get nanosecond(): Return['nanosecond'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, ISO_DATE_TIME).time.nanosecond;
   }
   get era(): Return['era'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { era: true }).era;
   }
   get eraYear(): Return['eraYear'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { eraYear: true }).eraYear;
   }
   get dayOfWeek(): Return['dayOfWeek'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { dayOfWeek: true }).dayOfWeek;
   }
   get dayOfYear(): Return['dayOfYear'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { dayOfYear: true }).dayOfYear;
   }
   get weekOfYear(): Return['weekOfYear'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { weekOfYear: true }).weekOfYear.week;
   }
   get yearOfWeek(): Return['yearOfWeek'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { weekOfYear: true }).weekOfYear.year;
   }
   get daysInWeek(): Return['daysInWeek'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { daysInWeek: true }).daysInWeek;
   }
   get daysInYear(): Return['daysInYear'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { daysInYear: true }).daysInYear;
   }
   get daysInMonth(): Return['daysInMonth'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { daysInMonth: true }).daysInMonth;
   }
   get monthsInYear(): Return['monthsInYear'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { monthsInYear: true }).monthsInYear;
   }
   get inLeapYear(): Return['inLeapYear'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE_TIME).isoDate;
     return ES.calendarImplForObj(this).isoToDate(isoDate, { inLeapYear: true }).inLeapYear;
   }
   with(temporalDateTimeLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(temporalDateTimeLike)) {
       throw new TypeError('invalid argument');
     }
@@ -170,38 +168,38 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     return ES.CreateTemporalDateTime(newDateTime, calendar);
   }
   withPlainTime(temporalTime: Params['withPlainTime'][0] = undefined): Return['withPlainTime'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const time = ES.ToTimeRecordOrMidnight(temporalTime);
     const isoDateTime = ES.CombineISODateAndTimeRecord(GetSlot(this, ISO_DATE_TIME).isoDate, time);
     return ES.CreateTemporalDateTime(isoDateTime, GetSlot(this, CALENDAR));
   }
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const calendar = ES.ToTemporalCalendarIdentifier(calendarParam);
     return ES.CreateTemporalDateTime(GetSlot(this, ISO_DATE_TIME), calendar);
   }
   add(temporalDurationLike: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return ES.AddDurationToDateTime('add', this, temporalDurationLike, options);
   }
   subtract(
     temporalDurationLike: Params['subtract'][0],
     options: Params['subtract'][1] = undefined
   ): Return['subtract'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return ES.AddDurationToDateTime('subtract', this, temporalDurationLike, options);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return ES.DifferenceTemporalPlainDateTime('until', this, other, options);
   }
   since(other: Params['since'][0], options: Params['since'][1] = undefined): Return['since'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return ES.DifferenceTemporalPlainDateTime('since', this, other, options);
   }
   round(roundToParam: Params['round'][0]): Return['round'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
-    if (roundToParam === undefined) throw new TypeErrorCtor('options parameter is required');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
+    if (roundToParam === undefined) throw new TypeError('options parameter is required');
     const roundTo =
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
@@ -231,33 +229,33 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     return ES.CreateTemporalDateTime(result, GetSlot(this, CALENDAR));
   }
   equals(otherParam: Params['equals'][0]): Return['equals'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalDateTime(otherParam);
     if (ES.CompareISODateTime(GetSlot(this, ISO_DATE_TIME), GetSlot(other, ISO_DATE_TIME)) !== 0) return false;
     return ES.CalendarEquals(GetSlot(this, CALENDAR), GetSlot(other, CALENDAR));
   }
   toString(options: Params['toString'][0] = undefined): string {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const resolvedOptions = ES.GetOptionsObject(options);
     const showCalendar = ES.GetTemporalShowCalendarNameOption(resolvedOptions);
     const digits = ES.GetTemporalFractionalSecondDigitsOption(resolvedOptions);
     const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
     const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit', 'time', undefined);
-    if (smallestUnit === 'hour') throw new RangeErrorCtor('smallestUnit must be a time unit other than "hour"');
+    if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     const result = ES.RoundISODateTime(GetSlot(this, ISO_DATE_TIME), increment, unit, roundingMode);
     ES.RejectDateTimeRange(result);
     return ES.ISODateTimeToString(result, GetSlot(this, CALENDAR), precision, showCalendar);
   }
   toJSON(): Return['toJSON'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return ES.ISODateTimeToString(GetSlot(this, ISO_DATE_TIME), GetSlot(this, CALENDAR), 'auto');
   }
   toLocaleString(
     locales: Params['toLocaleString'][0] = undefined,
     options: Params['toLocaleString'][1] = undefined
   ): string {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return new DateTimeFormat(locales, options).format(this);
   }
   valueOf(): never {
@@ -268,7 +266,7 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     temporalTimeZoneLike: Params['toZonedDateTime'][0],
     options: Params['toZonedDateTime'][1] = undefined
   ): Return['toZonedDateTime'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     const timeZone = ES.ToTemporalTimeZoneIdentifier(temporalTimeZoneLike);
     const resolvedOptions = ES.GetOptionsObject(options);
     const disambiguation = ES.GetTemporalDisambiguationOption(resolvedOptions);
@@ -276,11 +274,11 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     return ES.CreateTemporalZonedDateTime(epochNs, timeZone, GetSlot(this, CALENDAR));
   }
   toPlainDate(): Return['toPlainDate'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return ES.CreateTemporalDate(GetSlot(this, ISO_DATE_TIME).isoDate, GetSlot(this, CALENDAR));
   }
   toPlainTime(): Return['toPlainTime'] {
-    if (!ES.IsTemporalDateTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDateTime(this)) throw new TypeError('invalid receiver');
     return ES.CreateTemporalTime(GetSlot(this, ISO_DATE_TIME).time);
   }
 

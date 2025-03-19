@@ -1,5 +1,3 @@
-import { ObjectDefineProperty, SymbolToStringTag } from './primordials';
-
 import * as ES from './ecmascript';
 import { GetIntrinsic } from './intrinsicclass';
 import type { Temporal } from '..';
@@ -44,7 +42,7 @@ export const Now: typeof Temporal.Now = {
   zonedDateTimeISO,
   [Symbol.toStringTag]: 'Temporal.Now'
 };
-ObjectDefineProperty(Now, SymbolToStringTag, {
+Object.defineProperty(Now, Symbol.toStringTag, {
   value: 'Temporal.Now',
   writable: false,
   enumerable: false,

@@ -1,16 +1,3 @@
-import {
-  MathAbs,
-  MathLog10,
-  MathSign,
-  MathTrunc,
-  NumberParseInt,
-  NumberPrototypeToPrecision,
-  ReflectApply,
-  StringPrototypePadStart,
-  StringPrototypeRepeat,
-  StringPrototypeSlice
-} from './primordials';
-
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 
@@ -23,17 +10,17 @@ export function TruncatingDivModByPowerOf10(xParam: number, p: number) {
   let x = xParam;
   if (x === 0) return { div: x, mod: x }; // preserves signed zero
 
-  const sign = MathSign(x);
-  x = MathAbs(x);
+  const sign = Math.sign(x);
+  x = Math.abs(x);
 
-  const xDigits = MathTrunc(1 + MathLog10(x));
+  const xDigits = Math.trunc(1 + Math.log10(x));
   if (p >= xDigits) return { div: sign * 0, mod: sign * x };
   if (p === 0) return { div: sign * x, mod: sign * 0 };
 
   // would perform nearest rounding if x was not an integer:
-  const xStr = ReflectApply(NumberPrototypeToPrecision, x, [xDigits]);
-  const div = sign * NumberParseInt(ReflectApply(StringPrototypeSlice, xStr, [0, xDigits - p]), 10);
-  const mod = sign * NumberParseInt(ReflectApply(StringPrototypeSlice, xStr, [xDigits - p]), 10);
+  const xStr = x.toPrecision(xDigits);
+  const div = sign * Number.parseInt(xStr.slice(0, xDigits - p), 10);
+  const mod = sign * Number.parseInt(xStr.slice(xDigits - p), 10);
 
   return { div, mod };
 }
@@ -47,18 +34,18 @@ export function FMAPowerOf10(xParam: number, p: number, zParam: number) {
   let z = zParam;
   if (x === 0) return z;
 
-  const sign = MathSign(x) || MathSign(z);
-  x = MathAbs(x);
-  z = MathAbs(z);
+  const sign = Math.sign(x) || Math.sign(z);
+  x = Math.abs(x);
+  z = Math.abs(z);
 
-  const xStr = ReflectApply(NumberPrototypeToPrecision, x, [MathTrunc(1 + MathLog10(x))]);
+  const xStr = x.toPrecision(Math.trunc(1 + Math.log10(x)));
 
-  if (z === 0) return sign * NumberParseInt(xStr + ReflectApply(StringPrototypeRepeat, '0', [p]), 10);
+  if (z === 0) return sign * Number.parseInt(xStr + '0'.repeat(p), 10);
 
-  const zStr = ReflectApply(NumberPrototypeToPrecision, z, [MathTrunc(1 + MathLog10(z))]);
+  const zStr = z.toPrecision(Math.trunc(1 + Math.log10(z)));
 
-  const resStr = xStr + ReflectApply(StringPrototypePadStart, zStr, [p, '0']);
-  return sign * NumberParseInt(resStr, 10);
+  const resStr = xStr + zStr.padStart(p, '0');
+  return sign * Number.parseInt(resStr, 10);
 }
 
 type UnsignedRoundingMode = 'half-even' | 'half-infinity' | 'half-zero' | 'infinity' | 'zero';

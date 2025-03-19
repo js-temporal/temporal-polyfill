@@ -1,20 +1,3 @@
-import {
-  // constructors and similar
-  Number as NumberCtor,
-
-  // error constructors
-  RangeError as RangeErrorCtor,
-
-  // class static functions and methods
-  ArrayPrototypeJoin,
-  ArrayPrototypePush,
-  MathAbs,
-  MathSign,
-  NumberIsInteger,
-  NumberIsSafeInteger,
-  ReflectApply
-} from './primordials';
-
 import JSBI from 'jsbi';
 
 import { assert } from './assert';
@@ -53,13 +36,13 @@ export class TimeDuration {
 
     this.sec = JSBI.toNumber(JSBI.divide(this.totalNs, BILLION));
     this.subsec = JSBI.toNumber(JSBI.remainder(this.totalNs, BILLION));
-    assert(NumberIsSafeInteger(this.sec), 'seconds too big');
-    assert(MathAbs(this.subsec) <= 999_999_999, 'subseconds too big');
+    assert(Number.isSafeInteger(this.sec), 'seconds too big');
+    assert(Math.abs(this.subsec) <= 999_999_999, 'subseconds too big');
   }
 
   static validateNew(totalNs: JSBI, operation: string) {
     if (JSBI.greaterThan(abs(totalNs), TimeDuration.MAX)) {
-      throw new RangeErrorCtor(`${operation} of duration time units cannot exceed ${TimeDuration.MAX} s`);
+      throw new RangeError(`${operation} of duration time units cannot exceed ${TimeDuration.MAX} s`);
     }
     return new TimeDuration(totalNs);
   }
@@ -96,7 +79,7 @@ export class TimeDuration {
   }
 
   add24HourDays(days: number) {
-    assert(NumberIsInteger(days), 'days must be an integer');
+    assert(Number.isInteger(days), 'days must be an integer');
     return TimeDuration.validateNew(JSBI.add(this.totalNs, JSBI.multiply(JSBI.BigInt(days), DAY_NANOS_JSBI)), 'sum');
   }
 
@@ -127,13 +110,13 @@ export class TimeDuration {
     const precision = 50;
     const decimalDigits: number[] = [];
     let digit;
-    const sign = (JSBI.lessThan(this.totalNs, ZERO) ? -1 : 1) * MathSign(JSBI.toNumber(n));
+    const sign = (JSBI.lessThan(this.totalNs, ZERO) ? -1 : 1) * Math.sign(JSBI.toNumber(n));
     while (!JSBI.equal(remainder, ZERO) && decimalDigits.length < precision) {
       remainder = JSBI.multiply(remainder, TEN);
       ({ quotient: digit, remainder } = divmod(remainder, nBigInt));
-      ReflectApply(ArrayPrototypePush, decimalDigits, [MathAbs(JSBI.toNumber(digit))]);
+      decimalDigits.push(Math.abs(JSBI.toNumber(digit)));
     }
-    return sign * NumberCtor(abs(quotient).toString() + '.' + ReflectApply(ArrayPrototypeJoin, decimalDigits, ['']));
+    return sign * Number(abs(quotient).toString() + '.' + decimalDigits.join(''));
   }
 
   isZero() {
