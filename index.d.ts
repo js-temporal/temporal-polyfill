@@ -496,6 +496,10 @@ export namespace Temporal {
 
   // Handle Intl.LocalesArgument regardless of whether the TS version has it yet
   type LocalesArgument = ConstructorParameters<typeof Intl.DateTimeFormat>[0];
+  // Provide a quick replacement for Intl.DurationFormatOptions if not in TS
+  type DurationFormatOptions = typeof Intl extends { DurationFormat: any }
+    ? ConstructorParameters<(typeof Intl)['DurationFormat']>[1]
+    : Record<string, unknown>;
 
   export type DurationLike = {
     years?: number;
@@ -555,7 +559,7 @@ export namespace Temporal {
     subtract(other: Temporal.Duration | DurationLike | string): Temporal.Duration;
     round(roundTo: DurationRoundTo): Temporal.Duration;
     total(totalOf: DurationTotalOf): number;
-    toLocaleString(locales?: LocalesArgument, options?: globalThis.Intl.DateTimeFormatOptions): string;
+    toLocaleString(locales?: LocalesArgument, options?: DurationFormatOptions): string;
     toJSON(): string;
     toString(options?: ToStringPrecisionOptions): string;
     valueOf(): never;
