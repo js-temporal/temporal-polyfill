@@ -57,7 +57,7 @@ export class TimeDuration {
     assert(MathAbs(this.subsec) <= 999_999_999, 'subseconds too big');
   }
 
-  static #validateNew(totalNs: JSBI, operation: string) {
+  static validateNew(totalNs: JSBI, operation: string) {
     if (JSBI.greaterThan(abs(totalNs), TimeDuration.MAX)) {
       throw new RangeErrorCtor(`${operation} of duration time units cannot exceed ${TimeDuration.MAX} s`);
     }
@@ -84,7 +84,7 @@ export class TimeDuration {
       ),
       JSBI.multiply(JSBI.BigInt(h), HOUR_NANOS)
     );
-    return TimeDuration.#validateNew(totalNs, 'total');
+    return TimeDuration.validateNew(totalNs, 'total');
   }
 
   abs() {
@@ -92,12 +92,12 @@ export class TimeDuration {
   }
 
   add(other: TimeDuration) {
-    return TimeDuration.#validateNew(JSBI.add(this.totalNs, other.totalNs), 'sum');
+    return TimeDuration.validateNew(JSBI.add(this.totalNs, other.totalNs), 'sum');
   }
 
   add24HourDays(days: number) {
     assert(NumberIsInteger(days), 'days must be an integer');
-    return TimeDuration.#validateNew(JSBI.add(this.totalNs, JSBI.multiply(JSBI.BigInt(days), DAY_NANOS_JSBI)), 'sum');
+    return TimeDuration.validateNew(JSBI.add(this.totalNs, JSBI.multiply(JSBI.BigInt(days), DAY_NANOS_JSBI)), 'sum');
   }
 
   addToEpochNs(epochNs: JSBI | bigint) {
@@ -153,7 +153,7 @@ export class TimeDuration {
       ? r1
       : ApplyUnsignedRoundingMode(r1, r2, cmp, isEven(quotient), unsignedRoundingMode);
     const result = sign === 'positive' ? rounded : JSBI.unaryMinus(rounded);
-    return TimeDuration.#validateNew(result, 'rounding');
+    return TimeDuration.validateNew(result, 'rounding');
   }
 
   sign() {
@@ -161,6 +161,6 @@ export class TimeDuration {
   }
 
   subtract(other: TimeDuration) {
-    return TimeDuration.#validateNew(JSBI.subtract(this.totalNs, other.totalNs), 'difference');
+    return TimeDuration.validateNew(JSBI.subtract(this.totalNs, other.totalNs), 'difference');
   }
 }
