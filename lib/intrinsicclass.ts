@@ -1,14 +1,3 @@
-import {
-  ArrayPrototypeJoin,
-  ArrayPrototypePush,
-  ObjectDefineProperty,
-  ObjectGetOwnPropertyDescriptor,
-  ObjectGetOwnPropertyNames,
-  ReflectApply,
-  SymbolFor,
-  SymbolToStringTag
-} from './primordials';
-
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type { CalendarImpl } from './calendar';
@@ -94,10 +83,10 @@ const customUtilInspectFormatters: Partial<{
     for (let i = 0; i < props.length; i++) {
       const prop = props[i];
       if (this[prop] !== 0) {
-        ReflectApply(ArrayPrototypePush, entries, [`  ${prop}: ${options.stylize(this[prop], 'number')}`]);
+        entries.push(`  ${prop}: ${options.stylize(this[prop], 'number')}`);
       }
     }
-    return descr + ' {\n' + ReflectApply(ArrayPrototypeJoin, entries, [',\n']) + '\n}';
+    return descr + ' {\n' + entries.join(',\n') + '\n}';
   }
 };
 
@@ -110,31 +99,31 @@ export function MakeIntrinsicClass(
   Class: TemporalIntrinsicRegistrations[typeof name],
   name: keyof TemporalIntrinsicRegistrations
 ) {
-  ObjectDefineProperty(Class.prototype, SymbolToStringTag, {
+  Object.defineProperty(Class.prototype, Symbol.toStringTag, {
     value: name,
     writable: false,
     enumerable: false,
     configurable: true
   });
   if (DEBUG) {
-    ObjectDefineProperty(Class.prototype, SymbolFor('nodejs.util.inspect.custom'), {
+    Object.defineProperty(Class.prototype, Symbol.for('nodejs.util.inspect.custom'), {
       value: customUtilInspectFormatters[name] || defaultUtilInspectFormatter,
       writable: false,
       enumerable: false,
       configurable: true
     });
   }
-  const staticNames = ObjectGetOwnPropertyNames(Class);
+  const staticNames = Object.getOwnPropertyNames(Class);
   for (let i = 0; i < staticNames.length; i++) {
     const prop = staticNames[i];
     // we know that `prop` is present, so the descriptor is never undefined
     // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    const desc = ObjectGetOwnPropertyDescriptor(Class, prop)!;
+    const desc = Object.getOwnPropertyDescriptor(Class, prop)!;
     if (!desc.configurable || !desc.enumerable) continue;
     desc.enumerable = false;
     Object.defineProperty(Class, prop, desc);
   }
-  const protoNames = ObjectGetOwnPropertyNames(Class.prototype);
+  const protoNames = Object.getOwnPropertyNames(Class.prototype);
   for (let i = 0; i < protoNames.length; i++) {
     const prop = protoNames[i];
     // we know that `prop` is present, so the descriptor is never undefined

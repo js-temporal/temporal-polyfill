@@ -1,5 +1,3 @@
-import { DatePrototypeValueOf, ReflectApply } from './primordials';
-
 import { Instant } from './instant';
 
 import JSBI from 'jsbi';
@@ -14,7 +12,7 @@ import { MILLION } from './bigintmath';
 
 class LegacyDateImpl {
   toTemporalInstant(this: Date) {
-    const epochNanoseconds = JSBI.multiply(JSBI.BigInt(ReflectApply(DatePrototypeValueOf, this, [])), MILLION);
+    const epochNanoseconds = JSBI.multiply(JSBI.BigInt(Date.prototype.valueOf.call(this)), MILLION);
     return new Instant(epochNanoseconds);
   }
 }

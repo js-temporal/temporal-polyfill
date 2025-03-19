@@ -1,5 +1,3 @@
-import { TypeError as TypeErrorCtor } from './primordials';
-
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import { CALENDAR, GetSlot, ISO_DATE } from './slots';
@@ -24,22 +22,22 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   }
 
   get monthCode(): Return['monthCode'] {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE);
     return ES.calendarImplForObj(this).isoToDate(isoDate, { monthCode: true }).monthCode;
   }
   get day(): Return['day'] {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE);
     return ES.calendarImplForObj(this).isoToDate(isoDate, { day: true }).day;
   }
   get calendarId(): Return['calendarId'] {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, CALENDAR);
   }
 
   with(temporalMonthDayLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(temporalMonthDayLike)) {
       throw new TypeError('invalid argument');
     }
@@ -61,33 +59,33 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     return ES.CreateTemporalMonthDay(isoDate, calendar);
   }
   equals(otherParam: Params['equals'][0]): Return['equals'] {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalMonthDay(otherParam);
     if (ES.CompareISODate(GetSlot(this, ISO_DATE), GetSlot(other, ISO_DATE)) !== 0) return false;
     return ES.CalendarEquals(GetSlot(this, CALENDAR), GetSlot(other, CALENDAR));
   }
   toString(options: Params['toString'][0] = undefined): string {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     const resolvedOptions = ES.GetOptionsObject(options);
     const showCalendar = ES.GetTemporalShowCalendarNameOption(resolvedOptions);
     return ES.TemporalMonthDayToString(this, showCalendar);
   }
   toJSON(): Return['toJSON'] {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     return ES.TemporalMonthDayToString(this);
   }
   toLocaleString(
     locales: Params['toLocaleString'][0] = undefined,
     options: Params['toLocaleString'][1] = undefined
   ): string {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     return new DateTimeFormat(locales, options).format(this);
   }
   valueOf(): never {
     ES.ValueOfThrows('PlainMonthDay');
   }
   toPlainDate(item: Params['toPlainDate'][0]): Return['toPlainDate'] {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(item)) throw new TypeError('argument should be an object');
     const calendar = GetSlot(this, CALENDAR);
 

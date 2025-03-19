@@ -1,19 +1,3 @@
-import {
-  // constructors and similar
-  IntlDurationFormat,
-
-  // error constructors
-  RangeError as RangeErrorCtor,
-  TypeError as TypeErrorCtor,
-
-  // class static functions and methods
-  MathAbs,
-  ObjectDefineProperty,
-
-  // miscellaneous
-  warn
-} from './primordials';
-
 import { DEBUG } from './debug';
 import { assert } from './assert';
 import * as ES from './ecmascript';
@@ -82,7 +66,7 @@ export class Duration implements Temporal.Duration {
     SetSlot(this, NANOSECONDS, nanoseconds);
 
     if (DEBUG) {
-      ObjectDefineProperty(this, '_repr_', {
+      Object.defineProperty(this, '_repr_', {
         value: `Temporal.Duration <${ES.TemporalDurationToString(this, 'auto')}>`,
         writable: false,
         enumerable: false,
@@ -91,55 +75,55 @@ export class Duration implements Temporal.Duration {
     }
   }
   get years(): Return['years'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, YEARS);
   }
   get months(): Return['months'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, MONTHS);
   }
   get weeks(): Return['weeks'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, WEEKS);
   }
   get days(): Return['days'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, DAYS);
   }
   get hours(): Return['hours'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, HOURS);
   }
   get minutes(): Return['minutes'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, MINUTES);
   }
   get seconds(): Return['seconds'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, SECONDS);
   }
   get milliseconds(): Return['milliseconds'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, MILLISECONDS);
   }
   get microseconds(): Return['microseconds'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, MICROSECONDS);
   }
   get nanoseconds(): Return['nanoseconds'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, NANOSECONDS);
   }
   get sign(): Return['sign'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return ES.DurationSign(this);
   }
   get blank(): Return['blank'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return ES.DurationSign(this) === 0;
   }
   with(durationLike: Params['with'][0]): Return['with'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     const partialDuration = ES.ToTemporalPartialDurationRecord(durationLike);
     const {
       years = GetSlot(this, YEARS),
@@ -156,35 +140,35 @@ export class Duration implements Temporal.Duration {
     return new Duration(years, months, weeks, days, hours, minutes, seconds, milliseconds, microseconds, nanoseconds);
   }
   negated(): Return['negated'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return ES.CreateNegatedTemporalDuration(this);
   }
   abs(): Return['abs'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return new Duration(
-      MathAbs(GetSlot(this, YEARS)),
-      MathAbs(GetSlot(this, MONTHS)),
-      MathAbs(GetSlot(this, WEEKS)),
-      MathAbs(GetSlot(this, DAYS)),
-      MathAbs(GetSlot(this, HOURS)),
-      MathAbs(GetSlot(this, MINUTES)),
-      MathAbs(GetSlot(this, SECONDS)),
-      MathAbs(GetSlot(this, MILLISECONDS)),
-      MathAbs(GetSlot(this, MICROSECONDS)),
-      MathAbs(GetSlot(this, NANOSECONDS))
+      Math.abs(GetSlot(this, YEARS)),
+      Math.abs(GetSlot(this, MONTHS)),
+      Math.abs(GetSlot(this, WEEKS)),
+      Math.abs(GetSlot(this, DAYS)),
+      Math.abs(GetSlot(this, HOURS)),
+      Math.abs(GetSlot(this, MINUTES)),
+      Math.abs(GetSlot(this, SECONDS)),
+      Math.abs(GetSlot(this, MILLISECONDS)),
+      Math.abs(GetSlot(this, MICROSECONDS)),
+      Math.abs(GetSlot(this, NANOSECONDS))
     );
   }
   add(other: Params['add'][0]): Return['add'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return ES.AddDurations('add', this, other);
   }
   subtract(other: Params['subtract'][0]): Return['subtract'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return ES.AddDurations('subtract', this, other);
   }
   round(roundToParam: Params['round'][0]): Return['round'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
-    if (roundToParam === undefined) throw new TypeErrorCtor('options parameter is required');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
+    if (roundToParam === undefined) throw new TypeError('options parameter is required');
 
     const existingLargestUnit = ES.DefaultTemporalLargestUnit(this);
     const roundTo =
@@ -211,10 +195,10 @@ export class Duration implements Temporal.Duration {
     }
     if (largestUnit === 'auto') largestUnit = defaultLargestUnit;
     if (!smallestUnitPresent && !largestUnitPresent) {
-      throw new RangeErrorCtor('at least one of smallestUnit or largestUnit is required');
+      throw new RangeError('at least one of smallestUnit or largestUnit is required');
     }
     if (ES.LargerOfTwoTemporalUnits(largestUnit, smallestUnit) !== largestUnit) {
-      throw new RangeErrorCtor(`largestUnit ${largestUnit} cannot be smaller than smallestUnit ${smallestUnit}`);
+      throw new RangeError(`largestUnit ${largestUnit} cannot be smaller than smallestUnit ${smallestUnit}`);
     }
 
     const maximumIncrements = {
@@ -228,7 +212,7 @@ export class Duration implements Temporal.Duration {
     const maximum = maximumIncrements[smallestUnit];
     if (maximum !== undefined) ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximum, false);
     if (roundingIncrement > 1 && ES.TemporalUnitCategory(smallestUnit) === 'date' && largestUnit !== smallestUnit) {
-      throw new RangeErrorCtor('For calendar units with roundingIncrement > 1, use largestUnit = smallestUnit');
+      throw new RangeError('For calendar units with roundingIncrement > 1, use largestUnit = smallestUnit');
     }
 
     if (zonedRelativeTo) {
@@ -277,10 +261,10 @@ export class Duration implements Temporal.Duration {
 
     // No reference date to calculate difference relative to
     if (ES.IsCalendarUnit(existingLargestUnit)) {
-      throw new RangeErrorCtor(`a starting point is required for ${existingLargestUnit}s balancing`);
+      throw new RangeError(`a starting point is required for ${existingLargestUnit}s balancing`);
     }
     if (ES.IsCalendarUnit(largestUnit)) {
-      throw new RangeErrorCtor(`a starting point is required for ${largestUnit}s balancing`);
+      throw new RangeError(`a starting point is required for ${largestUnit}s balancing`);
     }
     assert(!ES.IsCalendarUnit(smallestUnit), 'smallestUnit was larger than largestUnit');
     let internalDuration = ES.ToInternalDurationRecordWith24HourDays(this);
@@ -298,9 +282,9 @@ export class Duration implements Temporal.Duration {
     return ES.TemporalDurationFromInternal(internalDuration, largestUnit);
   }
   total(optionsParam: Params['total'][0]): Return['total'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
 
-    if (optionsParam === undefined) throw new TypeErrorCtor('options argument is required');
+    if (optionsParam === undefined) throw new TypeError('options argument is required');
     const options =
       typeof optionsParam === 'string'
         ? (ES.CreateOnePropObject('unit', optionsParam) as Exclude<typeof optionsParam, string>)
@@ -335,22 +319,22 @@ export class Duration implements Temporal.Duration {
     // No reference date to calculate difference relative to
     const largestUnit = ES.DefaultTemporalLargestUnit(this);
     if (ES.IsCalendarUnit(largestUnit)) {
-      throw new RangeErrorCtor(`a starting point is required for ${largestUnit}s total`);
+      throw new RangeError(`a starting point is required for ${largestUnit}s total`);
     }
     if (ES.IsCalendarUnit(unit)) {
-      throw new RangeErrorCtor(`a starting point is required for ${unit}s total`);
+      throw new RangeError(`a starting point is required for ${unit}s total`);
     }
     const duration = ES.ToInternalDurationRecordWith24HourDays(this);
     return ES.TotalTimeDuration(duration.time, unit);
   }
   toString(options: Params['toString'][0] = undefined): string {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     const resolvedOptions = ES.GetOptionsObject(options);
     const digits = ES.GetTemporalFractionalSecondDigitsOption(resolvedOptions);
     const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
     const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit', 'time', undefined);
     if (smallestUnit === 'hour' || smallestUnit === 'minute') {
-      throw new RangeErrorCtor('smallestUnit must be a time unit other than "hours" or "minutes"');
+      throw new RangeError('smallestUnit must be a time unit other than "hours" or "minutes"');
     }
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     ES.uncheckedAssertNarrowedType<Exclude<typeof precision, 'minute'>>(
@@ -371,19 +355,19 @@ export class Duration implements Temporal.Duration {
     return ES.TemporalDurationToString(roundedDuration, precision);
   }
   toJSON(): Return['toJSON'] {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
     return ES.TemporalDurationToString(this, 'auto');
   }
   toLocaleString(
     locales: Params['toLocaleString'][0] = undefined,
     options: Params['toLocaleString'][1] = undefined
   ): string {
-    if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
-    if (typeof IntlDurationFormat === 'function') {
-      const formatter = new IntlDurationFormat(locales, options as Intl.DurationFormatOptions);
-      return ES.Call(ModifiedIntlDurationFormatPrototypeFormat, formatter, [this]);
+    if (!ES.IsTemporalDuration(this)) throw new TypeError('invalid receiver');
+    if (typeof Intl.DurationFormat === 'function') {
+      const formatter = new Intl.DurationFormat(locales, options as Intl.DurationFormatOptions);
+      return ModifiedIntlDurationFormatPrototypeFormat.call(formatter, this);
     }
-    warn('Temporal.Duration.prototype.toLocaleString() requires Intl.DurationFormat.');
+    console.warn('Temporal.Duration.prototype.toLocaleString() requires Intl.DurationFormat.');
     return ES.TemporalDurationToString(this, 'auto');
   }
   valueOf(): never {
@@ -439,7 +423,7 @@ export class Duration implements Temporal.Duration {
     let d2 = duration2.date.days;
     if (ES.IsCalendarUnit(largestUnit1) || ES.IsCalendarUnit(largestUnit2)) {
       if (!plainRelativeTo) {
-        throw new RangeErrorCtor('A starting point is required for years, months, or weeks comparison');
+        throw new RangeError('A starting point is required for years, months, or weeks comparison');
       }
       d1 = ES.DateDurationDays(duration1.date, plainRelativeTo);
       d2 = ES.DateDurationDays(duration2.date, plainRelativeTo);

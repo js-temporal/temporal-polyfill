@@ -1,14 +1,3 @@
-import {
-  WeakMap as WeakMapCtor,
-
-  // class static functions and methods
-  ArrayPrototypeEvery,
-  ReflectApply,
-  SymbolFor,
-  WeakMapPrototypeGet,
-  WeakMapPrototypeSet
-} from './primordials';
-
 import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type {
@@ -171,13 +160,13 @@ interface SlotsToTypes {
 
 type SlotKey = keyof SlotsToTypes;
 
-const globalSlots = new WeakMapCtor<Slots[keyof Slots]['usedBy'], Record<keyof Slots, Slots[keyof Slots]['value']>>();
+const globalSlots = new WeakMap<Slots[keyof Slots]['usedBy'], Record<keyof Slots, Slots[keyof Slots]['value']>>();
 
 function _GetSlots(container: Slots[keyof Slots]['usedBy']) {
-  return ReflectApply(WeakMapPrototypeGet, globalSlots, [container]);
+  return globalSlots.get(container);
 }
 
-const GetSlotsSymbol = SymbolFor('@@Temporal__GetSlots');
+const GetSlotsSymbol = Symbol.for('@@Temporal__GetSlots');
 
 // expose GetSlots to avoid dual package hazards
 (globalThis as any)[GetSlotsSymbol] ||= _GetSlots;
@@ -185,10 +174,10 @@ const GetSlotsSymbol = SymbolFor('@@Temporal__GetSlots');
 const GetSlots = (globalThis as any)[GetSlotsSymbol] as typeof _GetSlots;
 
 function _CreateSlots(container: Slots[keyof Slots]['usedBy']): void {
-  ReflectApply(WeakMapPrototypeSet, globalSlots, [container, Object.create(null)]);
+  globalSlots.set(container, Object.create(null));
 }
 
-const CreateSlotsSymbol = SymbolFor('@@Temporal__CreateSlots');
+const CreateSlotsSymbol = Symbol.for('@@Temporal__CreateSlots');
 
 // expose CreateSlots to avoid dual package hazards
 (globalThis as any)[CreateSlotsSymbol] ||= _CreateSlots;
@@ -309,7 +298,7 @@ export function HasSlot<
 export function HasSlot(container: unknown, ...ids: (keyof Slots)[]): boolean {
   if (!container || 'object' !== typeof container) return false;
   const myslots = GetSlots(container as AnySlottedType);
-  return !!myslots && ReflectApply(ArrayPrototypeEvery, ids, [(id) => id in myslots]);
+  return !!myslots && ids.every((id) => id in myslots);
 }
 export function GetSlot<KeyT extends keyof Slots>(
   container: Slots[typeof id]['usedBy'],

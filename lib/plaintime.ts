@@ -1,12 +1,3 @@
-import {
-  // error constructors
-  RangeError as RangeErrorCtor,
-  TypeError as TypeErrorCtor,
-
-  // class static functions and methods
-  ObjectAssign
-} from './primordials';
-
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 
@@ -31,32 +22,32 @@ export class PlainTime implements Temporal.PlainTime {
   }
 
   get hour(): Return['hour'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, TIME).hour;
   }
   get minute(): Return['minute'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, TIME).minute;
   }
   get second(): Return['second'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, TIME).second;
   }
   get millisecond(): Return['millisecond'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, TIME).millisecond;
   }
   get microsecond(): Return['microsecond'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, TIME).microsecond;
   }
   get nanosecond(): Return['nanosecond'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, TIME).nanosecond;
   }
 
   with(temporalTimeLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     if (!ES.IsObject(temporalTimeLike)) {
       throw new TypeError('invalid argument');
     }
@@ -65,7 +56,7 @@ export class PlainTime implements Temporal.PlainTime {
     const partialTime = ES.ToTemporalTimeRecord(temporalTimeLike, 'partial');
 
     const fields = ES.ToTemporalTimeRecord(this);
-    let { hour, minute, second, millisecond, microsecond, nanosecond } = ObjectAssign(fields, partialTime);
+    let { hour, minute, second, millisecond, microsecond, nanosecond } = Object.assign(fields, partialTime);
     const overflow = ES.GetTemporalOverflowOption(ES.GetOptionsObject(options));
     ({ hour, minute, second, millisecond, microsecond, nanosecond } = ES.RegulateTime(
       hour,
@@ -79,24 +70,24 @@ export class PlainTime implements Temporal.PlainTime {
     return new PlainTime(hour, minute, second, millisecond, microsecond, nanosecond);
   }
   add(temporalDurationLike: Params['add'][0]): Return['add'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return ES.AddDurationToTime('add', this, temporalDurationLike);
   }
   subtract(temporalDurationLike: Params['subtract'][0]): Return['subtract'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return ES.AddDurationToTime('subtract', this, temporalDurationLike);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return ES.DifferenceTemporalPlainTime('until', this, other, options);
   }
   since(other: Params['since'][0], options: Params['since'][1] = undefined): Return['since'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return ES.DifferenceTemporalPlainTime('since', this, other, options);
   }
   round(roundToParam: Params['round'][0]): Return['round'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
-    if (roundToParam === undefined) throw new TypeErrorCtor('options parameter is required');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
+    if (roundToParam === undefined) throw new TypeError('options parameter is required');
     const roundTo =
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
@@ -118,31 +109,31 @@ export class PlainTime implements Temporal.PlainTime {
     return ES.CreateTemporalTime(time);
   }
   equals(otherParam: Params['equals'][0]): Return['equals'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     const other = ES.ToTemporalTime(otherParam);
     return ES.CompareTimeRecord(GetSlot(this, TIME), GetSlot(other, TIME)) === 0;
   }
 
   toString(options: Params['toString'][0] = undefined): string {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     const resolvedOptions = ES.GetOptionsObject(options);
     const digits = ES.GetTemporalFractionalSecondDigitsOption(resolvedOptions);
     const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
     const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit', 'time', undefined);
-    if (smallestUnit === 'hour') throw new RangeErrorCtor('smallestUnit must be a time unit other than "hour"');
+    if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     const time = ES.RoundTime(GetSlot(this, TIME), increment, unit, roundingMode);
     return ES.TimeRecordToString(time, precision);
   }
   toJSON(): Return['toJSON'] {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return ES.TimeRecordToString(GetSlot(this, TIME), 'auto');
   }
   toLocaleString(
     locales: Params['toLocaleString'][0] = undefined,
     options: Params['toLocaleString'][1] = undefined
   ): string {
-    if (!ES.IsTemporalTime(this)) throw new TypeErrorCtor('invalid receiver');
+    if (!ES.IsTemporalTime(this)) throw new TypeError('invalid receiver');
     return new DateTimeFormat(locales, options).format(this);
   }
   valueOf(): never {
