@@ -380,7 +380,7 @@ export class Duration implements Temporal.Duration {
   ): string {
     if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
     if (typeof IntlDurationFormat === 'function') {
-      const formatter = new IntlDurationFormat(locales, options);
+      const formatter = new IntlDurationFormat(locales, options as Intl.DurationFormatOptions);
       return ES.Call(ModifiedIntlDurationFormatPrototypeFormat, formatter, [this]);
     }
     warn('Temporal.Duration.prototype.toLocaleString() requires Intl.DurationFormat.');

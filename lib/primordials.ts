@@ -1,5 +1,4 @@
-import type { Temporal } from '..';
-import type { DateTimeFormatParams, DurationParams } from './internaltypes';
+import type { DateTimeFormatParams } from './internaltypes';
 
 // Constructor Properties of the Global Object
 export const { Date, Map, Number, RegExp, Set, String, Symbol, WeakMap } = globalThis;
@@ -57,17 +56,11 @@ export const {
   },
   UTC: DateUTC
 } = Date;
-export type MaybeDurationFormat = {
-  new (locales: DurationParams['toLocaleString'][0], options: DurationParams['toLocaleString'][1]): MaybeDurationFormat;
-  format(d: Temporal.Duration): string;
-  formatToParts(d: Temporal.Duration): object;
-  resolvedOptions(): object;
-};
 export const {
   supportedValuesOf: IntlSupportedValuesOf,
   DateTimeFormat: IntlDateTimeFormat,
   DurationFormat: IntlDurationFormat
-} = Intl as typeof Intl & { DurationFormat?: MaybeDurationFormat };
+} = Intl;
 export const { get: IntlDateTimeFormatPrototypeGetFormat } = ObjectGetOwnPropertyDescriptor(
   IntlDateTimeFormat.prototype,
   'format'
@@ -85,7 +78,7 @@ export const {
   format: IntlDurationFormatPrototypeFormat,
   formatToParts: IntlDurationFormatPrototypeFormatToParts,
   resolvedOptions: IntlDurationFormatPrototypeResolvedOptions
-} = IntlDurationFormatPrototype as MaybeDurationFormat;
+} = IntlDurationFormatPrototype;
 export const { stringify: JSONStringify } = JSON;
 export const {
   prototype: { get: MapPrototypeGet, set: MapPrototypeSet }

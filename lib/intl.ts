@@ -20,8 +20,7 @@ import {
   ObjectDefineProperty,
   ObjectKeys,
   ObjectPrototypeHasOwnProperty,
-  ReflectApply,
-  type MaybeDurationFormat
+  ReflectApply
 } from './primordials';
 
 import { assert } from './assert';
@@ -756,7 +755,7 @@ function temporalDurationToCompatibilityRecord(duration: Temporal.Duration) {
 }
 
 export function ModifiedIntlDurationFormatPrototypeFormat(
-  this: MaybeDurationFormat,
+  this: Intl.DurationFormat,
   durationLike: Temporal.DurationLike
 ) {
   ES.Call(IntlDurationFormatPrototypeResolvedOptions, this, []); // brand check
@@ -768,7 +767,7 @@ export function ModifiedIntlDurationFormatPrototypeFormat(
 if (IntlDurationFormatPrototype) {
   IntlDurationFormatPrototype.format = ModifiedIntlDurationFormatPrototypeFormat;
   IntlDurationFormatPrototype.formatToParts = function formatToParts(
-    this: MaybeDurationFormat,
+    this: Intl.DurationFormat,
     durationLike: Temporal.DurationLike
   ) {
     ES.Call(IntlDurationFormatPrototypeResolvedOptions, this, []); // brand check
