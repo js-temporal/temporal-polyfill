@@ -67,12 +67,12 @@ export class PlainDate implements Temporal.PlainDate {
   get weekOfYear(): Return['weekOfYear'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { weekOfYear: true }).weekOfYear.week;
+    return ES.calendarImplForObj(this).isoToDate(isoDate, { weekOfYear: true }).weekOfYear?.week;
   }
   get yearOfWeek(): Return['weekOfYear'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
     const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { weekOfYear: true }).weekOfYear.year;
+    return ES.calendarImplForObj(this).isoToDate(isoDate, { weekOfYear: true }).weekOfYear?.year;
   }
   get daysInWeek(): Return['daysInWeek'] {
     if (!ES.IsTemporalDate(this)) throw new TypeError('invalid receiver');
