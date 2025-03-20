@@ -3,7 +3,11 @@ import { MakeIntrinsicClass } from './intrinsicclass';
 import { CALENDAR, GetSlot, ISO_DATE } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
-import type { PlainYearMonthParams as Params, PlainYearMonthReturn as Return } from './internaltypes';
+import type {
+  CalendarDateRecord,
+  PlainYearMonthParams as Params,
+  PlainYearMonthReturn as Return
+} from './internaltypes';
 
 export class PlainYearMonth implements Temporal.PlainYearMonth {
   constructor(
@@ -21,53 +25,35 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     ES.CreateTemporalYearMonthSlots(this, { year, month, day }, calendar);
   }
   get year(): Return['year'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { year: true }).year;
+    return getCalendarProperty(this, 'year');
   }
   get month(): Return['month'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { month: true }).month;
+    return getCalendarProperty(this, 'month');
   }
   get monthCode(): Return['monthCode'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { monthCode: true }).monthCode;
+    return getCalendarProperty(this, 'monthCode');
   }
   get calendarId(): Return['calendarId'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
     return GetSlot(this, CALENDAR);
   }
   get era(): Return['era'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { era: true }).era;
+    return getCalendarProperty(this, 'era');
   }
   get eraYear(): Return['eraYear'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { eraYear: true }).eraYear;
+    return getCalendarProperty(this, 'eraYear');
   }
   get daysInMonth(): Return['daysInMonth'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { daysInMonth: true }).daysInMonth;
+    return getCalendarProperty(this, 'daysInMonth');
   }
   get daysInYear(): Return['daysInYear'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { daysInYear: true }).daysInYear;
+    return getCalendarProperty(this, 'daysInYear');
   }
   get monthsInYear(): Return['monthsInYear'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { monthsInYear: true }).monthsInYear;
+    return getCalendarProperty(this, 'monthsInYear');
   }
   get inLeapYear(): Return['inLeapYear'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { inLeapYear: true }).inLeapYear;
+    return getCalendarProperty(this, 'inLeapYear');
   }
   with(temporalYearMonthLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
     if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
@@ -160,3 +146,12 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
 }
 
 MakeIntrinsicClass(PlainYearMonth, 'Temporal.PlainYearMonth');
+
+function getCalendarProperty<P extends keyof CalendarDateRecord>(
+  ym: Temporal.PlainYearMonth,
+  prop: P
+): CalendarDateRecord[P] {
+  if (!ES.IsTemporalYearMonth(ym)) throw new TypeError('invalid receiver');
+  const isoDate = GetSlot(ym, ISO_DATE);
+  return ES.calendarImplForObj(ym).isoToDate(isoDate, { [prop]: true })[prop];
+}

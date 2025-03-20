@@ -3,6 +3,7 @@ import { DefineIntrinsic } from './intrinsicclass';
 import type { Temporal } from '..';
 import type {
   BuiltinCalendarId,
+  CalendarDateRecord,
   CalendarFieldsRecord,
   CalendarYMD,
   DateDuration,
@@ -86,23 +87,6 @@ function ISODateSurpasses(sign: -1 | 0 | 1, y1: number, m1: number, d1: number, 
     if (sign * (d1 - isoDate2.day) > 0) return true;
   }
   return false;
-}
-
-interface CalendarDateRecord {
-  era: string | undefined;
-  eraYear: number | undefined;
-  year: number;
-  month: number;
-  monthCode: string;
-  day: number;
-  dayOfWeek: number;
-  dayOfYear: number;
-  weekOfYear: { week: number; year: number } | undefined;
-  daysInWeek: number;
-  daysInMonth: number;
-  daysInYear: number;
-  monthsInYear: number;
-  inLeapYear: boolean;
 }
 
 type ResolveFieldsReturn<Type extends ISODateToFieldsType> = Resolve<
