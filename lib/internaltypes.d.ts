@@ -176,6 +176,23 @@ export type Overflow = NonNullable<Temporal.AssignmentOptions['overflow']>;
 
 export type ISODateToFieldsType = 'date' | 'year-month' | 'month-day';
 
+export interface CalendarDateRecord {
+  era: string | undefined;
+  eraYear: number | undefined;
+  year: number;
+  month: number;
+  monthCode: string;
+  day: number;
+  dayOfWeek: number;
+  dayOfYear: number;
+  weekOfYear: { week: number; year: number } | undefined;
+  daysInWeek: number;
+  daysInMonth: number;
+  daysInYear: number;
+  monthsInYear: number;
+  inLeapYear: boolean;
+}
+
 export interface CalendarFieldsRecord {
   era?: string;
   eraYear?: number;

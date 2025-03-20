@@ -3,7 +3,7 @@ import { MakeIntrinsicClass } from './intrinsicclass';
 import { CALENDAR, GetSlot, ISO_DATE } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
-import type { PlainMonthDayParams as Params, PlainMonthDayReturn as Return } from './internaltypes';
+import type { CalendarDateRecord, PlainMonthDayParams as Params, PlainMonthDayReturn as Return } from './internaltypes';
 
 export class PlainMonthDay implements Temporal.PlainMonthDay {
   constructor(
@@ -22,14 +22,10 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
   }
 
   get monthCode(): Return['monthCode'] {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { monthCode: true }).monthCode;
+    return getCalendarProperty(this, 'monthCode');
   }
   get day(): Return['day'] {
-    if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
-    const isoDate = GetSlot(this, ISO_DATE);
-    return ES.calendarImplForObj(this).isoToDate(isoDate, { day: true }).day;
+    return getCalendarProperty(this, 'day');
   }
   get calendarId(): Return['calendarId'] {
     if (!ES.IsTemporalMonthDay(this)) throw new TypeError('invalid receiver');
@@ -103,3 +99,12 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
 }
 
 MakeIntrinsicClass(PlainMonthDay, 'Temporal.PlainMonthDay');
+
+function getCalendarProperty<P extends keyof CalendarDateRecord>(
+  md: Temporal.PlainMonthDay,
+  prop: P
+): CalendarDateRecord[P] {
+  if (!ES.IsTemporalMonthDay(md)) throw new TypeError('invalid receiver');
+  const isoDate = GetSlot(md, ISO_DATE);
+  return ES.calendarImplForObj(md).isoToDate(isoDate, { [prop]: true })[prop];
+}
