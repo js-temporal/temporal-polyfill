@@ -18,17 +18,12 @@ function arrayFromSet<T>(src: Set<T>): T[] {
   return [...src];
 }
 
-function calendarDateWeekOfYear(
-  id: BuiltinCalendarId,
-  isoDate: ISODate
-): { week: number; year: number } | { week: undefined; year: undefined } {
+function calendarDateWeekOfYear(id: BuiltinCalendarId, isoDate: ISODate): { week: number; year: number } | undefined {
   // Supports only Gregorian and ISO8601 calendar; can be updated to add support for other calendars.
   // Returns undefined for calendars without a well-defined week calendar system.
   // eslint-disable-next-line max-len
   // Also see: https://github.com/unicode-org/icu/blob/ab72ab1d4a3c3f9beeb7d92b0c7817ca93dfdb04/icu4c/source/i18n/calendar.cpp#L1606
-  if (id !== 'gregory' && id !== 'iso8601') {
-    return { week: undefined, year: undefined };
-  }
+  if (id !== 'gregory' && id !== 'iso8601') return undefined;
   const calendar = impl[id];
   let yow = isoDate.year;
   const { dayOfWeek, dayOfYear, daysInYear } = calendar.isoToDate(isoDate, {
@@ -102,7 +97,7 @@ interface CalendarDateRecord {
   day: number;
   dayOfWeek: number;
   dayOfYear: number;
-  weekOfYear: { week: number; year: number } | { week: undefined; year: undefined };
+  weekOfYear: { week: number; year: number } | undefined;
   daysInWeek: number;
   daysInMonth: number;
   daysInYear: number;

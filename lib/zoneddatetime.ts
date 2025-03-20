@@ -108,11 +108,11 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
   get weekOfYear(): Return['weekOfYear'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
-    return ES.calendarImplForObj(this).isoToDate(dateTime(this).isoDate, { weekOfYear: true }).weekOfYear.week;
+    return ES.calendarImplForObj(this).isoToDate(dateTime(this).isoDate, { weekOfYear: true }).weekOfYear?.week;
   }
   get yearOfWeek(): Return['yearOfWeek'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
-    return ES.calendarImplForObj(this).isoToDate(dateTime(this).isoDate, { weekOfYear: true }).weekOfYear.year;
+    return ES.calendarImplForObj(this).isoToDate(dateTime(this).isoDate, { weekOfYear: true }).weekOfYear?.year;
   }
   get hoursInDay(): Return['hoursInDay'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeError('invalid receiver');
