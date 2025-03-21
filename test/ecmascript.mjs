@@ -8,6 +8,7 @@ import { strict as assert } from 'assert';
 const { deepEqual, throws, equal } = assert;
 
 import * as ES from '../lib/ecmascript';
+import { F128 } from '../lib/float128';
 
 import { readFileSync } from 'fs';
 
@@ -384,7 +385,7 @@ describe('ECMAScript', () => {
       // Normally, this would have been done upstream by another part of the
       // Temporal APIs, but since we are directly calling into the ES function
       // we must convert in the test instead.
-      const nanosAsBigIntInternal = ES.ToBigInt(nanos);
+      const nanosAsBigIntInternal = ES.BigIntLikeToFloat128(nanos);
       it(`${nanos} @ ${zone}`, () =>
         deepEqual(ES.GetNamedTimeZoneDateTimeParts(zone, nanosAsBigIntInternal), {
           isoDate: { year, month, day },
@@ -478,26 +479,26 @@ describe('ECMAScript', () => {
   });
 
   describe('RoundNumberToIncrementAsIfPositive', () => {
-    const increment = 100n;
+    const increment = 100;
     const testValues = [-150, -100, -80, -50, -30, 0, 30, 50, 80, 100, 150];
     const expectations = {
-      ceil: [-100, -100, -0, -0, -0, 0, 100, 100, 100, 100, 200],
-      expand: [-100, -100, -0, -0, -0, 0, 100, 100, 100, 100, 200],
+      ceil: [-100, -100, 0, 0, 0, 0, 100, 100, 100, 100, 200],
+      expand: [-100, -100, 0, 0, 0, 0, 100, 100, 100, 100, 200],
       floor: [-200, -100, -100, -100, -100, 0, 0, 0, 0, 100, 100],
       trunc: [-200, -100, -100, -100, -100, 0, 0, 0, 0, 100, 100],
-      halfCeil: [-100, -100, -100, -0, -0, 0, 0, 100, 100, 100, 200],
-      halfExpand: [-100, -100, -100, -0, -0, 0, 0, 100, 100, 100, 200],
-      halfFloor: [-200, -100, -100, -100, -0, 0, 0, 0, 100, 100, 100],
-      halfTrunc: [-200, -100, -100, -100, -0, 0, 0, 0, 100, 100, 100],
-      halfEven: [-200, -100, -100, -0, -0, 0, 0, 0, 100, 100, 200]
+      halfCeil: [-100, -100, -100, 0, 0, 0, 0, 100, 100, 100, 200],
+      halfExpand: [-100, -100, -100, 0, 0, 0, 0, 100, 100, 100, 200],
+      halfFloor: [-200, -100, -100, -100, 0, 0, 0, 0, 100, 100, 100],
+      halfTrunc: [-200, -100, -100, -100, 0, 0, 0, 0, 100, 100, 100],
+      halfEven: [-200, -100, -100, 0, 0, 0, 0, 0, 100, 100, 200]
     };
     for (const roundingMode of Object.keys(expectations)) {
       describe(roundingMode, () => {
         testValues.forEach((value, ix) => {
           const expected = expectations[roundingMode][ix];
           it(`rounds ${value} to ${expected}`, () => {
-            const result = ES.RoundNumberToIncrementAsIfPositive(BigInt(value), increment, roundingMode);
-            equal(Number(String(result)), Number(BigInt(expected)));
+            const result = ES.RoundNumberToIncrementAsIfPositive(new F128(value), increment, roundingMode);
+            equal(result.toNumber(), expected);
           });
         });
       });
@@ -654,11 +655,11 @@ describe('ECMAScript', () => {
 
   describe('epochNsToMs', () => {
     it('returns 0 for 0n', () => {
-      equal(ES.epochNsToMs(0n, 'floor'), 0);
-      equal(ES.epochNsToMs(0n, 'ceil'), 0);
+      equal(ES.epochNsToMs(F128[0], 'floor'), 0);
+      equal(ES.epochNsToMs(F128[0], 'ceil'), 0);
     });
 
-    const oneBillionSeconds = 10n ** 18n;
+    const oneBillionSeconds = new F128(1e18);
 
     it('for a positive value already on ms boundary, divides by 1e6', () => {
       equal(ES.epochNsToMs(oneBillionSeconds, 'floor'), 1e12);
@@ -666,30 +667,30 @@ describe('ECMAScript', () => {
     });
 
     it('positive value just ahead of ms boundary', () => {
-      const plusOne = oneBillionSeconds + 1n;
+      const plusOne = oneBillionSeconds.fadd(1);
       equal(ES.epochNsToMs(plusOne, 'floor'), 1e12);
       equal(ES.epochNsToMs(plusOne, 'ceil'), 1e12 + 1);
     });
 
     it('positive value just behind ms boundary', () => {
-      const minusOne = oneBillionSeconds - 1n;
+      const minusOne = oneBillionSeconds.fadd(-1);
       equal(ES.epochNsToMs(minusOne, 'floor'), 1e12 - 1);
       equal(ES.epochNsToMs(minusOne, 'ceil'), 1e12);
     });
 
     it('positive value just behind next ms boundary', () => {
-      const plus999999 = oneBillionSeconds + 999999n;
+      const plus999999 = oneBillionSeconds.fadd(999999);
       equal(ES.epochNsToMs(plus999999, 'floor'), 1e12);
       equal(ES.epochNsToMs(plus999999, 'ceil'), 1e12 + 1);
     });
 
     it('positive value just behind ms boundary', () => {
-      const minus999999 = oneBillionSeconds - 999999n;
+      const minus999999 = oneBillionSeconds.fadd(-999999);
       equal(ES.epochNsToMs(minus999999, 'floor'), 1e12 - 1);
       equal(ES.epochNsToMs(minus999999, 'ceil'), 1e12);
     });
 
-    const minusOneBillionSeconds = -(10n ** 18n);
+    const minusOneBillionSeconds = new F128(-1e18);
 
     it('for a negative value already on ms boundary, divides by 1e6', () => {
       equal(ES.epochNsToMs(minusOneBillionSeconds, 'floor'), -1e12);
@@ -697,25 +698,25 @@ describe('ECMAScript', () => {
     });
 
     it('negative value just ahead of ms boundary', () => {
-      const plusOne = minusOneBillionSeconds + 1n;
+      const plusOne = minusOneBillionSeconds.fadd(1);
       equal(ES.epochNsToMs(plusOne, 'floor'), -1e12);
       equal(ES.epochNsToMs(plusOne, 'ceil'), -1e12 + 1);
     });
 
     it('negative value just behind ms boundary', () => {
-      const minusOne = minusOneBillionSeconds - 1n;
+      const minusOne = minusOneBillionSeconds.fadd(-1);
       equal(ES.epochNsToMs(minusOne, 'floor'), -1e12 - 1);
       equal(ES.epochNsToMs(minusOne, 'ceil'), -1e12);
     });
 
     it('negative value just behind next ms boundary', () => {
-      const plus999999 = minusOneBillionSeconds + 999999n;
+      const plus999999 = minusOneBillionSeconds.fadd(999999);
       equal(ES.epochNsToMs(plus999999, 'floor'), -1e12);
       equal(ES.epochNsToMs(plus999999, 'ceil'), -1e12 + 1);
     });
 
     it('negative value just behind ms boundary', () => {
-      const minus999999 = minusOneBillionSeconds - 999999n;
+      const minus999999 = minusOneBillionSeconds.fadd(-999999);
       equal(ES.epochNsToMs(minus999999, 'floor'), -1e12 - 1);
       equal(ES.epochNsToMs(minus999999, 'ceil'), -1e12);
     });

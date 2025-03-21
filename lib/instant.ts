@@ -5,17 +5,15 @@ import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { InstantParams as Params, InstantReturn as Return } from './internaltypes';
 
-import JSBI from 'jsbi';
-
 export class Instant implements Temporal.Instant {
-  constructor(epochNanoseconds: bigint | JSBI) {
+  constructor(epochNanoseconds: unknown) {
     // Note: if the argument is not passed, ToBigInt(undefined) will throw. This check exists only
     //       to improve the error message.
     if (arguments.length < 1) {
       throw new TypeError('missing argument: epochNanoseconds is required');
     }
 
-    const ns = ES.ToBigInt(epochNanoseconds);
+    const ns = ES.BigIntLikeToFloat128(epochNanoseconds);
     ES.CreateTemporalInstantSlots(this, ns);
   }
 
@@ -26,7 +24,7 @@ export class Instant implements Temporal.Instant {
   }
   get epochNanoseconds(): Return['epochNanoseconds'] {
     ES.CheckReceiver(this, ES.IsTemporalInstant);
-    return ES.ToBigIntExternal(JSBI.BigInt(GetSlot(this, EPOCHNANOSECONDS)));
+    return ES.ToBigIntExternal(GetSlot(this, EPOCHNANOSECONDS));
   }
 
   add(temporalDurationLike: Params['add'][0]): Return['add'] {
@@ -73,7 +71,7 @@ export class Instant implements Temporal.Instant {
     const other = ES.ToTemporalInstant(otherParam);
     const one = GetSlot(this, EPOCHNANOSECONDS);
     const two = GetSlot(other, EPOCHNANOSECONDS);
-    return JSBI.equal(JSBI.BigInt(one), JSBI.BigInt(two));
+    return one.eq(two);
   }
   toString(options: Params['toString'][0] = undefined): string {
     ES.CheckReceiver(this, ES.IsTemporalInstant);
@@ -117,7 +115,7 @@ export class Instant implements Temporal.Instant {
   static fromEpochNanoseconds(
     epochNanosecondsParam: Params['fromEpochNanoseconds'][0]
   ): Return['fromEpochNanoseconds'] {
-    const epochNanoseconds = ES.ToBigInt(epochNanosecondsParam);
+    const epochNanoseconds = ES.BigIntLikeToFloat128(epochNanosecondsParam);
     return ES.CreateTemporalInstant(epochNanoseconds);
   }
   static from(item: Params['from'][0]): Return['from'] {
@@ -128,8 +126,8 @@ export class Instant implements Temporal.Instant {
     const two = ES.ToTemporalInstant(twoParam);
     const oneNs = GetSlot(one, EPOCHNANOSECONDS);
     const twoNs = GetSlot(two, EPOCHNANOSECONDS);
-    if (JSBI.lessThan(oneNs, twoNs)) return -1;
-    if (JSBI.greaterThan(oneNs, twoNs)) return 1;
+    if (oneNs.lt(twoNs)) return -1;
+    if (oneNs.gt(twoNs)) return 1;
     return 0;
   }
   [Symbol.toStringTag]!: 'Temporal.Instant';
