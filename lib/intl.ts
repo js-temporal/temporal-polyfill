@@ -14,6 +14,7 @@ import {
   ObjectCreate,
   ObjectDefineProperties,
   ObjectDefineProperty,
+  ObjectKeys,
   ObjectPrototypeHasOwnProperty,
   ReflectApply
 } from './primordials';
@@ -71,7 +72,7 @@ function getSlotLazy(obj: DateTimeFormatImpl, slot: LazySlot) {
 
 function createDateTimeFormat(
   dtf: DateTimeFormatImpl,
-  locale: Params['constructor'][0],
+  locale: Intl.LocalesArgument,
   optionsParam: Params['constructor'][1]
 ) {
   const hasOptions = typeof optionsParam !== 'undefined';
@@ -114,7 +115,7 @@ function createDateTimeFormat(
   } else {
     options = ObjectCreate(null);
   }
-  const original = new IntlDateTimeFormat(locale, options);
+  const original = new IntlDateTimeFormat(locale as Params['constructor'][0], options);
   const ro = ES.Call(IntlDateTimeFormatPrototypeResolvedOptions, original, []);
 
   CreateSlots(dtf);
@@ -176,7 +177,7 @@ function createDateTimeFormat(
 }
 
 class DateTimeFormatImpl {
-  constructor(locales: Params['constructor'][0] = undefined, options: Params['constructor'][1] = undefined) {
+  constructor(locales: Intl.LocalesArgument = undefined, options: Params['constructor'][1] = undefined) {
     createDateTimeFormat(this, locales, options);
   }
 
@@ -228,15 +229,15 @@ if (!('formatRangeToParts' in IntlDateTimeFormat.prototype)) {
 export type { DateTimeFormatImpl };
 
 interface DateTimeFormatInterface {
-  (locales: Params['constructor'][0], options: Params['constructor'][1]): DateTimeFormatImpl;
-  new (locales: Params['constructor'][0], options: Params['constructor'][1]): DateTimeFormatImpl;
+  (locales: Intl.LocalesArgument, options: Params['constructor'][1]): DateTimeFormatImpl;
+  new (locales: Intl.LocalesArgument, options: Params['constructor'][1]): DateTimeFormatImpl;
   supportedLocalesOf: typeof Intl.DateTimeFormat.supportedLocalesOf;
 }
 
 // A non-class constructor is needed because Intl.DateTimeFormat must be able to
 // be called without 'new'
 export const DateTimeFormat = function (
-  locales: Params['constructor'][0] = undefined,
+  locales: Intl.LocalesArgument = undefined,
   options: Params['constructor'][1] = undefined
 ): DateTimeFormatImpl {
   return new DateTimeFormatImpl(locales, options);
@@ -371,8 +372,8 @@ function amend(optionsParam: Intl.DateTimeFormatOptions = {}, amended: MaybeFals
 
 type OptionsType<T extends TypesWithToLocaleString> = NonNullable<Parameters<T['toLocaleString']>[1]>;
 
-function timeAmend(optionsParam: OptionsType<Temporal.PlainTime>) {
-  let options = amend(optionsParam, {
+function timeAmend(originalOptions: OptionsType<Temporal.PlainTime>) {
+  const options = amend(originalOptions, {
     year: false,
     month: false,
     day: false,
@@ -380,8 +381,16 @@ function timeAmend(optionsParam: OptionsType<Temporal.PlainTime>) {
     timeZoneName: false,
     dateStyle: false
   });
+  if (options.timeStyle === 'long' || options.timeStyle === 'full') {
+    // Try to fake what timeStyle should do if not printing the time zone name
+    delete options.timeStyle;
+    ObjectAssign(options, { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  }
   if (!hasTimeOptions(options)) {
-    options = ObjectAssign({}, options, {
+    if (hasAnyDateTimeOptions(originalOptions)) {
+      throw new TypeError(`cannot format Temporal.PlainTime with options [${ObjectKeys(originalOptions)}]`);
+    }
+    ObjectAssign(options, {
       hour: 'numeric',
       minute: 'numeric',
       second: 'numeric'
@@ -390,7 +399,7 @@ function timeAmend(optionsParam: OptionsType<Temporal.PlainTime>) {
   return options;
 }
 
-function yearMonthAmend(optionsParam: OptionsType<Temporal.PlainYearMonth>) {
+function yearMonthAmend(originalOptions: OptionsType<Temporal.PlainYearMonth>) {
   // Try to fake what dateStyle should do for dates without a day. This is not
   // accurate for locales that always print the era
   const dateStyleHacks = {
@@ -399,7 +408,7 @@ function yearMonthAmend(optionsParam: OptionsType<Temporal.PlainYearMonth>) {
     long: { year: 'numeric', month: 'long' },
     full: { year: 'numeric', month: 'long' }
   };
-  let options = amend(optionsParam, {
+  const options = amend(originalOptions, {
     day: false,
     hour: false,
     minute: false,
@@ -414,13 +423,16 @@ function yearMonthAmend(optionsParam: OptionsType<Temporal.PlainYearMonth>) {
     delete options.dateStyle;
     ObjectAssign(options, dateStyleHacks[style]);
   }
-  if (!('year' in options || 'month' in options)) {
-    options = ObjectAssign(options, { year: 'numeric', month: 'numeric' });
+  if (!('year' in options || 'month' in options || 'era' in options)) {
+    if (hasAnyDateTimeOptions(originalOptions)) {
+      throw new TypeError(`cannot format PlainYearMonth with options [${ObjectKeys(originalOptions)}]`);
+    }
+    ObjectAssign(options, { year: 'numeric', month: 'numeric' });
   }
   return options;
 }
 
-function monthDayAmend(optionsParam: OptionsType<Temporal.PlainMonthDay>) {
+function monthDayAmend(originalOptions: OptionsType<Temporal.PlainMonthDay>) {
   // Try to fake what dateStyle should do for dates without a day
   const dateStyleHacks = {
     short: { month: 'numeric', day: 'numeric' },
@@ -428,7 +440,7 @@ function monthDayAmend(optionsParam: OptionsType<Temporal.PlainMonthDay>) {
     long: { month: 'long', day: 'numeric' },
     full: { month: 'long', day: 'numeric' }
   };
-  let options = amend(optionsParam, {
+  const options = amend(originalOptions, {
     year: false,
     hour: false,
     minute: false,
@@ -444,13 +456,16 @@ function monthDayAmend(optionsParam: OptionsType<Temporal.PlainMonthDay>) {
     ObjectAssign(options, dateStyleHacks[style]);
   }
   if (!('month' in options || 'day' in options)) {
-    options = ObjectAssign({}, options, { month: 'numeric', day: 'numeric' });
+    if (hasAnyDateTimeOptions(originalOptions)) {
+      throw new TypeError(`cannot format PlainMonthDay with options [${ObjectKeys(originalOptions)}]`);
+    }
+    ObjectAssign(options, { month: 'numeric', day: 'numeric' });
   }
   return options;
 }
 
-function dateAmend(optionsParam: OptionsType<Temporal.PlainDate>) {
-  let options = amend(optionsParam, {
+function dateAmend(originalOptions: OptionsType<Temporal.PlainDate>) {
+  const options = amend(originalOptions, {
     hour: false,
     minute: false,
     second: false,
@@ -459,7 +474,10 @@ function dateAmend(optionsParam: OptionsType<Temporal.PlainDate>) {
     timeStyle: false
   });
   if (!hasDateOptions(options)) {
-    options = ObjectAssign({}, options, {
+    if (hasAnyDateTimeOptions(originalOptions)) {
+      throw new TypeError(`cannot format PlainDate with options [${ObjectKeys(originalOptions)}]`);
+    }
+    ObjectAssign(options, {
       year: 'numeric',
       month: 'numeric',
       day: 'numeric'
@@ -468,10 +486,18 @@ function dateAmend(optionsParam: OptionsType<Temporal.PlainDate>) {
   return options;
 }
 
-function datetimeAmend(optionsParam: OptionsType<Temporal.PlainDateTime>) {
-  let options = amend(optionsParam, { timeZoneName: false });
+function datetimeAmend(originalOptions: OptionsType<Temporal.PlainDateTime>) {
+  const options = amend(originalOptions, { timeZoneName: false });
+  if (options.timeStyle === 'long' || options.timeStyle === 'full') {
+    // Try to fake what timeStyle should do if not printing the time zone name
+    delete options.timeStyle;
+    ObjectAssign(options, { hour: 'numeric', minute: '2-digit', second: '2-digit' });
+  }
   if (!hasTimeOptions(options) && !hasDateOptions(options)) {
-    options = ObjectAssign({}, options, {
+    if (hasAnyDateTimeOptions(originalOptions)) {
+      throw new TypeError(`cannot format PlainDateTime with options [${ObjectKeys(originalOptions)}]`);
+    }
+    ObjectAssign(options, {
       year: 'numeric',
       month: 'numeric',
       day: 'numeric',
@@ -499,12 +525,34 @@ function instantAmend(optionsParam: OptionsType<Temporal.Instant>) {
 }
 
 function hasDateOptions(options: OptionsType<TypesWithToLocaleString>) {
-  return 'year' in options || 'month' in options || 'day' in options || 'weekday' in options || 'dateStyle' in options;
+  return (
+    'year' in options ||
+    'month' in options ||
+    'day' in options ||
+    'weekday' in options ||
+    'dateStyle' in options ||
+    'era' in options
+  );
 }
 
 function hasTimeOptions(options: OptionsType<TypesWithToLocaleString>) {
   return (
-    'hour' in options || 'minute' in options || 'second' in options || 'timeStyle' in options || 'dayPeriod' in options
+    'hour' in options ||
+    'minute' in options ||
+    'second' in options ||
+    'timeStyle' in options ||
+    'dayPeriod' in options ||
+    'fractionalSecondDigits' in options
+  );
+}
+
+function hasAnyDateTimeOptions(originalOptions: OptionsType<TypesWithToLocaleString>) {
+  return (
+    hasDateOptions(originalOptions) ||
+    hasTimeOptions(originalOptions) ||
+    'dateStyle' in originalOptions ||
+    'timeStyle' in originalOptions ||
+    'timeZoneName' in originalOptions
   );
 }
 

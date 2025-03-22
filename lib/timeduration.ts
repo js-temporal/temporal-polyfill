@@ -70,7 +70,7 @@ export class TimeDuration {
     return new TimeDuration(diff);
   }
 
-  static normalize(h: number, min: number, s: number, ms: number, µs: number, ns: number) {
+  static fromComponents(h: number, min: number, s: number, ms: number, µs: number, ns: number) {
     const totalNs = JSBI.add(
       JSBI.add(
         JSBI.add(

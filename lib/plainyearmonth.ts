@@ -83,7 +83,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     const partialYearMonth = ES.PrepareCalendarFields(
       calendar,
       temporalYearMonthLike,
-      ['month', 'monthCode', 'year'],
+      ['year', 'month', 'monthCode'],
       [],
       'partial'
     );

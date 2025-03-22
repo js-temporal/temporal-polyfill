@@ -15,6 +15,7 @@ export const {
   defineProperty: ObjectDefineProperty,
   defineProperties: ObjectDefineProperties,
   entries: ObjectEntries,
+  keys: ObjectKeys,
   prototype: { hasOwnProperty: ObjectPrototypeHasOwnProperty }
 } = Object;
 

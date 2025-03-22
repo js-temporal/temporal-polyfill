@@ -201,7 +201,7 @@ export interface CalendarImpl {
   monthDayToISOReferenceDate(fields: ResolveFieldsReturn<'month-day'>, overflow: Overflow): ISODate;
   dateAdd(date: ISODate, duration: Partial<DateDuration>, overflow: Overflow): ISODate;
   dateUntil(one: ISODate, two: ISODate, largestUnit: 'year' | 'month' | 'week' | 'day'): DateDuration;
-  extraFields(): FieldKey[];
+  extraFields(fields: FieldKey[]): FieldKey[];
   fieldKeysToIgnore(keys: FieldKey[]): FieldKey[];
 }
 
@@ -2267,9 +2267,11 @@ class DangiHelper extends ChineseBaseHelper {
  */
 class NonIsoCalendar implements CalendarImpl {
   constructor(private readonly helper: HelperBase) {}
-  extraFields(type: ISODateToFieldsType = 'date'): FieldKey[] {
-    if (type === 'month-day') return [];
-    return ['era', 'eraYear'];
+  extraFields(fields: FieldKey[]): FieldKey[] {
+    if (this.helper.hasEra && Call(ArrayPrototypeIncludes, fields, ['year'])) {
+      return ['era', 'eraYear'];
+    }
+    return [];
   }
   resolveFields(fields: CalendarFieldsRecord /* , type */) {
     if (this.helper.calendarType !== 'lunisolar') {

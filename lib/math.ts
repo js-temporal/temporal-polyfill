@@ -91,7 +91,7 @@ export function GetUnsignedRoundingMode(
 }
 
 // Omits first step from spec algorithm so that it can be used both for
-// RoundNumberToIncrement and RoundNormalizedTimeDurationToIncrement
+// RoundNumberToIncrement and RoundTimeDurationToIncrement
 export function ApplyUnsignedRoundingMode<T extends number | JSBI>(
   r1: T,
   r2: T,

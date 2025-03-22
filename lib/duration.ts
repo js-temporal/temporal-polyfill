@@ -37,6 +37,7 @@ import {
   SetSlot,
   TIME_ZONE
 } from './slots';
+import { TimeDuration } from './timeduration';
 import type { Temporal } from '..';
 import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
 import JSBI from 'jsbi';
@@ -230,7 +231,7 @@ export class Duration implements Temporal.Duration {
     }
 
     if (zonedRelativeTo) {
-      let duration = ES.NormalizeDuration(this);
+      let duration = ES.ToInternalDurationRecord(this);
       const timeZone = GetSlot(zonedRelativeTo, TIME_ZONE);
       const calendar = GetSlot(zonedRelativeTo, CALENDAR);
       const relativeEpochNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
@@ -246,12 +247,12 @@ export class Duration implements Temporal.Duration {
         roundingMode
       );
       if (ES.TemporalUnitCategory(largestUnit) === 'date') largestUnit = 'hour';
-      return ES.UnnormalizeDuration(duration, largestUnit);
+      return ES.TemporalDurationFromInternal(duration, largestUnit);
     }
 
     if (plainRelativeTo) {
-      let duration = ES.NormalizeDurationWith24HourDays(this);
-      const targetTime = ES.AddTime(ES.MidnightTimeRecord(), duration.norm);
+      let duration = ES.ToInternalDurationRecordWith24HourDays(this);
+      const targetTime = ES.AddTime(ES.MidnightTimeRecord(), duration.time);
 
       // Delegate the date part addition to the calendar
       const isoRelativeToDate = GetSlot(plainRelativeTo, ISO_DATE);
@@ -270,7 +271,7 @@ export class Duration implements Temporal.Duration {
         smallestUnit,
         roundingMode
       );
-      return ES.UnnormalizeDuration(duration, largestUnit);
+      return ES.TemporalDurationFromInternal(duration, largestUnit);
     }
 
     // No reference date to calculate difference relative to
@@ -281,9 +282,20 @@ export class Duration implements Temporal.Duration {
       throw new RangeErrorCtor(`a starting point is required for ${largestUnit}s balancing`);
     }
     assert(!ES.IsCalendarUnit(smallestUnit), 'smallestUnit was larger than largestUnit');
-    let duration = ES.NormalizeDurationWith24HourDays(this);
-    duration = ES.RoundTimeDuration(duration, roundingIncrement, smallestUnit, roundingMode);
-    return ES.UnnormalizeDuration(duration, largestUnit);
+    let internalDuration = ES.ToInternalDurationRecordWith24HourDays(this);
+    if (smallestUnit === 'day') {
+      // First convert time units up to days
+      const DAY_NANOS = 86400 * 1e9;
+      const { quotient, remainder } = internalDuration.time.divmod(DAY_NANOS);
+      let days = internalDuration.date.days + quotient + ES.TotalTimeDuration(remainder, 'day');
+      days = ES.RoundNumberToIncrement(days, roundingIncrement, roundingMode);
+      const dateDuration = { years: 0, months: 0, weeks: 0, days };
+      internalDuration = ES.CombineDateAndTimeDuration(dateDuration, TimeDuration.ZERO);
+    } else {
+      const timeDuration = ES.RoundTimeDuration(internalDuration.time, roundingIncrement, smallestUnit, roundingMode);
+      internalDuration = ES.CombineDateAndTimeDuration(ES.ZeroDateDuration(), timeDuration);
+    }
+    return ES.TemporalDurationFromInternal(internalDuration, largestUnit);
   }
   total(optionsParam: Params['total'][0]): Return['total'] {
     if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
@@ -297,7 +309,7 @@ export class Duration implements Temporal.Duration {
     const unit = ES.GetTemporalUnitValuedOption(options, 'unit', 'datetime', ES.REQUIRED);
 
     if (zonedRelativeTo) {
-      const duration = ES.NormalizeDuration(this);
+      const duration = ES.ToInternalDurationRecord(this);
       const timeZone = GetSlot(zonedRelativeTo, TIME_ZONE);
       const calendar = GetSlot(zonedRelativeTo, CALENDAR);
       const relativeEpochNs = GetSlot(zonedRelativeTo, EPOCHNANOSECONDS);
@@ -306,8 +318,8 @@ export class Duration implements Temporal.Duration {
     }
 
     if (plainRelativeTo) {
-      const duration = ES.NormalizeDurationWith24HourDays(this);
-      let targetTime = ES.AddTime(ES.MidnightTimeRecord(), duration.norm);
+      const duration = ES.ToInternalDurationRecordWith24HourDays(this);
+      let targetTime = ES.AddTime(ES.MidnightTimeRecord(), duration.time);
 
       // Delegate the date part addition to the calendar
       const isoRelativeToDate = GetSlot(plainRelativeTo, ISO_DATE);
@@ -328,8 +340,8 @@ export class Duration implements Temporal.Duration {
     if (ES.IsCalendarUnit(unit)) {
       throw new RangeErrorCtor(`a starting point is required for ${unit}s total`);
     }
-    const duration = ES.NormalizeDurationWith24HourDays(this);
-    return ES.TotalTimeDuration(duration.norm, unit);
+    const duration = ES.ToInternalDurationRecordWith24HourDays(this);
+    return ES.TotalTimeDuration(duration.time, unit);
   }
   toString(options: Params['toString'][0] = undefined): string {
     if (!ES.IsTemporalDuration(this)) throw new TypeErrorCtor('invalid receiver');
@@ -349,9 +361,13 @@ export class Duration implements Temporal.Duration {
     if (unit === 'nanosecond' && increment === 1) return ES.TemporalDurationToString(this, precision);
 
     const largestUnit = ES.DefaultTemporalLargestUnit(this);
-    let duration = ES.NormalizeDuration(this);
-    duration = ES.RoundTimeDuration(duration, increment, unit, roundingMode);
-    const roundedDuration = ES.UnnormalizeDuration(duration, ES.LargerOfTwoTemporalUnits(largestUnit, 'second'));
+    let internalDuration = ES.ToInternalDurationRecord(this);
+    const timeDuration = ES.RoundTimeDuration(internalDuration.time, increment, unit, roundingMode);
+    internalDuration = ES.CombineDateAndTimeDuration(internalDuration.date, timeDuration);
+    const roundedDuration = ES.TemporalDurationFromInternal(
+      internalDuration,
+      ES.LargerOfTwoTemporalUnits(largestUnit, 'second')
+    );
     return ES.TemporalDurationToString(roundedDuration, precision);
   }
   toJSON(): Return['toJSON'] {
@@ -402,8 +418,8 @@ export class Duration implements Temporal.Duration {
 
     const largestUnit1 = ES.DefaultTemporalLargestUnit(one);
     const largestUnit2 = ES.DefaultTemporalLargestUnit(two);
-    const duration1 = ES.NormalizeDuration(one);
-    const duration2 = ES.NormalizeDuration(two);
+    const duration1 = ES.ToInternalDurationRecord(one);
+    const duration2 = ES.ToInternalDurationRecord(two);
 
     if (
       zonedRelativeTo &&
@@ -424,12 +440,12 @@ export class Duration implements Temporal.Duration {
       if (!plainRelativeTo) {
         throw new RangeErrorCtor('A starting point is required for years, months, or weeks comparison');
       }
-      d1 = ES.UnbalanceDateDurationRelative(duration1.date, plainRelativeTo);
-      d2 = ES.UnbalanceDateDurationRelative(duration2.date, plainRelativeTo);
+      d1 = ES.DateDurationDays(duration1.date, plainRelativeTo);
+      d2 = ES.DateDurationDays(duration2.date, plainRelativeTo);
     }
-    const norm1 = duration1.norm.add24HourDays(d1);
-    const norm2 = duration2.norm.add24HourDays(d2);
-    return norm1.cmp(norm2);
+    const timeDuration1 = duration1.time.add24HourDays(d1);
+    const timeDuration2 = duration2.time.add24HourDays(d2);
+    return timeDuration1.cmp(timeDuration2);
   }
   [Symbol.toStringTag]!: 'Temporal.Duration';
 }

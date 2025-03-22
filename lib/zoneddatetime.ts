@@ -17,7 +17,6 @@ import { DateTimeFormat } from './intl';
 import type { BuiltinCalendarId, ZonedDateTimeParams as Params, ZonedDateTimeReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { HOUR_NANOS } from './bigintmath';
 
 const customResolvedOptions = DateTimeFormat.prototype.resolvedOptions as Intl.DateTimeFormat['resolvedOptions'];
 
@@ -132,7 +131,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const todayNs = ES.GetStartOfDay(timeZone, today);
     const tomorrowNs = ES.GetStartOfDay(timeZone, tomorrow);
     const diff = TimeDuration.fromEpochNsDiff(tomorrowNs, todayNs);
-    return diff.fdiv(HOUR_NANOS);
+    return ES.TotalTimeDuration(diff, 'hour');
   }
   get daysInWeek(): Return['daysInWeek'] {
     if (!ES.IsTemporalZonedDateTime(this)) throw new TypeErrorCtor('invalid receiver');
@@ -177,19 +176,14 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const isoDateTime = dateTime(this);
     let fields = {
       ...ES.ISODateToFields(calendar, isoDateTime.isoDate),
-      hour: isoDateTime.time.hour,
-      minute: isoDateTime.time.minute,
-      second: isoDateTime.time.second,
-      millisecond: isoDateTime.time.millisecond,
-      microsecond: isoDateTime.time.microsecond,
-      nanosecond: isoDateTime.time.nanosecond,
+      ...isoDateTime.time,
       offset: ES.FormatUTCOffsetNanoseconds(offsetNs)
     };
     const partialZonedDateTime = ES.PrepareCalendarFields(
       calendar,
       temporalZonedDateTimeLike,
-      ['day', 'month', 'monthCode', 'year'],
-      ['hour', 'microsecond', 'millisecond', 'minute', 'nanosecond', 'offset', 'second'],
+      ['year', 'month', 'monthCode', 'day'],
+      ['hour', 'minute', 'second', 'millisecond', 'microsecond', 'nanosecond', 'offset'],
       'partial'
     );
     fields = ES.CalendarMergeFields(calendar, fields, partialZonedDateTime);
@@ -317,7 +311,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
 
       const dayLengthNs = JSBI.subtract(endNs, startNs);
       const dayProgressNs = TimeDuration.fromEpochNsDiff(thisNs, startNs);
-      epochNanoseconds = dayProgressNs.round(dayLengthNs, roundingMode).add(new TimeDuration(startNs)).totalNs;
+      const roundedDayNs = dayProgressNs.round(dayLengthNs, roundingMode);
+      epochNanoseconds = roundedDayNs.addToEpochNs(startNs);
     } else {
       // smallestUnit < day
       // Round based on ISO-calendar time units
@@ -391,11 +386,13 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       optionsCopy.year === undefined &&
       optionsCopy.month === undefined &&
       optionsCopy.day === undefined &&
+      optionsCopy.era === undefined &&
       optionsCopy.weekday === undefined &&
       optionsCopy.dateStyle === undefined &&
       optionsCopy.hour === undefined &&
       optionsCopy.minute === undefined &&
       optionsCopy.second === undefined &&
+      optionsCopy.fractionalSecondDigits === undefined &&
       optionsCopy.timeStyle === undefined &&
       optionsCopy.dayPeriod === undefined &&
       optionsCopy.timeZoneName === undefined
