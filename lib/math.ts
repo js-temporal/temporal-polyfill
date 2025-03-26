@@ -82,7 +82,7 @@ export function GetUnsignedRoundingMode(
 export function ApplyUnsignedRoundingMode<T extends number | JSBI>(
   r1: T,
   r2: T,
-  cmp: number,
+  cmp: -1 | 0 | 1,
   evenCardinality: boolean,
   unsignedRoundingMode: UnsignedRoundingMode
 ) {
