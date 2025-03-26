@@ -7,7 +7,6 @@ import { DateTimeFormat } from './intl';
 import type { InstantParams as Params, InstantReturn as Return } from './internaltypes';
 
 import JSBI from 'jsbi';
-import { MILLION } from './bigintmath';
 
 export class Instant implements Temporal.Instant {
   constructor(epochNanoseconds: bigint | JSBI) {
@@ -125,11 +124,8 @@ export class Instant implements Temporal.Instant {
     return ES.CreateTemporalZonedDateTime(GetSlot(this, EPOCHNANOSECONDS), timeZone, 'iso8601');
   }
 
-  static fromEpochMilliseconds(
-    epochMillisecondsParam: Params['fromEpochMilliseconds'][0]
-  ): Return['fromEpochMilliseconds'] {
-    const epochMilliseconds = ES.ToNumber(epochMillisecondsParam);
-    const epochNanoseconds = JSBI.multiply(JSBI.BigInt(epochMilliseconds), MILLION);
+  static fromEpochMilliseconds(epochMilliseconds: Params['fromEpochMilliseconds'][0]): Return['fromEpochMilliseconds'] {
+    const epochNanoseconds = ES.epochMsToNs(ES.ToNumber(epochMilliseconds));
     ES.ValidateEpochNanoseconds(epochNanoseconds);
     return new Instant(epochNanoseconds);
   }

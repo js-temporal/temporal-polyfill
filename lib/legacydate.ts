@@ -1,7 +1,5 @@
+import * as ES from './ecmascript';
 import { Instant } from './instant';
-
-import JSBI from 'jsbi';
-import { MILLION } from './bigintmath';
 
 // By default, a plain function can be called as a constructor. A method such as
 // Date.prototype.toTemporalInstant should not be able to. We could check
@@ -12,7 +10,7 @@ import { MILLION } from './bigintmath';
 
 class LegacyDateImpl {
   toTemporalInstant(this: Date) {
-    const epochNanoseconds = JSBI.multiply(JSBI.BigInt(Date.prototype.valueOf.call(this)), MILLION);
+    const epochNanoseconds = ES.epochMsToNs(Date.prototype.valueOf.call(this));
     return new Instant(epochNanoseconds);
   }
 }

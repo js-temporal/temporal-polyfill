@@ -66,8 +66,8 @@ export const DAY_NANOS = DAY_MS * 1e6;
 const MINUTE_NANOS = 60e9;
 // Instant range is 100 million days (inclusive) before or after epoch.
 const MS_MAX = DAY_MS * 1e8;
-const NS_MIN = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(-1e8));
-const NS_MAX = JSBI.multiply(DAY_NANOS_JSBI, JSBI.BigInt(1e8));
+const NS_MAX = epochMsToNs(MS_MAX);
+const NS_MIN = JSBI.unaryMinus(NS_MAX);
 // PlainDateTime range is 24 hours wider (exclusive) than the Instant range on
 // both ends, to allow for valid Instant=>PlainDateTime conversion for all
 // built-in time zones (whose offsets must have a magnitude less than 24 hours).
@@ -2681,13 +2681,12 @@ function GetUTCEpochMilliseconds({
 function GetUTCEpochNanoseconds(isoDateTime: ISODateTime) {
   const ms = GetUTCEpochMilliseconds(isoDateTime);
   const subMs = isoDateTime.time.microsecond * 1e3 + isoDateTime.time.nanosecond;
-  return JSBI.add(JSBI.multiply(JSBI.BigInt(ms), MILLION), JSBI.BigInt(subMs));
+  return JSBI.add(epochMsToNs(ms), JSBI.BigInt(subMs));
 }
 
 export function GetISOPartsFromEpoch(epochNanoseconds: JSBI) {
-  const { quotient, remainder } = divmod(epochNanoseconds, MILLION);
-  let epochMilliseconds = JSBI.toNumber(quotient);
-  let nanos = JSBI.toNumber(remainder);
+  let epochMilliseconds = epochNsToMs(epochNanoseconds, 'trunc');
+  let nanos = JSBI.toNumber(JSBI.remainder(epochNanoseconds, MILLION));
   if (nanos < 0) {
     nanos += 1e6;
     epochMilliseconds -= 1;
@@ -2729,7 +2728,7 @@ export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSB
   // time zone transitions don't happen in the middle of a millisecond.
   const epochMilliseconds = epochNsToMs(epochNanoseconds, 'floor');
   if (epochMilliseconds < BEFORE_FIRST_DST) {
-    return GetNamedTimeZoneNextTransition(id, JSBI.multiply(JSBI.BigInt(BEFORE_FIRST_DST), MILLION));
+    return GetNamedTimeZoneNextTransition(id, epochMsToNs(BEFORE_FIRST_DST));
   }
 
   // Optimization: the farthest that we'll look for a next transition is 3 years
@@ -2759,7 +2758,7 @@ export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSB
     leftOffsetNs,
     rightOffsetNs
   );
-  return JSBI.multiply(JSBI.BigInt(result), MILLION);
+  return epochMsToNs(result);
 }
 
 export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds: JSBI): JSBI | null {
@@ -2776,8 +2775,8 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
   const now = Date.now();
   const lookahead = now + DAY_MS * 366 * 3;
   if (epochMilliseconds > lookahead) {
-    const prevBeforeLookahead = GetNamedTimeZonePreviousTransition(id, JSBI.multiply(JSBI.BigInt(lookahead), MILLION));
-    if (prevBeforeLookahead === null || JSBI.lessThan(prevBeforeLookahead, JSBI.multiply(JSBI.BigInt(now), MILLION))) {
+    const prevBeforeLookahead = GetNamedTimeZonePreviousTransition(id, epochMsToNs(lookahead));
+    if (prevBeforeLookahead === null || JSBI.lessThan(prevBeforeLookahead, epochMsToNs(now))) {
       return prevBeforeLookahead;
     }
   }
@@ -2792,7 +2791,7 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
   if (id === 'Africa/Casablanca' || id === 'Africa/El_Aaiun') {
     const lastPrecomputed = Date.UTC(2088, 0, 1); // 2088-01-01T00Z
     if (lastPrecomputed < epochMilliseconds) {
-      return GetNamedTimeZonePreviousTransition(id, JSBI.multiply(JSBI.BigInt(lastPrecomputed), MILLION));
+      return GetNamedTimeZonePreviousTransition(id, epochMsToNs(lastPrecomputed));
     }
   }
 
@@ -2817,7 +2816,7 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
     leftOffsetNs,
     rightOffsetNs
   );
-  return JSBI.multiply(JSBI.BigInt(result), MILLION);
+  return epochMsToNs(result);
 }
 
 // ts-prune-ignore-next TODO: remove this after tests are converted to TS
@@ -4744,14 +4743,19 @@ export function ToBigIntExternal(arg: unknown): ExternalBigInt {
   return jsbiBI as unknown as ExternalBigInt;
 }
 
-// rounding modes supported: floor, ceil
-export function epochNsToMs(epochNanosecondsParam: JSBI | bigint, mode: 'floor' | 'ceil') {
+// rounding modes supported: floor, ceil, trunc
+export function epochNsToMs(epochNanosecondsParam: JSBI | bigint, mode: 'floor' | 'ceil' | 'trunc') {
   const epochNanoseconds = ensureJSBI(epochNanosecondsParam);
   const { quotient, remainder } = divmod(epochNanoseconds, MILLION);
   let epochMilliseconds = JSBI.toNumber(quotient);
   if (mode === 'floor' && JSBI.toNumber(remainder) < 0) epochMilliseconds -= 1;
   if (mode === 'ceil' && JSBI.toNumber(remainder) > 0) epochMilliseconds += 1;
   return epochMilliseconds;
+}
+
+export function epochMsToNs(epochMilliseconds: number) {
+  if (!Number.isInteger(epochMilliseconds)) throw new RangeError('epoch milliseconds must be an integer');
+  return JSBI.multiply(JSBI.BigInt(epochMilliseconds), MILLION);
 }
 
 export function ToBigInt(arg: unknown): JSBI {
@@ -4789,8 +4793,9 @@ export function ToBigInt(arg: unknown): JSBI {
 export const SystemUTCEpochNanoSeconds: () => JSBI = (() => {
   let ns = JSBI.BigInt(Date.now() % 1e6);
   return () => {
-    const ms = JSBI.BigInt(Date.now());
-    const result = JSBI.add(JSBI.multiply(ms, MILLION), ns);
+    const now = Date.now();
+    const ms = JSBI.BigInt(now);
+    const result = JSBI.add(epochMsToNs(now), ns);
     ns = JSBI.remainder(ms, MILLION);
     if (JSBI.greaterThan(result, NS_MAX)) return NS_MAX;
     if (JSBI.lessThan(result, NS_MIN)) return NS_MIN;
