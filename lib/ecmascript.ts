@@ -4611,7 +4611,8 @@ export function RoundNumberToIncrementAsIfPositive(
   }
   // Similar to the comparison in RoundNumberToIncrement, but multiplied by an
   // extra sign to make sure we treat it as positive
-  const cmp = compare(abs(JSBI.multiply(remainder, TWO)), increment) * (JSBI.lessThan(quantity, ZERO) ? -1 : 1);
+  const cmp = (compare(abs(JSBI.multiply(remainder, TWO)), increment) * (JSBI.lessThan(quantity, ZERO) ? -1 : 1) +
+    0) as -1 | 0 | 1;
   const rounded = JSBI.equal(remainder, ZERO)
     ? quotient
     : ApplyUnsignedRoundingMode(r1, r2, cmp, isEven(r1), unsignedRoundingMode);
