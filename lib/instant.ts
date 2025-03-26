@@ -35,33 +35,33 @@ export class Instant implements Temporal.Instant {
   }
 
   get epochMilliseconds(): Return['epochMilliseconds'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     const value = GetSlot(this, EPOCHNANOSECONDS);
     return ES.epochNsToMs(value, 'floor');
   }
   get epochNanoseconds(): Return['epochNanoseconds'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     return ES.ToBigIntExternal(JSBI.BigInt(GetSlot(this, EPOCHNANOSECONDS)));
   }
 
   add(temporalDurationLike: Params['add'][0]): Return['add'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     return ES.AddDurationToInstant('add', this, temporalDurationLike);
   }
   subtract(temporalDurationLike: Params['subtract'][0]): Return['subtract'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     return ES.AddDurationToInstant('subtract', this, temporalDurationLike);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     return ES.DifferenceTemporalInstant('until', this, other, options);
   }
   since(other: Params['since'][0], options: Params['since'][1] = undefined): Return['since'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     return ES.DifferenceTemporalInstant('since', this, other, options);
   }
   round(roundToParam: Params['round'][0]): Return['round'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     if (roundToParam === undefined) throw new TypeError('options parameter is required');
     const roundTo =
       typeof roundToParam === 'string'
@@ -84,14 +84,14 @@ export class Instant implements Temporal.Instant {
     return new Instant(roundedNs);
   }
   equals(otherParam: Params['equals'][0]): Return['equals'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     const other = ES.ToTemporalInstant(otherParam);
     const one = GetSlot(this, EPOCHNANOSECONDS);
     const two = GetSlot(other, EPOCHNANOSECONDS);
     return JSBI.equal(JSBI.BigInt(one), JSBI.BigInt(two));
   }
   toString(options: Params['toString'][0] = undefined): string {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     const resolvedOptions = ES.GetOptionsObject(options);
     const digits = ES.GetTemporalFractionalSecondDigitsOption(resolvedOptions);
     const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
@@ -106,21 +106,21 @@ export class Instant implements Temporal.Instant {
     return ES.TemporalInstantToString(roundedInstant, timeZone, precision);
   }
   toJSON(): string {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     return ES.TemporalInstantToString(this, undefined, 'auto');
   }
   toLocaleString(
     locales: Params['toLocaleString'][0] = undefined,
     options: Params['toLocaleString'][1] = undefined
   ): string {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     return new DateTimeFormat(locales, options).format(this);
   }
   valueOf(): never {
     ES.ValueOfThrows('Instant');
   }
   toZonedDateTimeISO(timeZoneParam: Params['toZonedDateTimeISO'][0]): Return['toZonedDateTimeISO'] {
-    if (!ES.IsTemporalInstant(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalInstant);
     const timeZone = ES.ToTemporalTimeZoneIdentifier(timeZoneParam);
     return ES.CreateTemporalZonedDateTime(GetSlot(this, EPOCHNANOSECONDS), timeZone, 'iso8601');
   }

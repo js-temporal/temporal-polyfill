@@ -34,7 +34,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     return getCalendarProperty(this, 'monthCode');
   }
   get calendarId(): Return['calendarId'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     return GetSlot(this, CALENDAR);
   }
   get era(): Return['era'] {
@@ -56,7 +56,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     return getCalendarProperty(this, 'inLeapYear');
   }
   with(temporalYearMonthLike: Params['with'][0], options: Params['with'][1] = undefined): Return['with'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     if (!ES.IsObject(temporalYearMonthLike)) {
       throw new TypeError('invalid argument');
     }
@@ -78,52 +78,52 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     return ES.CreateTemporalYearMonth(isoDate, calendar);
   }
   add(temporalDurationLike: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     return ES.AddDurationToYearMonth('add', this, temporalDurationLike, options);
   }
   subtract(
     temporalDurationLike: Params['subtract'][0],
     options: Params['subtract'][1] = undefined
   ): Return['subtract'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     return ES.AddDurationToYearMonth('subtract', this, temporalDurationLike, options);
   }
   until(other: Params['until'][0], options: Params['until'][1] = undefined): Return['until'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     return ES.DifferenceTemporalPlainYearMonth('until', this, other, options);
   }
   since(other: Params['since'][0], options: Params['since'][1] = undefined): Return['since'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     return ES.DifferenceTemporalPlainYearMonth('since', this, other, options);
   }
   equals(otherParam: Params['equals'][0]): Return['equals'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     const other = ES.ToTemporalYearMonth(otherParam);
     if (ES.CompareISODate(GetSlot(this, ISO_DATE), GetSlot(other, ISO_DATE)) !== 0) return false;
     return ES.CalendarEquals(GetSlot(this, CALENDAR), GetSlot(other, CALENDAR));
   }
   toString(options: Params['toString'][0] = undefined): string {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     const resolvedOptions = ES.GetOptionsObject(options);
     const showCalendar = ES.GetTemporalShowCalendarNameOption(resolvedOptions);
     return ES.TemporalYearMonthToString(this, showCalendar);
   }
   toJSON(): Return['toJSON'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     return ES.TemporalYearMonthToString(this);
   }
   toLocaleString(
     locales: Params['toLocaleString'][0] = undefined,
     options: Params['toLocaleString'][1] = undefined
   ): string {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     return new DateTimeFormat(locales, options).format(this);
   }
   valueOf(): never {
     ES.ValueOfThrows('PlainYearMonth');
   }
   toPlainDate(item: Params['toPlainDate'][0]): Return['toPlainDate'] {
-    if (!ES.IsTemporalYearMonth(this)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, ES.IsTemporalYearMonth);
     if (!ES.IsObject(item)) throw new TypeError('argument should be an object');
     const calendar = GetSlot(this, CALENDAR);
 
@@ -151,7 +151,7 @@ function getCalendarProperty<P extends keyof CalendarDateRecord>(
   ym: Temporal.PlainYearMonth,
   prop: P
 ): CalendarDateRecord[P] {
-  if (!ES.IsTemporalYearMonth(ym)) throw new TypeError('invalid receiver');
+  ES.CheckReceiver(ym, ES.IsTemporalYearMonth);
   const isoDate = GetSlot(ym, ISO_DATE);
   return ES.calendarImplForObj(ym).isoToDate(isoDate, { [prop]: true })[prop];
 }
