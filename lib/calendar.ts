@@ -414,7 +414,7 @@ type CalendarYM = { year: number; month: number };
 type CalendarYearOnly = { year: number };
 type EraAndEraYear = { era: string; eraYear: number };
 
-function monthCodeNumberPart(monthCode: string) {
+function nonLeapMonthCodeNumberPart(monthCode: string) {
   if (!Call(StringPrototypeStartsWith, monthCode, ['M'])) {
     throw new RangeErrorCtor(`Invalid month code: ${monthCode}.  Month codes must start with M.`);
   }
@@ -449,7 +449,7 @@ function resolveNonLunisolarMonth<T extends { monthCode?: string; month?: number
     if (overflow === 'constrain') month = ES.ConstrainToRange(month, 1, monthsPerYear);
     monthCode = buildMonthCode(month);
   } else {
-    const numberPart = monthCodeNumberPart(monthCode);
+    const numberPart = nonLeapMonthCodeNumberPart(monthCode);
     if (monthCode !== buildMonthCode(numberPart)) {
       throw new RangeErrorCtor(`Invalid month code: ${monthCode}`);
     }
@@ -1324,7 +1324,7 @@ class HebrewHelper extends HelperBase {
             }
           }
         } else {
-          month = monthCodeNumberPart(monthCode as string);
+          month = nonLeapMonthCodeNumberPart(monthCode as string);
           // if leap month is before this one, the month index is one more than the month code
           if (this.inLeapYear({ year }) && month >= 6) month++;
           const largestMonth = this.monthsInYear({ year });
@@ -1430,7 +1430,7 @@ class PersianHelper extends HelperBase {
     return month <= 6 ? 31 : 30;
   }
   maxLengthOfMonthCodeInAnyYear(monthCode: string) {
-    const month = monthCodeNumberPart(monthCode);
+    const month = nonLeapMonthCodeNumberPart(monthCode);
     return month <= 6 ? 31 : 30;
   }
   estimateIsoDate(calendarDate: CalendarYMD) {
@@ -1474,7 +1474,7 @@ class IndianHelper extends HelperBase {
     return this.getMonthInfo(calendarDate).length;
   }
   maxLengthOfMonthCodeInAnyYear(monthCode: string) {
-    const month = monthCodeNumberPart(monthCode);
+    const month = nonLeapMonthCodeNumberPart(monthCode);
     let monthInfo = this.months[month];
     monthInfo = monthInfo.leap ?? monthInfo;
     return monthInfo.length;
@@ -1779,7 +1779,7 @@ abstract class GregorianBaseHelperFixedEpoch extends HelperBase {
     return this.minimumMonthLength(calendarDate);
   }
   maxLengthOfMonthCodeInAnyYear(monthCode: string) {
-    const month = monthCodeNumberPart(monthCode);
+    const month = nonLeapMonthCodeNumberPart(monthCode);
     return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
   }
   estimateIsoDate(calendarDateParam: CalendarYMD) {
@@ -1826,7 +1826,7 @@ abstract class GregorianBaseHelper extends HelperBase {
     return this.minimumMonthLength(calendarDate);
   }
   maxLengthOfMonthCodeInAnyYear(monthCode: string) {
-    const month = monthCodeNumberPart(monthCode);
+    const month = nonLeapMonthCodeNumberPart(monthCode);
     return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
   }
   /** Fill in missing parts of the (year, era, eraYear) tuple */
@@ -1912,7 +1912,7 @@ abstract class GregorianBaseHelper extends HelperBase {
     let calendarDate = calendarDateParam;
     // Because this is not a lunisolar calendar, it's safe to convert monthCode to a number
     const { month, monthCode } = calendarDate;
-    if (month === undefined) calendarDate = { ...calendarDate, month: monthCodeNumberPart(monthCode as string) };
+    if (month === undefined) calendarDate = { ...calendarDate, month: nonLeapMonthCodeNumberPart(monthCode as string) };
     this.validateCalendarDate(calendarDate);
     calendarDate = this.completeEraYear(calendarDate);
     return super.adjustCalendarDate(calendarDate, cache, overflow);
