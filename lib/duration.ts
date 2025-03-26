@@ -380,7 +380,7 @@ export class Duration implements Temporal.Duration {
     oneParam: Params['compare'][0],
     twoParam: Params['compare'][1],
     options: Params['compare'][2] = undefined
-  ) {
+  ): Return['compare'] {
     const one = ES.ToTemporalDuration(oneParam);
     const two = ES.ToTemporalDuration(twoParam);
     const resolvedOptions = ES.GetOptionsObject(options);
