@@ -1,5 +1,4 @@
 import * as ES from './ecmascript';
-import { Instant } from './instant';
 
 // By default, a plain function can be called as a constructor. A method such as
 // Date.prototype.toTemporalInstant should not be able to. We could check
@@ -11,7 +10,7 @@ import { Instant } from './instant';
 class LegacyDateImpl {
   toTemporalInstant(this: Date) {
     const epochNanoseconds = ES.epochMsToNs(Date.prototype.valueOf.call(this));
-    return new Instant(epochNanoseconds);
+    return ES.CreateTemporalInstant(epochNanoseconds);
   }
 }
 

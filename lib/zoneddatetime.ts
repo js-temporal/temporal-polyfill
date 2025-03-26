@@ -1,6 +1,6 @@
 import { assert } from './assert';
 import * as ES from './ecmascript';
-import { GetIntrinsic, MakeIntrinsicClass } from './intrinsicclass';
+import { MakeIntrinsicClass } from './intrinsicclass';
 import { CALENDAR, EPOCHNANOSECONDS, TIME, TIME_ZONE, GetSlot } from './slots';
 import { TimeDuration } from './timeduration';
 import type { Temporal } from '..';
@@ -397,8 +397,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       );
     }
 
-    const Instant = GetIntrinsic('%Temporal.Instant%');
-    return formatter.format(new Instant(GetSlot(this, EPOCHNANOSECONDS)));
+    return formatter.format(ES.CreateTemporalInstant(GetSlot(this, EPOCHNANOSECONDS)));
   }
   toJSON(): Return['toJSON'] {
     ES.CheckReceiver(this, ES.IsTemporalZonedDateTime);
@@ -440,8 +439,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
   }
   toInstant(): Return['toInstant'] {
     ES.CheckReceiver(this, ES.IsTemporalZonedDateTime);
-    const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
-    return new TemporalInstant(GetSlot(this, EPOCHNANOSECONDS));
+    return ES.CreateTemporalInstant(GetSlot(this, EPOCHNANOSECONDS));
   }
   toPlainDate(): Return['toPlainDate'] {
     ES.CheckReceiver(this, ES.IsTemporalZonedDateTime);

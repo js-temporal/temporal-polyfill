@@ -1,7 +1,6 @@
-import { DEBUG } from './debug';
 import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
-import { EPOCHNANOSECONDS, CreateSlots, GetSlot, SetSlot } from './slots';
+import { EPOCHNANOSECONDS, GetSlot } from './slots';
 import type { Temporal } from '..';
 import { DateTimeFormat } from './intl';
 import type { InstantParams as Params, InstantReturn as Return } from './internaltypes';
@@ -17,20 +16,7 @@ export class Instant implements Temporal.Instant {
     }
 
     const ns = ES.ToBigInt(epochNanoseconds);
-    ES.ValidateEpochNanoseconds(ns);
-    CreateSlots(this);
-    SetSlot(this, EPOCHNANOSECONDS, ns);
-
-    if (DEBUG) {
-      const iso = ES.GetISOPartsFromEpoch(ns);
-      const repr = ES.ISODateTimeToString(iso, 'iso8601', 'auto', 'never') + 'Z';
-      Object.defineProperty(this, '_repr_', {
-        value: `${this[Symbol.toStringTag]} <${repr}>`,
-        writable: false,
-        enumerable: false,
-        configurable: false
-      });
-    }
+    ES.CreateTemporalInstantSlots(this, ns);
   }
 
   get epochMilliseconds(): Return['epochMilliseconds'] {
@@ -80,7 +66,7 @@ export class Instant implements Temporal.Instant {
     ES.ValidateTemporalRoundingIncrement(roundingIncrement, maximumIncrements[smallestUnit], true);
     const ns = GetSlot(this, EPOCHNANOSECONDS);
     const roundedNs = ES.RoundTemporalInstant(ns, roundingIncrement, smallestUnit, roundingMode);
-    return new Instant(roundedNs);
+    return ES.CreateTemporalInstant(roundedNs);
   }
   equals(otherParam: Params['equals'][0]): Return['equals'] {
     ES.CheckReceiver(this, ES.IsTemporalInstant);
@@ -101,7 +87,7 @@ export class Instant implements Temporal.Instant {
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     const ns = GetSlot(this, EPOCHNANOSECONDS);
     const roundedNs = ES.RoundTemporalInstant(ns, increment, unit, roundingMode);
-    const roundedInstant = new Instant(roundedNs);
+    const roundedInstant = ES.CreateTemporalInstant(roundedNs);
     return ES.TemporalInstantToString(roundedInstant, timeZone, precision);
   }
   toJSON(): string {
@@ -126,15 +112,13 @@ export class Instant implements Temporal.Instant {
 
   static fromEpochMilliseconds(epochMilliseconds: Params['fromEpochMilliseconds'][0]): Return['fromEpochMilliseconds'] {
     const epochNanoseconds = ES.epochMsToNs(ES.ToNumber(epochMilliseconds));
-    ES.ValidateEpochNanoseconds(epochNanoseconds);
-    return new Instant(epochNanoseconds);
+    return ES.CreateTemporalInstant(epochNanoseconds);
   }
   static fromEpochNanoseconds(
     epochNanosecondsParam: Params['fromEpochNanoseconds'][0]
   ): Return['fromEpochNanoseconds'] {
     const epochNanoseconds = ES.ToBigInt(epochNanosecondsParam);
-    ES.ValidateEpochNanoseconds(epochNanoseconds);
-    return new Instant(epochNanoseconds);
+    return ES.CreateTemporalInstant(epochNanoseconds);
   }
   static from(item: Params['from'][0]): Return['from'] {
     return ES.ToTemporalInstant(item);
