@@ -29,7 +29,8 @@ import type {
   CalendarFieldsRecord,
   MonthDayFromFieldsObject,
   Overflow,
-  Resolve
+  Resolve,
+  AnySlottedType
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
 import { ApplyUnsignedRoundingMode, FMAPowerOf10, GetUnsignedRoundingMode, TruncatingDivModByPowerOf10 } from './math';
@@ -452,6 +453,14 @@ export function IsTemporalMonthDay(item: unknown): item is Temporal.PlainMonthDa
 export function IsTemporalZonedDateTime(item: unknown): item is Temporal.ZonedDateTime {
   return HasSlot(item, EPOCHNANOSECONDS, TIME_ZONE, CALENDAR);
 }
+
+export function CheckReceiver<T extends AnySlottedType>(
+  item: unknown,
+  test: (item: unknown) => item is T
+): asserts item is T {
+  if (!test(item)) throw new TypeError('invalid receiver: method called with the wrong type of this-object');
+}
+
 export function RejectTemporalLikeObject(item: AnyTemporalLikeType) {
   if (HasSlot(item, CALENDAR) || HasSlot(item, TIME_ZONE)) {
     throw new TypeError('with() does not support a calendar or timeZone property');

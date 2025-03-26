@@ -173,13 +173,17 @@ function createDateTimeFormat(
   return undefined; // TODO: I couldn't satisfy TS without adding this. Is there another way?
 }
 
+function IsPatchedDateTimeFormat(item: unknown): item is DateTimeFormatImpl {
+  return HasSlot(item, ORIGINAL);
+}
+
 class DateTimeFormatImpl {
   constructor(locales: Params['constructor'][0] = undefined, options: Params['constructor'][1] = undefined) {
     createDateTimeFormat(this, locales, options);
   }
 
   get format() {
-    if (!HasSlot(this, ORIGINAL)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, IsPatchedDateTimeFormat);
     const boundFormat = format.bind(this);
     Object.defineProperties(boundFormat, {
       length: { value: 1, enumerable: false, writable: false, configurable: true },
@@ -189,7 +193,7 @@ class DateTimeFormatImpl {
   }
 
   formatRange(a: Params['formatRange'][0], b: Params['formatRange'][1]): Return['formatRange'] {
-    if (!HasSlot(this, ORIGINAL)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, IsPatchedDateTimeFormat);
     return formatRange.call(this, a, b);
   }
 
@@ -197,7 +201,7 @@ class DateTimeFormatImpl {
     datetime: Params['formatToParts'][0],
     ...rest: P
   ): Return['formatToParts'] {
-    if (!HasSlot(this, ORIGINAL)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, IsPatchedDateTimeFormat);
     return formatToParts.call(this, datetime, ...rest);
   }
 
@@ -205,12 +209,12 @@ class DateTimeFormatImpl {
     a: Params['formatRangeToParts'][0],
     b: Params['formatRangeToParts'][1]
   ): Return['formatRangeToParts'] {
-    if (!HasSlot(this, ORIGINAL)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, IsPatchedDateTimeFormat);
     return formatRangeToParts.call(this, a, b);
   }
 
   resolvedOptions(): Return['resolvedOptions'] {
-    if (!HasSlot(this, ORIGINAL)) throw new TypeError('invalid receiver');
+    ES.CheckReceiver(this, IsPatchedDateTimeFormat);
     return resolvedOptions.call(this);
   }
 }
