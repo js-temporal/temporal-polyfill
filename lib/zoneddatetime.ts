@@ -435,7 +435,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       direction === 'next'
         ? ES.GetNamedTimeZoneNextTransition(timeZone, thisEpochNanoseconds)
         : ES.GetNamedTimeZonePreviousTransition(timeZone, thisEpochNanoseconds);
-    return epochNanoseconds === null ? null : new ZonedDateTime(epochNanoseconds, timeZone, GetSlot(this, CALENDAR));
+    return epochNanoseconds === null
+      ? null
+      : ES.CreateTemporalZonedDateTime(epochNanoseconds, timeZone, GetSlot(this, CALENDAR));
   }
   toInstant(): Return['toInstant'] {
     ES.CheckReceiver(this, ES.IsTemporalZonedDateTime);
