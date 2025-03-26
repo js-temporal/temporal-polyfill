@@ -1513,11 +1513,10 @@ export function ToTemporalDuration(item: DurationParams['from'][0]) {
 }
 
 export function ToTemporalInstant(itemParam: InstantParams['from'][0]) {
-  const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
   let item: string | number;
   if (IsObject(itemParam)) {
     if (IsTemporalInstant(itemParam) || IsTemporalZonedDateTime(itemParam)) {
-      return new TemporalInstant(GetSlot(itemParam, EPOCHNANOSECONDS));
+      return CreateTemporalInstant(GetSlot(itemParam, EPOCHNANOSECONDS));
     }
     item = ToPrimitive(itemParam, String);
   } else {
@@ -1548,8 +1547,7 @@ export function ToTemporalInstant(itemParam: InstantParams['from'][0]) {
   );
   CheckISODaysRange(balanced.isoDate);
   const epochNanoseconds = GetUTCEpochNanoseconds(balanced);
-  ValidateEpochNanoseconds(epochNanoseconds);
-  return new TemporalInstant(epochNanoseconds);
+  return CreateTemporalInstant(epochNanoseconds);
 }
 
 export function ToTemporalMonthDay(item: PlainMonthDayParams['from'][0], options?: PlainMonthDayParams['from'][1]) {
@@ -1932,6 +1930,30 @@ export function CreateTemporalYearMonth(isoDate: ISODate, calendar: BuiltinCalen
   const TemporalPlainYearMonth = GetIntrinsic('%Temporal.PlainYearMonth%');
   const result = Object.create(TemporalPlainYearMonth.prototype);
   CreateTemporalYearMonthSlots(result, isoDate, calendar);
+  return result;
+}
+
+export function CreateTemporalInstantSlots(result: Temporal.Instant, epochNanoseconds: JSBI) {
+  ValidateEpochNanoseconds(epochNanoseconds);
+  CreateSlots(result);
+  SetSlot(result, EPOCHNANOSECONDS, epochNanoseconds);
+
+  if (DEBUG) {
+    const iso = GetISOPartsFromEpoch(epochNanoseconds);
+    const repr = ISODateTimeToString(iso, 'iso8601', 'auto', 'never') + 'Z';
+    Object.defineProperty(result, '_repr_', {
+      value: `${result[Symbol.toStringTag]} <${repr}>`,
+      writable: false,
+      enumerable: false,
+      configurable: false
+    });
+  }
+}
+
+export function CreateTemporalInstant(epochNanoseconds: JSBI) {
+  const TemporalInstant = GetIntrinsic('%Temporal.Instant%');
+  const result: Temporal.Instant = Object.create(TemporalInstant.prototype);
+  CreateTemporalInstantSlots(result, epochNanoseconds);
   return result;
 }
 
@@ -2684,7 +2706,7 @@ function GetUTCEpochNanoseconds(isoDateTime: ISODateTime) {
   return JSBI.add(epochMsToNs(ms), JSBI.BigInt(subMs));
 }
 
-export function GetISOPartsFromEpoch(epochNanoseconds: JSBI) {
+function GetISOPartsFromEpoch(epochNanoseconds: JSBI) {
   let epochMilliseconds = epochNsToMs(epochNanoseconds, 'trunc');
   let nanos = JSBI.toNumber(JSBI.remainder(epochNanoseconds, MILLION));
   if (nanos < 0) {
@@ -3196,7 +3218,7 @@ function AssertISODateTimeWithinLimits(isoDateTime: ISODateTime) {
 // In the spec, IsValidEpochNanoseconds returns a boolean and call sites are
 // responsible for throwing. In the polyfill, ValidateEpochNanoseconds takes its
 // place so that we can DRY the throwing code.
-export function ValidateEpochNanoseconds(epochNanoseconds: JSBI) {
+function ValidateEpochNanoseconds(epochNanoseconds: JSBI) {
   if (JSBI.lessThan(epochNanoseconds, NS_MIN) || JSBI.greaterThan(epochNanoseconds, NS_MAX)) {
     throw new RangeError('date/time value is outside of supported range');
   }
@@ -4455,8 +4477,7 @@ export function AddDurationToInstant(
   }
   const internalDuration = ToInternalDurationRecordWith24HourDays(duration);
   const ns = AddInstant(GetSlot(instant, EPOCHNANOSECONDS), internalDuration.time);
-  const Instant = GetIntrinsic('%Temporal.Instant%');
-  return new Instant(ns);
+  return CreateTemporalInstant(ns);
 }
 
 export function AddDurationToDate(

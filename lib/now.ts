@@ -1,5 +1,4 @@
 import * as ES from './ecmascript';
-import { GetIntrinsic } from './intrinsicclass';
 import type { Temporal } from '..';
 
 function SystemDateTime(timeZone: string) {
@@ -7,8 +6,7 @@ function SystemDateTime(timeZone: string) {
 }
 
 const instant: (typeof Temporal.Now)['instant'] = () => {
-  const Instant = GetIntrinsic('%Temporal.Instant%');
-  return new Instant(ES.SystemUTCEpochNanoSeconds());
+  return ES.CreateTemporalInstant(ES.SystemUTCEpochNanoSeconds());
 };
 const plainDateTimeISO: (typeof Temporal.Now)['plainDateTimeISO'] = (temporalTimeZoneLike = ES.DefaultTimeZone()) => {
   const timeZone = ES.ToTemporalTimeZoneIdentifier(temporalTimeZoneLike);
