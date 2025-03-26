@@ -25,7 +25,6 @@ export const {
     filter: ArrayPrototypeFilter,
     every: ArrayPrototypeEvery,
     find: ArrayPrototypeFind,
-    flatMap: ArrayPrototypeFlatMap,
     forEach: ArrayPrototypeForEach,
     includes: ArrayPrototypeIncludes,
     indexOf: ArrayPrototypeIndexOf,
@@ -89,7 +88,7 @@ export const {
 } = IntlDurationFormatPrototype as MaybeDurationFormat;
 export const { stringify: JSONStringify } = JSON;
 export const {
-  prototype: { get: MapPrototypeGet, has: MapPrototypeHas, set: MapPrototypeSet }
+  prototype: { get: MapPrototypeGet, set: MapPrototypeSet }
 } = Map;
 export const {
   abs: MathAbs,

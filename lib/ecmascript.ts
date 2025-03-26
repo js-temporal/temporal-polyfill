@@ -16,7 +16,6 @@ import {
   ArrayPrototypeConcat,
   ArrayPrototypeEvery,
   ArrayPrototypeFilter,
-  ArrayPrototypeFlatMap,
   ArrayPrototypeIncludes,
   ArrayPrototypeIndexOf,
   ArrayPrototypeJoin,
@@ -42,7 +41,6 @@ import {
   IntlDateTimeFormatPrototypeResolvedOptions,
   IntlSupportedValuesOf,
   MapPrototypeGet,
-  MapPrototypeHas,
   MapPrototypeSet,
   MathAbs,
   MathFloor,
@@ -386,31 +384,31 @@ const CALENDAR_FIELD_KEYS: readonly FieldKey[] = [
 ] as const;
 
 type BuiltinCastFunction = (v: unknown) => string | number;
-const BUILTIN_CASTS = new MapCtor<AnyTemporalKey, BuiltinCastFunction>([
-  ['era', ToString],
-  ['eraYear', ToIntegerWithTruncation],
-  ['year', ToIntegerWithTruncation],
-  ['month', ToPositiveIntegerWithTruncation],
-  ['monthCode', ToSyntacticallyValidMonthCode],
-  ['day', ToPositiveIntegerWithTruncation],
-  ['hour', ToIntegerWithTruncation],
-  ['minute', ToIntegerWithTruncation],
-  ['second', ToIntegerWithTruncation],
-  ['millisecond', ToIntegerWithTruncation],
-  ['microsecond', ToIntegerWithTruncation],
-  ['nanosecond', ToIntegerWithTruncation],
-  ['offset', ToOffsetString],
-  ['timeZone', ToTemporalTimeZoneIdentifier]
-]);
+const BUILTIN_CASTS: Partial<Record<FieldKey, BuiltinCastFunction>> = {
+  era: ToString,
+  eraYear: ToIntegerWithTruncation,
+  year: ToIntegerWithTruncation,
+  month: ToPositiveIntegerWithTruncation,
+  monthCode: ToSyntacticallyValidMonthCode,
+  day: ToPositiveIntegerWithTruncation,
+  hour: ToIntegerWithTruncation,
+  minute: ToIntegerWithTruncation,
+  second: ToIntegerWithTruncation,
+  millisecond: ToIntegerWithTruncation,
+  microsecond: ToIntegerWithTruncation,
+  nanosecond: ToIntegerWithTruncation,
+  offset: ToOffsetString,
+  timeZone: ToTemporalTimeZoneIdentifier
+};
 
-const BUILTIN_DEFAULTS = new MapCtor([
-  ['hour', 0],
-  ['minute', 0],
-  ['second', 0],
-  ['millisecond', 0],
-  ['microsecond', 0],
-  ['nanosecond', 0]
-]);
+const BUILTIN_DEFAULTS: Partial<Record<FieldKey, number>> = {
+  hour: 0,
+  minute: 0,
+  second: 0,
+  millisecond: 0,
+  microsecond: 0,
+  nanosecond: 0
+};
 
 // each item is [plural, singular, category, (length in ns)]
 type TemporalUnitsEntry = [Temporal.PluralUnit<Temporal.DateTimeUnit>, Temporal.DateTimeUnit, 'date' | 'time', number?];
@@ -418,29 +416,32 @@ const TEMPORAL_UNITS = [
   ['years', 'year', 'date'],
   ['months', 'month', 'date'],
   ['weeks', 'week', 'date'],
-  ['days', 'day', 'date', DAY_NANOS],
-  ['hours', 'hour', 'time', 3600e9],
-  ['minutes', 'minute', 'time', 60e9],
-  ['seconds', 'second', 'time', 1e9],
-  ['milliseconds', 'millisecond', 'time', 1e6],
-  ['microseconds', 'microsecond', 'time', 1e3],
-  ['nanoseconds', 'nanosecond', 'time', 1]
+  ['days', 'day', 'date'],
+  ['hours', 'hour', 'time'],
+  ['minutes', 'minute', 'time'],
+  ['seconds', 'second', 'time'],
+  ['milliseconds', 'millisecond', 'time'],
+  ['microseconds', 'microsecond', 'time'],
+  ['nanoseconds', 'nanosecond', 'time']
 ] as const;
-const SINGULAR_FOR = new MapCtor(
+const SINGULAR_FOR = Object.fromEntries(
   Call(ArrayPrototypeMap, TEMPORAL_UNITS, [(e: TemporalUnitsEntry) => [e[0], e[1]] as const])
 );
 // Iterable destructuring is acceptable in this first-run code.
-const PLURAL_FOR = new MapCtor(
+const PLURAL_FOR = Object.fromEntries(
   Call(ArrayPrototypeMap, TEMPORAL_UNITS, [([p, s]: TemporalUnitsEntry) => [s, p] as const])
 );
 const UNITS_DESCENDING = Call(ArrayPrototypeMap, TEMPORAL_UNITS, [([, s]) => s]);
 type TimeUnitOrDay = Temporal.TimeUnit | 'day';
-// Utility type whose `get` is only callable using valid keys, and that therefore
-// omits `undefined` from its result.
-type ConstMap<K, V> = Omit<ReadonlyMap<K, V>, 'get'> & { get(key: K): V };
-const NS_PER_TIME_UNIT = new MapCtor(
-  Call(ArrayPrototypeFlatMap, TEMPORAL_UNITS, [([, s, , l]: TemporalUnitsEntry) => (l ? [[s, l] as const] : [])])
-) as ConstMap<TimeUnitOrDay, number>;
+const NS_PER_TIME_UNIT = {
+  day: DAY_NANOS,
+  hour: 3600e9,
+  minute: 60e9,
+  second: 1e9,
+  millisecond: 1e6,
+  microsecond: 1e3,
+  nanosecond: 1
+};
 
 const DURATION_FIELDS = [
   'days',
@@ -1184,7 +1185,7 @@ export function GetTemporalUnitValuedOption<
   Call(ArrayPrototypePush, allowedValues, allowedSingular);
   for (let index = 0; index < allowedSingular.length; index++) {
     const singular = allowedSingular[index];
-    const plural = Call(MapPrototypeGet, PLURAL_FOR, [singular]);
+    const plural = PLURAL_FOR[singular];
     if (plural !== undefined) Call(ArrayPrototypePush, allowedValues, [plural]);
   }
   let retval = GetOption(options, key, allowedValues, defaultVal);
@@ -1192,12 +1193,7 @@ export function GetTemporalUnitValuedOption<
     throw new RangeErrorCtor(`${key} is required`);
   }
   // Coerce any plural units into their singular form
-  if (Call(MapPrototypeHas, SINGULAR_FOR, [retval as Temporal.PluralUnit<Temporal.DateTimeUnit>])) {
-    // We just has-checked this, but tsc doesn't understand that.
-    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-    return Call(MapPrototypeGet, SINGULAR_FOR, [retval as Temporal.PluralUnit<Temporal.DateTimeUnit>])! as R;
-  }
-  return retval as R;
+  return (retval && retval in SINGULAR_FOR ? SINGULAR_FOR[retval] : retval) as R;
 }
 
 export function GetTemporalRelativeToOption(options: {
@@ -1392,12 +1388,12 @@ export function PrepareCalendarFields<
     const value = bag[property];
     if (value !== undefined) {
       any = true;
-      result[property] = castExists(Call(MapPrototypeGet, BUILTIN_CASTS, [property])(value));
+      result[property] = castExists(BUILTIN_CASTS[property])(value);
     } else if (requiredFields !== 'partial') {
       if (Call(ArrayPrototypeIncludes, requiredFields, [property])) {
         throw new TypeErrorCtor(`required property '${property}' missing or undefined`);
       }
-      result[property] = Call(MapPrototypeGet, BUILTIN_DEFAULTS, [property]);
+      result[property] = BUILTIN_DEFAULTS[property];
     }
   }
   if (requiredFields === 'partial' && !any) {
@@ -3821,7 +3817,7 @@ function NudgeToZonedTime(
 
   // Compute time parts of the duration to nanoseconds and round
   // Result could be negative
-  const unitIncrement = JSBI.BigInt(Call(MapPrototypeGet, NS_PER_TIME_UNIT, [unit]) * increment);
+  const unitIncrement = JSBI.BigInt(NS_PER_TIME_UNIT[unit] * increment);
   let roundedTimeDuration = duration.time.round(unitIncrement, roundingMode);
 
   // Does the rounded time exceed the time-in-day?
@@ -3865,8 +3861,7 @@ function NudgeToDayOrTime(
 
   const timeDuration = duration.time.add24HourDays(duration.date.days);
   // Convert to nanoseconds and round
-  const unitLength = Call(MapPrototypeGet, NS_PER_TIME_UNIT, [smallestUnit]);
-  const roundedTime = timeDuration.round(JSBI.BigInt(increment * unitLength), roundingMode);
+  const roundedTime = timeDuration.round(JSBI.BigInt(increment * NS_PER_TIME_UNIT[smallestUnit]), roundingMode);
   const diffTime = roundedTime.subtract(timeDuration);
 
   // Determine if whole days expanded
@@ -4740,7 +4735,7 @@ export function RoundTemporalInstant(
   unit: TimeUnitOrDay,
   roundingMode: Temporal.RoundingMode
 ) {
-  const incrementNs = Call(MapPrototypeGet, NS_PER_TIME_UNIT, [unit]) * increment;
+  const incrementNs = NS_PER_TIME_UNIT[unit] * increment;
   return RoundNumberToIncrementAsIfPositive(epochNs, JSBI.BigInt(incrementNs), roundingMode);
 }
 
@@ -4784,7 +4779,7 @@ export function RoundTime(
     case 'nanosecond':
       quantity = nanosecond;
   }
-  const nsPerUnit = Call(MapPrototypeGet, NS_PER_TIME_UNIT, [unit]);
+  const nsPerUnit = NS_PER_TIME_UNIT[unit];
   const result = RoundNumberToIncrement(quantity, nsPerUnit * increment, roundingMode) / nsPerUnit;
   switch (unit) {
     case 'day':
@@ -4813,12 +4808,12 @@ export function RoundTimeDuration(
   roundingMode: Temporal.RoundingMode
 ) {
   // unit must be a time unit
-  const divisor = Call(MapPrototypeGet, NS_PER_TIME_UNIT, [unit]);
+  const divisor = NS_PER_TIME_UNIT[unit];
   return timeDuration.round(JSBI.BigInt(divisor * increment), roundingMode);
 }
 
 export function TotalTimeDuration(timeDuration: TimeDuration, unit: TimeUnitOrDay) {
-  const divisor: number = Call(MapPrototypeGet, NS_PER_TIME_UNIT, [unit]);
+  const divisor = NS_PER_TIME_UNIT[unit];
   return timeDuration.fdiv(JSBI.BigInt(divisor));
 }
 
