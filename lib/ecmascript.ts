@@ -2370,11 +2370,6 @@ interface ToStringOptions {
   roundingMode: ReturnType<typeof GetRoundingModeOption>;
 }
 
-function formatAsDecimalNumber(num: number | JSBI): string {
-  if (typeof num === 'number' && num <= Number.MAX_SAFE_INTEGER) return num.toString(10);
-  return JSBI.BigInt(num).toString();
-}
-
 export function TemporalDurationToString(
   duration: Temporal.Duration,
   precision: Exclude<SecondsStringPrecisionRecord['precision'], 'minute'>
@@ -2388,14 +2383,14 @@ export function TemporalDurationToString(
   const sign = DurationSign(duration);
 
   let datePart = '';
-  if (years !== 0) datePart += `${formatAsDecimalNumber(Math.abs(years))}Y`;
-  if (months !== 0) datePart += `${formatAsDecimalNumber(Math.abs(months))}M`;
-  if (weeks !== 0) datePart += `${formatAsDecimalNumber(Math.abs(weeks))}W`;
-  if (days !== 0) datePart += `${formatAsDecimalNumber(Math.abs(days))}D`;
+  if (years !== 0) datePart += `${Math.abs(years)}Y`;
+  if (months !== 0) datePart += `${Math.abs(months)}M`;
+  if (weeks !== 0) datePart += `${Math.abs(weeks)}W`;
+  if (days !== 0) datePart += `${Math.abs(days)}D`;
 
   let timePart = '';
-  if (hours !== 0) timePart += `${formatAsDecimalNumber(Math.abs(hours))}H`;
-  if (minutes !== 0) timePart += `${formatAsDecimalNumber(Math.abs(minutes))}M`;
+  if (hours !== 0) timePart += `${Math.abs(hours)}H`;
+  if (minutes !== 0) timePart += `${Math.abs(minutes)}M`;
 
   // Keeping sub-second units separate avoids losing precision after resolving
   // any overflows from rounding
@@ -2412,7 +2407,7 @@ export function TemporalDurationToString(
     ['second', 'millisecond', 'microsecond', 'nanosecond'].includes(DefaultTemporalLargestUnit(duration)) ||
     precision !== 'auto'
   ) {
-    const secondsPart = formatAsDecimalNumber(Math.abs(secondsDuration.sec));
+    const secondsPart = Math.abs(secondsDuration.sec);
     const subSecondsPart = FormatFractionalSeconds(Math.abs(secondsDuration.subsec), precision);
     timePart += `${secondsPart}${subSecondsPart}S`;
   }
