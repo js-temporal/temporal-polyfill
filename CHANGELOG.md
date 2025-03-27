@@ -1,3 +1,55 @@
+# 0.5.0
+
+Breaking changes:
+
+This major update reflects all changes to the Temporal proposal adopted by TC39 between May 2023 and March 2025.
+
+The majority of these changes were made in the June 2024 TC39 meeting (slides [here](https://docs.google.com/presentation/d/1PPMAxVnVjFwRPuJwOvVsw9nZLQ6jDM8Hd5PNO0Grp4I/edit?slide=id.g2e01b5af2da_0_444#slide=id.g2e01b5af2da_0_444)) where the scope of Temporal was reduced at the request of JS engine implementers who were concerned about the size impact of adding Temporal to distributions on limited-capacity devices like low-end Android phones and Apple Watch.
+
+- User-defined calendars have been removed.
+  Calendars are now represented by strings representing built-in calendars.
+  Without custom calendars, the huge surface area of `Temporal.Calendar` was not necessary, and that type was removed from the proposal.
+- User-defined time zones have been removed.
+  Time zones are now only represented by string identifiers representing built-in time zones: either a Zone or Link name from the IANA Time Zone Database, or a time zone offset with minutes precision.
+  `Temporal.TimeZone` has also been removed, and its methods replaced by the following:
+  - `getPreviousTransition`/`getNextTransition` - use the new `getTimeZoneTransition` method of `Temporal.ZoneDateTime`.
+  - `equals` - use `ZonedDateTime.prototype.equals` using the same instant and calendar.
+  - Other `Temporal.TimeZone` methods can use the corresponding methods on `Temporal.ZonedDateTime`.
+- Many convenience methods have been removed. In all cases, the same functionality is available using other Temporal methods:
+  - Removed `getISOFields()` methods. Instead use `withCalendar('iso8601')` and the individual property getters.
+  - Removed `withPlainDate()` methods. Instead use `with({ year, monthCode, day })`.
+  - Removed `toPlainDateTime()` and `toZonedDateTime()` methods of `Temporal.PlainTime`. Instead use the same-named methods on `Temporal.PlainDate` to combine a date and a time.
+  - Removed `epochSeconds` and `epochMicroseconds` properties. Instead calculate epoch seconds with `Math.floor(epochMilliseconds / 1000)` and epoch microseconds with `epochNanoseconds / 1000n + ((epochNanoseconds % 1000n) < 0n ? -1n : 0n)`.
+  - Removed `toPlainYearMonth()` and `toPlainMonthDay()` methods of `Temporal.PlainDateTime` and `Temporal.ZonedDateTime`. Instead use `toPlainDate()` and then the methods on `Temporal.PlainDate`.
+  - Removed `Temporal.Instant.prototype.toZonedDateTime` and `Temporal.Now.zonedDateTime`. Instead use `toZonedDateTimeISO()`/`zonedDateTimeISO()` to create a `Temporal.ZonedDateTime` object using the ISO8601 calendar, and then use `withCalendar()` if a non-ISO calendar is desired.
+- The `relativeTo` parameter is no longer accepted in `Temporal.Duration.prototype.add` and `subtract`. Instead take the `relativeTo` object, add the two durations to it, and difference it with the original using `until()`.
+- Throw if there are multiple calendar annotations in a string and one has the critical flag ([Proposal PR](https://github.com/tc39/proposal-temporal/pull/2572))
+- Changed the way calculations are done with `Temporal.Duration`, and placed limits on each of the units. Years, months, and weeks are each limited to 2³²−1. The other units (days through nanoseconds) are collectively limited: taken together, they must be less than `Number.MAX_SAFE_INTEGER` seconds plus 999,999,999 nanoseconds. This has few user-visible changes, but it does mean that some durations are no longer allowed (for example, `Temporal.Duration.from({ seconds: Number.MAX_VALUE })`.) ([Proposal PR 1](https://github.com/tc39/proposal-temporal/pull/2722), [PR 2](https://github.com/tc39/proposal-temporal/pull/2727), [PR 3](https://github.com/tc39/proposal-temporal/pull/2612))
+- Offset time zones are now limited to minutes precision. That is, you can have `[+01:01]` but not `[+01:00:01]` or `[+01:00:00.000000001]` ([Proposal PR](https://github.com/tc39/proposal-temporal/pull/2607))
+- For APIs that take a string, other primitives are no longer coerced to strings. Technically, you could previously do `Temporal.PlainDate.from(20230711)` and it would be treated as `Temporal.PlainDate.from("20230711")`. This is no longer the case. ([Proposal PR](https://github.com/tc39/proposal-temporal/pull/2574))
+- `Temporal.PlainYearMonth.prototype.toPlainDate` and `Temporal.PlainMonthDay.prototype.toPlainDate` now have clamping behaviour instead of throwing if the resulting PlainDate would be invalid. For example, `birthday.toPlainDate({ year: 2025 })` will now return February 28, 2025 if the birthday in question if February 29. ([Proposal PR](https://github.com/tc39/proposal-temporal/pull/2718))
+  - If you still want the throwing behaviour, you can get it more verbosely:
+  ```js
+  const { monthCode, day } = birthday;
+  Temporal.PlainDate.from({ year: 2025, monthCode, day }, { overflow: 'reject' });
+  ```
+- Not all calendars have a week numbering scheme, so `weekOfYear` and `yearOfWeek` methods may now return `undefined` ([Proposal PR](https://github.com/tc39/proposal-temporal/pull/2756))
+- In `Temporal.Duration.prototype.round()`, rounding to a >1 increment of a calendar `smallestUnit` while simultaneously balancing to a calendar `largestUnit` is now disallowed and will throw ([Proposal PR](https://github.com/tc39/proposal-temporal/pull/2916))
+- Creating a `Temporal.MonthDay` in a non-ISO8601 calendar will now throw if the year is too far (>¼ million years) in the future or past ([Proposal PR](https://github.com/tc39/proposal-temporal/pull/3054))
+
+Bug fixes:
+
+- Fixed several bugs in duration calculations, particularly rounding ([Proposal PR 1](https://github.com/tc39/proposal-temporal/pull/2571), [PR 2](https://github.com/tc39/proposal-temporal/pull/2758), [PR 3](https://github.com/tc39/proposal-temporal/pull/2759), [PR 4](https://github.com/tc39/proposal-temporal/pull/2797), [PR 5](https://github.com/tc39/proposal-temporal/pull/2810))
+- Fixed a bug in start-of-day calculations ([Proposal PR](https://github.com/tc39/proposal-temporal/pull/2918))
+- Many small bug fixes to bring the polyfill into better compliance with the Temporal proposal
+
+Non-breaking changes
+
+- Many improvements in performance and bundle size
+- Remove runtime dependency on tslib. Now this package has only one runtime dependency: JSBI (a polyfill for `BigInt`)
+- Update dev dependencies
+- Support Node 20.x and test it in CI
+
 # 0.4.4
 
 Breaking changes:
