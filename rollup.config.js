@@ -2,6 +2,7 @@ import commonjs from '@rollup/plugin-commonjs';
 import nodeResolve from '@rollup/plugin-node-resolve';
 import babel from '@rollup/plugin-babel';
 import replace from '@rollup/plugin-replace';
+import strip from '@rollup/plugin-strip';
 import terser from '@rollup/plugin-terser';
 import sourcemaps from 'rollup-plugin-sourcemaps';
 import { env } from 'process';
@@ -43,6 +44,13 @@ function withPlugins(
       options.babelConfig.inputSourceMap = true;
     }
     basePlugins.push(babel(options.babelConfig));
+  }
+  if (!options.enableAssertions) {
+    basePlugins.push(
+      strip({
+        functions: ['assert', 'assertNotReached', 'assertExists', 'ES.assertExists']
+      })
+    );
   }
   if (options.optimize) {
     basePlugins.push(
