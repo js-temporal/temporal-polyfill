@@ -25,7 +25,8 @@ function withPlugins(
     babelConfig: undefined,
     optimize: false,
     debugBuild: true,
-    enableAssertions: true
+    enableAssertions: true,
+    minifyNames: false
   }
 ) {
   const basePlugins = [
@@ -56,16 +57,17 @@ function withPlugins(
     basePlugins.push(
       terser({
         keep_classnames: true,
-        keep_fnames: true,
+        keep_fnames: !options.minifyNames,
         ecma: 2015,
         compress: {
           keep_fargs: true,
           keep_classnames: true,
-          keep_fnames: true
+          keep_fnames: !options.minifyNames,
+          passes: 2
         },
         mangle: {
           keep_classnames: true,
-          keep_fnames: true
+          keep_fnames: !options.minifyNames
         }
       })
     );
@@ -159,7 +161,8 @@ if (isTest262Build) {
     plugins: withPlugins({
       debugBuild: !isProduction,
       enableAssertions: !isProduction,
-      optimize: isProduction
+      optimize: isProduction,
+      minifyNames: isProduction
       // Here is where we could insert the JSBI -> native BigInt plugin if we
       // could find a way to provide a separate bundle for modern browsers
       // that can use native BigInt.
