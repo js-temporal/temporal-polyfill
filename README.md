@@ -11,6 +11,14 @@ Note that this polyfill is not affiliated with TC39. Links to other polyfills ca
 
 This polyfill is compatible with Node.js 14 or later.
 
+## v0.4.0 => v0.5.0 Breaking Changes and Migration
+
+Until recently, this polyfill lagged behind the proposal repo (and its not-for-production-use polyfill).
+It's now caught up with the last few years of changes to the Temporal proposal, including many removed APIs and other breaking changes.
+While breaking changes to any TC39 proposal are always possible before [Stage 4](https://tc39.es/process-document/), Temporal is close to adoption and no signifncant changes are expected in the future.
+
+The [changelog](./CHANGELOG.md#050) details what's changed, including tips for migrating existing code to the latest version.
+
 ## Roadmap
 
 - [x] Fork non-production polyfill from [tc39/proposal-temporal repo](https://github.com/tc39/proposal-temporal/tree/main/polyfill)
