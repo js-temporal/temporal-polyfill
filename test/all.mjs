@@ -14,11 +14,9 @@ import './datemath.mjs';
 // tests of internals, not suitable for test262
 import './ecmascript.mjs';
 
-// Power-of-10 math
-import './math.mjs';
-
-// Internal 96-bit integer implementation, not suitable for test262
+// Internal 128-bit float implementation, not suitable for test262
 import './timeduration.mjs';
+import './float128.mjs';
 
 Promise.resolve()
   .then(() => {

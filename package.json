@@ -84,9 +84,6 @@
   "overrides": {
     "@rollup/pluginutils": "^5.0.2"
   },
-  "dependencies": {
-    "jsbi": "^4.3.0"
-  },
   "devDependencies": {
     "@babel/core": "^7.22.5",
     "@babel/preset-env": "^7.22.5",

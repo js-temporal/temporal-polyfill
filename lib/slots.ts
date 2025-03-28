@@ -1,5 +1,5 @@
-import type JSBI from 'jsbi';
 import type { Temporal } from '..';
+import type { F128 } from './float128';
 import type {
   BuiltinCalendarId,
   AnySlottedType,
@@ -63,7 +63,7 @@ interface SlotInfoRecord {
 
 interface Slots extends SlotInfoRecord {
   // Instant
-  [EPOCHNANOSECONDS]: SlotInfo<JSBI, Temporal.Instant | Temporal.ZonedDateTime>; // number? JSBI?
+  [EPOCHNANOSECONDS]: SlotInfo<F128, Temporal.Instant | Temporal.ZonedDateTime>; // number? JSBI?
 
   // DateTime, Date, Time, YearMonth, MonthDay
   [ISO_DATE]: SlotInfo<ISODate, Temporal.PlainDate | Temporal.PlainMonthDay | Temporal.PlainYearMonth>;
