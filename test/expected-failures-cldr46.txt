@@ -1,6 +1,0 @@
-# Failures in this file are expected to fail for all Test262 tests. To record
-# expected test failures for the transpiled or optimized builds of the polyfill,
-# see expected-failures-es5.txt and expected-failures-opt.txt respectively.
-
-# CLDR 46 / ICU 76.1 was backported to Node 20.19 LTS
-staging/Intl402/Temporal/old/non-iso-calendars.js

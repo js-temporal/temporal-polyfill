@@ -31,9 +31,10 @@ yargs(hideBin(process.argv))
       if (nodeVersion < 18) expectedFailureFiles.push('test/expected-failures-before-node18.txt');
       if (nodeVersion < 16) expectedFailureFiles.push('test/expected-failures-before-node16.txt');
       if (nodeVersion < 20) expectedFailureFiles.push('test/expected-failures-before-node20.txt');
+      if (nodeVersion < 22) expectedFailureFiles.push('test/expected-failures-before-node22.txt');
+      if (nodeVersion < 23) expectedFailureFiles.push('test/expected-failures-before-node23.txt');
       // Eventually this should be fixed and this condition should be updated.
       if (nodeVersion >= 18) expectedFailureFiles.push('test/expected-failures-cldr42.txt');
-      if (nodeVersion >= 20) expectedFailureFiles.push('test/expected-failures-cldr46.txt');
 
       // As we migrate commits from proposal-temporal, remove expected failures from here.
       expectedFailureFiles.push('test/expected-failures-todo-migrated-code.txt');
