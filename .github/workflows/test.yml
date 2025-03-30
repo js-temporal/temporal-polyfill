@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [20.x, 18.x, 16.x, 14.x]
+        version: [23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [20.x, 18.x, 16.x, 14.x]
+        version: [23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -41,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [20.x, 18.x, 16.x, 14.x]
+        version: [23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -59,7 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [20.x, 18.x, 16.x, 14.x]
+        version: [23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -78,10 +78,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
-      - name: use node.js v20.x
+      - name: use node.js v22.x
         uses: actions/setup-node@v3
         with:
-          node-version: 20.x
+          node-version: 22.x
       - run: npm ci
       - run: |
           npm ci

@@ -1,0 +1,12 @@
+# Fails until Intl.DurationFormat available in Node.js release
+intl402/DurationFormat/prototype/format/taint-temporal-duration-prototype.js
+intl402/DurationFormat/prototype/format/temporal-duration-object-arg.js
+intl402/DurationFormat/prototype/format/temporal-duration-string-arg.js
+intl402/DurationFormat/prototype/formatToParts/taint-temporal-duration-prototype.js
+intl402/DurationFormat/prototype/formatToParts/temporal-duration-object-arg.js
+intl402/DurationFormat/prototype/formatToParts/temporal-duration-string-arg.js
+intl402/Temporal/Duration/prototype/toLocaleString/returns-same-results-as-DurationFormat.js
+
+# A regression in V8 (https://issues.chromium.org/issues/40893567) caused
+# these tests to fail before Node 23.
+intl402/DateTimeFormat/prototype/format/timedatestyle-en.js
