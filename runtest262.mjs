@@ -5,7 +5,7 @@ import { hideBin } from 'yargs/helpers';
 
 const isProduction = process.env.NODE_ENV === 'production';
 const isTranspiledBuild = !!process.env.TRANSPILE;
-const timeoutMsecs = process.env.TIMEOUT || 30000;
+const timeoutMsecs = process.env.TIMEOUT || 60000;
 
 yargs(hideBin(process.argv))
   .command(
