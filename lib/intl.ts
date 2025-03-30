@@ -734,6 +734,9 @@ function temporalDurationToCompatibilityRecord(duration: Temporal.Duration) {
   return record;
 }
 
+const { format: IntlDurationFormatPrototypeFormat, formatToParts: IntlDurationFormatPrototypeFormatToParts } =
+  Intl.DurationFormat?.prototype ?? Object.create(null);
+
 export function ModifiedIntlDurationFormatPrototypeFormat(
   this: Intl.DurationFormat,
   durationLike: Temporal.DurationLike
@@ -741,7 +744,7 @@ export function ModifiedIntlDurationFormatPrototypeFormat(
   Intl.DurationFormat.prototype.resolvedOptions.call(this); // brand check
   const duration = ES.ToTemporalDuration(durationLike);
   const record = temporalDurationToCompatibilityRecord(duration);
-  return this.format(record);
+  return IntlDurationFormatPrototypeFormat.call(this, record);
 }
 
 if (Intl.DurationFormat?.prototype) {
@@ -750,6 +753,6 @@ if (Intl.DurationFormat?.prototype) {
     Intl.DurationFormat.prototype.resolvedOptions.call(this); // brand check
     const duration = ES.ToTemporalDuration(durationLike);
     const record = temporalDurationToCompatibilityRecord(duration);
-    return this.formatToParts(record);
+    return IntlDurationFormatPrototypeFormatToParts.call(this, record);
   };
 }
