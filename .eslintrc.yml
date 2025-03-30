@@ -90,6 +90,15 @@ overrides:
     rules:
       no-param-reassign: off
   - files:
+      - '*.json'
+    rules:
+      quotes:
+        - error
+        - double
+      quote-props: off
+      max-len: off
+      semi: off
+  - files:
       - '**/*.ts'
     plugins:
       - '@typescript-eslint'
