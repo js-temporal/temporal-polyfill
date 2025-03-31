@@ -1,7 +1,7 @@
 {
   "name": "@js-temporal/polyfill",
   "version": "0.5.1",
-  "description": "Polyfill for ECMA TC39 Stage 3 proposal Temporal (https://github.com/tc39/proposal-temporal)",
+  "description": "Polyfill for Temporal (https://github.com/tc39/proposal-temporal), an ECMA TC39 Stage 3 proposal",
   "type": "module",
   "main": "./dist/index.cjs",
   "module": "./dist/index.esm.js",
