@@ -3,7 +3,7 @@
 ## Polyfill for [TC39 Proposal: Temporal](https://github.com/tc39/proposal-temporal)
 
 This polyfill was kicked off by some of the champions of the [Temporal proposal](https://github.com/tc39/proposal-temporal).
-The goal is to be ready for production use when the Temporal proposal reaches Stage 4, although like with all OSS work progress is dependent on contributors.
+The goal is to be ready for production use when the Temporal proposal reaches Stage 3, although like with all OSS work progress is dependent on contributors.
 We're eagerly welcoming to contributors who want to help build and maintain this polyfill.
 PRs are always welcome!
 
@@ -15,7 +15,7 @@ This polyfill is compatible with Node.js 14 or later.
 
 Until recently, this polyfill lagged behind the proposal repo (and its not-for-production-use polyfill).
 It's now caught up with the last few years of changes to the Temporal proposal, including many removed APIs and other breaking changes.
-While breaking changes to any TC39 proposal are always possible before [Stage 4](https://tc39.es/process-document/), Temporal is close to adoption and no signifncant changes are expected in the future.
+While breaking changes to any TC39 proposal are always possible before [Stage 3](https://tc39.es/process-document/), Temporal is close to adoption and no signifncant changes are expected in the future.
 
 The [changelog](./CHANGELOG.md#050) details what's changed, including tips for migrating existing code to the latest version.
 
