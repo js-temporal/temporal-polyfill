@@ -1,3 +1,18 @@
+# 0.5.1
+
+Bug fixes:
+
+- Fix infinite recursion in Node 23.x with `Intl.DurationFormat` (fixes [#329](https://github.com/js-temporal/temporal-polyfill/issues/329)).
+- Include correct `package-lock.json` (fixes [#328](https://github.com/js-temporal/temporal-polyfill/issues/328)).
+- Don't override TIMEOUT when running `npm run test262`.
+
+Non-breaking changes:
+
+- Support Node 22.x and 23.x and test them in CI (fixes [#323](https://github.com/js-temporal/temporal-polyfill/issues/323)).
+- The polyfilled `Intl.DateTimeFormat` object now supports offset time zone identifiers (e.g., `-02:30`) in Node 23.x. Note that the native `Intl.DateTimeFormat` in Node 23.x also supports them, but in a nonstandard way, so you should use the polyfilled `Intl.DateTimeFormat` in your code.
+- Add migration guide for 0.4.x → 0.5.0.
+- Reduce production bundle size by deleting assertions and minifying function names.
+
 # 0.5.0
 
 Breaking changes:
