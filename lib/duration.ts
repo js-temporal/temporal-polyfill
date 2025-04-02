@@ -25,7 +25,6 @@ import {
 import { TimeDuration } from './timeduration';
 import type { Temporal } from '..';
 import type { DurationParams as Params, DurationReturn as Return } from './internaltypes';
-import JSBI from 'jsbi';
 
 export class Duration implements Temporal.Duration {
   constructor(
@@ -270,8 +269,10 @@ export class Duration implements Temporal.Duration {
     let internalDuration = ES.ToInternalDurationRecordWith24HourDays(this);
     if (smallestUnit === 'day') {
       // First convert time units up to days
-      const { quotient, remainder } = internalDuration.time.divmod(ES.DAY_NANOS);
-      let days = internalDuration.date.days + quotient + ES.TotalTimeDuration(remainder, 'day');
+      const div = internalDuration.time.totalNs.fdiv(ES.DAY_NANOS);
+      const quotient = div.toInt();
+      const fractionalDays = div.fadd(-quotient).toNumber();
+      let days = internalDuration.date.days + quotient + fractionalDays;
       days = ES.RoundNumberToIncrement(days, roundingIncrement, roundingMode);
       const dateDuration = { years: 0, months: 0, weeks: 0, days };
       internalDuration = ES.CombineDateAndTimeDuration(dateDuration, TimeDuration.ZERO);
@@ -416,7 +417,7 @@ export class Duration implements Temporal.Duration {
 
       const after1 = ES.AddZonedDateTime(epochNs, timeZone, calendar, duration1);
       const after2 = ES.AddZonedDateTime(epochNs, timeZone, calendar, duration2);
-      return ES.ComparisonResult(JSBI.toNumber(JSBI.subtract(after1, after2)));
+      return ES.ComparisonResult(after1.sub(after2).toNumber());
     }
 
     let d1 = duration1.date.days;
@@ -430,7 +431,7 @@ export class Duration implements Temporal.Duration {
     }
     const timeDuration1 = duration1.time.add24HourDays(d1);
     const timeDuration2 = duration2.time.add24HourDays(d2);
-    return timeDuration1.cmp(timeDuration2);
+    return timeDuration1.totalNs.cmp(timeDuration2.totalNs);
   }
   [Symbol.toStringTag]!: 'Temporal.Duration';
 }

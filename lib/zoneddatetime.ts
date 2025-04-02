@@ -12,18 +12,16 @@ import type {
   ZonedDateTimeReturn as Return
 } from './internaltypes';
 
-import JSBI from 'jsbi';
-
 const customResolvedOptions = DateTimeFormat.prototype.resolvedOptions as Intl.DateTimeFormat['resolvedOptions'];
 
 export class ZonedDateTime implements Temporal.ZonedDateTime {
-  constructor(epochNanosecondsParam: bigint | JSBI, timeZoneParam: string, calendarParam = 'iso8601') {
+  constructor(epochNanosecondsParam: unknown, timeZoneParam: string, calendarParam = 'iso8601') {
     // Note: if the argument is not passed, ToBigInt(undefined) will throw. This check exists only
     //       to improve the error message.
     if (arguments.length < 1) {
       throw new TypeError('missing argument: epochNanoseconds is required');
     }
-    const epochNanoseconds = ES.ToBigInt(epochNanosecondsParam);
+    const epochNanoseconds = ES.BigIntLikeToFloat128(epochNanosecondsParam);
     let timeZone = ES.RequireString(timeZoneParam);
     const { tzName, offsetMinutes } = ES.ParseTimeZoneIdentifier(timeZone);
     if (offsetMinutes === undefined) {
@@ -273,21 +271,15 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       const dateEnd = ES.BalanceISODate(dateStart.year, dateStart.month, dateStart.day + 1);
 
       const startNs = ES.GetStartOfDay(timeZone, dateStart);
-      assert(
-        JSBI.greaterThanOrEqual(thisNs, startNs),
-        'cannot produce an instant during a day that occurs before start-of-day instant'
-      );
+      assert(thisNs.geq(startNs), 'cannot produce an instant during a day that occurs before start-of-day instant');
 
       const endNs = ES.GetStartOfDay(timeZone, dateEnd);
-      assert(
-        JSBI.lessThan(thisNs, endNs),
-        'cannot produce an instant during a day that occurs on or after end-of-day instant'
-      );
+      assert(thisNs.lt(endNs), 'cannot produce an instant during a day that occurs on or after end-of-day instant');
 
-      const dayLengthNs = JSBI.subtract(endNs, startNs);
+      const dayLengthNs = endNs.sub(startNs);
       const dayProgressNs = TimeDuration.fromEpochNsDiff(thisNs, startNs);
-      const roundedDayNs = dayProgressNs.round(dayLengthNs, roundingMode);
-      epochNanoseconds = roundedDayNs.addToEpochNs(startNs);
+      const roundedDayNs = dayProgressNs.round(dayLengthNs.toNumber(), roundingMode);
+      epochNanoseconds = roundedDayNs.totalNs.add(startNs);
     } else {
       // smallestUnit < day
       // Round based on ISO-calendar time units
@@ -318,7 +310,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const other = ES.ToTemporalZonedDateTime(otherParam);
     const one = GetSlot(this, EPOCHNANOSECONDS);
     const two = GetSlot(other, EPOCHNANOSECONDS);
-    if (!JSBI.equal(JSBI.BigInt(one), JSBI.BigInt(two))) return false;
+    if (!one.eq(two)) return false;
     if (!ES.TimeZoneEquals(GetSlot(this, TIME_ZONE), GetSlot(other, TIME_ZONE))) return false;
     return ES.CalendarEquals(GetSlot(this, CALENDAR), GetSlot(other, CALENDAR));
   }
@@ -464,9 +456,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const two = ES.ToTemporalZonedDateTime(twoParam);
     const ns1 = GetSlot(one, EPOCHNANOSECONDS);
     const ns2 = GetSlot(two, EPOCHNANOSECONDS);
-    if (JSBI.lessThan(JSBI.BigInt(ns1), JSBI.BigInt(ns2))) return -1;
-    if (JSBI.greaterThan(JSBI.BigInt(ns1), JSBI.BigInt(ns2))) return 1;
-    return 0;
+    return ns1.cmp(ns2);
   }
   [Symbol.toStringTag]!: 'Temporal.ZonedDateTime';
 }
