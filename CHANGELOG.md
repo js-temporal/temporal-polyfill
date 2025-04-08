@@ -35,6 +35,8 @@ The majority of these changes were made in the June 2024 TC39 meeting (slides [h
   - Removed `withPlainDate()` methods. Instead use `with({ year, monthCode, day })`.
   - Removed `toPlainDateTime()` and `toZonedDateTime()` methods of `Temporal.PlainTime`. Instead use the same-named methods on `Temporal.PlainDate` to combine a date and a time.
   - Removed `epochSeconds` and `epochMicroseconds` properties. Instead calculate epoch seconds with `Math.floor(epochMilliseconds / 1000)` and epoch microseconds with `epochNanoseconds / 1000n + ((epochNanoseconds % 1000n) < 0n ? -1n : 0n)`.
+  - Removed `Temporal.Instant.fromEpochSeconds()`. Instead use `Temporal.Instant.fromEpochMilliseconds(epochSeconds * 1000)`
+  - Removed `Temporal.Instant.fromEpochMicroseconds()`. Instead use `Temporal.Instant.fromEpochNanoseconds(epochMicroseconds * 1000)`
   - Removed `toPlainYearMonth()` and `toPlainMonthDay()` methods of `Temporal.PlainDateTime` and `Temporal.ZonedDateTime`. Instead use `toPlainDate()` and then the methods on `Temporal.PlainDate`.
   - Removed `Temporal.Instant.prototype.toZonedDateTime` and `Temporal.Now.zonedDateTime`. Instead use `toZonedDateTimeISO()`/`zonedDateTimeISO()` to create a `Temporal.ZonedDateTime` object using the ISO8601 calendar, and then use `withCalendar()` if a non-ISO calendar is desired.
 - The `relativeTo` parameter is no longer accepted in `Temporal.Duration.prototype.add` and `subtract`. Instead take the `relativeTo` object, add the two durations to it, and difference it with the original using `until()`.
