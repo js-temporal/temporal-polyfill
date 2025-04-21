@@ -132,7 +132,7 @@ export class TimeDuration {
     const r2 = JSBI.add(r1, increment);
     const cmp = compare(abs(JSBI.multiply(remainder, TWO)), increment);
     const unsignedRoundingMode = GetUnsignedRoundingMode(mode, sign);
-    const rounded = JSBI.equal(abs(this.totalNs), r1)
+    const rounded = JSBI.equal(remainder, ZERO)
       ? r1
       : ApplyUnsignedRoundingMode(r1, r2, cmp, isEven(quotient), unsignedRoundingMode);
     const result = sign === 'positive' ? rounded : JSBI.unaryMinus(rounded);
