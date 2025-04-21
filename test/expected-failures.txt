@@ -6,9 +6,6 @@
 # canonicalizing the timezone name.
 staging/Intl402/Temporal/old/date-time-format.js
 
-# https://github.com/tc39/test262/pull/4336
-intl402/DateTimeFormat/canonicalize-utc-timezone.js
-
 # Possibly faulty calculations for year 0 in Hebrew calendar in ICU4C
 # https://unicode-org.atlassian.net/browse/ICU-23007
 staging/sm/Temporal/PlainDate/from-constrain-hebrew.js
@@ -20,3 +17,6 @@ staging/sm/Temporal/PlainDate/from-islamic-umalqura.js
 # Faulty leap month calculations in Chinese calendar in ICU4C
 # https://unicode-org.atlassian.net/browse/ICU-22230
 staging/sm/Temporal/PlainMonthDay/from-chinese-leap-month-uncommon.js
+
+# https://github.com/tc39/ecma402/issues/534
+staging/Intl402/Temporal/old/non-iso-calendars-ethiopic.js
