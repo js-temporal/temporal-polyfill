@@ -1,4 +1,3 @@
-import type JSBI from 'jsbi';
 import type { Temporal } from '..';
 import type { CalendarImpl } from './calendar';
 import type { BuiltinCalendarId } from './internaltypes';
@@ -13,14 +12,14 @@ type TemporalIntrinsics = {
   ['Intl.DateTimeFormat']: typeof globalThis.Intl.DateTimeFormat;
   ['Temporal.Duration']: typeof Temporal.Duration;
   ['Temporal.Instant']: OmitConstructor<Temporal.Instant> &
-    (new (epochNanoseconds: JSBI) => Temporal.Instant) & { prototype: typeof Temporal.Instant.prototype };
+    (new (epochNanoseconds: unknown) => Temporal.Instant) & { prototype: typeof Temporal.Instant.prototype };
   ['Temporal.PlainDate']: typeof Temporal.PlainDate;
   ['Temporal.PlainDateTime']: typeof Temporal.PlainDateTime;
   ['Temporal.PlainMonthDay']: typeof Temporal.PlainMonthDay;
   ['Temporal.PlainTime']: typeof Temporal.PlainTime;
   ['Temporal.PlainYearMonth']: typeof Temporal.PlainYearMonth;
   ['Temporal.ZonedDateTime']: OmitConstructor<Temporal.ZonedDateTime> &
-    (new (epochNanoseconds: JSBI, timeZone: string, calendar?: string) => Temporal.ZonedDateTime) & {
+    (new (epochNanoseconds: unknown, timeZone: string, calendar?: string) => Temporal.ZonedDateTime) & {
       prototype: typeof Temporal.ZonedDateTime.prototype;
       from: typeof Temporal.ZonedDateTime.from;
       compare: typeof Temporal.ZonedDateTime.compare;
