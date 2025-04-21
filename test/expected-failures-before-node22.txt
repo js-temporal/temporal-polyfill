@@ -1,5 +1,5 @@
 # Fails until CLDR 46 (released 2024-10-24) makes its way into a Node.js release
-staging/Intl402/Temporal/old/non-iso-calendars.js
+staging/Intl402/Temporal/old/non-iso-calendars-iso8601.js
 
 # These rely on Intl.DateTimeFormat supporting offset time zones.
 intl402/DateTimeFormat/prototype/format/offset-timezone-gmt-same.js

@@ -2,12 +2,15 @@
 intl402/Temporal/Instant/prototype/toLocaleString/options-conflict.js
 intl402/Temporal/PlainDate/prototype/toLocaleString/options-conflict.js
 intl402/Temporal/PlainDateTime/prototype/toLocaleString/options-conflict.js
+intl402/Temporal/PlainMonthDay/prototype/toLocaleString/options-conflict.js
 intl402/Temporal/PlainTime/prototype/toLocaleString/options-conflict.js
+intl402/Temporal/PlainYearMonth/prototype/toLocaleString/options-conflict.js
 intl402/Temporal/ZonedDateTime/prototype/toLocaleString/options-conflict.js
 
 # Tests using Object.hasOwn which is not available in Node 14
 intl402/Temporal/PlainDate/from/calendar-not-supporting-eras.js
 intl402/Temporal/PlainDate/from/canonicalize-era-codes.js
+intl402/Temporal/PlainDate/from/remapping-era.js
 intl402/Temporal/PlainDate/prototype/with/gregorian-mutually-exclusive-fields.js
 intl402/Temporal/PlainDate/prototype/with/japanese-mutually-exclusive-fields.js
 intl402/Temporal/PlainDateTime/from/calendar-not-supporting-eras.js
@@ -18,6 +21,7 @@ intl402/Temporal/PlainYearMonth/from/canonicalize-era-codes.js
 intl402/Temporal/PlainYearMonth/from/reference-day-chinese.js
 intl402/Temporal/PlainYearMonth/from/reference-day-gregory.js
 intl402/Temporal/PlainYearMonth/from/reference-day-hebrew.js
+intl402/Temporal/PlainYearMonth/from/remapping-era.js
 intl402/Temporal/PlainYearMonth/prototype/with/minimum-valid-year-month.js
 intl402/Temporal/ZonedDateTime/construct-non-utc-non-iso.js
 intl402/Temporal/ZonedDateTime/supported-values-of.js
