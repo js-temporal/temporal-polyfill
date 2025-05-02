@@ -20,11 +20,11 @@ function arrayFromSet<T>(src: Set<T>): T[] {
 }
 
 function calendarDateWeekOfYear(id: BuiltinCalendarId, isoDate: ISODate): { week: number; year: number } | undefined {
-  // Supports only Gregorian and ISO8601 calendar; can be updated to add support for other calendars.
+  // Supports only ISO8601 calendar; can be updated to add support for other calendars.
   // Returns undefined for calendars without a well-defined week calendar system.
   // eslint-disable-next-line max-len
   // Also see: https://github.com/unicode-org/icu/blob/ab72ab1d4a3c3f9beeb7d92b0c7817ca93dfdb04/icu4c/source/i18n/calendar.cpp#L1606
-  if (id !== 'gregory' && id !== 'iso8601') return undefined;
+  if (id !== 'iso8601') return undefined;
   const calendar = impl[id];
   let yow = isoDate.year;
   const { dayOfWeek, dayOfYear, daysInYear } = calendar.isoToDate(isoDate, {
@@ -34,8 +34,8 @@ function calendarDateWeekOfYear(id: BuiltinCalendarId, isoDate: ISODate): { week
   });
   const fdow = calendar.getFirstDayOfWeek();
   const mdow = calendar.getMinimalDaysInFirstWeek();
-  ES.uncheckedAssertNarrowedType<number>(fdow, 'guaranteed to exist for iso8601/gregory');
-  ES.uncheckedAssertNarrowedType<number>(mdow, 'guaranteed to exist for iso8601/gregory');
+  ES.uncheckedAssertNarrowedType<number>(fdow, 'guaranteed to exist for iso8601');
+  ES.uncheckedAssertNarrowedType<number>(mdow, 'guaranteed to exist for iso8601');
 
   // For both the input date and the first day of its calendar year, calculate the day of week
   // relative to first day of week in the relevant calendar (e.g., in iso8601, relative to Monday).
@@ -1971,12 +1971,6 @@ class GregoryHelper extends SameMonthDayAsGregorianBaseHelper {
     if (era === 'b') era = 'gregory-inverse';
     if (era === 'a') era = 'gregory';
     return { era, eraYear } as T;
-  }
-  override getFirstDayOfWeek() {
-    return 1;
-  }
-  override getMinimalDaysInFirstWeek() {
-    return 1;
   }
 }
 
