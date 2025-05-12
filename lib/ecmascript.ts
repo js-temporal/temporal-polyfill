@@ -2737,6 +2737,31 @@ export function GetNamedTimeZoneDateTimeParts(id: string, epochNanoseconds: JSBI
   return BalanceISODateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
 }
 
+// Most time zones never transition twice within a short span of days. We still
+// accommodate twitchy zones, albeit at a performance penalty. 19 days is the
+// default window, past which we'd need to start adding many more special cases.
+function searchWindowForTransitions(id: string) {
+  if (id === 'Africa/El_Aaiun') return DAY_MS * 17;
+  if (id === 'America/Argentina/Tucuman') return DAY_MS * 12;
+  if (id === 'Europe/Tirane') return DAY_MS * 11;
+  if (id === 'Europe/Riga') return DAY_MS * 10;
+  if (id === 'Europe/Simferopol' || id === 'Europe/Vienna') return DAY_MS * 9;
+  if (id === 'Africa/Tunis') return DAY_MS * 8;
+  if (
+    id === 'America/Boa_Vista' ||
+    id === 'America/Fortaleza' ||
+    id === 'America/Maceio' ||
+    id === 'America/Noronha' ||
+    id === 'America/Recife' ||
+    id === 'Asia/Gaza' || // dubious, only in future calculations
+    id === 'Asia/Hebron' || // ditto
+    id === 'Brazil/DeNoronha'
+  ) {
+    return DAY_MS * 6;
+  }
+  return DAY_MS * 19;
+}
+
 export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSBI): JSBI | null {
   if (id === 'UTC') return null; // UTC fast path
 
@@ -2759,8 +2784,9 @@ export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSB
   let leftOffsetNs = GetNamedTimeZoneOffsetNanosecondsImpl(id, leftMs);
   let rightMs = leftMs;
   let rightOffsetNs = leftOffsetNs;
+  const searchWindow = searchWindowForTransitions(id);
   while (leftOffsetNs === rightOffsetNs && leftMs < uppercap) {
-    rightMs = leftMs + DAY_MS * 2 * 7;
+    rightMs = leftMs + searchWindow;
     if (rightMs > MS_MAX) return null;
     rightOffsetNs = GetNamedTimeZoneOffsetNanosecondsImpl(id, rightMs);
     if (leftOffsetNs === rightOffsetNs) {
@@ -2817,8 +2843,9 @@ export function GetNamedTimeZonePreviousTransition(id: string, epochNanoseconds:
   let rightOffsetNs = GetNamedTimeZoneOffsetNanosecondsImpl(id, rightMs);
   let leftMs = rightMs;
   let leftOffsetNs = rightOffsetNs;
+  const searchWindow = searchWindowForTransitions(id);
   while (rightOffsetNs === leftOffsetNs && rightMs > BEFORE_FIRST_DST) {
-    leftMs = rightMs - DAY_MS * 2 * 7;
+    leftMs = rightMs - searchWindow;
     if (leftMs < BEFORE_FIRST_DST) return null;
     leftOffsetNs = GetNamedTimeZoneOffsetNanosecondsImpl(id, leftMs);
     if (rightOffsetNs === leftOffsetNs) {
