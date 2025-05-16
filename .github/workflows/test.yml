@@ -9,7 +9,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
+        version: [24.x, 23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
+        version: [24.x, 23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -41,7 +41,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
+        version: [24.x, 23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -59,7 +59,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: [23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
+        version: [24.x, 23.x, 22.x, 20.x, 18.x, 16.x, 14.x]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
