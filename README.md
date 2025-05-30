@@ -15,7 +15,7 @@ This polyfill is compatible with Node.js 14 or later.
 
 Until recently, this polyfill lagged behind the proposal repo (and its not-for-production-use polyfill).
 It's now caught up with the last few years of changes to the Temporal proposal, including many removed APIs and other breaking changes.
-While breaking changes to any TC39 proposal are always possible before [Stage 4](https://tc39.es/process-document/), Temporal is close to adoption and no signifncant changes are expected in the future.
+While breaking changes to any TC39 proposal are always possible before [Stage 4](https://tc39.es/process-document/), Temporal is close to adoption and no significant changes are expected in the future.
 
 The [changelog](./CHANGELOG.md#050) details what's changed, including tips for migrating existing code to the latest version.
 
@@ -35,7 +35,7 @@ The [changelog](./CHANGELOG.md#050) details what's changed, including tips for m
 
 ## Bug Reports and Feedback
 
-If you think you've found a bug in the Temporal API itself (not the implementation in this polyfill), please file an issue in the [tc39/proposal-temporal issue tracker](https://github.com/tc39/proposal-temporal/issues) issue tracker.
+If you think you've found a bug in the Temporal API itself (not the implementation in this polyfill), please file an issue in the [tc39/proposal-temporal issue tracker](https://github.com/tc39/proposal-temporal/issues).
 
 If you've found a bug in this polyfill&mdash;meaning that the implementation here doesn't match the [Temporal spec](https://tc39.es/proposal-temporal/)&mdash;please file an issue in this repo's [issue tracker](https://github.com/js-temporal/temporal-polyfill/issues).
 
