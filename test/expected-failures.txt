@@ -23,3 +23,8 @@ staging/sm/Temporal/PlainMonthDay/from-chinese-leap-month-uncommon.js
 
 # https://github.com/tc39/ecma402/issues/534
 staging/Intl402/Temporal/old/non-iso-calendars-ethiopic.js
+
+# https://github.com/tc39/test262/commit/95d90bf9f2f519cad3305e3948cbb1663b0b667a
+# Fails on V8, no upstream bug open yet
+intl402/DateTimeFormat/prototype/resolvedOptions/resolved-calendar-unicode-extensions-and-options.js
+intl402/DateTimeFormat/prototype/resolvedOptions/resolved-numbering-system-unicode-extensions-and-options.js
