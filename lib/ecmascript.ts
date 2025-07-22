@@ -341,7 +341,6 @@ const TEMPORAL_UNITS = [
   ['nanoseconds', 'nanosecond', 'time']
 ] as const;
 const SINGULAR_FOR = Object.fromEntries(TEMPORAL_UNITS.map((e) => [e[0], e[1]] as const));
-const PLURAL_FOR = Object.fromEntries(TEMPORAL_UNITS.map(([p, s]) => [s, p] as const));
 const UNITS_DESCENDING = TEMPORAL_UNITS.map(([, s]) => s);
 type TimeUnitOrDay = Temporal.TimeUnit | 'day';
 const NS_PER_TIME_UNIT = {
@@ -1046,70 +1045,67 @@ type UnitTypeMapping = {
   time: Temporal.TimeUnit;
   datetime: Temporal.DateTimeUnit;
 };
-// This type specifies the allowed defaults for each unit key type.
-type AllowedGetTemporalUnitDefaultValues = {
-  smallestUnit: undefined;
-  largestUnit: 'auto' | undefined;
-  unit: undefined;
-};
 
-export function GetTemporalUnitValuedOption<
-  U extends keyof TemporalUnitOptionsBag,
-  T extends keyof UnitTypeMapping,
-  D extends typeof REQUIRED | UnitTypeMapping[T] | AllowedGetTemporalUnitDefaultValues[U],
-  R extends Exclude<D, typeof REQUIRED> | UnitTypeMapping[T]
->(options: TemporalUnitOptionsBag, key: U, unitGroup: T, requiredOrDefault: D): R;
-export function GetTemporalUnitValuedOption<
-  U extends keyof TemporalUnitOptionsBag,
-  T extends keyof UnitTypeMapping,
-  D extends typeof REQUIRED | UnitTypeMapping[T] | AllowedGetTemporalUnitDefaultValues[U],
-  E extends 'auto' | Temporal.DateTimeUnit,
-  R extends UnitTypeMapping[T] | Exclude<D, typeof REQUIRED> | E
->(options: TemporalUnitOptionsBag, key: U, unitGroup: T, requiredOrDefault: D, extraValues: ReadonlyArray<E>): R;
-// This signature of the function is NOT used in type-checking, so restricting
-// the default value via generic binding like the other overloads isn't
-// necessary.
-export function GetTemporalUnitValuedOption<
-  T extends keyof UnitTypeMapping,
-  D extends typeof REQUIRED | UnitTypeMapping[T] | 'auto' | undefined,
-  E extends 'auto' | Temporal.DateTimeUnit,
-  R extends UnitTypeMapping[T] | Exclude<D, typeof REQUIRED> | E
->(
+export function GetTemporalUnitValuedOption(
+  options: TemporalUnitOptionsBag,
+  key: keyof typeof options
+): Temporal.DateTimeUnit | 'auto' | undefined;
+export function GetTemporalUnitValuedOption(
   options: TemporalUnitOptionsBag,
   key: keyof typeof options,
-  unitGroup: T,
-  requiredOrDefault: D,
-  extraValues: ReadonlyArray<E> | never[] = []
-): R {
-  let allowedSingular: Array<Temporal.DateTimeUnit | 'auto'> = [];
+  requiredOrUndefined: typeof REQUIRED
+): Temporal.DateTimeUnit | 'auto';
+export function GetTemporalUnitValuedOption(
+  options: TemporalUnitOptionsBag,
+  key: keyof typeof options,
+  requiredOrUndefined: typeof REQUIRED | undefined = undefined
+) {
+  const allowedStrings: Array<Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit> | 'auto'> = [];
   for (let index = 0; index < TEMPORAL_UNITS.length; index++) {
     const unitInfo = TEMPORAL_UNITS[index];
+    const plural = unitInfo[0];
     const singular = unitInfo[1];
-    const category = unitInfo[2];
-    if (unitGroup === 'datetime' || unitGroup === category) {
-      allowedSingular.push(singular);
-    }
+    allowedStrings.push(singular, plural);
   }
-  allowedSingular = allowedSingular.concat(extraValues);
-  let defaultVal: typeof REQUIRED | Temporal.DateTimeUnit | 'auto' | undefined = requiredOrDefault;
-  if (defaultVal === REQUIRED) {
-    defaultVal = undefined;
-  } else if (defaultVal !== undefined) {
-    allowedSingular.push(defaultVal);
-  }
-  let allowedValues: Array<Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit> | 'auto'> = [];
-  allowedValues = allowedValues.concat(allowedSingular);
-  for (let index = 0; index < allowedSingular.length; index++) {
-    const singular = allowedSingular[index];
-    const plural = PLURAL_FOR[singular];
-    if (plural !== undefined) allowedValues.push(plural);
-  }
-  let retval = GetOption(options, key, allowedValues, defaultVal);
-  if (retval === undefined && requiredOrDefault === REQUIRED) {
-    throw new RangeError(`${key} is required`);
-  }
+  allowedStrings.push('auto');
+  let retval = GetOption(options, key, allowedStrings, requiredOrUndefined);
+  if (retval === undefined) return undefined;
   // Coerce any plural units into their singular form
-  return (retval && retval in SINGULAR_FOR ? SINGULAR_FOR[retval] : retval) as R;
+  return retval in SINGULAR_FOR ? SINGULAR_FOR[retval] : (retval as Temporal.DateTimeUnit | 'auto');
+}
+export function ValidateTemporalUnitValue<T extends keyof UnitTypeMapping>(
+  value: Temporal.DateTimeUnit | 'auto',
+  unitGroup: T
+): asserts value is UnitTypeMapping[T];
+export function ValidateTemporalUnitValue<T extends keyof UnitTypeMapping>(
+  value: Temporal.DateTimeUnit | 'auto' | undefined,
+  unitGroup: T
+): asserts value is UnitTypeMapping[T] | undefined;
+export function ValidateTemporalUnitValue<T extends keyof UnitTypeMapping, E extends 'auto' | Temporal.DateTimeUnit>(
+  value: Temporal.DateTimeUnit | 'auto',
+  unitGroup: T,
+  extraValues: ReadonlyArray<E>
+): asserts value is UnitTypeMapping[T] | E;
+export function ValidateTemporalUnitValue<T extends keyof UnitTypeMapping, E extends 'auto' | Temporal.DateTimeUnit>(
+  value: Temporal.DateTimeUnit | 'auto' | undefined,
+  unitGroup: T,
+  extraValues: ReadonlyArray<E>
+): asserts value is UnitTypeMapping[T] | E | undefined;
+export function ValidateTemporalUnitValue(
+  value: Temporal.DateTimeUnit | 'auto' | undefined,
+  unitGroup: keyof UnitTypeMapping,
+  extraValues: ReadonlyArray<'auto' | Temporal.DateTimeUnit> = []
+) {
+  if (value === undefined) return;
+  if (extraValues.includes(value)) return;
+  for (let index = 0; index < TEMPORAL_UNITS.length; index++) {
+    const unitInfo = TEMPORAL_UNITS[index];
+    const plural = unitInfo[1];
+    const category = unitInfo[2];
+    if (value !== plural) continue;
+    if (unitGroup === 'datetime' || unitGroup === category) return;
+  }
+  throw new RangeError(`${value} not allowed as a ${unitGroup} unit`);
 }
 
 export function GetTemporalRelativeToOption(options: {
@@ -4149,7 +4145,9 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
     return allowed;
   }, [] as (Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit>)[]);
 
-  let largestUnit = GetTemporalUnitValuedOption(options, 'largestUnit', group, 'auto');
+  let largestUnit = GetTemporalUnitValuedOption(options, 'largestUnit');
+  ValidateTemporalUnitValue(largestUnit, group, ['auto']);
+  if (!largestUnit) largestUnit = 'auto';
   if (disallowed.includes(largestUnit)) {
     throw new RangeError(`largestUnit must be one of ${ALLOWED_UNITS.join(', ')}, not ${largestUnit}`);
   }
@@ -4159,7 +4157,9 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
   let roundingMode = GetRoundingModeOption(options, 'trunc');
   if (op === 'since') roundingMode = NegateRoundingMode(roundingMode);
 
-  const smallestUnit = GetTemporalUnitValuedOption(options, 'smallestUnit', group, fallbackSmallest);
+  let smallestUnit = GetTemporalUnitValuedOption(options, 'smallestUnit');
+  ValidateTemporalUnitValue(smallestUnit, group);
+  if (!smallestUnit) smallestUnit = fallbackSmallest;
   if (disallowed.includes(smallestUnit)) {
     throw new RangeError(`smallestUnit must be one of ${ALLOWED_UNITS.join(', ')}, not ${smallestUnit}`);
   }
