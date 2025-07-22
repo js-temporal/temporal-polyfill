@@ -238,7 +238,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
         : ES.GetOptionsObject(roundToParam);
     const roundingIncrement = ES.GetTemporalRoundingIncrementOption(roundTo);
     const roundingMode = ES.GetRoundingModeOption(roundTo, 'halfExpand');
-    const smallestUnit = ES.GetTemporalUnitValuedOption(roundTo, 'smallestUnit', 'time', ES.REQUIRED, ['day']);
+    const smallestUnit = ES.GetTemporalUnitValuedOption(roundTo, 'smallestUnit', ES.REQUIRED);
+    ES.ValidateTemporalUnitValue(smallestUnit, 'time', ['day']);
     const maximumIncrements = {
       day: 1,
       hour: 24,
@@ -329,7 +330,8 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const digits = ES.GetTemporalFractionalSecondDigitsOption(resolvedOptions);
     const showOffset = ES.GetTemporalShowOffsetOption(resolvedOptions);
     const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
-    const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit', 'time', undefined);
+    const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit');
+    ES.ValidateTemporalUnitValue(smallestUnit, 'time');
     if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
     const showTimeZone = ES.GetTemporalShowTimeZoneNameOption(resolvedOptions);
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
