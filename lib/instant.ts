@@ -52,7 +52,7 @@ export class Instant implements Temporal.Instant {
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
         : ES.GetOptionsObject(roundToParam);
-    const roundingIncrement = ES.GetTemporalRoundingIncrementOption(roundTo);
+    const roundingIncrement = ES.GetRoundingIncrementOption(roundTo);
     const roundingMode = ES.GetRoundingModeOption(roundTo, 'halfExpand');
     const smallestUnit = ES.GetTemporalUnitValuedOption(roundTo, 'smallestUnit', ES.REQUIRED);
     ES.ValidateTemporalUnitValue(smallestUnit, 'time');
@@ -82,9 +82,9 @@ export class Instant implements Temporal.Instant {
     const digits = ES.GetTemporalFractionalSecondDigitsOption(resolvedOptions);
     const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
     const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit');
+    let timeZone = resolvedOptions.timeZone;
     ES.ValidateTemporalUnitValue(smallestUnit, 'time');
     if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
-    let timeZone = resolvedOptions.timeZone;
     if (timeZone !== undefined) timeZone = ES.ToTemporalTimeZoneIdentifier(timeZone);
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     const ns = GetSlot(this, EPOCHNANOSECONDS);

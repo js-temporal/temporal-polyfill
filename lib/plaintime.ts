@@ -92,7 +92,7 @@ export class PlainTime implements Temporal.PlainTime {
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
         : ES.GetOptionsObject(roundToParam);
-    const roundingIncrement = ES.GetTemporalRoundingIncrementOption(roundTo);
+    const roundingIncrement = ES.GetRoundingIncrementOption(roundTo);
     const roundingMode = ES.GetRoundingModeOption(roundTo, 'halfExpand');
     const smallestUnit = ES.GetTemporalUnitValuedOption(roundTo, 'smallestUnit', ES.REQUIRED);
     ES.ValidateTemporalUnitValue(smallestUnit, 'time');
