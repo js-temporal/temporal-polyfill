@@ -236,7 +236,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       typeof roundToParam === 'string'
         ? (ES.CreateOnePropObject('smallestUnit', roundToParam) as Exclude<typeof roundToParam, string>)
         : ES.GetOptionsObject(roundToParam);
-    const roundingIncrement = ES.GetTemporalRoundingIncrementOption(roundTo);
+    const roundingIncrement = ES.GetRoundingIncrementOption(roundTo);
     const roundingMode = ES.GetRoundingModeOption(roundTo, 'halfExpand');
     const smallestUnit = ES.GetTemporalUnitValuedOption(roundTo, 'smallestUnit', ES.REQUIRED);
     ES.ValidateTemporalUnitValue(smallestUnit, 'time', ['day']);
@@ -331,9 +331,9 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     const showOffset = ES.GetTemporalShowOffsetOption(resolvedOptions);
     const roundingMode = ES.GetRoundingModeOption(resolvedOptions, 'trunc');
     const smallestUnit = ES.GetTemporalUnitValuedOption(resolvedOptions, 'smallestUnit');
+    const showTimeZone = ES.GetTemporalShowTimeZoneNameOption(resolvedOptions);
     ES.ValidateTemporalUnitValue(smallestUnit, 'time');
     if (smallestUnit === 'hour') throw new RangeError('smallestUnit must be a time unit other than "hour"');
-    const showTimeZone = ES.GetTemporalShowTimeZoneNameOption(resolvedOptions);
     const { precision, unit, increment } = ES.ToSecondsStringPrecisionRecord(smallestUnit, digits);
     return ES.TemporalZonedDateTimeToString(this, precision, showCalendar, showTimeZone, showOffset, {
       unit,

@@ -928,7 +928,7 @@ export function GetDirectionOption(options: { direction?: 'next' | 'previous' })
   return GetOption(options, 'direction', ['next', 'previous'], REQUIRED);
 }
 
-export function GetTemporalRoundingIncrementOption(options: { roundingIncrement?: number }) {
+export function GetRoundingIncrementOption(options: { roundingIncrement?: number }) {
   let increment = options.roundingIncrement;
   if (increment === undefined) return 1;
   const integerIncrement = ToIntegerWithTruncation(increment);
@@ -4123,18 +4123,18 @@ function GetDifferenceSettings<T extends Temporal.DateTimeUnit>(
   }, [] as (Temporal.DateTimeUnit | Temporal.PluralUnit<Temporal.DateTimeUnit>)[]);
 
   let largestUnit = GetTemporalUnitValuedOption(options, 'largestUnit');
+  const roundingIncrement = GetRoundingIncrementOption(options);
+  let roundingMode = GetRoundingModeOption(options, 'trunc');
+  let smallestUnit = GetTemporalUnitValuedOption(options, 'smallestUnit');
+
   ValidateTemporalUnitValue(largestUnit, group, ['auto']);
   if (!largestUnit) largestUnit = 'auto';
   if (disallowed.includes(largestUnit)) {
     throw new RangeError(`largestUnit must be one of ${ALLOWED_UNITS.join(', ')}, not ${largestUnit}`);
   }
 
-  const roundingIncrement = GetTemporalRoundingIncrementOption(options);
-
-  let roundingMode = GetRoundingModeOption(options, 'trunc');
   if (op === 'since') roundingMode = NegateRoundingMode(roundingMode);
 
-  let smallestUnit = GetTemporalUnitValuedOption(options, 'smallestUnit');
   ValidateTemporalUnitValue(smallestUnit, group);
   if (!smallestUnit) smallestUnit = fallbackSmallest;
   if (disallowed.includes(smallestUnit)) {
