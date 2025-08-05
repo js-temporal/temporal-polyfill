@@ -1150,7 +1150,13 @@ interface HebrewMonthInfo {
 
 class HebrewHelper extends HelperBase {
   id = 'hebrew' as const;
+  override hasEra = true;
   calendarType = 'lunisolar' as const;
+  constructor() {
+    super();
+    const { eras, anchorEra } = adjustEras([{ code: 'hebrew', isoEpoch: { year: -3760, month: 9, day: 9 } }]);
+    this.eras = eras;
+  }
   inLeapYear(calendarDate: CalendarYearOnly) {
     const { year } = calendarDate;
     // FYI: In addition to adding a month in leap years, the Hebrew calendar
@@ -1290,6 +1296,13 @@ class HebrewHelper extends HelperBase {
 abstract class IslamicBaseHelper extends HelperBase {
   abstract override id: BuiltinCalendarId;
   calendarType = 'lunar' as const;
+  override hasEra = true;
+  // Some Islamic calendars start on 622-7-18, some on 622-7-19
+  constructor(islamicStartDay: number) {
+    super();
+    const { eras, anchorEra } = adjustEras([{ code: 'ah', isoEpoch: { year: 622, month: 7, day: islamicStartDay } }, {code: 'bh', reverseOf: 'ah'}]);
+    this.eras = eras;
+  }
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     const startOfYearCalendar = { year: calendarDate.year, month: 1, monthCode: 'M01', day: 1 };
     const startOfNextYearCalendar = { year: calendarDate.year + 1, month: 1, monthCode: 'M01', day: 1 };
@@ -1321,26 +1334,50 @@ abstract class IslamicBaseHelper extends HelperBase {
 // Intl implementation, but our code for each of them is identical.
 class IslamicHelper extends IslamicBaseHelper {
   id = 'islamic' as const;
+  constructor() {
+    super(18);
+  }
 }
 class IslamicUmalquraHelper extends IslamicBaseHelper {
   id = 'islamic-umalqura' as const;
+  constructor() {
+    super(19);
+  }
 }
 class IslamicTblaHelper extends IslamicBaseHelper {
   id = 'islamic-tbla' as const;
+  constructor() {
+    super(18);
+  }
 }
 class IslamicCivilHelper extends IslamicBaseHelper {
   id = 'islamic-civil' as const;
+  constructor() {
+    super(19);
+  }
 }
 class IslamicRgsaHelper extends IslamicBaseHelper {
   id = 'islamic-rgsa' as const;
+  constructor() {
+    super(18);
+  }
 }
 class IslamicCcHelper extends IslamicBaseHelper {
   id = 'islamicc' as const;
+  constructor() {
+    super(19);
+  }
 }
 
 class PersianHelper extends HelperBase {
   id = 'persian' as const;
   calendarType = 'solar' as const;
+  override hasEra = true;
+  constructor() {
+    super();
+    const { eras, anchorEra } = adjustEras([{ code: 'ap', isoEpoch: { year: 622, month: 3, day: 21 } }]);
+    this.eras = eras;
+  }
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     // If the last month has 30 days, it's a leap year.
     return this.daysInMonth({ year: calendarDate.year, month: 12, day: 1 }, cache) === 30;
@@ -1673,12 +1710,14 @@ function isGregorianLeapYear(year: number) {
 /** Base for all Gregorian-like calendars. */
 abstract class GregorianBaseHelperFixedEpoch extends HelperBase {
   id: BuiltinCalendarId;
-  isoEpoch: ISODate;
+  era: Era;
 
-  constructor(id: BuiltinCalendarId, isoEpoch: ISODate) {
+  constructor(id: BuiltinCalendarId, inputEra: InputEra) {
     super();
     this.id = id;
-    this.isoEpoch = isoEpoch;
+    const { eras, anchorEra } = adjustEras([inputEra]);
+    this.era = anchorEra;
+    this.eras = eras;
   }
   calendarType = 'solar' as const;
   inLeapYear(calendarDate: CalendarYearOnly) {
@@ -1703,9 +1742,9 @@ abstract class GregorianBaseHelperFixedEpoch extends HelperBase {
   estimateIsoDate(calendarDateParam: CalendarYMD) {
     const calendarDate = this.adjustCalendarDate(calendarDateParam);
     return ES.RegulateISODate(
-      calendarDate.year + this.isoEpoch.year,
-      calendarDate.month + this.isoEpoch.month,
-      calendarDate.day + this.isoEpoch.day,
+      calendarDate.year + this.era.isoEpoch.year,
+      calendarDate.month + this.era.isoEpoch.month,
+      calendarDate.day + this.era.isoEpoch.day,
       'constrain'
     );
   }
@@ -1888,8 +1927,9 @@ const OrthodoxOps = {
   }
 };
 abstract class OrthodoxBaseHelperFixedEpoch extends GregorianBaseHelperFixedEpoch {
-  constructor(id: BuiltinCalendarId, isoEpoch: ISODate) {
-    super(id, isoEpoch);
+  override hasEra = true;
+  constructor(id: BuiltinCalendarId, epochEra: InputEra) {
+    super(id, epochEra);
   }
   override inLeapYear = OrthodoxOps.inLeapYear;
   override monthsInYear = OrthodoxOps.monthsInYear;
@@ -1917,7 +1957,7 @@ abstract class OrthodoxBaseHelper extends GregorianBaseHelper {
 //   zero era of ethioaa.
 class EthioaaHelper extends OrthodoxBaseHelperFixedEpoch {
   constructor() {
-    super('ethioaa', { year: -5492, month: 7, day: 17 });
+    super('ethioaa',  { code: 'am', names: ['incar'],  isoEpoch: { year: -5492, month: 7, day: 17 } } );
   }
 }
 class CopticHelper extends OrthodoxBaseHelper {
@@ -1934,8 +1974,8 @@ class CopticHelper extends OrthodoxBaseHelper {
 class EthiopicHelper extends OrthodoxBaseHelper {
   constructor() {
     super('ethiopic', [
-      { code: 'ethioaa', names: ['ethiopic-amete-alem', 'mundi'], isoEpoch: { year: -5492, month: 7, day: 17 } },
-      { code: 'ethiopic', names: ['incar'], isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
+      { code: 'aa', names: ['mundi'], isoEpoch: { year: -5492, month: 7, day: 17 } },
+      { code: 'am', names: ['incar'], isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
     ]);
   }
 }
@@ -1944,22 +1984,22 @@ class RocHelper extends SameMonthDayAsGregorianBaseHelper {
   constructor() {
     super('roc', [
       { code: 'roc', names: ['minguo'], isoEpoch: { year: 1912, month: 1, day: 1 } },
-      { code: 'roc-inverse', names: ['before-roc'], reverseOf: 'roc' }
+      { code: 'broc', names: ['before-roc', 'minguo-qian'], reverseOf: 'roc' }
     ]);
   }
 }
 
 class BuddhistHelper extends GregorianBaseHelperFixedEpoch {
   constructor() {
-    super('buddhist', { year: -543, month: 1, day: 1 });
+    super('buddhist', { code: 'be', isoEpoch: { year: -543, month: 1, day: 1 } });
   }
 }
 
 class GregoryHelper extends SameMonthDayAsGregorianBaseHelper {
   constructor() {
     super('gregory', [
-      { code: 'gregory', names: ['ad', 'ce'], isoEpoch: { year: 1, month: 1, day: 1 } },
-      { code: 'gregory-inverse', names: ['be', 'bce'], reverseOf: 'gregory' }
+      { code: 'ce', names: ['ad'], isoEpoch: { year: 1, month: 1, day: 1 } },
+      { code: 'bce', names: ['bc'], reverseOf: 'ce' }
     ]);
   }
   override reviseIntlEra<T extends Partial<EraAndEraYear>>(calendarDate: T /*, isoDate: IsoDate*/): T {
@@ -2013,8 +2053,8 @@ class JapaneseHelper extends SameMonthDayAsGregorianBaseHelper {
       { code: 'showa', isoEpoch: { year: 1926, month: 12, day: 25 }, anchorEpoch: { year: 1926, month: 12, day: 25 } },
       { code: 'taisho', isoEpoch: { year: 1912, month: 7, day: 30 }, anchorEpoch: { year: 1912, month: 7, day: 30 } },
       { code: 'meiji', isoEpoch: { year: 1868, month: 9, day: 8 }, anchorEpoch: { year: 1868, month: 9, day: 8 } },
-      { code: 'japanese', names: ['japanese', 'gregory', 'ad', 'ce'], isoEpoch: { year: 1, month: 1, day: 1 } },
-      { code: 'japanese-inverse', names: ['japanese-inverse', 'gregory-inverse', 'bc', 'bce'], reverseOf: 'japanese' }
+      { code: 'ce', names: ['ad'], isoEpoch: { year: 1, month: 1, day: 1 } },
+      { code: 'bce', names: ['bc'], reverseOf: 'ce' }
     ]);
   }
 
