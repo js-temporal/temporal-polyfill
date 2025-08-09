@@ -177,7 +177,6 @@ export class Duration implements Temporal.Duration {
         : ES.GetOptionsObject(roundToParam);
 
     let largestUnit = ES.GetTemporalUnitValuedOption(roundTo, 'largestUnit');
-    ES.ValidateTemporalUnitValue(largestUnit, 'datetime', ['auto']);
     let { plainRelativeTo, zonedRelativeTo } = ES.GetTemporalRelativeToOption(roundTo);
     const roundingIncrement = ES.GetTemporalRoundingIncrementOption(roundTo);
     const roundingMode = ES.GetRoundingModeOption(roundTo, 'halfExpand');
