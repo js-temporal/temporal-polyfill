@@ -249,7 +249,7 @@ export function RequireString(value: unknown): string {
   return value;
 }
 
-function ToSyntacticallyValidMonthCode(valueParam: unknown) {
+function ToMonthCode(valueParam: unknown) {
   const value = RequireString(ToPrimitive(valueParam, String));
   if (
     value.length < 3 ||
@@ -306,7 +306,7 @@ const BUILTIN_CASTS: Partial<Record<FieldKey, BuiltinCastFunction>> = {
   eraYear: ToIntegerWithTruncation,
   year: ToIntegerWithTruncation,
   month: ToPositiveIntegerWithTruncation,
-  monthCode: ToSyntacticallyValidMonthCode,
+  monthCode: ToMonthCode,
   day: ToPositiveIntegerWithTruncation,
   hour: ToIntegerWithTruncation,
   minute: ToIntegerWithTruncation,
