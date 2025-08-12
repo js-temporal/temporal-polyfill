@@ -276,7 +276,7 @@ impl['iso8601'] = {
       daysInWeek: 7,
       monthsInYear: 12
     };
-    if (requestedFields.monthCode) date.monthCode = buildMonthCode(month);
+    if (requestedFields.monthCode) date.monthCode = CreateMonthCode(month, false);
     if (requestedFields.dayOfWeek) {
       // https://en.wikipedia.org/wiki/Determination_of_the_day_of_the_week#Disparate_variation
       const shiftedMonth = month + (month < 3 ? 10 : -2);
@@ -358,19 +358,15 @@ type CalendarYM = { year: number; month: number };
 type CalendarYearOnly = { year: number };
 type EraAndEraYear = { era: string; eraYear: number };
 
-function nonLeapMonthCodeNumberPart(monthCode: string) {
-  if (!monthCode.startsWith('M')) {
-    throw new RangeError(`Invalid month code: ${monthCode}.  Month codes must start with M.`);
-  }
-  const month = +monthCode.slice(1);
-  if (Number.isNaN(month)) throw new RangeError(`Invalid month code: ${monthCode}`);
-  return month;
+function ParseMonthCode(monthCode: string) {
+  const isLeapMonth = monthCode.length === 4;
+  const monthNumber = +monthCode.slice(1, 3);
+  return { monthNumber, isLeapMonth };
 }
 
-function buildMonthCode(month: number, leap = false) {
-  const digitPart = `${month}`.padStart(2, '0');
-  const leapMarker = leap ? 'L' : '';
-  return `M${digitPart}${leapMarker}`;
+function CreateMonthCode(monthNumber: number, isLeapMonth: boolean) {
+  const numberPart = `${monthNumber}`.padStart(2, '0');
+  return isLeapMonth ? `M${numberPart}L` : `M${numberPart}`;
 }
 
 /**
@@ -391,16 +387,19 @@ function resolveNonLunisolarMonth<T extends { monthCode?: string; month?: number
     // rely on this function to constrain/reject out-of-range `month` values.
     if (overflow === 'reject') ES.RejectToRange(month, 1, monthsPerYear);
     if (overflow === 'constrain') month = ES.ConstrainToRange(month, 1, monthsPerYear);
-    monthCode = buildMonthCode(month);
+    monthCode = CreateMonthCode(month, false);
   } else {
-    const numberPart = nonLeapMonthCodeNumberPart(monthCode);
-    if (monthCode !== buildMonthCode(numberPart)) {
+    const { monthNumber, isLeapMonth } = ParseMonthCode(monthCode);
+    if (isLeapMonth) {
+      throw new RangeError(`Invalid monthCode: ${monthCode}. Leap months do not exist in this calendar`);
+    }
+    if (monthCode !== CreateMonthCode(monthNumber, false)) {
       throw new RangeError(`Invalid month code: ${monthCode}`);
     }
-    if (month !== undefined && month !== numberPart) {
+    if (month !== undefined && month !== monthNumber) {
       throw new RangeError(`monthCode ${monthCode} and month ${month} must match if both are present`);
     }
-    month = numberPart;
+    month = monthNumber;
     if (month < 1 || month > monthsPerYear) throw new RangeError(`Invalid monthCode: ${monthCode}`);
   }
   return { ...calendarDate, month, monthCode };
@@ -686,9 +685,9 @@ abstract class HelperBase {
       if (typeof monthCode !== 'string') {
         throw new RangeError(`monthCode must be a string, not ${typeof monthCode}`);
       }
-      if (!/^M([01]?\d)(L?)$/.test(monthCode)) {
-        throw new RangeError(`Invalid monthCode: ${monthCode}`);
-      }
+      ES.ToMonthCode(monthCode);
+      const { monthNumber } = ParseMonthCode(monthCode);
+      if (monthNumber < 1 || monthNumber > 13) throw new RangeError(`Invalid monthCode: ${monthCode}`);
     }
     if (this.hasEra) {
       if ((calendarDate['era'] === undefined) !== (calendarDate['eraYear'] === undefined)) {
@@ -1220,9 +1219,9 @@ class HebrewHelper extends HelperBase {
   };
   getMonthCode(year: number, month: number) {
     if (this.inLeapYear({ year })) {
-      return month === 6 ? buildMonthCode(5, true) : buildMonthCode(month < 6 ? month : month - 1);
+      return month === 6 ? CreateMonthCode(5, true) : CreateMonthCode(month < 6 ? month : month - 1, false);
     } else {
-      return buildMonthCode(month);
+      return CreateMonthCode(month, false);
     }
   }
   override adjustCalendarDate(
@@ -1257,8 +1256,9 @@ class HebrewHelper extends HelperBase {
       this.validateCalendarDate(calendarDate);
       if (month === undefined) {
         ES.assertExists(monthCode);
-        if (monthCode.endsWith('L')) {
-          if (monthCode !== 'M05L') {
+        const { monthNumber, isLeapMonth } = ParseMonthCode(monthCode);
+        if (isLeapMonth) {
+          if (monthNumber !== 5) {
             throw new RangeError(`Hebrew leap month must have monthCode M05L, not ${monthCode}`);
           }
           month = 6;
@@ -1272,7 +1272,7 @@ class HebrewHelper extends HelperBase {
             }
           }
         } else {
-          month = nonLeapMonthCodeNumberPart(monthCode);
+          month = monthNumber;
           // if leap month is before this one, the month index is one more than the month code
           if (this.inLeapYear({ year }) && month >= 6) month++;
           const largestMonth = this.monthsInYear({ year });
@@ -1376,8 +1376,7 @@ class PersianHelper extends HelperBase {
     return month <= 6 ? 31 : 30;
   }
   maxLengthOfMonthCodeInAnyYear(monthCode: string) {
-    const month = nonLeapMonthCodeNumberPart(monthCode);
-    return month <= 6 ? 31 : 30;
+    return ParseMonthCode(monthCode).monthNumber <= 6 ? 31 : 30;
   }
   estimateIsoDate(calendarDate: CalendarYMD) {
     const { year } = this.adjustCalendarDate(calendarDate);
@@ -1420,8 +1419,7 @@ class IndianHelper extends HelperBase {
     return this.getMonthInfo(calendarDate).length;
   }
   maxLengthOfMonthCodeInAnyYear(monthCode: string) {
-    const month = nonLeapMonthCodeNumberPart(monthCode);
-    let monthInfo = this.months[month];
+    let monthInfo = this.months[ParseMonthCode(monthCode).monthNumber];
     monthInfo = monthInfo.leap ?? monthInfo;
     return monthInfo.length;
   }
@@ -1714,7 +1712,7 @@ abstract class GregorianBaseHelperFixedEpoch extends HelperBase {
     return this.minimumMonthLength(calendarDate);
   }
   maxLengthOfMonthCodeInAnyYear(monthCode: string) {
-    const month = nonLeapMonthCodeNumberPart(monthCode);
+    const month = ParseMonthCode(monthCode).monthNumber;
     return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
   }
   estimateIsoDate(calendarDateParam: CalendarYMD) {
@@ -1761,7 +1759,7 @@ abstract class GregorianBaseHelper extends HelperBase {
     return this.minimumMonthLength(calendarDate);
   }
   maxLengthOfMonthCodeInAnyYear(monthCode: string) {
-    const month = nonLeapMonthCodeNumberPart(monthCode);
+    const month = ParseMonthCode(monthCode).monthNumber;
     return [31, 29, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31][month - 1];
   }
   /** Fill in missing parts of the (year, era, eraYear) tuple */
@@ -1841,7 +1839,7 @@ abstract class GregorianBaseHelper extends HelperBase {
     let calendarDate = calendarDateParam;
     // Because this is not a lunisolar calendar, it's safe to convert monthCode to a number
     const { month, monthCode } = calendarDate;
-    if (month === undefined) calendarDate = { ...calendarDate, month: nonLeapMonthCodeNumberPart(monthCode as string) };
+    if (month === undefined) calendarDate = { ...calendarDate, month: ParseMonthCode(monthCode as string).monthNumber };
     this.validateCalendarDate(calendarDate);
     calendarDate = this.completeEraYear(calendarDate);
     return super.adjustCalendarDate(calendarDate, cache, overflow);
@@ -1870,7 +1868,7 @@ abstract class SameMonthDayAsGregorianBaseHelper extends GregorianBaseHelper {
     // Month and day are same as ISO, so bypass Intl.DateTimeFormat and
     // calculate the year, era, and eraYear here.
     const { year: isoYear, month, day } = isoDate;
-    const monthCode = buildMonthCode(month);
+    const monthCode = CreateMonthCode(month, false);
     const year = isoYear - this.anchorEra.isoEpoch.year + 1;
     return this.completeEraYear({ year, month, monthCode, day });
   }
@@ -2190,7 +2188,7 @@ abstract class ChineseBaseHelper extends HelperBase {
       // "bis" suffix used only by the Chinese/Dangi calendar to indicate a leap
       // month. Below we'll normalize the output.
       if (monthExtra && monthExtra !== 'bis') throw new RangeError(`Unexpected leap month suffix: ${monthExtra}`);
-      const monthCode = buildMonthCode(month as number, monthExtra !== undefined);
+      const monthCode = CreateMonthCode(month as number, monthExtra !== undefined);
       const monthString = `${month}${monthExtra || ''}`;
       const months = this.getMonthList(year, cache);
       const monthInfo = months[monthString];
@@ -2204,19 +2202,18 @@ abstract class ChineseBaseHelper extends HelperBase {
       if (month === undefined) {
         ES.assertExists(monthCode);
         const months = this.getMonthList(year, cache);
-        let numberPart = monthCode.replace(/^M|L$/g, (ch) => (ch === 'L' ? 'bis' : ''));
-        if (numberPart[0] === '0') numberPart = numberPart.slice(1);
+        const { monthNumber, isLeapMonth } = ParseMonthCode(monthCode);
+        const numberPart = `${monthNumber}${isLeapMonth ? 'bis' : ''}`;
         let monthInfo = months[numberPart];
         month = monthInfo && monthInfo.monthIndex;
 
         // If this leap month isn't present in this year, constrain to the same
         // day of the previous month.
-        if (month === undefined && monthCode.endsWith('L') && monthCode != 'M13L' && overflow === 'constrain') {
-          const withoutML = +monthCode.replace(/^M0?|L$/g, '');
-          monthInfo = months[withoutML];
+        if (month === undefined && isLeapMonth && monthNumber !== 13 && overflow === 'constrain') {
+          monthInfo = months[monthNumber];
           if (monthInfo) {
             month = monthInfo.monthIndex;
-            monthCode = buildMonthCode(withoutML);
+            monthCode = CreateMonthCode(monthNumber, false);
           }
         }
         if (month === undefined) {
@@ -2237,15 +2234,15 @@ abstract class ChineseBaseHelper extends HelperBase {
         if (matchingMonthEntry === undefined) {
           throw new RangeError(`Invalid month ${month} in Chinese year ${year}`);
         }
-        monthCode = buildMonthCode(
+        monthCode = CreateMonthCode(
           +matchingMonthEntry[0].replace('bis', ''),
           matchingMonthEntry[0].indexOf('bis') !== -1
         );
       } else {
         // Both month and monthCode are present. Make sure they don't conflict.
         const months = this.getMonthList(year, cache);
-        let numberPart = monthCode.replace(/^M|L$/g, (ch) => (ch === 'L' ? 'bis' : ''));
-        if (numberPart[0] === '0') numberPart = numberPart.slice(1);
+        const { monthNumber, isLeapMonth } = ParseMonthCode(monthCode);
+        const numberPart = `${monthNumber}${isLeapMonth ? 'bis' : ''}`;
         const monthInfo = months[numberPart];
         if (!monthInfo) throw new RangeError(`Unmatched monthCode ${monthCode} in Chinese year ${year}`);
         if (month !== monthInfo.monthIndex) {

@@ -249,7 +249,7 @@ export function RequireString(value: unknown): string {
   return value;
 }
 
-function ToMonthCode(valueParam: unknown) {
+export function ToMonthCode(valueParam: unknown) {
   const value = RequireString(ToPrimitive(valueParam, String));
   if (
     value.length < 3 ||
