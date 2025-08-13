@@ -966,8 +966,9 @@ export function GetTemporalFractionalSecondDigitsOption(
   const digitsValue = normalizedOptions.fractionalSecondDigits;
   if (digitsValue === undefined) return 'auto';
   if (typeof digitsValue !== 'number') {
-    if (ToString(digitsValue) !== 'auto') {
-      throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digitsValue}`);
+    const digitsString = ToString(digitsValue);
+    if (digitsString !== 'auto') {
+      throw new RangeError(`fractionalSecondDigits must be 'auto' or 0 through 9, not ${digitsString}`);
     }
     return 'auto';
   }
