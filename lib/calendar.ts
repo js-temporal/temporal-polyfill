@@ -14,6 +14,7 @@ import type {
   Overflow,
   Resolve
 } from './internaltypes';
+import { CreateMonthCode, ParseMonthCode } from './monthcode';
 
 function arrayFromSet<T>(src: Set<T>): T[] {
   return [...src];
@@ -358,17 +359,6 @@ type CalendarYM = { year: number; month: number };
 type CalendarYearOnly = { year: number };
 type EraAndEraYear = { era: string; eraYear: number };
 
-function ParseMonthCode(monthCode: string) {
-  const isLeapMonth = monthCode.length === 4;
-  const monthNumber = +monthCode.slice(1, 3);
-  return { monthNumber, isLeapMonth };
-}
-
-function CreateMonthCode(monthNumber: number, isLeapMonth: boolean) {
-  const numberPart = `${monthNumber}`.padStart(2, '0');
-  return isLeapMonth ? `M${numberPart}L` : `M${numberPart}`;
-}
-
 /**
  * Safely merge a month, monthCode pair into an integer month.
  * If both are present, make sure they match.
@@ -685,7 +675,6 @@ abstract class HelperBase {
       if (typeof monthCode !== 'string') {
         throw new RangeError(`monthCode must be a string, not ${typeof monthCode}`);
       }
-      ES.ToMonthCode(monthCode);
       const { monthNumber } = ParseMonthCode(monthCode);
       if (monthNumber < 1 || monthNumber > 13) throw new RangeError(`Invalid monthCode: ${monthCode}`);
     }

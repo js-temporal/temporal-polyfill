@@ -34,6 +34,7 @@ import type {
 } from './internaltypes';
 import { GetIntrinsic } from './intrinsicclass';
 import { ApplyUnsignedRoundingMode, FMAPowerOf10, GetUnsignedRoundingMode, TruncatingDivModByPowerOf10 } from './math';
+import { CreateMonthCode, ParseMonthCode } from './monthcode';
 import { TimeDuration } from './timeduration';
 import {
   CreateSlots,
@@ -249,20 +250,9 @@ export function RequireString(value: unknown): string {
   return value;
 }
 
-export function ToMonthCode(valueParam: unknown) {
-  const value = RequireString(ToPrimitive(valueParam, String));
-  if (
-    value.length < 3 ||
-    value.length > 4 ||
-    value[0] !== 'M' ||
-    '0123456789'.indexOf(value[1]) === -1 ||
-    '0123456789'.indexOf(value[2]) === -1 ||
-    (value[1] + value[2] === '00' && value[3] !== 'L') ||
-    (value[3] !== 'L' && value[3] !== undefined)
-  ) {
-    throw new RangeError(`bad month code ${value}; must match M01-M99 or M00L-M99L`);
-  }
-  return value;
+function ToMonthCode(value: unknown) {
+  const { monthNumber, isLeapMonth } = ParseMonthCode(value);
+  return CreateMonthCode(monthNumber, isLeapMonth);
 }
 
 function ToOffsetString(valueParam: unknown) {
