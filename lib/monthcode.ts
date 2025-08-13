@@ -1,3 +1,5 @@
+import { monthCode as MONTH_CODE_REGEX } from './regex';
+
 type Primitive = boolean | string | number | symbol | bigint | null | undefined;
 type Primitivable = { [Symbol.toPrimitive]?(hint: 'string' | 'number' | 'default'): Primitive };
 
@@ -33,20 +35,12 @@ function ToPrimitiveRequireString(input: unknown): string {
 
 export function ParseMonthCode(argument: unknown) {
   const value = ToPrimitiveRequireString(argument);
-  if (
-    value.length < 3 ||
-    value.length > 4 ||
-    value[0] !== 'M' ||
-    '0123456789'.indexOf(value[1]) === -1 ||
-    '0123456789'.indexOf(value[2]) === -1 ||
-    (value[1] + value[2] === '00' && value[3] !== 'L') ||
-    (value[3] !== 'L' && value[3] !== undefined)
-  ) {
-    throw new RangeError(`bad month code ${value}; must match M01-M99 or M00L-M99L`);
-  }
-  const isLeapMonth = value.length === 4;
-  const monthNumber = +value.slice(1, 3);
-  return { monthNumber, isLeapMonth };
+  const match = MONTH_CODE_REGEX.exec(value);
+  if (!match) throw new RangeError(`bad month code ${value}; must match M01-M99 or M00L-M99L`);
+  return {
+    monthNumber: +(match[1] ?? match[3] ?? match[5]),
+    isLeapMonth: (match[2] ?? match[4] ?? match[6]) === 'L'
+  };
 }
 
 export function CreateMonthCode(monthNumber: number, isLeapMonth: boolean) {
