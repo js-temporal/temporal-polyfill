@@ -1322,12 +1322,9 @@ abstract class IslamicBaseHelper extends HelperBase {
   }
 }
 
-// There are 6 Islamic calendars with the same implementation in this polyfill.
+// There are 4 Islamic calendars with the same implementation in this polyfill.
 // They vary only in their ID. They do emit different output from the underlying
 // Intl implementation, but our code for each of them is identical.
-class IslamicHelper extends IslamicBaseHelper {
-  id = 'islamic' as const;
-}
 class IslamicUmalquraHelper extends IslamicBaseHelper {
   id = 'islamic-umalqura' as const;
 }
@@ -1336,9 +1333,6 @@ class IslamicTblaHelper extends IslamicBaseHelper {
 }
 class IslamicCivilHelper extends IslamicBaseHelper {
   id = 'islamic-civil' as const;
-}
-class IslamicRgsaHelper extends IslamicBaseHelper {
-  id = 'islamic-rgsa' as const;
 }
 class IslamicCcHelper extends IslamicBaseHelper {
   id = 'islamicc' as const;
@@ -2400,11 +2394,9 @@ for (const Helper of [
   BuddhistHelper,
   GregoryHelper,
   JapaneseHelper,
-  IslamicHelper,
   IslamicUmalquraHelper,
   IslamicTblaHelper,
   IslamicCivilHelper,
-  IslamicRgsaHelper,
   IslamicCcHelper
 ]) {
   const helper = new Helper();
