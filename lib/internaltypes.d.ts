@@ -5,11 +5,9 @@ import type { TimeDuration } from './timeduration';
 export type BuiltinCalendarId =
   | 'iso8601'
   | 'hebrew'
-  | 'islamic'
   | 'islamic-umalqura'
   | 'islamic-tbla'
   | 'islamic-civil'
-  | 'islamic-rgsa'
   | 'islamicc'
   | 'persian'
   | 'ethiopic'
