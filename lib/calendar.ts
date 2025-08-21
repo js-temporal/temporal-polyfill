@@ -178,7 +178,7 @@ impl['iso8601'] = {
     if ((type === 'date' || type === 'month-day') && fields.day === undefined) {
       throw new TypeError('day is required');
     }
-    Object.assign(fields, resolveNonLunisolarMonth(fields));
+    Object.assign(fields, resolveNonLunisolarMonth(fields, 'iso8601'));
   },
   dateToISO(fields, overflow) {
     return ES.RegulateISODate(fields.year, fields.month, fields.day, overflow);
@@ -352,6 +352,33 @@ type CalendarYM = { year: number; month: number };
 type CalendarYearOnly = { year: number };
 type EraAndEraYear = { era: string; eraYear: number };
 
+const monthCodeInfo: Partial<Record<BuiltinCalendarId, { additionalMonths: string[] }>> = {
+  chinese: {
+    additionalMonths: ['M01L', 'M02L', 'M03L', 'M04L', 'M05L', 'M06L', 'M07L', 'M08L', 'M09L', 'M10L', 'M11L', 'M12L']
+  },
+  coptic: {
+    additionalMonths: ['M13']
+  },
+  dangi: {
+    additionalMonths: ['M01L', 'M02L', 'M03L', 'M04L', 'M05L', 'M06L', 'M07L', 'M08L', 'M09L', 'M10L', 'M11L', 'M12L']
+  },
+  ethioaa: {
+    additionalMonths: ['M13']
+  },
+  ethiopic: {
+    additionalMonths: ['M13']
+  },
+  hebrew: {
+    additionalMonths: ['M05L']
+  }
+};
+
+function IsValidMonthCodeForCalendar(calendar: BuiltinCalendarId, monthCode: string) {
+  const { monthNumber, isLeapMonth } = ParseMonthCode(monthCode);
+  if (!isLeapMonth && monthNumber >= 1 && monthNumber <= 12) return true;
+  return monthCodeInfo[calendar]?.additionalMonths.includes(monthCode) ?? false;
+}
+
 /**
  * Safely merge a month, monthCode pair into an integer month.
  * If both are present, make sure they match.
@@ -359,8 +386,8 @@ type EraAndEraYear = { era: string; eraYear: number };
  * */
 function resolveNonLunisolarMonth<T extends { monthCode?: string; month?: number }>(
   calendarDate: T,
-  overflow: Overflow | undefined = undefined,
-  monthsPerYear = 12
+  calendar: BuiltinCalendarId,
+  overflow: Overflow | undefined = undefined
 ) {
   let { month, monthCode } = calendarDate;
   if (monthCode === undefined) {
@@ -368,22 +395,19 @@ function resolveNonLunisolarMonth<T extends { monthCode?: string; month?: number
     // The ISO calendar uses the default (undefined) value because it does
     // constrain/reject after this method returns. Non-ISO calendars, however,
     // rely on this function to constrain/reject out-of-range `month` values.
+    const monthsPerYear = 12 + (monthCodeInfo[calendar]?.additionalMonths.length ?? 0);
     if (overflow === 'reject') ES.RejectToRange(month, 1, monthsPerYear);
     if (overflow === 'constrain') month = ES.ConstrainToRange(month, 1, monthsPerYear);
     monthCode = CreateMonthCode(month, false);
   } else {
-    const { monthNumber, isLeapMonth } = ParseMonthCode(monthCode);
-    if (isLeapMonth) {
-      throw new RangeError(`Invalid monthCode: ${monthCode}. Leap months do not exist in this calendar`);
+    if (!IsValidMonthCodeForCalendar(calendar, monthCode)) {
+      throw new RangeError(`Invalid monthCode: ${monthCode} does not exist in calendar ${calendar}`);
     }
-    if (monthCode !== CreateMonthCode(monthNumber, false)) {
-      throw new RangeError(`Invalid month code: ${monthCode}`);
-    }
+    const { monthNumber } = ParseMonthCode(monthCode);
     if (month !== undefined && month !== monthNumber) {
       throw new RangeError(`monthCode ${monthCode} and month ${month} must match if both are present`);
     }
     month = monthNumber;
-    if (month < 1 || month > monthsPerYear) throw new RangeError(`Invalid monthCode: ${monthCode}`);
   }
   return { ...calendarDate, month, monthCode };
 }
@@ -853,6 +877,8 @@ abstract class HelperBase {
    * */
   adjustCalendarDate(
     calendarDateParam: Partial<FullCalendarDate>,
+    // This param is only used by derived classes
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     cache: OneObjectCache | undefined = undefined,
     overflow: Overflow = 'constrain',
     // This param is only used by derived classes
@@ -862,10 +888,8 @@ abstract class HelperBase {
     if (this.calendarType === 'lunisolar') throw new RangeError('Override required for lunisolar calendars');
     let calendarDate = calendarDateParam;
     this.validateCalendarDate(calendarDate);
-    const largestMonth = this.monthsInYear(calendarDate, cache);
     let { month, monthCode } = calendarDate;
-
-    ({ month, monthCode } = resolveNonLunisolarMonth(calendarDate, overflow, largestMonth));
+    ({ month, monthCode } = resolveNonLunisolarMonth(calendarDate, this.id, overflow));
     let fullCalendarDate: FullCalendarDate = { ...calendarDate, month, monthCode };
     if (CalendarSupportsEra(this.id)) fullCalendarDate = this.completeEraYear(fullCalendarDate);
     return fullCalendarDate;
@@ -2312,9 +2336,7 @@ class NonIsoCalendar implements CalendarImpl {
   }
   resolveFields(fields: CalendarFieldsRecord /* , type */) {
     if (this.helper.calendarType !== 'lunisolar') {
-      const cache = new OneObjectCache();
-      const largestMonth = this.helper.monthsInYear({ year: fields.year ?? 1972 }, cache);
-      resolveNonLunisolarMonth(fields, undefined, largestMonth);
+      resolveNonLunisolarMonth(fields, this.helper.id);
     }
   }
   dateToISO(fields: CalendarDateFields, overflow: Overflow) {
