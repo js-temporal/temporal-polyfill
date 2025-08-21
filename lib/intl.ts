@@ -107,8 +107,30 @@ function createDateTimeFormat(
   } else {
     options = Object.create(null);
   }
-  const original = new OriginalIntlDateTimeFormat(locale, options);
-  const ro = original.resolvedOptions();
+  let original = new OriginalIntlDateTimeFormat(locale, options);
+  let ro = original.resolvedOptions();
+
+  // If the original Intl.DateTimeFormat resolvedOptions isn't new enough to
+  // reject the unshipped IDs, log a warning and re-do it. Fallbacks are based
+  // on discussion https://github.com/tc39/proposal-intl-era-monthcode/issues/29
+  const fallbacks = [
+    ['islamic', 'islamic-tbla'],
+    ['islamic-rgsa', 'islamic-umalqura']
+  ];
+  for (let ix = 0; ix < fallbacks.length; ix++) {
+    const id = fallbacks[ix][0];
+    const substitute = fallbacks[ix][1];
+    if (ro.calendar === id) {
+      options.calendar = substitute;
+      // eslint-disable-next-line no-console
+      console.warn(
+        `"${id}" calendar ID does not specify the calendar algorithm. "${substitute}" was used. ` +
+          'Please specify one of "islamic-umalqura", "islamic-tbla", or "islamic-civil" explicitly.'
+      );
+      original = new OriginalIntlDateTimeFormat(locale, options);
+      ro = original.resolvedOptions();
+    }
+  }
 
   CreateSlots(dtf);
 
