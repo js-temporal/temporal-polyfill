@@ -398,24 +398,75 @@ function weekNumber(firstDayOfWeek: number, minimalDaysInFirstWeek: number, desi
   return weekNo;
 }
 
-const eraInfo = [
-  'buddhist',
-  'coptic',
-  'ethioaa',
-  'ethiopic',
-  'gregory',
-  'hebrew',
-  'indian',
-  'islamic-civil',
-  'islamic-tbla',
-  'islamic-umalqura',
-  'japanese',
-  'persian',
-  'roc'
-];
+const eraInfo: Partial<Record<BuiltinCalendarId, Record<string, { aliases?: string[] }>>> = {
+  buddhist: {
+    be: {}
+  },
+  coptic: {
+    am: {}
+  },
+  ethioaa: {
+    aa: { aliases: ['mundi'] }
+  },
+  ethiopic: {
+    am: { aliases: ['incar'] },
+    aa: { aliases: ['mundi'] }
+  },
+  gregory: {
+    ce: { aliases: ['ad'] },
+    bce: { aliases: ['bc'] }
+  },
+  hebrew: {
+    am: {}
+  },
+  indian: {
+    shaka: {}
+  },
+  'islamic-civil': {
+    ah: {},
+    bh: {}
+  },
+  'islamic-tbla': {
+    ah: {},
+    bh: {}
+  },
+  'islamic-umalqura': {
+    ah: {},
+    bh: {}
+  },
+  japanese: {
+    reiwa: {},
+    heisei: {},
+    showa: {},
+    taisho: {},
+    meiji: {},
+    ce: { aliases: ['ad'] },
+    bce: { aliases: ['bc'] }
+  },
+  persian: {
+    ap: {}
+  },
+  roc: {
+    roc: { aliases: ['minguo'] },
+    broc: { aliases: ['before-roc', 'minguo-qian'] }
+  }
+};
 
 function CalendarSupportsEra(calendar: BuiltinCalendarId) {
-  return eraInfo.includes(calendar);
+  return Object.prototype.hasOwnProperty.call(eraInfo, calendar);
+}
+
+function CanonicalizeEraInCalendar(calendar: keyof typeof eraInfo, era: string) {
+  const eras = eraInfo[calendar];
+  ES.assertExists(eras);
+  const entries = Object.entries(eras);
+  for (let ix = 0; ix < entries.length; ix++) {
+    const canonicalName = entries[ix][0];
+    const info = entries[ix][1];
+    if (era === canonicalName) return era;
+    if (info.aliases && info.aliases.includes(era)) return canonicalName;
+  }
+  return undefined;
 }
 
 /**
@@ -532,7 +583,6 @@ abstract class HelperBase {
   anchorEra: Era = {
     // dummy era for calendars without eras
     code: '',
-    names: [],
     genericName: '',
     anchorEpoch: { year: 0, month: 1, day: 1 },
     isoEpoch: { year: 0, month: 1, day: 1 }
@@ -752,27 +802,23 @@ abstract class HelperBase {
       if (ix === -1) throw new RangeError(`Year ${year} was not matched by any era`);
       let matchingEra = this.eras[ix];
       if (matchingEra.skip) matchingEra = this.eras[ix - 1];
-      return { eraYear, era: matchingEra.code, eraNames: matchingEra.names };
+      return { eraYear, era: matchingEra.code };
     };
 
     let { year, eraYear, era } = calendarDate;
     if (year !== undefined) {
       const matchData = eraFromYear(year);
       ({ eraYear, era } = matchData);
-      if (
-        calendarDate.era !== undefined &&
-        calendarDate.era !== era &&
-        !(matchData?.eraNames ?? []).includes(calendarDate.era)
-      ) {
+      if (calendarDate.era !== undefined && CanonicalizeEraInCalendar(this.id, calendarDate.era) !== era) {
         throw new RangeError(`Input era ${calendarDate.era} doesn't match calculated value ${era}`);
       }
       if (calendarDate.eraYear !== undefined && calendarDate.eraYear !== eraYear) {
         throw new RangeError(`Input eraYear ${calendarDate.eraYear} doesn't match calculated value ${eraYear}`);
       }
     } else if (eraYear !== undefined) {
-      // TS limitation: https://github.com/microsoft/TypeScript/issues/11498
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const matchingEra = this.eras.find(({ code, names = [] }) => code === era || names.includes(era!));
+      ES.assertExists(era);
+      const canonicalName = CanonicalizeEraInCalendar(this.id, era);
+      const matchingEra = this.eras.find(({ code }) => code === canonicalName);
       if (!matchingEra) throw new RangeError(`Era ${era} (ISO year ${eraYear}) was not matched by any era`);
       if (matchingEra.reverseOf) {
         year = matchingEra.anchorEpoch.year - eraYear;
@@ -1612,15 +1658,6 @@ interface InputEra {
   code: string;
 
   /**
-   * Names are additionally accepted as alternate era codes on input, and the
-   * first name is also output in error messages (and may be the era code if
-   * desired.)
-   * See https://tc39.es/proposal-intl-era-monthcode/#table-eras
-   * If absent, this field defaults to a single element matching the code.
-   */
-  names?: string[];
-
-  /**
    * Signed calendar year where this era begins.Will be
    * 1 (or 0 for zero-based eras) for the anchor era assuming that `year`
    * numbering starts at the beginning of the anchor era, which is true
@@ -1667,15 +1704,6 @@ interface Era {
    * See https://tc39.es/proposal-intl-era-monthcode/#table-eras
    */
   code: string;
-
-  /**
-   * Names are additionally accepted as alternate era codes on input, and the
-   * first name is also output in error messages (and may be the era code if
-   * desired.)
-   * See https://tc39.es/proposal-intl-era-monthcode/#table-eras
-   * If absent, this field defaults to a single element matching the code.
-   */
-  names: string[];
 
   /**
    * alternate name of the era used in old versions of ICU data
@@ -1929,7 +1957,7 @@ abstract class OrthodoxBaseHelper extends GregorianBaseHelper {
 //   zero era of ethioaa.
 class EthioaaHelper extends OrthodoxBaseHelper {
   constructor() {
-    super('ethioaa', [{ code: 'aa', names: ['mundi'], isoEpoch: { year: -5492, month: 7, day: 17 } }]);
+    super('ethioaa', [{ code: 'aa', isoEpoch: { year: -5492, month: 7, day: 17 } }]);
   }
 }
 const copticLegacyEra0 = 'era0';
@@ -1953,8 +1981,8 @@ class CopticHelper extends OrthodoxBaseHelper {
 class EthiopicHelper extends OrthodoxBaseHelper {
   constructor() {
     super('ethiopic', [
-      { code: 'aa', names: ['mundi'], isoEpoch: { year: -5492, month: 7, day: 17 } },
-      { code: 'am', names: ['incar'], isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
+      { code: 'aa', isoEpoch: { year: -5492, month: 7, day: 17 } },
+      { code: 'am', isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
     ]);
   }
 }
@@ -1962,8 +1990,8 @@ class EthiopicHelper extends OrthodoxBaseHelper {
 class RocHelper extends SameMonthDayAsGregorianBaseHelper {
   constructor() {
     super('roc', [
-      { code: 'roc', names: ['minguo'], isoEpoch: { year: 1912, month: 1, day: 1 } },
-      { code: 'broc', names: ['before-roc', 'minguo-qian'], reverseOf: 'roc' }
+      { code: 'roc', isoEpoch: { year: 1912, month: 1, day: 1 } },
+      { code: 'broc', reverseOf: 'roc' }
     ]);
   }
 }
@@ -1977,8 +2005,8 @@ class BuddhistHelper extends SameMonthDayAsGregorianBaseHelper {
 class GregoryHelper extends SameMonthDayAsGregorianBaseHelper {
   constructor() {
     super('gregory', [
-      { code: 'ce', names: ['ad'], isoEpoch: { year: 1, month: 1, day: 1 } },
-      { code: 'bce', names: ['bc'], reverseOf: 'ce' }
+      { code: 'ce', isoEpoch: { year: 1, month: 1, day: 1 } },
+      { code: 'bce', reverseOf: 'ce' }
     ]);
   }
   override reviseIntlEra(calendarDate: EraAndEraYear /*, isoDate: IsoDate */): EraAndEraYear {
@@ -2032,8 +2060,8 @@ class JapaneseHelper extends SameMonthDayAsGregorianBaseHelper {
       { code: 'showa', isoEpoch: { year: 1926, month: 12, day: 25 }, anchorEpoch: { year: 1926, month: 12, day: 25 } },
       { code: 'taisho', isoEpoch: { year: 1912, month: 7, day: 30 }, anchorEpoch: { year: 1912, month: 7, day: 30 } },
       { code: 'meiji', isoEpoch: { year: 1868, month: 9, day: 8 }, anchorEpoch: { year: 1868, month: 9, day: 8 } },
-      { code: 'ce', names: ['ad'], isoEpoch: { year: 1, month: 1, day: 1 } },
-      { code: 'bce', names: ['bc'], reverseOf: 'ce' }
+      { code: 'ce', isoEpoch: { year: 1, month: 1, day: 1 } },
+      { code: 'bce', reverseOf: 'ce' }
     ]);
   }
 
