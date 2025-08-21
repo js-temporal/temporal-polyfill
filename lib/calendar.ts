@@ -317,13 +317,6 @@ impl['iso8601'] = {
   }
 };
 
-// Note: Built-in calendars other than iso8601 are not part of the Temporal
-// proposal for ECMA-262. These calendars will be standardized as part of
-// ECMA-402. Code below here includes an implementation of these calendars to
-// validate the Temporal API and to get feedback. However, native non-ISO
-// calendar behavior is at least somewhat implementation-defined, so may not
-// match this polyfill's output exactly.
-//
 // Some ES implementations don't include ECMA-402. For this reason, it's helpful
 // to ensure a clean separation between the ISO calendar implementation which is
 // a part of ECMA-262 and the non-ISO calendar implementation which requires
