@@ -398,6 +398,26 @@ function weekNumber(firstDayOfWeek: number, minimalDaysInFirstWeek: number, desi
   return weekNo;
 }
 
+const eraInfo = [
+  'buddhist',
+  'coptic',
+  'ethioaa',
+  'ethiopic',
+  'gregory',
+  'hebrew',
+  'indian',
+  'islamic-civil',
+  'islamic-tbla',
+  'islamic-umalqura',
+  'japanese',
+  'persian',
+  'roc'
+];
+
+function CalendarSupportsEra(calendar: BuiltinCalendarId) {
+  return eraInfo.includes(calendar);
+}
+
 /**
  * This prototype implementation of non-ISO calendars makes many repeated calls
  * to Intl APIs which may be slow (e.g. >0.2ms). This trivial cache will speed
@@ -507,7 +527,6 @@ abstract class HelperBase {
   abstract estimateIsoDate(calendarDate: CalendarYMD): ISODate;
   abstract inLeapYear(calendarDate: CalendarYearOnly, cache?: OneObjectCache): boolean;
   abstract calendarType: 'solar' | 'lunar' | 'lunisolar';
-  abstract hasEra: boolean;
   reviseIntlEra?(calendarDate: EraAndEraYear, isoDate: ISODate): EraAndEraYear;
   eras: Era[] = [];
   anchorEra: Era = {
@@ -570,12 +589,13 @@ abstract class HelperBase {
 
     const isoString = toUtcIsoDateString({ isoYear, isoMonth, isoDay });
     const parts = this.getCalendarParts(isoString);
+    const hasEra = CalendarSupportsEra(this.id);
     const result: Partial<FullCalendarDate> = {};
     for (let i = 0; i < parts.length; i++) {
       const { type, value } = parts[i];
       // TODO: remove this type annotation when `relatedYear` gets into TS lib types
       if (type === 'year' || type === ('relatedYear' as Intl.DateTimeFormatPartTypes)) {
-        if (this.hasEra) {
+        if (hasEra) {
           result.eraYear = +value;
         } else {
           result.year = +value;
@@ -613,7 +633,7 @@ abstract class HelperBase {
         if (matches[2]) result.monthExtra = matches[2];
       }
       if (type === 'day') result.day = +value;
-      if (this.hasEra && type === 'era' && value != null && value !== '') {
+      if (hasEra && type === 'era' && value != null && value !== '') {
         // The convention for Temporal era values is lowercase, so following
         // that convention in this prototype. Punctuation is removed, accented
         // letters are normalized, and spaces are replaced with dashes.
@@ -629,7 +649,7 @@ abstract class HelperBase {
           .toLowerCase();
       }
     }
-    if (this.hasEra && result.eraYear === undefined) {
+    if (hasEra && result.eraYear === undefined) {
       // Node 12 has outdated ICU data that lacks the `relatedYear` field in the
       // output of Intl.DateTimeFormat.formatToParts.
       throw new RangeError(
@@ -637,7 +657,7 @@ abstract class HelperBase {
       );
     }
     // Translate old ICU era codes "ERA0" etc. into canonical era names.
-    if (this.hasEra) {
+    if (hasEra) {
       const replacement = this.eras.find((e) => result.era === e.genericName);
       if (replacement) result.era = replacement.code;
     }
@@ -687,7 +707,7 @@ abstract class HelperBase {
       const { monthNumber } = ParseMonthCode(monthCode);
       if (monthNumber < 1 || monthNumber > 13) throw new RangeError(`Invalid monthCode: ${monthCode}`);
     }
-    if (this.hasEra) {
+    if (CalendarSupportsEra(this.id)) {
       if ((calendarDate['era'] === undefined) !== (calendarDate['eraYear'] === undefined)) {
         throw new TypeError('properties era and eraYear must be provided together');
       }
@@ -801,7 +821,7 @@ abstract class HelperBase {
 
     ({ month, monthCode } = resolveNonLunisolarMonth(calendarDate, overflow, largestMonth));
     let fullCalendarDate: FullCalendarDate = { ...calendarDate, month, monthCode };
-    if (this.hasEra) fullCalendarDate = this.completeEraYear(fullCalendarDate);
+    if (CalendarSupportsEra(this.id)) fullCalendarDate = this.completeEraYear(fullCalendarDate);
     return fullCalendarDate;
   }
   regulateMonthDayNaive(calendarDate: FullCalendarDate, overflow: Overflow, cache: OneObjectCache) {
@@ -939,7 +959,7 @@ abstract class HelperBase {
       date.month === undefined ||
       date.day === undefined ||
       date.monthCode === undefined ||
-      (this.hasEra && (date.era === undefined || date.eraYear === undefined))
+      (CalendarSupportsEra(this.id) && (date.era === undefined || date.eraYear === undefined))
     ) {
       throw new RangeError('Unexpected missing property');
     }
@@ -1147,10 +1167,11 @@ abstract class HelperBase {
   }
   monthDayFromFields(fields: MonthDayFromFieldsObject, overflow: Overflow, cache: OneObjectCache): ISODate {
     let { era, eraYear, year, month, monthCode, day } = fields;
-    if (month !== undefined && year === undefined && (!this.hasEra || era === undefined || eraYear === undefined)) {
+    const hasEra = CalendarSupportsEra(this.id);
+    if (month !== undefined && year === undefined && (!hasEra || era === undefined || eraYear === undefined)) {
       throw new TypeError('when month is present, year (or era and eraYear) are required');
     }
-    if (monthCode === undefined || year !== undefined || (this.hasEra && eraYear !== undefined)) {
+    if (monthCode === undefined || year !== undefined || (hasEra && eraYear !== undefined)) {
       // Apply overflow behaviour to year/month/day, to get correct monthCode/day
       ({ monthCode, day } = this.isoToCalendarDate(this.calendarToIsoDate(fields, overflow, cache), cache));
     }
@@ -1249,7 +1270,6 @@ class HebrewHelper extends HelperBase {
   }
   id = 'hebrew' as const;
   calendarType = 'lunisolar' as const;
-  hasEra = true as const;
   inLeapYear(calendarDate: CalendarYearOnly) {
     const { year } = calendarDate;
     // FYI: In addition to adding a month in leap years, the Hebrew calendar
@@ -1394,7 +1414,6 @@ abstract class IslamicBaseHelper extends HelperBase {
   }
   abstract override id: BuiltinCalendarId;
   calendarType = 'lunar' as const;
-  hasEra = true as const;
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     const startOfYearCalendar = { year: calendarDate.year, month: 1, monthCode: 'M01', day: 1 };
     const startOfNextYearCalendar = { year: calendarDate.year + 1, month: 1, monthCode: 'M01', day: 1 };
@@ -1456,7 +1475,6 @@ class PersianHelper extends HelperBase {
   }
   id = 'persian' as const;
   calendarType = 'solar' as const;
-  hasEra = true as const;
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     // If the last month has 30 days, it's a leap year.
     return this.daysInMonth({ year: calendarDate.year, month: 12, day: 1 }, cache) === 30;
@@ -1503,7 +1521,6 @@ class IndianHelper extends HelperBase {
   }
   id = 'indian' as const;
   calendarType = 'solar' as const;
-  hasEra = true as const;
   inLeapYear(calendarDate: CalendarYearOnly) {
     // From https://en.wikipedia.org/wiki/Indian_national_calendar:
     // Years are counted in the Saka era, which starts its year 0 in the year 78
@@ -1806,7 +1823,6 @@ function isGregorianLeapYear(year: number) {
 /** Base for Gregorian-like calendars with eras. */
 abstract class GregorianBaseHelper extends HelperBase {
   id: BuiltinCalendarId;
-  hasEra = true as const;
 
   constructor(id: BuiltinCalendarId, originalEras: InputEra[]) {
     super(originalEras);
@@ -1897,7 +1913,6 @@ abstract class OrthodoxBaseHelper extends GregorianBaseHelper {
   constructor(id: BuiltinCalendarId, originalEras: InputEra[]) {
     super(id, originalEras);
   }
-  override hasEra = true as const;
   override inLeapYear = OrthodoxOps.inLeapYear;
   override monthsInYear = OrthodoxOps.monthsInYear;
   override minimumMonthLength = OrthodoxOps.minimumMonthLength;
@@ -2045,7 +2060,6 @@ abstract class ChineseBaseHelper extends HelperBase {
   }
   abstract override id: BuiltinCalendarId;
   calendarType = 'lunisolar' as const;
-  hasEra = false as const;
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     const months = this.getMonthList(calendarDate.year, cache);
     return Object.entries(months).length === 13;
@@ -2263,7 +2277,7 @@ class DangiHelper extends ChineseBaseHelper {
 class NonIsoCalendar implements CalendarImpl {
   constructor(private readonly helper: HelperBase) {}
   extraFields(fields: FieldKey[]): FieldKey[] {
-    if (this.helper.hasEra && fields.includes('year')) {
+    if (CalendarSupportsEra(this.helper.id) && fields.includes('year')) {
       return ['era', 'eraYear'];
     }
     return [];
