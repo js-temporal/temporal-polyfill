@@ -3523,6 +3523,20 @@ function DifferenceZonedDateTime(
   const isoDtStart = GetISODateTimeFor(timeZone, ns1);
   const isoDtEnd = GetISODateTimeFor(timeZone, ns2);
 
+  // If year-month-day values are same-day,
+  // there's no point involving the calendar/timezone for zdt->pdt conversions.
+  // It also avoids a situation where dayCorrection backs up too far on same-day diffs
+  // with reverse-direction wallclock delta due to DST:
+  // https://github.com/tc39/proposal-temporal/issues/3141
+  if (
+    isoDtStart.isoDate.year === isoDtEnd.isoDate.year &&
+    isoDtStart.isoDate.month === isoDtEnd.isoDate.month &&
+    isoDtStart.isoDate.day === isoDtEnd.isoDate.day
+  ) {
+    const timeDuration = new TimeDuration(nsDiff);
+    return { date: ZeroDateDuration(), time: timeDuration };
+  }
+
   // Simulate moving ns1 as many years/months/weeks/days as possible without
   // surpassing ns2. This value is stored in intermediateDateTime/intermediateInstant/intermediateNs.
   // We do not literally move years/months/weeks/days with calendar arithmetic,
@@ -3588,6 +3602,7 @@ function DifferenceZonedDateTime(
 function NudgeToCalendarUnit(
   sign: -1 | 1,
   durationParam: InternalDuration,
+  originEpochNs: JSBI,
   destEpochNs: JSBI,
   isoDateTime: ISODateTime,
   timeZone: string | null,
@@ -3647,21 +3662,28 @@ function NudgeToCalendarUnit(
   if (sign === 1) assert(r1 >= 0 && r1 < r2, `positive ordering of r1, r2: 0 ≤ ${r1} < ${r2}`);
   if (sign === -1) assert(r1 <= 0 && r1 > r2, `negative ordering of r1, r2: 0 ≥ ${r1} > ${r2}`);
 
-  // Apply to origin, output PlainDateTimes
-  const start = CalendarDateAdd(calendar, isoDateTime.isoDate, startDuration, 'constrain');
-  const end = CalendarDateAdd(calendar, isoDateTime.isoDate, endDuration, 'constrain');
-
-  // Convert to epoch-nanoseconds
-  let startEpochNs, endEpochNs;
-  const startDateTime = CombineISODateAndTimeRecord(start, isoDateTime.time);
-  const endDateTime = CombineISODateAndTimeRecord(end, isoDateTime.time);
-  if (timeZone) {
-    startEpochNs = GetEpochNanosecondsFor(timeZone, startDateTime, 'compatible');
-    endEpochNs = GetEpochNanosecondsFor(timeZone, endDateTime, 'compatible');
+  // Convert to bound-START to epoch-nanoseconds
+  let startEpochNs;
+  if (!r1) {
+    // If the start of the bound is the same as the "origin" (aka relativeTo),
+    // use the origin's epoch-nanoseconds as-is instead of relying on isoDateTime,
+    // which then gets zoned and converted back to epoch-nanoseconds,
+    // which looses precision and creates a distorted bounding window.
+    startEpochNs = originEpochNs;
   } else {
-    startEpochNs = GetUTCEpochNanoseconds(startDateTime);
-    endEpochNs = GetUTCEpochNanoseconds(endDateTime);
+    const start = CalendarDateAdd(calendar, isoDateTime.isoDate, startDuration, 'constrain');
+    const startDateTime = CombineISODateAndTimeRecord(start, isoDateTime.time);
+    startEpochNs = timeZone
+      ? GetEpochNanosecondsFor(timeZone, startDateTime, 'compatible')
+      : GetUTCEpochNanoseconds(startDateTime);
   }
+
+  // Convert to bound-END to epoch-nanoseconds
+  const end = CalendarDateAdd(calendar, isoDateTime.isoDate, endDuration, 'constrain');
+  const endDateTime = CombineISODateAndTimeRecord(end, isoDateTime.time);
+  const endEpochNs = timeZone
+    ? GetEpochNanosecondsFor(timeZone, endDateTime, 'compatible')
+    : GetUTCEpochNanoseconds(endDateTime);
 
   // Round the smallestUnit within the epoch-nanosecond span
   if (sign === 1) {
@@ -3896,6 +3918,7 @@ function BubbleRelativeDuration(
 
 function RoundRelativeDuration(
   durationParam: InternalDuration,
+  originEpochNs: JSBI,
   destEpochNs: JSBI,
   isoDateTime: ISODateTime,
   timeZone: string | null,
@@ -3921,6 +3944,7 @@ function RoundRelativeDuration(
     ({ nudgeResult } = NudgeToCalendarUnit(
       sign,
       duration,
+      originEpochNs,
       destEpochNs,
       isoDateTime,
       timeZone,
@@ -3977,6 +4001,7 @@ function RoundRelativeDuration(
 
 function TotalRelativeDuration(
   duration: InternalDuration,
+  originEpochNs: JSBI,
   destEpochNs: JSBI,
   isoDateTime: ISODateTime,
   timeZone: string | null,
@@ -3992,7 +4017,18 @@ function TotalRelativeDuration(
   if (IsCalendarUnit(unit) || (timeZone && unit === 'day')) {
     // Rounding an irregular-length unit? Use epoch-nanosecond-bounding technique
     const sign = InternalDurationSign(duration) < 0 ? -1 : 1;
-    return NudgeToCalendarUnit(sign, duration, destEpochNs, isoDateTime, timeZone, calendar, 1, unit, 'trunc').total;
+    return NudgeToCalendarUnit(
+      sign,
+      duration,
+      originEpochNs,
+      destEpochNs,
+      isoDateTime,
+      timeZone,
+      calendar,
+      1,
+      unit,
+      'trunc'
+    ).total;
   }
   // Rounding uniform-length days/hours/minutes/etc units. Simple nanosecond
   // math. years/months/weeks unchanged
@@ -4019,9 +4055,11 @@ export function DifferencePlainDateTimeWithRounding(
 
   if (smallestUnit === 'nanosecond' && roundingIncrement === 1) return duration;
 
+  const originEpochNs = GetUTCEpochNanoseconds(isoDateTime1);
   const destEpochNs = GetUTCEpochNanoseconds(isoDateTime2);
   return RoundRelativeDuration(
     duration,
+    originEpochNs,
     destEpochNs,
     isoDateTime1,
     null,
@@ -4047,8 +4085,9 @@ export function DifferencePlainDateTimeWithTotal(
 
   if (unit === 'nanosecond') return JSBI.toNumber(duration.time.totalNs);
 
+  const originEpochNs = GetUTCEpochNanoseconds(isoDateTime1);
   const destEpochNs = GetUTCEpochNanoseconds(isoDateTime2);
-  return TotalRelativeDuration(duration, destEpochNs, isoDateTime1, null, calendar, unit);
+  return TotalRelativeDuration(duration, originEpochNs, destEpochNs, isoDateTime1, null, calendar, unit);
 }
 
 export function DifferenceZonedDateTimeWithRounding(
@@ -4073,6 +4112,7 @@ export function DifferenceZonedDateTimeWithRounding(
   const dateTime = GetISODateTimeFor(timeZone, ns1);
   return RoundRelativeDuration(
     duration,
+    ns1,
     ns2,
     dateTime,
     timeZone,
@@ -4098,7 +4138,7 @@ export function DifferenceZonedDateTimeWithTotal(
 
   const duration = DifferenceZonedDateTime(ns1, ns2, timeZone, calendar, unit);
   const dateTime = GetISODateTimeFor(timeZone, ns1);
-  return TotalRelativeDuration(duration, ns2, dateTime, timeZone, calendar, unit);
+  return TotalRelativeDuration(duration, ns1, ns2, dateTime, timeZone, calendar, unit);
 }
 
 type DifferenceOperation = 'since' | 'until';
@@ -4212,9 +4252,11 @@ export function DifferenceTemporalPlainDate(
   if (!roundingIsNoop) {
     const isoDateTime = CombineISODateAndTimeRecord(isoDate, MidnightTimeRecord());
     const isoDateTimeOther = CombineISODateAndTimeRecord(isoOther, MidnightTimeRecord());
+    const originEpochNs = GetUTCEpochNanoseconds(isoDateTime);
     const destEpochNs = GetUTCEpochNanoseconds(isoDateTimeOther);
     duration = RoundRelativeDuration(
       duration,
+      originEpochNs,
       destEpochNs,
       isoDateTime,
       null,
@@ -4325,9 +4367,11 @@ export function DifferenceTemporalPlainYearMonth(
   if (settings.smallestUnit !== 'month' || settings.roundingIncrement !== 1) {
     const isoDateTime = CombineISODateAndTimeRecord(thisDate, MidnightTimeRecord());
     const isoDateTimeOther = CombineISODateAndTimeRecord(otherDate, MidnightTimeRecord());
+    const originEpochNs = GetUTCEpochNanoseconds(isoDateTime);
     const destEpochNs = GetUTCEpochNanoseconds(isoDateTimeOther);
     duration = RoundRelativeDuration(
       duration,
+      originEpochNs,
       destEpochNs,
       isoDateTime,
       null,
