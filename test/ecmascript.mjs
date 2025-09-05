@@ -1,15 +1,19 @@
-import Demitasse from '@pipobscure/demitasse';
-const { describe, it, report } = Demitasse;
-
-import Pretty from '@pipobscure/demitasse-pretty';
-const { reporter } = Pretty;
-
-import { strict as assert } from 'assert';
-const { deepEqual, throws, equal } = assert;
-
+import { describe, expect, it } from '@jest/globals';
+import '../lib/temporal'; // ensure intrinsics are registered
 import * as ES from '../lib/ecmascript';
 
 import { readFileSync } from 'fs';
+
+// Avoid these wrappers in new tests:
+function deepEqual(a, b) {
+  expect(a).toEqual(b);
+}
+function equal(a, b) {
+  expect(a).toBe(b);
+}
+function throws(f, cons) {
+  expect(f).toThrow(cons);
+}
 
 describe('ECMAScript', () => {
   describe('GetNamedTimeZoneDateTimeParts', () => {
@@ -721,8 +725,3 @@ describe('ECMAScript', () => {
     });
   });
 });
-
-import { normalize } from 'path';
-if (normalize(import.meta.url.slice(8)) === normalize(process.argv[1])) {
-  report(reporter).then((failed) => process.exit(failed ? 1 : 0));
-}

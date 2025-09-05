@@ -1,13 +1,13 @@
-import Demitasse from '@pipobscure/demitasse';
-const { describe, it, report } = Demitasse;
-
-import Pretty from '@pipobscure/demitasse-pretty';
-const { reporter } = Pretty;
-
-import { strict as assert } from 'assert';
-const { deepEqual, equal } = assert;
-
+import { describe, expect, it } from '@jest/globals';
 import { TruncatingDivModByPowerOf10 as div, FMAPowerOf10 as fma } from '../lib/math';
+
+// Avoid these wrappers in new tests:
+function deepEqual(a, b) {
+  expect(a).toEqual(b);
+}
+function equal(a, b) {
+  expect(a).toBe(b);
+}
 
 describe('Math', () => {
   describe('TruncatingDivModByPowerOf10', () => {
@@ -103,8 +103,3 @@ describe('Math', () => {
       equal(fma(-Number.MAX_SAFE_INTEGER, 9, -999999999), -9007199254740992000000000));
   });
 });
-
-import { normalize } from 'path';
-if (normalize(import.meta.url.slice(8)) === normalize(process.argv[1])) {
-  report(reporter).then((failed) => process.exit(failed ? 1 : 0));
-}
