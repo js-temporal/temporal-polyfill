@@ -1162,7 +1162,7 @@ abstract class HelperBase {
         }
         // Now we have less than one year remaining. Add one month at a time
         // until we go over the target, then back up one month and calculate
-        // remaining days and weeks.
+        // remaining days.
         let current;
         let next: CalendarYMD = yearsAdded;
         do {
@@ -1170,8 +1170,9 @@ abstract class HelperBase {
           current = next;
           next = this.addMonthsCalendar(current, sign, 'constrain', cache);
           if (next.day !== calendarOne.day) {
-            // In case the day was constrained down, try to un-constrain it
-            next = this.regulateDate({ ...next, day: calendarOne.day }, 'constrain', cache);
+            // In case the day was constrained down, un-constrain it (even if
+            // that's not a real date)
+            next = { ...next, day: calendarOne.day };
           }
         } while (this.compareCalendarDates(calendarTwo, next) * sign >= 0);
         months -= sign; // correct for loop above which overshoots by 1
