@@ -1,15 +1,18 @@
-import Demitasse from '@pipobscure/demitasse';
-const { describe, it, report } = Demitasse;
-
-import Pretty from '@pipobscure/demitasse-pretty';
-const { reporter } = Pretty;
-
-import { strict as assert, AssertionError } from 'assert';
-const { equal, throws } = assert;
-
+import { describe, expect, it } from '@jest/globals';
 import JSBI from 'jsbi';
 import { ensureJSBI } from '../lib/bigintmath';
 import { TimeDuration } from '../lib/timeduration';
+
+// Avoid these wrappers in new tests:
+function assert(cond) {
+  expect(cond).toBeTruthy();
+}
+function equal(a, b) {
+  expect(a).toBe(b);
+}
+function throws(f, cons) {
+  expect(f).toThrow(cons);
+}
 
 function check(timeDuration, sec, subsec) {
   equal(timeDuration.sec, sec);
@@ -25,14 +28,7 @@ function checkBigInt(value, bigint) {
 }
 
 function checkFloat(value, float) {
-  if (!Number.isFinite(value) || Math.abs(value - float) > Number.EPSILON) {
-    throw new AssertionError({
-      message: `Expected ${value} to be within ɛ of ${float}`,
-      expected: float,
-      actual: value,
-      operator: 'checkFloat'
-    });
-  }
+  expect(value).toBeCloseTo(float);
 }
 
 describe('Normalized time duration', () => {
@@ -509,8 +505,3 @@ describe('Normalized time duration', () => {
     });
   });
 });
-
-import { normalize } from 'path';
-if (normalize(import.meta.url.slice(8)) === normalize(process.argv[1])) {
-  report(reporter).then((failed) => process.exit(failed ? 1 : 0));
-}

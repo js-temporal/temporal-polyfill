@@ -5,7 +5,7 @@ on:
     branches:
       - main
 jobs:
-  test-demitasse:
+  test-jest:
     strategy:
       fail-fast: false
       matrix:
@@ -17,7 +17,7 @@ jobs:
         uses: actions/setup-node@v3
         with:
           node-version: ${{ matrix.version }}
-      - run: npm ci --no-optional
+      - run: npm ci
       - run: npm test
   test-test262-matrix:
     strategy:
