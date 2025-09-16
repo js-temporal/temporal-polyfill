@@ -2264,7 +2264,6 @@ function GetPossibleEpochNanoseconds(timeZone: string, isoDateTime: ISODateTime)
     return [epochNs];
   }
 
-  CheckISODaysRange(isoDateTime.isoDate);
   return GetNamedTimeZoneEpochNanoseconds(timeZone, isoDateTime);
 }
 
