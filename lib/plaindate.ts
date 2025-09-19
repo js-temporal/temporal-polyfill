@@ -94,7 +94,10 @@ export class PlainDate implements Temporal.PlainDate {
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
     ES.CheckReceiver(this, ES.IsTemporalDate);
     const calendar = ES.ToTemporalCalendarIdentifier(calendarParam);
-    return ES.CreateTemporalDate(GetSlot(this, ISO_DATE), calendar);
+    // Don't reuse the same ISODate object, as it should start with a fresh
+    // calendar cache
+    const { year, month, day } = GetSlot(this, ISO_DATE);
+    return ES.CreateTemporalDate({ year, month, day }, calendar);
   }
   add(temporalDurationLike: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
     ES.CheckReceiver(this, ES.IsTemporalDate);

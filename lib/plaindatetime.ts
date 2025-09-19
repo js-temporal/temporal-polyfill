@@ -140,7 +140,13 @@ export class PlainDateTime implements Temporal.PlainDateTime {
   withCalendar(calendarParam: Params['withCalendar'][0]): Return['withCalendar'] {
     ES.CheckReceiver(this, ES.IsTemporalDateTime);
     const calendar = ES.ToTemporalCalendarIdentifier(calendarParam);
-    return ES.CreateTemporalDateTime(GetSlot(this, ISO_DATE_TIME), calendar);
+    // Don't reuse the same ISODate object, as it should start with a fresh
+    // calendar cache
+    const {
+      isoDate: { year, month, day },
+      time
+    } = GetSlot(this, ISO_DATE_TIME);
+    return ES.CreateTemporalDateTime(ES.CombineISODateAndTimeRecord({ year, month, day }, time), calendar);
   }
   add(temporalDurationLike: Params['add'][0], options: Params['add'][1] = undefined): Return['add'] {
     ES.CheckReceiver(this, ES.IsTemporalDateTime);
