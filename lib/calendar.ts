@@ -1,3 +1,4 @@
+import { assert } from './assert';
 import * as ES from './ecmascript';
 import { DefineIntrinsic } from './intrinsicclass';
 import type { Temporal } from '..';
@@ -517,11 +518,13 @@ function CanonicalizeEraInCalendar(calendar: keyof typeof eraInfo, era: string) 
  * This prototype implementation of non-ISO calendars makes many repeated calls
  * to Intl APIs which may be slow (e.g. >0.2ms). This trivial cache will speed
  * up these repeat accesses. Each cache instance is associated (via a WeakMap)
- * to a specific Temporal object, which speeds up multiple calendar calls on the
- * same Temporal object instance.  No invalidation or pruning is necessary
- * because each object's cache is thrown away when the object is GC-ed.
+ * to a specific ISO Date Record object, which speeds up multiple calendar calls
+ * on Temporal objects with the same ISO Date Record instance.  No invalidation
+ * or pruning is necessary because each object's cache is thrown away when the
+ * object is GC-ed.
  */
 class OneObjectCache {
+  id: BuiltinCalendarId;
   map = new Map();
   calls = 0;
   // now = OneObjectCache.monotonicTimestamp();
@@ -532,8 +535,10 @@ class OneObjectCache {
   //   return performance?.now() ?? Date.now();
   // }
 
-  constructor(cacheToClone?: OneObjectCache) {
+  constructor(id: BuiltinCalendarId, cacheToClone?: OneObjectCache) {
+    this.id = id;
     if (cacheToClone !== undefined) {
+      assert(cacheToClone.id === this.id, 'should not clone cache from a different calendar');
       let i = 0;
       for (const entry of cacheToClone.map.entries()) {
         if (++i > OneObjectCache.MAX_CACHE_ENTRIES) break;
@@ -568,14 +573,14 @@ class OneObjectCache {
     OneObjectCache.objectMap.set(obj, this);
     this.report();
   }
-  static generateCalendarToISOKey(id: BuiltinCalendarId, { year, month, day }: CalendarYMD, overflow: Overflow) {
-    return JSON.stringify({ func: 'calendarToIsoDate', year, month, day, overflow, id });
+  static generateCalendarToISOKey({ year, month, day }: CalendarYMD, overflow: Overflow) {
+    return JSON.stringify({ func: 'calendarToIsoDate', year, month, day, overflow });
   }
-  static generateISOToCalendarKey(id: BuiltinCalendarId, { year, month, day }: ISODate) {
-    return JSON.stringify({ func: 'isoToCalendarDate', year, month, day, id });
+  static generateISOToCalendarKey({ year, month, day }: ISODate) {
+    return JSON.stringify({ func: 'isoToCalendarDate', year, month, day });
   }
-  static generateMonthListKey(id: BuiltinCalendarId, year: number) {
-    return JSON.stringify({ func: 'getMonthList', year, id });
+  static generateMonthListKey(year: number) {
+    return JSON.stringify({ func: 'getMonthList', year });
   }
 
   static objectMap = new WeakMap();
@@ -585,12 +590,13 @@ class OneObjectCache {
    * Returns a WeakMap-backed cache that's used to store expensive results
    * that are associated with a particular Temporal object instance.
    *
+   * @param id - calendar ID for the cache
    * @param obj - object to associate with the cache
    */
-  static getCacheForObject(obj: ISODate) {
+  static getCacheForObject(id: BuiltinCalendarId, obj: ISODate) {
     let cache = OneObjectCache.objectMap.get(obj);
     if (!cache) {
-      cache = new OneObjectCache();
+      cache = new OneObjectCache(id);
       OneObjectCache.objectMap.set(obj, cache);
     }
     return cache;
@@ -686,7 +692,7 @@ abstract class HelperBase {
   }
   isoToCalendarDate(isoDate: ISODate, cache: OneObjectCache): FullCalendarDate {
     const { year: isoYear, month: isoMonth, day: isoDay } = isoDate;
-    const key = OneObjectCache.generateISOToCalendarKey(this.id, isoDate);
+    const key = OneObjectCache.generateISOToCalendarKey(isoDate);
     const cached = cache.get(key);
     if (cached) return cached;
 
@@ -782,7 +788,7 @@ abstract class HelperBase {
     cache.set(key, calendarDate);
     // Also cache the reverse mapping
     const cacheReverse = (overflow: Overflow) => {
-      const keyReverse = OneObjectCache.generateCalendarToISOKey(this.id, calendarDate, overflow);
+      const keyReverse = OneObjectCache.generateCalendarToISOKey(calendarDate, overflow);
       cache.set(keyReverse, isoDate);
     };
     (['constrain', 'reject'] as const).forEach(cacheReverse);
@@ -940,7 +946,7 @@ abstract class HelperBase {
     date = this.regulateMonthDayNaive(date, overflow, cache);
 
     const { year, month, day } = date;
-    const key = OneObjectCache.generateCalendarToISOKey(this.id, date, overflow);
+    const key = OneObjectCache.generateCalendarToISOKey(date, overflow);
     let cached = cache.get(key);
     if (cached) return cached;
     // If YMD are present in the input but the input has been constrained
@@ -952,7 +958,7 @@ abstract class HelperBase {
       originalDate.day !== undefined &&
       (originalDate.year !== date.year || originalDate.month !== date.month || originalDate.day !== date.day)
     ) {
-      keyOriginal = OneObjectCache.generateCalendarToISOKey(this.id, originalDate as CalendarYMD, overflow);
+      keyOriginal = OneObjectCache.generateCalendarToISOKey(originalDate as CalendarYMD, overflow);
       cached = cache.get(keyOriginal);
       if (cached) return cached;
     }
@@ -2189,7 +2195,7 @@ abstract class ChineseBaseHelper extends HelperBase {
     if (calendarYear === undefined) {
       throw new TypeError('Missing year');
     }
-    const key = OneObjectCache.generateMonthListKey(this.id, calendarYear);
+    const key = OneObjectCache.generateMonthListKey(calendarYear);
     const cached = cache.get(key);
     if (cached) return cached;
 
@@ -2374,13 +2380,13 @@ class NonIsoCalendar implements CalendarImpl {
     }
   }
   dateToISO(fields: CalendarDateFields, overflow: Overflow) {
-    const cache = new OneObjectCache();
+    const cache = new OneObjectCache(this.helper.id);
     const result = this.helper.calendarToIsoDate(fields, overflow, cache);
     cache.setObject(result);
     return result;
   }
   monthDayToISOReferenceDate(fields: MonthDayFromFieldsObject, overflow: Overflow) {
-    const cache = new OneObjectCache();
+    const cache = new OneObjectCache(this.helper.id);
     const result = this.helper.monthDayFromFields(fields, overflow, cache);
     // result.year is a reference year where this month/day exists in this calendar
     cache.setObject(result);
@@ -2432,20 +2438,20 @@ class NonIsoCalendar implements CalendarImpl {
     return arrayFromSet(result);
   }
   dateAdd(isoDate: ISODate, { years, months, weeks, days }: DateDuration, overflow: Overflow) {
-    const cache = OneObjectCache.getCacheForObject(isoDate);
+    const cache = OneObjectCache.getCacheForObject(this.helper.id, isoDate);
     const calendarDate = this.helper.isoToCalendarDate(isoDate, cache);
     const added = this.helper.addCalendar(calendarDate, { years, months, weeks, days }, overflow, cache);
     const isoAdded = this.helper.calendarToIsoDate(added, 'constrain', cache);
     // The new object's cache starts with the cache of the old object
-    if (!OneObjectCache.getCacheForObject(isoAdded)) {
-      const newCache = new OneObjectCache(cache);
+    if (!OneObjectCache.getCacheForObject(this.helper.id, isoAdded)) {
+      const newCache = new OneObjectCache(this.helper.id, cache);
       newCache.setObject(isoAdded);
     }
     return isoAdded;
   }
   dateUntil(one: ISODate, two: ISODate, largestUnit: Temporal.DateUnit) {
-    const cacheOne = OneObjectCache.getCacheForObject(one);
-    const cacheTwo = OneObjectCache.getCacheForObject(two);
+    const cacheOne = OneObjectCache.getCacheForObject(this.helper.id, one);
+    const cacheTwo = OneObjectCache.getCacheForObject(this.helper.id, two);
     const calendarOne = this.helper.isoToCalendarDate(one, cacheOne);
     const calendarTwo = this.helper.isoToCalendarDate(two, cacheTwo);
     const result = this.helper.untilCalendar(calendarOne, calendarTwo, largestUnit, cacheOne);
@@ -2457,7 +2463,7 @@ class NonIsoCalendar implements CalendarImpl {
       [Field in keyof CalendarDateRecord]: Request extends { [K in Field]: true } ? CalendarDateRecord[Field] : never;
     }
   >(isoDate: ISODate, requestedFields: Request): T {
-    const cache = OneObjectCache.getCacheForObject(isoDate);
+    const cache = OneObjectCache.getCacheForObject(this.helper.id, isoDate);
     const calendarDate: Partial<CalendarDateRecord> & FullCalendarDate = this.helper.isoToCalendarDate(isoDate, cache);
     if (requestedFields.dayOfWeek) {
       calendarDate.dayOfWeek = impl['iso8601'].isoToDate(isoDate, { dayOfWeek: true }).dayOfWeek;
