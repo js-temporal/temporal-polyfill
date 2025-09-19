@@ -1100,11 +1100,17 @@ abstract class HelperBase {
   }
   addCalendar(
     calendarDate: CalendarYMD & { monthCode: string },
-    { years = 0, months = 0, weeks = 0, days = 0 },
+    { years: yearsParam = 0, months: monthsParam = 0, weeks = 0, days = 0 },
     overflow: Overflow,
     cache: OneObjectCache
   ): FullCalendarDate {
+    let years = yearsParam;
+    let months = monthsParam;
     const { year, day, monthCode } = calendarDate;
+    if (Math.abs(months) > 12 && !monthCodeInfo[this.id]?.additionalMonths) {
+      years += Math.trunc(months / 12);
+      months %= 12;
+    }
     const addedYears = this.adjustCalendarDate({ year: year + years, monthCode, day }, cache);
     const addedMonths = this.addMonthsCalendar(addedYears, months, overflow, cache);
     const initialDays = days + weeks * 7;
