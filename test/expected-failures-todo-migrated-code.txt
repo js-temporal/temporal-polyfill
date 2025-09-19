@@ -1,2 +1,5 @@
 # Failures in this file will be fixed after migrating the latest polyfill changes
 # from proposal-temporal.
+
+intl402/DateTimeFormat/prototype/format/format-function-builtin.js
+intl402/DateTimeFormat/prototype/resolvedOptions/hourCycle-default.js
