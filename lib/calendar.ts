@@ -443,43 +443,43 @@ function weekNumber(firstDayOfWeek: number, minimalDaysInFirstWeek: number, desi
   return weekNo;
 }
 
-const eraInfo: Partial<Record<BuiltinCalendarId, Record<string, { aliases?: string[] }>>> = {
-  buddhist: {
+const eraInfoEntries: Partial<Record<BuiltinCalendarId, [string, { aliases?: string[] }][]>> = {
+  buddhist: Object.entries({
     be: {}
-  },
-  coptic: {
+  }),
+  coptic: Object.entries({
     am: {}
-  },
-  ethioaa: {
+  }),
+  ethioaa: Object.entries({
     aa: { aliases: ['mundi'] }
-  },
-  ethiopic: {
+  }),
+  ethiopic: Object.entries({
     am: { aliases: ['incar'] },
     aa: { aliases: ['mundi'] }
-  },
-  gregory: {
+  }),
+  gregory: Object.entries({
     ce: { aliases: ['ad'] },
     bce: { aliases: ['bc'] }
-  },
-  hebrew: {
+  }),
+  hebrew: Object.entries({
     am: {}
-  },
-  indian: {
+  }),
+  indian: Object.entries({
     shaka: {}
-  },
-  'islamic-civil': {
+  }),
+  'islamic-civil': Object.entries({
     ah: {},
     bh: {}
-  },
-  'islamic-tbla': {
+  }),
+  'islamic-tbla': Object.entries({
     ah: {},
     bh: {}
-  },
-  'islamic-umalqura': {
+  }),
+  'islamic-umalqura': Object.entries({
     ah: {},
     bh: {}
-  },
-  japanese: {
+  }),
+  japanese: Object.entries({
     reiwa: {},
     heisei: {},
     showa: {},
@@ -487,28 +487,27 @@ const eraInfo: Partial<Record<BuiltinCalendarId, Record<string, { aliases?: stri
     meiji: {},
     ce: { aliases: ['ad'] },
     bce: { aliases: ['bc'] }
-  },
-  persian: {
+  }),
+  persian: Object.entries({
     ap: {}
-  },
-  roc: {
+  }),
+  roc: Object.entries({
     roc: { aliases: ['minguo'] },
     broc: { aliases: ['before-roc', 'minguo-qian'] }
-  }
-};
+  })
+} as const;
 
 function CalendarSupportsEra(calendar: BuiltinCalendarId) {
-  return Object.prototype.hasOwnProperty.call(eraInfo, calendar);
+  return Object.prototype.hasOwnProperty.call(eraInfoEntries, calendar);
 }
 
-function CanonicalizeEraInCalendar(calendar: keyof typeof eraInfo, era: string) {
-  const eras = eraInfo[calendar];
-  ES.assertExists(eras);
-  const entries = Object.entries(eras);
+function CanonicalizeEraInCalendar(calendar: BuiltinCalendarId, era: string) {
+  const entries = eraInfoEntries[calendar];
+  ES.assertExists(entries);
   for (let ix = 0; ix < entries.length; ix++) {
     const canonicalName = entries[ix][0];
-    const info = entries[ix][1];
     if (era === canonicalName) return era;
+    const info = entries[ix][1];
     if (info.aliases && info.aliases.includes(era)) return canonicalName;
   }
   return undefined;
