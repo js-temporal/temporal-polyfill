@@ -834,51 +834,51 @@ abstract class HelperBase {
       }
     }
   }
+  /** Private helper function */
+  eraFromYear(calendarDate: Partial<FullCalendarDate> & { year: number }) {
+    const { year } = calendarDate;
+    let eraYear;
+    const ix = this.eras.findIndex((eParam, i) => {
+      let e = eParam;
+      if (i === this.eras.length - 1) {
+        if (e.skip) {
+          // This last era is only present for legacy ICU data. Treat the
+          // previous era as the last era.
+          e = this.eras[i - 1];
+        }
+        if (e.reverseOf) {
+          // This is a reverse-sign era (like BCE) which must be the oldest
+          // era. Count years backwards.
+          if (year > 0) throw new RangeError(`Signed year ${year} is invalid for era ${e.code}`);
+          eraYear = e.anchorEpoch.year - year;
+          return true;
+        }
+        // last era always gets all "leftover" (older than epoch) years,
+        // so no need for a comparison like below.
+        eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
+        return true;
+      }
+      // FIXME: This cast may not be correct. I think month and day are always
+      // present when we get here, but the type system does not prove it
+      const comparison = this.compareCalendarDates(calendarDate as CalendarYMD, e.anchorEpoch);
+      if (comparison >= 0) {
+        eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
+        return true;
+      }
+      return false;
+    });
+    if (ix === -1) throw new RangeError(`Year ${year} was not matched by any era`);
+    let matchingEra = this.eras[ix];
+    if (matchingEra.skip) matchingEra = this.eras[ix - 1];
+    return { eraYear, era: matchingEra.code };
+  }
   /** Fill in missing parts of the (year, era, eraYear) tuple */
   completeEraYear<T extends Partial<FullCalendarDate>>(
     calendarDate: T
   ): T & Required<Pick<FullCalendarDate, 'year' | 'era' | 'eraYear'>> {
-    const eraFromYear = (year: number) => {
-      let eraYear;
-      const adjustedCalendarDate = { ...calendarDate, year };
-      const ix = this.eras.findIndex((eParam, i) => {
-        let e = eParam;
-        if (i === this.eras.length - 1) {
-          if (e.skip) {
-            // This last era is only present for legacy ICU data. Treat the
-            // previous era as the last era.
-            e = this.eras[i - 1];
-          }
-          if (e.reverseOf) {
-            // This is a reverse-sign era (like BCE) which must be the oldest
-            // era. Count years backwards.
-            if (year > 0) throw new RangeError(`Signed year ${year} is invalid for era ${e.code}`);
-            eraYear = e.anchorEpoch.year - year;
-            return true;
-          }
-          // last era always gets all "leftover" (older than epoch) years,
-          // so no need for a comparison like below.
-          eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
-          return true;
-        }
-        // FIXME: This cast may not be correct. I think month and day are always
-        // present when we get here, but the type system does not prove it
-        const comparison = this.compareCalendarDates(adjustedCalendarDate as CalendarYMD, e.anchorEpoch);
-        if (comparison >= 0) {
-          eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
-          return true;
-        }
-        return false;
-      });
-      if (ix === -1) throw new RangeError(`Year ${year} was not matched by any era`);
-      let matchingEra = this.eras[ix];
-      if (matchingEra.skip) matchingEra = this.eras[ix - 1];
-      return { eraYear, era: matchingEra.code };
-    };
-
     let { year, eraYear, era } = calendarDate;
     if (year !== undefined) {
-      const matchData = eraFromYear(year);
+      const matchData = this.eraFromYear(calendarDate as typeof calendarDate & { year: number });
       ({ eraYear, era } = matchData);
       if (calendarDate.era !== undefined && CanonicalizeEraInCalendar(this.id, calendarDate.era) !== era) {
         throw new RangeError(`Input era ${calendarDate.era} doesn't match calculated value ${era}`);
@@ -903,7 +903,8 @@ abstract class HelperBase {
       // the era or after its end as long as it's in the same year. If that
       // happens, we'll adjust the era/eraYear pair to be the correct era for
       // the `year`.
-      ({ eraYear, era } = eraFromYear(year));
+      const adjustedCalendarDate = { year, month: calendarDate.month, day: calendarDate.day };
+      ({ eraYear, era } = this.eraFromYear(adjustedCalendarDate));
     }
     // validateCalendarDate already ensured that either year or era+eraYear are
     // present
