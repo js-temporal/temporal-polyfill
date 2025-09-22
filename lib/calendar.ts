@@ -16,6 +16,8 @@ import type {
 } from './internaltypes';
 import { CreateMonthCode, ParseMonthCode } from './monthcode';
 
+const midnightTimeRecord = ES.MidnightTimeRecord();
+
 function arrayFromSet<T>(src: Set<T>): T[] {
   return [...src];
 }
@@ -572,7 +574,7 @@ class OneObjectCache {
   }
 }
 
-function toUtcIsoDateString({ isoYear, isoMonth, isoDay }: { isoYear: number; isoMonth: number; isoDay: number }) {
+function toUtcIsoDateString(isoYear: number, isoMonth: number, isoDay: number) {
   const yearString = ES.ISOYearString(isoYear);
   const monthString = ES.ISODateTimePartString(isoMonth);
   const dayString = ES.ISODateTimePartString(isoDay);
@@ -665,7 +667,7 @@ abstract class HelperBase {
     const cached = cache.get(key);
     if (cached) return cached;
 
-    const isoString = toUtcIsoDateString({ isoYear, isoMonth, isoDay });
+    const isoString = toUtcIsoDateString(isoYear, isoMonth, isoDay);
     const parts = this.getCalendarParts(isoString);
     const hasEra = CalendarSupportsEra(this.id);
     const result: Partial<FullCalendarDate> = {};
@@ -2169,74 +2171,75 @@ abstract class ChineseBaseHelper extends HelperBase {
     const key = JSON.stringify({ func: 'getMonthList', calendarYear, id: this.id });
     const cached = cache.get(key);
     if (cached) return cached;
+
+    // Reuse the same local object for calendar-specific results, starting with
+    // a date close to Chinese New Year. Feb 17 will either be in the new year
+    // or near the end of the previous year's final month.
+    let daysPastJan31 = 17;
+    const calendarFields: { day: number; monthString: string; relatedYear: number | undefined } = {
+      day: 0,
+      monthString: '',
+      relatedYear: undefined
+    };
     const dateTimeFormat = this.getFormatter();
-    const getCalendarDate = (isoYear: number, daysPastFeb1: number) => {
-      const isoStringFeb1 = toUtcIsoDateString({ isoYear, isoMonth: 2, isoDay: 1 });
-      const legacyDate = new Date(isoStringFeb1);
-      // Now add the requested number of days, which may wrap to the next month.
-      legacyDate.setUTCDate(daysPastFeb1 + 1);
-      const newYearGuess = dateTimeFormat.formatToParts(legacyDate);
-      // The 'month' and 'day' parts are guaranteed to be present because the
-      // formatter was created with month and day options.
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const calendarMonthString = newYearGuess.find((tv) => tv.type === 'month')!.value;
-      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
-      const calendarDay = +newYearGuess.find((tv) => tv.type === 'day')!.value;
-      const calendarYearPartToVerify = newYearGuess.find((tv) => (tv.type as string) === 'relatedYear');
-      let calendarYearToVerify: number | undefined;
-      if (calendarYearPartToVerify !== undefined) {
-        calendarYearToVerify = +calendarYearPartToVerify.value;
-      } else {
+    const updateCalendarFields = () => {
+      // Abuse GetUTCEpochMilliseconds for automatic rebalancing.
+      const isoNumbers = { year: calendarYear, month: 2, day: daysPastJan31 };
+      const ms = ES.GetUTCEpochMilliseconds({ isoDate: isoNumbers, time: midnightTimeRecord });
+      const fieldEntries = dateTimeFormat.formatToParts(ms);
+      for (let i = 0; i < fieldEntries.length; i++) {
+        const { type, value } = fieldEntries[i];
+        // day and year should be decimal strings, but month values like "5bis" are not number-coercible.
+        // TODO: remove this type annotation when `relatedYear` gets into TS lib types
+        if (type === 'day' || type === ('relatedYear' as Intl.DateTimeFormatPartTypes)) {
+          calendarFields[type as 'day' | 'relatedYear'] = +value;
+        } else if (type === 'month') {
+          calendarFields.monthString = value;
+        }
+      }
+      if (calendarFields.relatedYear === undefined) {
         // Node 12 has outdated ICU data that lacks the `relatedYear` field in the
         // output of Intl.DateTimeFormat.formatToParts.
         throw new RangeError(
           `Intl.DateTimeFormat.formatToParts lacks relatedYear in ${this.id} calendar. Try Node 14+ or modern browsers.`
         );
       }
-      return { calendarMonthString, calendarDay, calendarYearToVerify };
+      return calendarFields;
     };
 
-    // First, find a date close to Chinese New Year. Feb 17 will either be in
-    // the first month or near the end of the last month of the previous year.
-    let isoDaysDelta = 17;
-    let { calendarMonthString, calendarDay, calendarYearToVerify } = getCalendarDate(calendarYear, isoDaysDelta);
-
-    // If we didn't guess the first month correctly, add (almost in some months)
-    // a lunar month
-    if (calendarMonthString !== '1') {
-      isoDaysDelta += 29;
-      ({ calendarMonthString, calendarDay } = getCalendarDate(calendarYear, isoDaysDelta));
+    // Ensure that we're in the first month.
+    updateCalendarFields();
+    if (calendarFields.monthString !== '1') {
+      daysPastJan31 += 29;
+      updateCalendarFields();
     }
 
-    // Now back up to near the start of the first month, but not too near that
+    // Now back up to near the start of the first month, but not so near that
     // off-by-one issues matter.
-    isoDaysDelta -= calendarDay - 5;
-    const result = {} as ChineseDraftMonthInfo;
-    let monthIndex = 1;
-    let oldCalendarDay: number | undefined;
-    let oldMonthString: string | undefined;
-    let done = false;
-    do {
-      ({ calendarMonthString, calendarDay, calendarYearToVerify } = getCalendarDate(calendarYear, isoDaysDelta));
-      if (oldCalendarDay) {
-        result[oldMonthString as string].daysInMonth = oldCalendarDay + 30 - calendarDay;
-      }
-      if (calendarYearToVerify !== calendarYear) {
-        done = true;
-      } else {
-        result[calendarMonthString] = { monthIndex: monthIndex++ };
-        // Move to the next month. Because months are sometimes 29 days, the day of the
-        // calendar month will move forward slowly but not enough to flip over to a new
-        // month before the loop ends at 12-13 months.
-        isoDaysDelta += 30;
-      }
-      oldCalendarDay = calendarDay;
-      oldMonthString = calendarMonthString;
-    } while (!done);
-    result[oldMonthString].daysInMonth = oldCalendarDay + 30 - calendarDay;
+    daysPastJan31 -= calendarFields.day - 5;
 
-    cache.set(key, result);
-    return result as ChineseMonthInfo;
+    const monthList: ChineseDraftMonthInfo = {};
+    let monthIndex = 1;
+    let old: { day: number; monthString: string } | undefined;
+    for (;;) {
+      const { day, monthString, relatedYear } = updateCalendarFields();
+      if (old) {
+        monthList[old.monthString].daysInMonth = old.day + 30 - day;
+      }
+      old = { day, monthString };
+
+      if (relatedYear !== calendarYear) break;
+
+      monthList[monthString] = { monthIndex: monthIndex++ };
+      // Move to the next month. Because months are sometimes 29 days, the day of the
+      // calendar month will move forward slowly but not enough to flip over to a new
+      // month before the loop ends at 12-13 months.
+      daysPastJan31 += 30;
+    }
+    monthList[old.monthString].daysInMonth = old.day + 30 - calendarFields.day;
+
+    cache.set(key, monthList);
+    return monthList as ChineseMonthInfo;
   }
   estimateIsoDate(calendarDate: CalendarYMD) {
     const { year, month } = calendarDate;
