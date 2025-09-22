@@ -2658,7 +2658,7 @@ function FormatDateTimeUTCOffsetRounded(offsetNanosecondsParam: number): string 
   return FormatOffsetTimeZoneIdentifier(offsetNanoseconds / 60e9);
 }
 
-function GetUTCEpochMilliseconds({
+export function GetUTCEpochMilliseconds({
   isoDate: { year, month, day },
   time: { hour, minute, second, millisecond }
 }: {
