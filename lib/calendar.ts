@@ -1368,7 +1368,7 @@ abstract class HelperBase {
 }
 
 interface HebrewMonthInfo {
-  [m: string]: (
+  [m: string]:
     | {
         leap: undefined;
         regular: number;
@@ -1380,17 +1380,9 @@ interface HebrewMonthInfo {
     | {
         leap: number;
         regular: number;
-      }
-  ) & {
-    monthCode: string;
-    days:
-      | number
-      | {
-          min: number;
-          max: number;
-        };
-  };
+      };
 }
+type HebrewMonthCodeInfo = Record<string, number | [number, number]>;
 
 class HebrewHelper extends HelperBase {
   constructor() {
@@ -1411,21 +1403,21 @@ class HebrewHelper extends HelperBase {
     return this.inLeapYear(calendarDate) ? 13 : 12;
   }
   minimumMonthLength(calendarDate: CalendarYM) {
-    return this.minMaxMonthLength(calendarDate, 'min');
+    return this.minMaxMonthLength(calendarDate, 0);
   }
   maximumMonthLength(calendarDate: CalendarYM) {
-    return this.minMaxMonthLength(calendarDate, 'max');
+    return this.minMaxMonthLength(calendarDate, 1);
   }
-  minMaxMonthLength(calendarDate: CalendarYM, minOrMax: 'min' | 'max') {
+  minMaxMonthLength(calendarDate: CalendarYM, minOrMax: 0 | 1) {
     const { month, year } = calendarDate;
     const monthCode = this.getMonthCode(year, month);
-    const monthInfo = Object.entries(this.months).find((m) => m[1].monthCode === monthCode);
-    if (monthInfo === undefined) throw new RangeError(`unmatched Hebrew month: ${month}`);
-    const daysInMonth = monthInfo[1].days;
+    const daysInMonth = this.monthLengths[monthCode];
+    if (daysInMonth === undefined) throw new RangeError(`unmatched Hebrew month: ${month}`);
     return typeof daysInMonth === 'number' ? daysInMonth : daysInMonth[minOrMax];
   }
   maxLengthOfMonthCodeInAnyYear(monthCode: string) {
-    return ['M04', 'M06', 'M08', 'M10', 'M12'].includes(monthCode) ? 29 : 30;
+    const daysInMonth = this.monthLengths[monthCode];
+    return typeof daysInMonth === 'number' ? daysInMonth : daysInMonth[1];
   }
   /** Take a guess at what ISO date a particular calendar date corresponds to */
   estimateIsoDate(calendarDate: CalendarYMD) {
@@ -1433,20 +1425,35 @@ class HebrewHelper extends HelperBase {
     return { year: year - 3760, month: 1, day: 1 };
   }
   months: HebrewMonthInfo = {
-    Tishri: { leap: 1, regular: 1, monthCode: 'M01', days: 30 },
-    Heshvan: { leap: 2, regular: 2, monthCode: 'M02', days: { min: 29, max: 30 } },
-    Kislev: { leap: 3, regular: 3, monthCode: 'M03', days: { min: 29, max: 30 } },
-    Tevet: { leap: 4, regular: 4, monthCode: 'M04', days: 29 },
-    Shevat: { leap: 5, regular: 5, monthCode: 'M05', days: 30 },
-    Adar: { leap: undefined, regular: 6, monthCode: 'M06', days: 29 },
-    'Adar I': { leap: 6, regular: undefined, monthCode: 'M05L', days: 30 },
-    'Adar II': { leap: 7, regular: undefined, monthCode: 'M06', days: 29 },
-    Nisan: { leap: 8, regular: 7, monthCode: 'M07', days: 30 },
-    Iyar: { leap: 9, regular: 8, monthCode: 'M08', days: 29 },
-    Sivan: { leap: 10, regular: 9, monthCode: 'M09', days: 30 },
-    Tamuz: { leap: 11, regular: 10, monthCode: 'M10', days: 29 },
-    Av: { leap: 12, regular: 11, monthCode: 'M11', days: 30 },
-    Elul: { leap: 13, regular: 12, monthCode: 'M12', days: 29 }
+    Tishri: { leap: 1, regular: 1 },
+    Heshvan: { leap: 2, regular: 2 },
+    Kislev: { leap: 3, regular: 3 },
+    Tevet: { leap: 4, regular: 4 },
+    Shevat: { leap: 5, regular: 5 },
+    Adar: { leap: undefined, regular: 6 },
+    'Adar I': { leap: 6, regular: undefined },
+    'Adar II': { leap: 7, regular: undefined },
+    Nisan: { leap: 8, regular: 7 },
+    Iyar: { leap: 9, regular: 8 },
+    Sivan: { leap: 10, regular: 9 },
+    Tamuz: { leap: 11, regular: 10 },
+    Av: { leap: 12, regular: 11 },
+    Elul: { leap: 13, regular: 12 }
+  };
+  monthLengths: HebrewMonthCodeInfo = {
+    M01: 30,
+    M02: [29, 30],
+    M03: [29, 30],
+    M04: 29,
+    M05: 30,
+    M05L: 30,
+    M06: 29,
+    M07: 30,
+    M08: 29,
+    M09: 30,
+    M10: 29,
+    M11: 30,
+    M12: 29
   };
   getMonthCode(year: number, month: number) {
     if (this.inLeapYear({ year })) {
