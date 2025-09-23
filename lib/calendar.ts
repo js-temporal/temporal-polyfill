@@ -1408,9 +1408,9 @@ class HebrewHelper extends HelperBase {
   maximumMonthLength(calendarDate: CalendarYM) {
     return this.minMaxMonthLength(calendarDate, 1);
   }
-  minMaxMonthLength(calendarDate: CalendarYM, minOrMax: 0 | 1) {
+  minMaxMonthLength(calendarDate: CalendarYM & { monthCode?: string }, minOrMax: 0 | 1) {
     const { month, year } = calendarDate;
-    const monthCode = this.getMonthCode(year, month);
+    const monthCode = calendarDate.monthCode ?? this.getMonthCode(year, month);
     const daysInMonth = this.monthLengths[monthCode];
     if (daysInMonth === undefined) throw new RangeError(`unmatched Hebrew month: ${month}`);
     return typeof daysInMonth === 'number' ? daysInMonth : daysInMonth[minOrMax];
