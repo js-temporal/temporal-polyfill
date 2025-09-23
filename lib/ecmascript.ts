@@ -2633,7 +2633,7 @@ function GetNamedTimeZoneOffsetNanosecondsImpl(id: string, epochMilliseconds: nu
   const { year, month, day, hour, minute, second } = GetFormatterParts(id, epochMilliseconds);
   let millisecond = epochMilliseconds % 1000;
   if (millisecond < 0) millisecond += 1000;
-  const utc = GetUTCEpochMilliseconds({ isoDate: { year, month, day }, time: { hour, minute, second, millisecond } });
+  const utc = GetUTCEpochMilliseconds({ year, month, day }, { hour, minute, second, millisecond });
   return (utc - epochMilliseconds) * 1e6;
 }
 
@@ -2658,13 +2658,10 @@ function FormatDateTimeUTCOffsetRounded(offsetNanosecondsParam: number): string 
   return FormatOffsetTimeZoneIdentifier(offsetNanoseconds / 60e9);
 }
 
-export function GetUTCEpochMilliseconds({
-  isoDate: { year, month, day },
-  time: { hour, minute, second, millisecond }
-}: {
-  isoDate: ISODate;
-  time: Omit<TimeRecord, 'microsecond' | 'nanosecond'>;
-}) {
+export function GetUTCEpochMilliseconds(isoDate: ISODate, time: Omit<TimeRecord, 'microsecond' | 'nanosecond'>) {
+  const { year, month, day } = isoDate;
+  const { hour, minute, second, millisecond /* ignored: microsecond, nanosecond */ } = time;
+
   // The pattern of leap years in the ISO 8601 calendar repeats every 400
   // years. To avoid overflowing at the edges of the range, we reduce the year
   // to the remainder after dividing by 400, and then add back all the
@@ -2672,18 +2669,18 @@ export function GetUTCEpochMilliseconds({
   const reducedYear = year % 400;
   const yearCycles = (year - reducedYear) / 400;
 
-  // Note: Date.UTC() interprets one and two-digit years as being in the
-  // 20th century, so don't use it
-  const legacyDate = new Date();
-  legacyDate.setUTCHours(hour, minute, second, millisecond);
-  legacyDate.setUTCFullYear(reducedYear, month - 1, day);
-  const ms = legacyDate.getTime();
-  return ms + MS_IN_400_YEAR_CYCLE * yearCycles;
+  // `Date.UTC(year, monthIndex, days)` maps year [0, 99] to [1900, 1999], so
+  // avoid that range.
+  const extraCycles = reducedYear >= 0 ? 5 : 0;
+  const ms = Date.UTC(reducedYear + 400 * extraCycles, month - 1, day, hour, minute, second, millisecond);
+
+  return ms + MS_IN_400_YEAR_CYCLE * (yearCycles - extraCycles);
 }
 
 function GetUTCEpochNanoseconds(isoDateTime: ISODateTime) {
-  const ms = GetUTCEpochMilliseconds(isoDateTime);
-  const subMs = isoDateTime.time.microsecond * 1e3 + isoDateTime.time.nanosecond;
+  const { isoDate, time } = isoDateTime;
+  const ms = GetUTCEpochMilliseconds(isoDate, time);
+  const subMs = time.microsecond * 1e3 + time.nanosecond;
   return JSBI.add(epochMsToNs(ms), JSBI.BigInt(subMs));
 }
 
@@ -3437,10 +3434,7 @@ export function CombineDateAndTimeDuration(dateDuration: DateDuration, timeDurat
 // Caution: month is 0-based
 export function ISODateToEpochDays(year: number, month: number, day: number) {
   return (
-    GetUTCEpochMilliseconds({
-      isoDate: { year, month: month + 1, day },
-      time: { hour: 0, minute: 0, second: 0, millisecond: 0 }
-    }) / DAY_MS
+    GetUTCEpochMilliseconds({ year, month: month + 1, day }, { hour: 0, minute: 0, second: 0, millisecond: 0 }) / DAY_MS
   );
 }
 
