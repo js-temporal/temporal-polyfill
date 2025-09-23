@@ -705,7 +705,8 @@ abstract class HelperBase {
     try {
       return dateTimeFormat.formatToParts(legacyDate);
     } catch (e) {
-      throw new RangeError(`Invalid ISO date: ${isoString}`);
+      if (e instanceof RangeError) throw new RangeError(`Invalid ISO date: ${isoString}`);
+      throw e;
     }
   }
   isoToCalendarDate(isoDate: ISODate, cache: OneObjectCache): FullCalendarDate {
