@@ -2185,7 +2185,7 @@ abstract class ChineseBaseHelper extends HelperBase {
     const updateCalendarFields = () => {
       // Abuse GetUTCEpochMilliseconds for automatic rebalancing.
       const isoNumbers = { year: calendarYear, month: 2, day: daysPastJan31 };
-      const ms = ES.GetUTCEpochMilliseconds({ isoDate: isoNumbers, time: midnightTimeRecord });
+      const ms = ES.GetUTCEpochMilliseconds(isoNumbers, midnightTimeRecord);
       const fieldEntries = dateTimeFormat.formatToParts(ms);
       for (let i = 0; i < fieldEntries.length; i++) {
         const { type, value } = fieldEntries[i];
