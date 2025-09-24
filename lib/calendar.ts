@@ -2185,6 +2185,24 @@ abstract class ChineseBaseHelper extends HelperBase {
   monthsInYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     return this.inLeapYear(calendarDate, cache) ? 13 : 12;
   }
+  override daysInMonth(calendarDate: CalendarYM, cache: OneObjectCache) {
+    const { month, year } = calendarDate;
+    const monthEntries = Object.entries(this.getMonthList(calendarDate.year, cache));
+    const matchingMonthEntry = monthEntries.find((entry) => entry[1].monthIndex === month);
+    if (matchingMonthEntry === undefined) {
+      throw new RangeError(`Invalid month ${month} in Chinese year ${year}`);
+    }
+    return matchingMonthEntry[1].daysInMonth;
+  }
+  override daysInPreviousMonth(calendarDate: CalendarYM, cache: OneObjectCache) {
+    const { month, year } = calendarDate;
+
+    const previousMonthYear = month > 1 ? year : year - 1;
+    const previousMonthDate = { year: previousMonthYear, month, day: 1 };
+    const previousMonth = month > 1 ? month - 1 : this.monthsInYear(previousMonthDate, cache);
+
+    return this.daysInMonth({ year: previousMonthYear, month: previousMonth }, cache);
+  }
   minimumMonthLength(/* calendarDate */) {
     return 29;
   }
@@ -2290,7 +2308,6 @@ abstract class ChineseBaseHelper extends HelperBase {
       // month before the loop ends at 12-13 months.
       daysPastJan31 += 30;
     }
-    monthList[old.monthString].daysInMonth = old.day + 30 - calendarFields.day;
 
     cache.set(key, monthList);
     return monthList as ChineseMonthInfo;
