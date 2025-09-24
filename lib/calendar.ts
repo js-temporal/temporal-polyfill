@@ -2165,12 +2165,16 @@ class JapaneseHelper extends SameMonthDayAsGregorianBaseHelper {
   }
 }
 
-interface ChineseMonthInfo {
-  [key: string]: { monthIndex: number; daysInMonth: number };
-}
-interface ChineseDraftMonthInfo {
-  [key: string]: { monthIndex: number; daysInMonth?: number };
-}
+type ChineseMonthInfo = { monthCode: string; daysInMonth: number }[] & {
+  monthsInYear: number;
+} & {
+  [key: string]: number;
+};
+type ChineseDraftMonthInfo = { monthCode: string; daysInMonth?: number }[] & {
+  monthsInYear?: number;
+} & {
+  [key: string]: number;
+};
 
 abstract class ChineseBaseHelper extends HelperBase {
   constructor() {
@@ -2179,20 +2183,18 @@ abstract class ChineseBaseHelper extends HelperBase {
   abstract override id: BuiltinCalendarId;
   calendarType = 'lunisolar' as const;
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
-    const months = this.getMonthList(calendarDate.year, cache);
-    return Object.entries(months).length === 13;
+    return this.getMonthList(calendarDate.year, cache).monthsInYear === 13;
   }
   monthsInYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
-    return this.inLeapYear(calendarDate, cache) ? 13 : 12;
+    return this.getMonthList(calendarDate.year, cache).monthsInYear;
   }
   override daysInMonth(calendarDate: CalendarYM, cache: OneObjectCache) {
     const { month, year } = calendarDate;
-    const monthEntries = Object.entries(this.getMonthList(calendarDate.year, cache));
-    const matchingMonthEntry = monthEntries.find((entry) => entry[1].monthIndex === month);
+    const matchingMonthEntry = this.getMonthList(year, cache)[month];
     if (matchingMonthEntry === undefined) {
       throw new RangeError(`Invalid month ${month} in Chinese year ${year}`);
     }
-    return matchingMonthEntry[1].daysInMonth;
+    return matchingMonthEntry.daysInMonth;
   }
   override daysInPreviousMonth(calendarDate: CalendarYM, cache: OneObjectCache) {
     const { month, year } = calendarDate;
@@ -2290,24 +2292,29 @@ abstract class ChineseBaseHelper extends HelperBase {
     // off-by-one issues matter.
     daysPastJan31 -= calendarFields.day - 5;
 
-    const monthList: ChineseDraftMonthInfo = {};
+    const monthList = [] as unknown as ChineseDraftMonthInfo;
     let monthIndex = 1;
-    let old: { day: number; monthString: string } | undefined;
+    let oldDay: number | undefined;
     for (;;) {
       const { day, monthString, relatedYear } = updateCalendarFields();
-      if (old) {
-        monthList[old.monthString].daysInMonth = old.day + 30 - day;
+      const isLeapMonth = monthString.endsWith('bis');
+      const monthCode = CreateMonthCode(+(isLeapMonth ? monthString.slice(0, -3) : monthString), isLeapMonth);
+      if (oldDay) {
+        monthList[monthIndex - 1].daysInMonth = oldDay + 30 - day;
       }
-      old = { day, monthString };
+      oldDay = day;
 
       if (relatedYear !== calendarYear) break;
 
-      monthList[monthString] = { monthIndex: monthIndex++ };
+      monthList[monthIndex] = { monthCode };
+      monthList[monthCode] = monthIndex++;
+
       // Move to the next month. Because months are sometimes 29 days, the day of the
       // calendar month will move forward slowly but not enough to flip over to a new
       // month before the loop ends at 12-13 months.
       daysPastJan31 += 30;
     }
+    monthList.monthsInYear = monthIndex - 1; // subtract 1, it was incremented after the loop
 
     cache.set(key, monthList);
     return monthList as ChineseMonthInfo;
@@ -2330,11 +2337,11 @@ abstract class ChineseBaseHelper extends HelperBase {
       // month. Below we'll normalize the output.
       if (monthExtra && monthExtra !== 'bis') throw new RangeError(`Unexpected leap month suffix: ${monthExtra}`);
       const monthCode = CreateMonthCode(month as number, monthExtra !== undefined);
-      const monthString = `${month}${monthExtra || ''}`;
       const months = this.getMonthList(year, cache);
-      const monthInfo = months[monthString];
-      if (monthInfo === undefined) throw new RangeError(`Unmatched month ${monthString} in Chinese year ${year}`);
-      month = monthInfo.monthIndex;
+      month = months[monthCode];
+      if (month === undefined) {
+        throw new RangeError(`Unmatched month ${month}${monthExtra || ''} in Chinese year ${year}`);
+      }
       return { year, month, day: day as number, monthCode };
     } else {
       // When called without input coming from legacy Date output,
@@ -2344,26 +2351,20 @@ abstract class ChineseBaseHelper extends HelperBase {
         ES.assertExists(monthCode);
         const months = this.getMonthList(year, cache);
         const { monthNumber, isLeapMonth } = ParseMonthCode(monthCode);
-        const numberPart = `${monthNumber}${isLeapMonth ? 'bis' : ''}`;
-        let monthInfo = months[numberPart];
-        month = monthInfo && monthInfo.monthIndex;
-
+        month = months[monthCode];
         // If this leap month isn't present in this year, constrain to the same
         // day of the previous month.
-        if (month === undefined && isLeapMonth && monthNumber !== 13 && overflow === 'constrain') {
-          monthInfo = months[monthNumber];
-          if (monthInfo) {
-            month = monthInfo.monthIndex;
-            monthCode = CreateMonthCode(monthNumber, false);
-          }
+        if (month === undefined && isLeapMonth && overflow === 'constrain') {
+          const adjustedMonthCode = CreateMonthCode(monthNumber, false);
+          month = months[adjustedMonthCode];
+          monthCode = adjustedMonthCode;
         }
         if (month === undefined) {
           throw new RangeError(`Unmatched month ${monthCode} in Chinese year ${year}`);
         }
       } else if (monthCode === undefined) {
         const months = this.getMonthList(year, cache);
-        const monthEntries = Object.entries(months);
-        const largestMonth = monthEntries.length;
+        const largestMonth = months.monthsInYear;
         if (overflow === 'reject') {
           ES.RejectToRange(month, 1, largestMonth);
           ES.RejectToRange(day as number, 1, this.maximumMonthLength());
@@ -2371,22 +2372,16 @@ abstract class ChineseBaseHelper extends HelperBase {
           month = ES.ConstrainToRange(month, 1, largestMonth);
           day = ES.ConstrainToRange(day, 1, this.maximumMonthLength());
         }
-        const matchingMonthEntry = monthEntries.find((entry) => entry[1].monthIndex === month);
-        if (matchingMonthEntry === undefined) {
+        monthCode = months[month].monthCode;
+        if (monthCode === undefined) {
           throw new RangeError(`Invalid month ${month} in Chinese year ${year}`);
         }
-        monthCode = CreateMonthCode(
-          +matchingMonthEntry[0].replace('bis', ''),
-          matchingMonthEntry[0].indexOf('bis') !== -1
-        );
       } else {
         // Both month and monthCode are present. Make sure they don't conflict.
         const months = this.getMonthList(year, cache);
-        const { monthNumber, isLeapMonth } = ParseMonthCode(monthCode);
-        const numberPart = `${monthNumber}${isLeapMonth ? 'bis' : ''}`;
-        const monthInfo = months[numberPart];
-        if (!monthInfo) throw new RangeError(`Unmatched monthCode ${monthCode} in Chinese year ${year}`);
-        if (month !== monthInfo.monthIndex) {
+        const monthIndex = months[monthCode];
+        if (!monthIndex) throw new RangeError(`Unmatched monthCode ${monthCode} in Chinese year ${year}`);
+        if (month !== monthIndex) {
           throw new RangeError(`monthCode ${monthCode} doesn't correspond to month ${month} in Chinese year ${year}`);
         }
       }
