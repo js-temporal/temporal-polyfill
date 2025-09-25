@@ -2297,6 +2297,7 @@ abstract class ChineseBaseHelper extends HelperBase {
     let oldDay: number | undefined;
     for (;;) {
       const { day, monthString, relatedYear } = updateCalendarFields();
+      if (monthIndex === 1) assert(monthString === '1', `we didn't back up to the beginning of year ${calendarYear}`);
       const isLeapMonth = monthString.endsWith('bis');
       const monthCode = CreateMonthCode(+(isLeapMonth ? monthString.slice(0, -3) : monthString), isLeapMonth);
       if (oldDay) {
