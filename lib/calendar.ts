@@ -358,24 +358,38 @@ type CalendarYM = { year: number; month: number };
 type CalendarYearOnly = { year: number };
 type EraAndEraYear = { era: string; eraYear: number };
 
-const monthCodeInfo: Partial<Record<BuiltinCalendarId, { additionalMonths: string[] }>> = {
+type CycleInfo = {
+  years: number;
+  months: number;
+};
+type MonthCodeInfo = {
+  additionalMonths: string[];
+  cycleInfo?: CycleInfo;
+};
+
+const monthCodeInfo: Partial<Record<BuiltinCalendarId, MonthCodeInfo>> = {
   chinese: {
     additionalMonths: ['M01L', 'M02L', 'M03L', 'M04L', 'M05L', 'M06L', 'M07L', 'M08L', 'M09L', 'M10L', 'M11L', 'M12L']
   },
   coptic: {
-    additionalMonths: ['M13']
+    additionalMonths: ['M13'],
+    cycleInfo: { years: 1, months: 13 }
   },
   dangi: {
     additionalMonths: ['M01L', 'M02L', 'M03L', 'M04L', 'M05L', 'M06L', 'M07L', 'M08L', 'M09L', 'M10L', 'M11L', 'M12L']
   },
   ethioaa: {
-    additionalMonths: ['M13']
+    additionalMonths: ['M13'],
+    cycleInfo: { years: 1, months: 13 }
   },
   ethiopic: {
-    additionalMonths: ['M13']
+    additionalMonths: ['M13'],
+    cycleInfo: { years: 1, months: 13 }
   },
   hebrew: {
-    additionalMonths: ['M05L']
+    additionalMonths: ['M05L'],
+    // Metonic cycle: 7 leap years every 19 years
+    cycleInfo: { years: 19, months: 19 * 12 + 7 }
   }
 };
 
@@ -1109,9 +1123,12 @@ abstract class HelperBase {
     let years = yearsParam;
     let months = monthsParam;
     const { year, day, monthCode } = calendarDate;
-    if (Math.abs(months) > 12 && !monthCodeInfo[this.id]?.additionalMonths) {
-      years += Math.trunc(months / 12);
-      months %= 12;
+    const monthInfo = monthCodeInfo[this.id];
+    const cycleInfo = monthInfo ? monthInfo.cycleInfo : { years: 1, months: 12 };
+    if (cycleInfo && Math.abs(months) > cycleInfo.months) {
+      const cycleCount = Math.trunc(months / cycleInfo.months);
+      years += cycleCount * cycleInfo.years;
+      months %= cycleInfo.months;
     }
     const addedYears = this.adjustCalendarDate({ year: year + years, monthCode, day }, cache);
     const addedMonths = this.addMonthsCalendar(addedYears, months, overflow, cache);
@@ -1147,7 +1164,9 @@ abstract class HelperBase {
         }
         const diffYears = calendarTwo.year - calendarOne.year;
         const diffDays = calendarTwo.day - calendarOne.day;
-        if (diffYears && (largestUnit === 'year' || !monthCodeInfo[this.id]?.additionalMonths)) {
+        const monthInfo = monthCodeInfo[this.id];
+        const cycleInfo = monthInfo ? monthInfo.cycleInfo : { years: 1, months: 12 };
+        if (diffYears && (largestUnit === 'year' || cycleInfo)) {
           let diffInYearSign = 0;
           if (calendarTwo.monthCode > calendarOne.monthCode) diffInYearSign = 1;
           if (calendarTwo.monthCode < calendarOne.monthCode) diffInYearSign = -1;
@@ -1155,16 +1174,22 @@ abstract class HelperBase {
           const isOneFurtherInYear = diffInYearSign * sign < 0;
           years = isOneFurtherInYear ? diffYears - sign : diffYears;
         }
-        const yearsAdded = years ? this.addCalendar(calendarOne, { years }, 'constrain', cache) : calendarOne;
-        if (years && largestUnit === 'month') {
-          months += years * 12;
+        // Try to skip ahead as many months as possible for this calendar
+        // without adding month by month in a loop
+        if (largestUnit === 'month') {
+          if (cycleInfo && Math.abs(years) >= cycleInfo.years) {
+            const cycleCount = Math.trunc(years / cycleInfo.years);
+            months = cycleCount * cycleInfo.months;
+          }
           years = 0;
         }
-        // Now we have less than one year remaining. Add one month at a time
+        const intermediate =
+          years || months ? this.addCalendar(calendarOne, { years, months }, 'constrain', cache) : calendarOne;
+        // Now we have less than one cycle remaining. Add one month at a time
         // until we go over the target, then back up one month and calculate
         // remaining days.
         let current;
-        let next: CalendarYMD = yearsAdded;
+        let next: CalendarYMD = intermediate;
         do {
           months += sign;
           current = next;
