@@ -19,6 +19,7 @@ staging/sm/Temporal/PlainMonthDay/from-chinese.js
 
 # CLDR 48 provides new era code, which the polyfill won't handle until a later
 # rebase.
+staging/Intl402/Temporal/old/non-iso-calendars-ethiopic.js
 staging/sm/Temporal/PlainDate/withCalendar.js
 
 # Tests incorrect, expecting old era codes
