@@ -2044,7 +2044,7 @@ abstract class OrthodoxBaseHelper extends GregorianBaseHelper {
 //   two use negative year numbers before epoch)
 // - Coptic has a different epoch date
 // - Ethiopic has an additional second era that starts at the same date as the
-//   zero era of ethioaa.
+//   zero era of ethioaa, which is the anchor era
 class EthioaaHelper extends OrthodoxBaseHelper {
   constructor() {
     super('ethioaa', [{ code: 'aa', isoEpoch: { year: -5492, month: 7, day: 17 } }]);
@@ -2066,13 +2066,11 @@ class CopticHelper extends OrthodoxBaseHelper {
   }
 }
 
-// Anchor is currently the older era to match ethioaa, but should it be the newer era?
-// See https://github.com/tc39/ecma402/issues/534 for discussion.
 class EthiopicHelper extends OrthodoxBaseHelper {
   constructor() {
     super('ethiopic', [
-      { code: 'aa', isoEpoch: { year: -5492, month: 7, day: 17 } },
-      { code: 'am', isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
+      { code: 'aa', isoEpoch: { year: -5492, month: 7, day: 17 }, anchorEpoch: { year: -5499 } },
+      { code: 'am', isoEpoch: { year: 8, month: 8, day: 27 } }
     ]);
   }
 }
