@@ -107,7 +107,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
     ES.CheckReceiver(this, ES.IsTemporalZonedDateTime);
     const timeZone = GetSlot(this, TIME_ZONE);
     const today = dateTime(this).isoDate;
-    const tomorrow = ES.BalanceISODate(today.year, today.month, today.day + 1);
+    const tomorrow = ES.AddDaysToISODate(today, 1);
     const todayNs = ES.GetStartOfDay(timeZone, today);
     const tomorrowNs = ES.GetStartOfDay(timeZone, tomorrow);
     const diff = TimeDuration.fromEpochNsDiff(tomorrowNs, todayNs);
@@ -271,7 +271,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
       // Compute Instants for start-of-day and end-of-day
       // Determine how far the current instant has progressed through this span.
       const dateStart = iso.isoDate;
-      const dateEnd = ES.BalanceISODate(dateStart.year, dateStart.month, dateStart.day + 1);
+      const dateEnd = ES.AddDaysToISODate(dateStart, 1);
 
       const startNs = ES.GetStartOfDay(timeZone, dateStart);
       assert(

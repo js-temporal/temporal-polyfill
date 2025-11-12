@@ -104,10 +104,6 @@ type ResolveFieldsReturn<Type extends ISODateToFieldsType> = Resolve<
   }
 >;
 
-function addDaysISO(isoDate: ISODate, days: number): ISODate {
-  return ES.BalanceISODate(isoDate.year, isoDate.month, isoDate.day + days);
-}
-
 /**
  * Shape of internal implementation of each built-in calendar. Note that
  * parameter types are simpler than CalendarProtocol because the `Calendar`
@@ -198,9 +194,8 @@ impl['iso8601'] = {
     year += years;
     month += months;
     ({ year, month } = ES.BalanceISOYearMonth(year, month));
-    ({ year, month, day } = ES.RegulateISODate(year, month, day, overflow));
-    day += days + 7 * weeks;
-    return ES.BalanceISODate(year, month, day);
+    const intermediate = ES.RegulateISODate(year, month, day, overflow);
+    return ES.AddDaysToISODate(intermediate, days + 7 * weeks);
   },
   dateUntil(one, two, largestUnit) {
     const sign = -ES.CompareISODate(one, two);
@@ -1001,7 +996,7 @@ abstract class HelperBase {
       // that's currently worked around by a custom calendarToIsoDate
       // implementation in those calendars. So this optimization should be safe
       // for all ICU calendars.
-      let testIsoEstimate = addDaysISO(isoEstimate, diffDays);
+      let testIsoEstimate = ES.AddDaysToISODate(isoEstimate, diffDays);
       if (date.day > this.minimumMonthLength(date)) {
         // There's a chance that the calendar date is out of range. Throw or
         // constrain if so.
@@ -1011,7 +1006,7 @@ abstract class HelperBase {
             throw new RangeError(`day ${day} does not exist in month ${month} of year ${year}`);
           }
           // Back up a day at a time until we're not hanging over the month end
-          testIsoEstimate = addDaysISO(testIsoEstimate, -1);
+          testIsoEstimate = ES.AddDaysToISODate(testIsoEstimate, -1);
           testCalendarDate = this.isoToCalendarDate(testIsoEstimate, cache);
         }
       }
@@ -1022,7 +1017,7 @@ abstract class HelperBase {
     let diff = simpleDateDiff(date, roundtripEstimate);
     if (diff.years !== 0 || diff.months !== 0 || diff.days !== 0) {
       const diffTotalDaysEstimate = diff.years * 365 + diff.months * 30 + diff.days;
-      isoEstimate = clampISODate(addDaysISO(isoEstimate, diffTotalDaysEstimate));
+      isoEstimate = clampISODate(ES.AddDaysToISODate(isoEstimate, diffTotalDaysEstimate));
       roundtripEstimate = this.isoToCalendarDate(isoEstimate, cache);
       diff = simpleDateDiff(date, roundtripEstimate);
       if (diff.years === 0 && diff.months === 0) {
@@ -1035,7 +1030,7 @@ abstract class HelperBase {
     // distance to the target, starting with 8 days per step.
     let increment = 8;
     while (sign) {
-      isoEstimate = addDaysISO(isoEstimate, sign * increment);
+      isoEstimate = ES.AddDaysToISODate(isoEstimate, sign * increment);
       const oldRoundtripEstimate = roundtripEstimate;
       roundtripEstimate = this.isoToCalendarDate(isoEstimate, cache);
       const oldSign = sign;
@@ -1062,7 +1057,7 @@ abstract class HelperBase {
               // To constrain, pick the earliest value
               const order = this.compareCalendarDates(roundtripEstimate, oldRoundtripEstimate);
               // If current value is larger, then back up to the previous value.
-              if (order > 0) isoEstimate = addDaysISO(isoEstimate, -1);
+              if (order > 0) isoEstimate = ES.AddDaysToISODate(isoEstimate, -1);
               sign = 0;
             }
           }
@@ -1095,7 +1090,7 @@ abstract class HelperBase {
   }
   addDaysCalendar(calendarDate: CalendarYMD, days: number, cache: OneObjectCache): FullCalendarDate {
     const isoDate = this.calendarToIsoDate(calendarDate, 'constrain', cache);
-    const addedIso = addDaysISO(isoDate, days);
+    const addedIso = ES.AddDaysToISODate(isoDate, days);
     const addedCalendar = this.isoToCalendarDate(addedIso, cache);
     return addedCalendar;
   }
@@ -1115,7 +1110,7 @@ abstract class HelperBase {
           ? -Math.max(day, this.daysInPreviousMonth(calendarDate, cache))
           : this.daysInMonth(calendarDate, cache);
       const isoDate = this.calendarToIsoDate(calendarDate, 'constrain', cache);
-      let addedIso = addDaysISO(isoDate, days);
+      let addedIso = ES.AddDaysToISODate(isoDate, days);
       calendarDate = this.isoToCalendarDate(addedIso, cache);
 
       // Normally, we can advance one month by adding the number of days in the
@@ -1126,7 +1121,7 @@ abstract class HelperBase {
       if (months > 0) {
         const monthsInOldYear = this.monthsInYear(oldCalendarDate, cache);
         while (calendarDate.month - 1 !== month % monthsInOldYear) {
-          addedIso = addDaysISO(addedIso, -1);
+          addedIso = ES.AddDaysToISODate(addedIso, -1);
           calendarDate = this.isoToCalendarDate(addedIso, cache);
         }
       }
@@ -1290,11 +1285,11 @@ abstract class HelperBase {
     // Add enough days to get into the next month, without skipping it
     const increment = day <= max - min ? max : min;
     const isoDate = this.calendarToIsoDate(calendarDate, 'constrain', cache);
-    const addedIsoDate = addDaysISO(isoDate, increment);
+    const addedIsoDate = ES.AddDaysToISODate(isoDate, increment);
     const addedCalendarDate = this.isoToCalendarDate(addedIsoDate, cache);
 
     // Now back up to the last day of the original month
-    const endOfMonthIso = addDaysISO(addedIsoDate, -addedCalendarDate.day);
+    const endOfMonthIso = ES.AddDaysToISODate(addedIsoDate, -addedCalendarDate.day);
     const endOfMonthCalendar = this.isoToCalendarDate(endOfMonthIso, cache);
     return endOfMonthCalendar.day;
   }
@@ -1311,7 +1306,7 @@ abstract class HelperBase {
     if (min === max) return max;
 
     const isoDate = this.calendarToIsoDate(calendarDate, 'constrain', cache);
-    const lastDayOfPreviousMonthIso = addDaysISO(isoDate, -day);
+    const lastDayOfPreviousMonthIso = ES.AddDaysToISODate(isoDate, -day);
     const lastDayOfPreviousMonthCalendar = this.isoToCalendarDate(lastDayOfPreviousMonthIso, cache);
     return lastDayOfPreviousMonthCalendar.day;
   }
@@ -1744,7 +1739,7 @@ class IndianHelper extends HelperBase {
     const isoYear = calendarDate.year + 78 + (monthInfo.nextYear ? 1 : 0);
     const isoMonth = monthInfo.month;
     const isoDay = monthInfo.day;
-    const isoDate = ES.BalanceISODate(isoYear, isoMonth, isoDay + calendarDate.day - 1);
+    const isoDate = ES.AddDaysToISODate({ year: isoYear, month: isoMonth, day: isoDay }, calendarDate.day - 1);
     return isoDate;
   }
   // https://bugs.chromium.org/p/v8/issues/detail?id=10529 causes Intl's Indian
