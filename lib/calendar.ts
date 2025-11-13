@@ -1151,7 +1151,7 @@ abstract class HelperBase {
       years += cycleCount * cycleInfo.years;
       months %= cycleInfo.months;
     }
-    const addedYears = this.adjustCalendarDate({ year: year + years, monthCode, day }, cache);
+    const addedYears = this.adjustCalendarDate({ year: year + years, monthCode, day }, cache, overflow);
     const addedMonths = this.addMonthsCalendar(addedYears, months, overflow, cache);
     const initialDays = days + weeks * 7;
     const addedDays = this.addDaysCalendar(addedMonths, initialDays, cache);
