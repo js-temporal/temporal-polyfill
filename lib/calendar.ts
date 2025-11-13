@@ -2190,7 +2190,7 @@ abstract class ChineseBaseHelper extends HelperBase {
     const { month, year } = calendarDate;
     const matchingMonthEntry = this.getMonthList(year, cache)[month];
     if (matchingMonthEntry === undefined) {
-      throw new RangeError(`Invalid month ${month} in Chinese year ${year}`);
+      throw new RangeError(`Invalid month ${month} in ${this.id} year ${year}`);
     }
     return matchingMonthEntry.daysInMonth;
   }
@@ -2339,7 +2339,7 @@ abstract class ChineseBaseHelper extends HelperBase {
       const months = this.getMonthList(year, cache);
       month = months[monthCode];
       if (month === undefined) {
-        throw new RangeError(`Unmatched month ${month}${monthExtra || ''} in Chinese year ${year}`);
+        throw new RangeError(`Unmatched month ${month}${monthExtra || ''} in ${this.id} year ${year}`);
       }
       return { year, month, day: day as number, monthCode };
     } else {
@@ -2359,7 +2359,7 @@ abstract class ChineseBaseHelper extends HelperBase {
           monthCode = adjustedMonthCode;
         }
         if (month === undefined) {
-          throw new RangeError(`Unmatched month ${monthCode} in Chinese year ${year}`);
+          throw new RangeError(`Unmatched month ${monthCode} in ${this.id} year ${year}`);
         }
       } else if (monthCode === undefined) {
         const months = this.getMonthList(year, cache);
@@ -2373,15 +2373,17 @@ abstract class ChineseBaseHelper extends HelperBase {
         }
         monthCode = months[month].monthCode;
         if (monthCode === undefined) {
-          throw new RangeError(`Invalid month ${month} in Chinese year ${year}`);
+          throw new RangeError(`Invalid month ${month} in ${this.id} year ${year}`);
         }
       } else {
         // Both month and monthCode are present. Make sure they don't conflict.
         const months = this.getMonthList(year, cache);
         const monthIndex = months[monthCode];
-        if (!monthIndex) throw new RangeError(`Unmatched monthCode ${monthCode} in Chinese year ${year}`);
+        if (!monthIndex) throw new RangeError(`Unmatched monthCode ${monthCode} in ${this.id} year ${year}`);
         if (month !== monthIndex) {
-          throw new RangeError(`monthCode ${monthCode} doesn't correspond to month ${month} in Chinese year ${year}`);
+          throw new RangeError(
+            `monthCode ${monthCode} doesn't correspond to month ${month} in ${this.id} year ${year}`
+          );
         }
       }
       return { ...calendarDate, year, month, monthCode, day: day as number };
