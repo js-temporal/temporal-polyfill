@@ -730,7 +730,9 @@ abstract class HelperBase {
         }
       }
       if (type === 'month') {
-        const matches = /^([0-9]*)(.*?)$/.exec(value);
+        // Newer ICU data has some formats with "Mo11" / "Mo9bis" for Chinese
+        // and Dangi months
+        const matches = /^(?:Mo)?([0-9]*)(.*?)$/.exec(value);
         if (!matches || matches.length != 3 || (!matches[1] && !matches[2])) {
           throw new RangeError(`Unexpected month: ${value}`);
         }
@@ -2266,7 +2268,11 @@ abstract class ChineseBaseHelper extends HelperBase {
         if (type === 'day' || type === ('relatedYear' as Intl.DateTimeFormatPartTypes)) {
           calendarFields[type as 'day' | 'relatedYear'] = +value;
         } else if (type === 'month') {
-          calendarFields.monthString = value;
+          if (value.startsWith('Mo')) {
+            calendarFields.monthString = value.slice(2);
+          } else {
+            calendarFields.monthString = value;
+          }
         }
       }
       if (calendarFields.relatedYear === undefined) {
