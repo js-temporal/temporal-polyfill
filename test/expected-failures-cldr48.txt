@@ -10,6 +10,3 @@ staging/Intl402/Temporal/old/indian-calendar.js
 staging/Intl402/Temporal/old/non-iso-calendars-coptic.js
 staging/Intl402/Temporal/old/non-iso-calendars-ethioaa.js
 staging/Intl402/Temporal/old/non-iso-calendars-indian.js
-
-# Needs further investigation if a later rebase doesn't fix:
-staging/sm/Temporal/PlainDate/non-positive-era-year.js
