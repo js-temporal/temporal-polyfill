@@ -1720,8 +1720,9 @@ class IndianHelper extends HelperBase {
   // calendar output to fail for all dates before 0001-01-01 ISO.  For example,
   // in Node 12 0000-01-01 is calculated as 6146/12/-583 instead of 10/11/-79 as
   // expected.
-  vulnerableToBceBug =
-    new Date('0000-01-01T00:00Z').toLocaleDateString('en-US-u-ca-indian', { timeZone: 'UTC' }) !== '10/11/-79 Saka';
+  vulnerableToBceBug = !new Date('0000-01-01T00:00Z')
+    .toLocaleDateString('en-US-u-ca-indian', { timeZone: 'UTC' })
+    .startsWith('10/11/-79');
   override checkIcuBugs(isoDate: ISODate) {
     if (this.vulnerableToBceBug && isoDate.year < 1) {
       throw new RangeError(
