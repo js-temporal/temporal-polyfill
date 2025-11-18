@@ -2434,7 +2434,20 @@ class NonIsoCalendar implements CalendarImpl {
     }
     return [];
   }
-  resolveFields(fields: CalendarFieldsRecord /* , type */) {
+  resolveFields<Type extends ISODateToFieldsType>(
+    fields: CalendarFieldsRecord,
+    type: Type
+  ): asserts fields is ResolveFieldsReturn<Type> {
+    if ((type === 'date' || type === 'year-month') && fields.year === undefined) {
+      if (!CalendarSupportsEra(this.helper.id)) {
+        throw new TypeError('year is required');
+      } else if (fields.era === undefined || fields.eraYear === undefined) {
+        throw new TypeError('year (or era and eraYear) are required');
+      }
+    }
+    if ((type === 'date' || type === 'month-day') && fields.day === undefined) {
+      throw new TypeError('day is required');
+    }
     if (this.helper.calendarType !== 'lunisolar') {
       resolveNonLunisolarMonth(fields, this.helper.id);
     }
