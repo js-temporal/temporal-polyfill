@@ -2455,6 +2455,8 @@ class NonIsoCalendar implements CalendarImpl {
     if (this.helper.calendarType !== 'lunisolar') {
       resolveNonLunisolarMonth(fields, this.helper.id);
     }
+    // Note: Lunisolar calendars go on to resolve month/monthCode in their
+    // adjustCalendarDate implementations
   }
   dateToISO(fields: CalendarDateFields, overflow: Overflow) {
     const cache = new OneObjectCache(this.helper.id);
