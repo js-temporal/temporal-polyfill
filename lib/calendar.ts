@@ -1308,11 +1308,8 @@ abstract class HelperBase {
     return 1972;
   }
   monthDayFromFields(fields: MonthDayFromFieldsObject, overflow: Overflow, cache: OneObjectCache): ISODate {
-    let { era, eraYear, year, month, monthCode, day } = fields;
+    let { eraYear, year, monthCode, day } = fields;
     const hasEra = CalendarSupportsEra(this.id);
-    if (month !== undefined && year === undefined && (!hasEra || era === undefined || eraYear === undefined)) {
-      throw new TypeError('when month is present, year (or era and eraYear) are required');
-    }
     if (monthCode === undefined || year !== undefined || (hasEra && eraYear !== undefined)) {
       // Apply overflow behaviour to year/month/day, to get correct monthCode/day
       ({ monthCode, day } = this.isoToCalendarDate(this.calendarToIsoDate(fields, overflow, cache), cache));
@@ -2447,6 +2444,13 @@ class NonIsoCalendar implements CalendarImpl {
     }
     if ((type === 'date' || type === 'month-day') && fields.day === undefined) {
       throw new TypeError('day is required');
+    }
+    if (type === 'month-day' && fields.month !== undefined && fields.year === undefined) {
+      if (!CalendarSupportsEra(this.helper.id)) {
+        throw new TypeError('when month is present, year is required');
+      } else if (fields.era === undefined || fields.eraYear === undefined) {
+        throw new TypeError('when month is present, year (or era and eraYear) are required');
+      }
     }
     if (this.helper.calendarType !== 'lunisolar') {
       resolveNonLunisolarMonth(fields, this.helper.id);
