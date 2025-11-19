@@ -1146,7 +1146,7 @@ abstract class HelperBase {
     if (overflow === 'reject' && calendarDate.day !== day) {
       throw new RangeError(`Day ${day} does not exist in resulting calendar month`);
     }
-    return calendarDate;
+    return this.regulateDate(calendarDate, overflow, cache);
   }
   addCalendar(
     calendarDate: CalendarYMD & { monthCode: string },
