@@ -1,12 +1,8 @@
 # Tests in this file are expected to fail for Node 20 LTS, Node 22 LTS, and
 # Node 24 LTS.
 
-# CLDR 48 provides new era code, which the polyfill won't handle until a later
-# rebase.
-staging/Intl402/Temporal/old/non-iso-calendars-ethiopic.js
-
 # Tests incorrect, expecting old era codes
-staging/Intl402/Temporal/old/indian-calendar.js
 staging/Intl402/Temporal/old/non-iso-calendars-coptic.js
 staging/Intl402/Temporal/old/non-iso-calendars-ethioaa.js
+staging/Intl402/Temporal/old/non-iso-calendars-ethiopic.js
 staging/Intl402/Temporal/old/non-iso-calendars-indian.js
