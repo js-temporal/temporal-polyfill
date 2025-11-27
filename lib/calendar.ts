@@ -1598,6 +1598,7 @@ abstract class IslamicBaseHelper extends HelperBase {
     super(eraData);
   }
   abstract override id: BuiltinCalendarId;
+  abstract tabular: boolean;
   calendarType = 'lunar' as const;
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     const startOfYearCalendar = { year: calendarDate.year, month: 1, monthCode: 'M01', day: 1 };
@@ -1614,8 +1615,10 @@ abstract class IslamicBaseHelper extends HelperBase {
   maximumMonthLength(/* calendarDate */) {
     return 30;
   }
-  maxLengthOfMonthCodeInAnyYear(/* monthCode */) {
-    return 30;
+  maxLengthOfMonthCodeInAnyYear(monthCode: string) {
+    if (!this.tabular) return 30; // if observational, any month can have 29 or 30 days
+    const month = ParseMonthCode(monthCode).monthNumber;
+    return [0, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 30][month];
   }
   DAYS_PER_ISLAMIC_YEAR = 354 + 11 / 30;
   DAYS_PER_ISO_YEAR = 365.2425;
@@ -1631,24 +1634,28 @@ abstract class IslamicBaseHelper extends HelperBase {
 // is identical.
 class IslamicUmalquraHelper extends IslamicBaseHelper {
   id = 'islamic-umalqura' as const;
+  tabular = false;
   constructor() {
     super(20);
   }
 }
 class IslamicTblaHelper extends IslamicBaseHelper {
   id = 'islamic-tbla' as const;
+  tabular = true;
   constructor() {
     super(19);
   }
 }
 class IslamicCivilHelper extends IslamicBaseHelper {
   id = 'islamic-civil' as const;
+  tabular = true;
   constructor() {
     super(20);
   }
 }
 class IslamicCcHelper extends IslamicBaseHelper {
   id = 'islamicc' as const;
+  tabular = true;
   constructor() {
     super(20);
   }
