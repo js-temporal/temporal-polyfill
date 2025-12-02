@@ -482,6 +482,7 @@ function monthDayAmend(originalOptions: OptionsType<Temporal.PlainMonthDay>) {
     full: { month: 'long', day: 'numeric' }
   };
   const options = amend(originalOptions, {
+    era: false,
     year: false,
     hour: false,
     minute: false,
