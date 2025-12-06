@@ -8,3 +8,14 @@ staging/sm/Temporal/ZonedDateTime/zones-and-links.js
 # Bug prior to Node 20
 intl402/DateTimeFormat/prototype/formatRangeToParts/chinese-calendar-dates.js
 intl402/DateTimeFormat/prototype/formatRangeToParts/dangi-calendar-dates.js
+
+# ICU4C 77 failures. Remove these lines when updating to a version of Node.js
+# with ICU4C 78.
+intl402/Temporal/PlainDate/from/hebrew-keviah.js
+intl402/Temporal/PlainDate/from/roundtrip-from-string.js
+intl402/Temporal/PlainDate/prototype/daysInYear/basic-hebrew.js
+intl402/Temporal/PlainDateTime/from/roundtrip-from-string.js
+intl402/Temporal/PlainDateTime/prototype/daysInYear/basic-hebrew.js
+intl402/Temporal/PlainYearMonth/prototype/daysInYear/basic-hebrew.js
+intl402/Temporal/ZonedDateTime/from/roundtrip-from-string.js
+intl402/Temporal/ZonedDateTime/prototype/daysInYear/basic-hebrew.js
