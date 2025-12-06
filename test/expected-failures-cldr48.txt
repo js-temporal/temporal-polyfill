@@ -1,11 +1,5 @@
 # Tests in this file are expected to fail for Node LTS versions 20 through 26.
 
-# Tests incorrect, expecting old era codes
-staging/Intl402/Temporal/old/non-iso-calendars-coptic.js
-staging/Intl402/Temporal/old/non-iso-calendars-ethioaa.js
-staging/Intl402/Temporal/old/non-iso-calendars-ethiopic.js
-staging/Intl402/Temporal/old/non-iso-calendars-indian.js
-
 # A regression in V8 (https://issues.chromium.org/issues/40893567) caused
 # these tests to fail. We don't know when a fix is expected, but when it's fixed
 # then these tests should start passing again.

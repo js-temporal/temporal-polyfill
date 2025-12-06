@@ -11,13 +11,10 @@ staging/Intl402/Temporal/old/date-time-format.js
 
 # Possibly faulty calculations for year 0 in Hebrew calendar in ICU4C
 # https://unicode-org.atlassian.net/browse/ICU-23007
-staging/sm/Temporal/PlainDate/from-constrain-hebrew.js
+intl402/Temporal/PlainDate/from/calc-epoch-year-hebrew.js
 
-# Test is incorrect, no reason why this date should not exist; seems to be
-# working around an ICU4X bug
-staging/sm/Temporal/PlainDate/from-islamic-umalqura.js
-
-# Faulty leap month calculations in Chinese calendar in ICU4C
+# Faulty lunar month calculations in Chinese calendar in ICU4C
+# https://unicode-org.atlassian.net/browse/ICU-13195
 intl402/Temporal/PlainDate/prototype/monthCode/chinese-calendar-dates.js
 intl402/Temporal/PlainDateTime/prototype/monthCode/chinese-calendar-dates.js
 intl402/Temporal/PlainMonthDay/prototype/monthCode/chinese-calendar-dates.js
@@ -25,3 +22,14 @@ intl402/Temporal/PlainYearMonth/prototype/monthCode/chinese-calendar-dates.js
 intl402/Temporal/ZonedDateTime/prototype/monthCode/chinese-calendar-dates.js
 # https://unicode-org.atlassian.net/browse/ICU-22230
 staging/sm/Temporal/PlainMonthDay/from-chinese-leap-month-uncommon.js
+# https://unicode-org.atlassian.net/browse/ICU-23285
+intl402/Temporal/PlainDate/prototype/daysInYear/basic-chinese.js
+intl402/Temporal/PlainDateTime/prototype/daysInYear/basic-chinese.js
+intl402/Temporal/PlainYearMonth/prototype/daysInYear/basic-chinese.js
+intl402/Temporal/ZonedDateTime/prototype/daysInYear/basic-chinese.js
+
+# ICU4C internal error in extreme dates in chinese/dangi calendars
+intl402/Temporal/PlainDate/from/extreme-dates.js
+intl402/Temporal/PlainDateTime/from/extreme-dates.js
+intl402/Temporal/PlainYearMonth/from/extreme-dates.js
+intl402/Temporal/ZonedDateTime/from/extreme-dates.js
