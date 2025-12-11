@@ -557,7 +557,7 @@ export function ParseTemporalTimeString(isoString: string) {
   let hour, minute, second, millisecond, microsecond, nanosecond, calendar;
   if (match) {
     assertExists(match.groups); // https://github.com/microsoft/TypeScript/issues/32098
-    processAnnotations(match.groups.annotation); // ignore found calendar
+    calendar = processAnnotations(match.groups.annotation);
     hour = +(match.groups.hour ?? 0);
     minute = +(match.groups.minute ?? 0);
     second = +(match.groups.second ?? 0);
