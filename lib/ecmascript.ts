@@ -489,30 +489,31 @@ function ParseISODateTime(isoString: string) {
   // ZDT is the superset of fields for every other Temporal type
   const match = PARSE.zoneddatetime.exec(isoString);
   if (!match) throw new RangeError(`invalid RFC 9557 string: ${isoString}`);
-  const calendar = processAnnotations(match[16]);
-  let yearString = match[1];
+  assertExists(match.groups); // https://github.com/microsoft/TypeScript/issues/32098
+  const calendar = processAnnotations(match.groups.annotation);
+  let yearString = match.groups.yearpart;
   if (yearString === '-000000') throw new RangeError(`invalid RFC 9557 string: ${isoString}`);
   const year = +yearString;
-  const month = +(match[2] ?? match[4] ?? 1);
-  const day = +(match[3] ?? match[5] ?? 1);
-  const hasTime = match[6] !== undefined;
-  const hour = +(match[6] ?? 0);
-  const minute = +(match[7] ?? match[10] ?? 0);
-  let second = +(match[8] ?? match[11] ?? 0);
+  const month = +(match.groups.monthpartSep ?? match.groups.monthpartNoSep ?? 1);
+  const day = +(match.groups.daypartSep ?? match.groups.daypartNoSep ?? 1);
+  const hasTime = match.groups.hour !== undefined;
+  const hour = +(match.groups.hour ?? 0);
+  const minute = +(match.groups.minute ?? 0);
+  let second = +(match.groups.second ?? 0);
   if (second === 60) second = 59;
-  const fraction = (match[9] ?? match[12] ?? '') + '000000000';
+  const fraction = (match.groups.fraction ?? '') + '000000000';
   const millisecond = +fraction.slice(0, 3);
   const microsecond = +fraction.slice(3, 6);
   const nanosecond = +fraction.slice(6, 9);
   let offset;
   let z = false;
-  if (match[13]) {
+  if (match.groups.z) {
     offset = undefined;
     z = true;
-  } else if (match[14]) {
-    offset = match[14];
+  } else if (match.groups.offset) {
+    offset = match.groups.offset;
   }
-  const tzAnnotation = match[15];
+  const tzAnnotation = match.groups.timeZoneID;
   RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
   return {
     year,
@@ -555,16 +556,17 @@ export function ParseTemporalTimeString(isoString: string) {
   const match = PARSE.time.exec(isoString);
   let hour, minute, second, millisecond, microsecond, nanosecond, calendar;
   if (match) {
-    calendar = processAnnotations(match[10]);
-    hour = +(match[1] ?? 0);
-    minute = +(match[2] ?? match[5] ?? 0);
-    second = +(match[3] ?? match[6] ?? 0);
+    assertExists(match.groups); // https://github.com/microsoft/TypeScript/issues/32098
+    processAnnotations(match.groups.annotation); // ignore found calendar
+    hour = +(match.groups.hour ?? 0);
+    minute = +(match.groups.minute ?? 0);
+    second = +(match.groups.second ?? 0);
     if (second === 60) second = 59;
-    const fraction = (match[4] ?? match[7] ?? '') + '000000000';
+    const fraction = (match.groups.fraction ?? '') + '000000000';
     millisecond = +fraction.slice(0, 3);
     microsecond = +fraction.slice(3, 6);
     nanosecond = +fraction.slice(6, 9);
-    if (match[8]) throw new RangeError('Z designator not supported for PlainTime');
+    if (match.groups.z) throw new RangeError('Z designator not supported for PlainTime');
   } else {
     let time, z;
     ({ time, z, calendar } = ParseISODateTime(isoString));
@@ -1139,7 +1141,9 @@ export function GetTemporalRelativeToOption(options: {
       if (offset) {
         const offsetParseResult = OFFSET_WITH_PARTS.exec(offset);
         assert(offsetParseResult !== null, 'offset string must re-parse');
-        const offsetSecondsPart = offsetParseResult[4];
+        assertExists(offsetParseResult.groups); // https://github.com/microsoft/TypeScript/issues/32098
+        const offsetSecondsPart =
+          offsetParseResult.groups.offsetSecondSep ?? offsetParseResult.groups.offsetSecondNoSep;
         if (offsetSecondsPart) matchMinutes = false;
       }
     } else if (z) {
@@ -1754,7 +1758,8 @@ export function ToTemporalZonedDateTime(
     if (offset) {
       const offsetParseResult = OFFSET_WITH_PARTS.exec(offset);
       assert(offsetParseResult !== null, 'offset string must re-parse');
-      const offsetSecondsPart = offsetParseResult[4];
+      assertExists(offsetParseResult.groups); // https://github.com/microsoft/TypeScript/issues/32098
+      const offsetSecondsPart = offsetParseResult.groups.offsetSecondSep ?? offsetParseResult.groups.offsetSecondNoSep;
       if (offsetSecondsPart) matchMinute = false;
     }
     const resolvedOptions = GetOptionsObject(options);
@@ -2520,11 +2525,14 @@ export function ParseDateTimeUTCOffset(string: string): number {
   if (!match) {
     throw new RangeError(`invalid time zone offset: ${string}; must match ±HH:MM[:SS.SSSSSSSSS]`);
   }
-  const sign = match[1] === '-' ? -1 : +1;
-  const hours = +match[2];
-  const minutes = +(match[3] || 0);
-  const seconds = +(match[4] || 0);
-  const nanoseconds = +((match[5] || 0) + '000000000').slice(0, 9);
+  assertExists(match.groups); // https://github.com/microsoft/TypeScript/issues/32098
+  const sign = match.groups.offsetSign === '-' ? -1 : +1;
+  const hours = +match.groups.offsetHour;
+  const minutes = +(match.groups.offsetMinuteSep ?? match.groups.offsetMinuteNoSep ?? 0);
+  const seconds = +(match.groups.offsetSecondSep ?? match.groups.offsetSecondNoSep ?? 0);
+  const nanoseconds = +(
+    (match.groups.offsetSubsecondsSep ?? match.groups.offsetSubsecondsNoSep ?? '') + '000000000'
+  ).slice(0, 9);
   const offsetNanoseconds = sign * (((hours * 60 + minutes) * 60 + seconds) * 1e9 + nanoseconds);
   return offsetNanoseconds;
 }

@@ -7,13 +7,43 @@ export const timeZoneID = new RegExp(
 const yearpart = /(?:[+-]\d{6}|\d{4})/;
 const monthpart = /(?:0[1-9]|1[0-2])/;
 const daypart = /(?:0[1-9]|[12]\d|3[01])/;
+// COMPAT: Note spec polyfill uses duplicate named capture groups here
 const datesplit = new RegExp(
-  `(${yearpart.source})(?:-(${monthpart.source})-(${daypart.source})|(${monthpart.source})(${daypart.source}))`
+  [
+    `(?<yearpart>${yearpart.source})`,
+    `(?:-(?<monthpartSep>${monthpart.source})-`,
+    `(?<daypartSep>${daypart.source})|`,
+    `(?<monthpartNoSep>${monthpart.source})(?<daypartNoSep>${daypart.source}))`
+  ].join('')
 );
-const timesplit = /(\d{2})(?::(\d{2})(?::(\d{2})(?:[.,](\d{1,9}))?)?|(\d{2})(?:(\d{2})(?:[.,](\d{1,9}))?)?)?/;
-export const offsetWithParts = /([+-])([01][0-9]|2[0-3])(?::?([0-5][0-9])(?::?([0-5][0-9])(?:[.,](\d{1,9}))?)?)?/;
-export const offset = /((?:[+-])(?:[01][0-9]|2[0-3])(?::?(?:[0-5][0-9])(?::?(?:[0-5][0-9])(?:[.,](?:\d{1,9}))?)?)?)/;
-const offsetpart = new RegExp(`([zZ])|${offset.source}?`);
+const sep = /:/;
+const hourminute = new RegExp(`(?<hour>\\d{2})(?:(?:${sep.source})?(?<minute>\\d{2}))?`);
+const timesecond = new RegExp('(?<second>\\d{2})');
+const fraction = new RegExp('(?:[.,](?<fraction>\\d{1,9}))');
+const secondspart = new RegExp(`${sep.source}?(?:${timesecond.source})(?:${fraction.source})?`);
+const timesplit = new RegExp(`(?:${hourminute.source})(?:${secondspart.source})?`);
+const sign = /[+-]/;
+const hour = /[01][0-9]|2[0-3]/;
+const minute = /[0-5][0-9]/;
+const second = minute;
+const optionalMinSecWithSep = new RegExp(
+  [
+    `(?:${sep.source})(?<offsetMinuteSep>${minute.source})`,
+    `(?:${sep.source}(?<offsetSecondSep>${second.source})(?:[.,](?<offsetSubsecondsSep>\\d{1,9})?)?)?`
+  ].join('')
+);
+const optionalMinSecNoSep = new RegExp(
+  [
+    `(?<offsetMinuteNoSep>${minute.source})`,
+    `(?<offsetSecondNoSep>${second.source}(?:[.,](?<offsetSubsecondsNoSep>\\d{1,9})?)?)?`
+  ].join('')
+);
+const optionalMinSec = new RegExp(`(?:${optionalMinSecWithSep.source})|(?:${optionalMinSecNoSep.source})`);
+export const offsetWithParts = new RegExp(
+  `^(?<offsetSign>${sign.source})(?<offsetHour>${hour.source})(?:${optionalMinSec.source})?$`
+);
+export const offset = new RegExp(`(?<offset>(?:${sign.source})(?:${hour.source})(?:${optionalMinSec.source})?)`);
+const offsetpart = new RegExp(`(?<z>[zZ])|${offset.source}?`);
 export const offsetIdentifier = /([+-])([01][0-9]|2[0-3])(?::?([0-5][0-9])?)?/;
 export const annotation = /\[(!)?([a-z_][a-z0-9_-]*)=([A-Za-z0-9]+(?:-[A-Za-z0-9]+)*)\]/g;
 
@@ -21,8 +51,8 @@ export const zoneddatetime = new RegExp(
   [
     `^${datesplit.source}`,
     `(?:(?:[tT]|\\s+)${timesplit.source}(?:${offsetpart.source})?)?`,
-    `(?:\\[!?(${timeZoneID.source})\\])?`,
-    `((?:${annotation.source})*)$`
+    `(?:\\[!?(?<timeZoneID>${timeZoneID.source})\\])?`,
+    `(?<annotation>(?:${annotation.source})*)$`
   ].join('')
 );
 
@@ -30,8 +60,8 @@ export const time = new RegExp(
   [
     `^[tT]?${timesplit.source}`,
     `(?:${offsetpart.source})?`,
-    `(?:\\[!?${timeZoneID.source}\\])?`,
-    `((?:${annotation.source})*)$`
+    `(?:\\[!?((?<timeZoneID>${timeZoneID.source}))\\])?`,
+    `(?<annotation>(?:${annotation.source})*)$`
   ].join('')
 );
 
@@ -52,8 +82,14 @@ export const monthday = new RegExp(
   `^(?:--)?(${monthpart.source})-?(${daypart.source})(?:\\[!?${timeZoneID.source}\\])?((?:${annotation.source})*)$`
 );
 
-const fraction = /(\d+)(?:[.,](\d{1,9}))?/;
+const numberWithOptionalFraction = /(\d+)(?:[.,](\d{1,9}))?/;
 
 const durationDate = /(?:(\d+)Y)?(?:(\d+)M)?(?:(\d+)W)?(?:(\d+)D)?/;
-const durationTime = new RegExp(`(?:${fraction.source}H)?(?:${fraction.source}M)?(?:${fraction.source}S)?`);
+const durationTime = new RegExp(
+  [
+    `(?:${numberWithOptionalFraction.source}H)?`,
+    `(?:${numberWithOptionalFraction.source}M)?`,
+    `(?:${numberWithOptionalFraction.source}S)?`
+  ].join('')
+);
 export const duration = new RegExp(`^([+-])?P${durationDate.source}(?:T(?!$)${durationTime.source})?$`, 'i');
