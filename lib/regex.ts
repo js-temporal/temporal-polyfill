@@ -17,11 +17,23 @@ const datesplit = new RegExp(
   ].join('')
 );
 const sep = /:/;
-const hourminute = new RegExp(`(?<hour>\\d{2})(?:(?:${sep.source})?(?<minute>\\d{2}))?`);
-const timesecond = new RegExp('(?<second>\\d{2})');
-const fraction = new RegExp('(?:[.,](?<fraction>\\d{1,9}))');
-const secondspart = new RegExp(`${sep.source}?(?:${timesecond.source})(?:${fraction.source})?`);
-const timesplit = new RegExp(`(?:${hourminute.source})(?:${secondspart.source})?`);
+const hourminutesecondNoSep = new RegExp(
+  [
+    '(?<hourNoSep>\\d{2})',
+    '(?:(?<minuteNoSep>\\d{2}))?',
+    '(?:(?:(?<secondNoSep>\\d{2}))',
+    '(?:(?:[.,](?<fractionNoSep>\\d{1,9})))?)?'
+  ].join('')
+);
+const hourminutesecondSep = new RegExp(
+  [
+    '(?<hourSep>\\d{2})',
+    `(?:${sep.source}(?<minuteSep>\\d{2}))?`,
+    `(?:${sep.source}(?:(?<secondSep>\\d{2}))`,
+    '(?:(?:[.,](?<fractionSep>\\d{1,9})))?)?'
+  ].join('')
+);
+const timesplit = new RegExp(`(?:(?:${hourminutesecondSep.source})|(?:${hourminutesecondNoSep.source}))`);
 const sign = /[+-]/;
 const hour = /[01][0-9]|2[0-3]/;
 const minute = /[0-5][0-9]/;
