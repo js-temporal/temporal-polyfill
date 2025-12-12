@@ -496,12 +496,12 @@ function ParseISODateTime(isoString: string) {
   const year = +yearString;
   const month = +(match.groups.monthpartSep ?? match.groups.monthpartNoSep ?? 1);
   const day = +(match.groups.daypartSep ?? match.groups.daypartNoSep ?? 1);
-  const hasTime = match.groups.hour !== undefined;
-  const hour = +(match.groups.hour ?? 0);
-  const minute = +(match.groups.minute ?? 0);
-  let second = +(match.groups.second ?? 0);
+  const hasTime = match.groups.hourSep !== undefined || match.groups.hourNoSep !== undefined;
+  const hour = +(match.groups.hourSep ?? match.groups.hourNoSep ?? 0);
+  const minute = +(match.groups.minuteSep ?? match.groups.minuteNoSep ?? 0);
+  let second = +(match.groups.secondSep ?? match.groups.secondNoSep ?? 0);
   if (second === 60) second = 59;
-  const fraction = (match.groups.fraction ?? '') + '000000000';
+  const fraction = (match.groups.fractionSep ?? match.groups.fractionNoSep ?? '') + '000000000';
   const millisecond = +fraction.slice(0, 3);
   const microsecond = +fraction.slice(3, 6);
   const nanosecond = +fraction.slice(6, 9);
@@ -558,11 +558,11 @@ export function ParseTemporalTimeString(isoString: string) {
   if (match) {
     assertExists(match.groups); // https://github.com/microsoft/TypeScript/issues/32098
     calendar = processAnnotations(match.groups.annotation);
-    hour = +(match.groups.hour ?? 0);
-    minute = +(match.groups.minute ?? 0);
-    second = +(match.groups.second ?? 0);
+    hour = +(match.groups.hourSep ?? match.groups.hourNoSep ?? 0);
+    minute = +(match.groups.minuteSep ?? match.groups.minuteNoSep ?? 0);
+    second = +(match.groups.secondSep ?? match.groups.secondNoSep ?? 0);
     if (second === 60) second = 59;
-    const fraction = (match.groups.fraction ?? '') + '000000000';
+    const fraction = (match.groups.fractionSep ?? match.groups.fractionNoSep ?? '') + '000000000';
     millisecond = +fraction.slice(0, 3);
     microsecond = +fraction.slice(3, 6);
     nanosecond = +fraction.slice(6, 9);
