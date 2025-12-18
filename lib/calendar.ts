@@ -70,9 +70,7 @@ function calendarDateWeekOfYear(id: BuiltinCalendarId, isoDate: ISODate): { week
     let lastDoy = daysInYear;
     if (dayOfYear >= lastDoy - 5) {
       let lastRelDow = (relDow + lastDoy - dayOfYear) % 7;
-      if (lastRelDow < 0) {
-        lastRelDow += 7;
-      }
+      assert(lastRelDow >= 0, 'lastRelDow must be non-negative because relDow is positive and lastDoy >= dayOfYear');
       if (6 - lastRelDow >= mdow && dayOfYear + 7 - relDow > lastDoy) {
         woy = 1;
         yow++;
