@@ -80,27 +80,11 @@ function calendarDateWeekOfYear(id: BuiltinCalendarId, isoDate: ISODate): { week
   return { week: woy, year: yow };
 }
 
-function ISODateSurpasses(
-  sign: -1 | 0 | 1,
-  baseDate: ISODate,
-  isoDate2: ISODate,
-  years: number,
-  months: number,
-  weeks: number,
-  days: number
-) {
+function ISODateSurpasses(sign: -1 | 0 | 1, baseDate: ISODate, isoDate2: ISODate, years: number, months: number) {
   const yearMonth = ES.BalanceISOYearMonth(baseDate.year + years, baseDate.month + months);
   let y1 = yearMonth.year;
   let m1 = yearMonth.month;
   let d1 = baseDate.day;
-  if (weeks !== 0 || days !== 0) {
-    const regulatedDate = ES.RegulateISODate(y1, m1, d1, 'constrain');
-    ({
-      year: y1,
-      month: m1,
-      day: d1
-    } = ES.BalanceISODate(regulatedDate.year, regulatedDate.month, regulatedDate.day + 7 * weeks + days));
-  }
   if (y1 !== isoDate2.year) {
     if (sign * (y1 - isoDate2.year) > 0) return true;
   } else if (m1 !== isoDate2.month) {
@@ -231,14 +215,14 @@ impl['iso8601'] = {
       let candidateYears = two.year - one.year;
       if (candidateYears !== 0) candidateYears -= sign;
       // loops at most twice
-      while (!ISODateSurpasses(sign, one, two, candidateYears, 0, 0, 0)) {
+      while (!ISODateSurpasses(sign, one, two, candidateYears, 0)) {
         years = candidateYears;
         candidateYears += sign;
       }
 
       let candidateMonths = sign;
       // loops at most 12 times
-      while (!ISODateSurpasses(sign, one, two, years, candidateMonths, 0, 0)) {
+      while (!ISODateSurpasses(sign, one, two, years, candidateMonths)) {
         months = candidateMonths;
         candidateMonths += sign;
       }
