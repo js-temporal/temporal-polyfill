@@ -905,9 +905,6 @@ abstract class HelperBase {
       } else {
         year = eraYear + matchingEra.anchorEpoch.year - (matchingEra.hasYearZero ? 0 : 1);
       }
-      if (calendarDate.year !== undefined && calendarDate.year !== year) {
-        throw new RangeError(`Input year ${calendarDate.year} doesn't match calculated value ${year}`);
-      }
       // We'll accept dates where the month/day is earlier than the start of
       // the era or after its end as long as it's in the same year. If that
       // happens, we'll adjust the era/eraYear pair to be the correct era for
