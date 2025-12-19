@@ -1432,7 +1432,7 @@ class HebrewHelper extends HelperBase {
     const { month, year } = calendarDate;
     const monthCode = calendarDate.monthCode ?? this.getMonthCode(year, month);
     const daysInMonth = this.monthLengths[monthCode];
-    if (daysInMonth === undefined) throw new RangeError(`unmatched Hebrew month: ${month}`);
+    assert(daysInMonth !== undefined, `missing daysInMonth for Hebrew month ${monthCode}`);
     return typeof daysInMonth === 'number' ? daysInMonth : daysInMonth[minOrMax];
   }
   maxLengthOfMonthCodeInAnyYear(monthCode: string) {
