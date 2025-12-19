@@ -562,7 +562,8 @@ export function ParseTemporalTimeString(isoString: string) {
   if (match) {
     assertExists(match.groups); // https://github.com/microsoft/TypeScript/issues/32098
     calendar = processAnnotations(match.groups.annotation);
-    hour = +(match.groups.hourSep ?? match.groups.hourNoSep ?? 0);
+    hour = +(match.groups.hourSep ?? match.groups.hourNoSep);
+    assert(Number.isFinite(hour), `Hour must be present if string ${isoString} matched`);
     minute = +(match.groups.minuteSep ?? match.groups.minuteNoSep ?? 0);
     second = +(match.groups.secondSep ?? match.groups.secondNoSep ?? 0);
     if (second === 60) second = 59;
