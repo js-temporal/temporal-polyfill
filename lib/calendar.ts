@@ -2259,9 +2259,7 @@ abstract class ChineseBaseHelper extends HelperBase {
     return day < 30 ? years[0] : years[1];
   }
   getMonthList(calendarYear: number, cache: OneObjectCache): ChineseMonthInfo {
-    if (calendarYear === undefined) {
-      throw new TypeError('Missing year');
-    }
+    assert(calendarYear !== undefined, 'getMonthList called on undefined year');
     const key = OneObjectCache.generateMonthListKey(calendarYear);
     const cached = cache.get(key);
     if (cached) return cached;
