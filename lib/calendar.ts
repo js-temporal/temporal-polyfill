@@ -1883,18 +1883,12 @@ interface Era {
  * */
 function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
   let eras: (InputEra | Era)[] = erasParam;
-  if (eras.length === 0) {
-    throw new RangeError('Invalid era data: eras are required');
-  }
-  if (eras.length === 1 && eras[0].reverseOf) {
-    throw new RangeError('Invalid era data: anchor era cannot count years backwards');
-  }
-  if (eras.length === 1 && !eras[0].code) {
-    throw new RangeError('Invalid era data: at least one named era is required');
-  }
-  if (eras.filter((e) => e.reverseOf != null).length > 1) {
-    throw new RangeError('Invalid era data: only one era can count years backwards');
-  }
+  // It's an internal error if the eras data are malformed
+  assert(eras.length > 0, 'Invalid era data: eras are required');
+  assert(!(eras.length === 1 && eras[0].reverseOf), 'Invalid era data: anchor era cannot count years backwards');
+  assert(!(eras.length === 1 && !eras[0].code), 'Invalid era data: at least one named era is required');
+  const moreThanOneReverseOf = eras.filter((e) => e.reverseOf != null).length > 1;
+  assert(!moreThanOneReverseOf, 'Invalid era data: only one era can count years backwards');
 
   // Find the "anchor era" which is the era used for (era-less) `year`. Reversed
   // eras can never be anchors. The era without an `anchorEpoch` property is the
@@ -1902,11 +1896,11 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
   let anchorEra: Era | InputEra | undefined;
   eras.forEach((e) => {
     if (e.isAnchor || (!e.anchorEpoch && !e.reverseOf)) {
-      if (anchorEra) throw new RangeError('Invalid era data: cannot have multiple anchor eras');
+      assert(!anchorEra, 'Invalid era data: cannot have multiple anchor eras');
       anchorEra = e;
       e.anchorEpoch = { year: e.hasYearZero ? 0 : 1 };
-    } else if (!e.code) {
-      throw new RangeError('If era name is blank, it must be the anchor era');
+    } else {
+      assert(e.code !== '', 'Invalid era data: if era name is blank, it must be the anchor era');
     }
   });
 
@@ -1923,9 +1917,7 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
     const { reverseOf } = e;
     if (reverseOf) {
       const reversedEra = eras.find((era) => era.code === reverseOf);
-      if (reversedEra === undefined) {
-        throw new RangeError(`Invalid era data: unmatched reverseOf era: ${reverseOf}`);
-      }
+      assert(reversedEra !== undefined, `Invalid era data: unmatched reverseOf era: ${reverseOf}`);
       e.reverseOf = reversedEra as Era; // genericName property added later
       e.anchorEpoch = reversedEra.anchorEpoch;
       e.isoEpoch = reversedEra.isoEpoch;
@@ -1945,7 +1937,7 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
   eras.sort((e1, e2) => {
     if (e1.reverseOf) return 1;
     if (e2.reverseOf) return -1;
-    if (!e1.isoEpoch || !e2.isoEpoch) throw new RangeError('Invalid era data: missing ISO epoch');
+    assert(e1.isoEpoch !== undefined && e2.isoEpoch !== undefined, 'Invalid era data: missing ISO epoch');
     return e2.isoEpoch.year - e1.isoEpoch.year;
   });
 
@@ -1953,9 +1945,7 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
   // being reversed.
   const lastEraReversed = eras[eras.length - 1].reverseOf;
   if (lastEraReversed) {
-    if (lastEraReversed !== eras[eras.length - 2]) {
-      throw new RangeError('Invalid era data: invalid reverse-sign era');
-    }
+    assert(lastEraReversed === eras[eras.length - 2], 'Invalid era data: invalid reverse-sign era');
   }
 
   // Finally, add a "genericName" property in the format "era{n} where `n` is
