@@ -1732,7 +1732,7 @@ class IndianHelper extends HelperBase {
   getMonthInfo(calendarDate: CalendarYM) {
     const { month } = calendarDate;
     let monthInfo = this.months[month];
-    if (monthInfo === undefined) throw new RangeError(`Invalid month: ${month}`);
+    assert(monthInfo !== undefined, `getMonthInfo called on date with invalid month ${month}`);
     if (this.inLeapYear(calendarDate) && monthInfo.leap) monthInfo = monthInfo.leap;
     return monthInfo;
   }
@@ -2213,9 +2213,7 @@ abstract class ChineseBaseHelper extends HelperBase {
   override daysInMonth(calendarDate: CalendarYM, cache: OneObjectCache) {
     const { month, year } = calendarDate;
     const matchingMonthEntry = this.getMonthList(year, cache)[month];
-    if (matchingMonthEntry === undefined) {
-      throw new RangeError(`Invalid month ${month} in ${this.id} year ${year}`);
-    }
+    assert(matchingMonthEntry !== undefined, `Invalid month ${month} in ${this.id} year ${year}`);
     return matchingMonthEntry.daysInMonth;
   }
   override daysInPreviousMonth(calendarDate: CalendarYM, cache: OneObjectCache) {
