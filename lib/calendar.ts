@@ -1318,9 +1318,6 @@ abstract class HelperBase {
   startOfCalendarYear(calendarDate: CalendarYearOnly): CalendarYMD & { monthCode: string } {
     return { year: calendarDate.year, month: 1, monthCode: 'M01', day: 1 };
   }
-  startOfCalendarMonth(calendarDate: CalendarYM): CalendarYMD {
-    return { year: calendarDate.year, month: calendarDate.month, day: 1 };
-  }
   calendarDaysUntil(calendarOne: CalendarYMD, calendarTwo: CalendarYMD, cache: OneObjectCache): number {
     const oneIso = this.calendarToIsoDate(calendarOne, 'constrain', cache);
     const twoIso = this.calendarToIsoDate(calendarTwo, 'constrain', cache);
