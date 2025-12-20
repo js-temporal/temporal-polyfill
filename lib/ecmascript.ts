@@ -2996,7 +2996,7 @@ function InternalDurationSign(duration: InternalDuration) {
 export function BalanceISOYearMonth(yearParam: number, monthParam: number) {
   let year = yearParam;
   let month = monthParam;
-  if (!Number.isFinite(year) || !Number.isFinite(month)) throw new RangeError('infinity is out of range');
+  assert(Number.isFinite(year) && Number.isFinite(month), 'BalanceISOYearMonth: infinity is out of range');
   month -= 1;
   year += Math.floor(month / 12);
   month %= 12;
@@ -3009,7 +3009,7 @@ export function BalanceISODate(yearParam: number, monthParam: number, dayParam: 
   let year = yearParam;
   let month = monthParam;
   let day = dayParam;
-  if (!Number.isFinite(day)) throw new RangeError('infinity is out of range');
+  assert(Number.isFinite(day), 'BalanceISODate: infinity is out of range');
   ({ year, month } = BalanceISOYearMonth(year, month));
 
   // The pattern of leap years in the ISO 8601 calendar repeats every 400
