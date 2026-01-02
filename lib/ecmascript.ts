@@ -497,7 +497,13 @@ function ParseISODateTime(isoString: string) {
     Number.isFinite(month) && Number.isFinite(day),
     `Month and day must be present if string ${isoString} matched`
   );
-  const hasTime = match.groups.hourSep !== undefined || match.groups.hourNoSep !== undefined;
+  const hasTime = !!match.groups.hourSep || !!match.groups.hourNoSep;
+  const hasMinute = !!match.groups.minuteSep || !!match.groups.minuteNoSep;
+  const hasSecond = !!match.groups.secondSep || !!match.groups.secondNoSep;
+  const hasFraction = !!match.groups.fractionSep || !!match.groups.fractionNoSep;
+  if (hasFraction && (!hasSecond || (!hasMinute && hasTime))) {
+    throw new RangeError(`invalid RFC 9557 string: ${isoString}, only seconds may be fractional`);
+  }
   const hour = +(match.groups.hourSep ?? match.groups.hourNoSep ?? 0);
   const minute = +(match.groups.minuteSep ?? match.groups.minuteNoSep ?? 0);
   let second = +(match.groups.secondSep ?? match.groups.secondNoSep ?? 0);
@@ -559,6 +565,13 @@ export function ParseTemporalTimeString(isoString: string) {
   if (match) {
     assertExists(match.groups); // https://github.com/microsoft/TypeScript/issues/32098
     calendar = processAnnotations(match.groups.annotation);
+    const hasFraction = !!match.groups.fractionSep || !!match.groups.fractionNoSep;
+    const hasSecond = !!match.groups.secondSep || !!match.groups.secondNoSep;
+    const hasMinute = !!match.groups.minuteSep || !!match.groups.minuteNoSep;
+    const hasHour = !!match.groups.hourSep || !!match.groups.hourNoSep;
+    if (hasFraction && (!hasSecond || (!hasMinute && hasHour))) {
+      throw new RangeError(`invalid RFC 9557 string: ${isoString}, only seconds may be fractional`);
+    }
     hour = +(match.groups.hourSep ?? match.groups.hourNoSep);
     assert(Number.isFinite(hour), `Hour must be present if string ${isoString} matched`);
     minute = +(match.groups.minuteSep ?? match.groups.minuteNoSep ?? 0);
