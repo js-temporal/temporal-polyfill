@@ -22,13 +22,13 @@ export class PlainDateTime implements Temporal.PlainDateTime {
     const year = ES.ToIntegerWithTruncation(isoYear);
     const month = ES.ToIntegerWithTruncation(isoMonth);
     const day = ES.ToIntegerWithTruncation(isoDay);
-    const hour = hourParam === undefined ? 0 : ES.ToIntegerWithTruncation(hourParam);
-    const minute = minuteParam === undefined ? 0 : ES.ToIntegerWithTruncation(minuteParam);
-    const second = secondParam === undefined ? 0 : ES.ToIntegerWithTruncation(secondParam);
-    const millisecond = millisecondParam === undefined ? 0 : ES.ToIntegerWithTruncation(millisecondParam);
-    const microsecond = microsecondParam === undefined ? 0 : ES.ToIntegerWithTruncation(microsecondParam);
-    const nanosecond = nanosecondParam === undefined ? 0 : ES.ToIntegerWithTruncation(nanosecondParam);
-    const calendar = ES.CanonicalizeCalendar(calendarParam === undefined ? 'iso8601' : ES.RequireString(calendarParam));
+    const hour = ES.ToIntegerWithTruncation(hourParam);
+    const minute = ES.ToIntegerWithTruncation(minuteParam);
+    const second = ES.ToIntegerWithTruncation(secondParam);
+    const millisecond = ES.ToIntegerWithTruncation(millisecondParam);
+    const microsecond = ES.ToIntegerWithTruncation(microsecondParam);
+    const nanosecond = ES.ToIntegerWithTruncation(nanosecondParam);
+    const calendar = ES.CanonicalizeCalendar(ES.RequireString(calendarParam));
 
     ES.RejectDateTime(year, month, day, hour, minute, second, millisecond, microsecond, nanosecond);
 
