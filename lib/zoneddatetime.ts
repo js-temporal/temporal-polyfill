@@ -421,7 +421,7 @@ export class ZonedDateTime implements Temporal.ZonedDateTime {
         ? (ES.CreateOnePropObject('direction', directionParam) as Exclude<typeof directionParam, string>)
         : ES.GetOptionsObject(directionParam)
     );
-    if (direction === undefined) throw new TypeError('direction option is required');
+    assert(direction !== undefined, 'direction should have defaulted in GetDirectionOption');
 
     // Offset time zones or UTC have no transitions
     if (ES.IsOffsetTimeZoneIdentifier(timeZone) || timeZone === 'UTC') {
