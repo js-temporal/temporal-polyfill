@@ -34,7 +34,7 @@ export function FMAPowerOf10(xParam: number, p: number, zParam: number) {
   let z = zParam;
   if (x === 0) return z;
 
-  const sign = Math.sign(x) || Math.sign(z);
+  const sign = Math.sign(x);
   x = Math.abs(x);
   z = Math.abs(z);
 
