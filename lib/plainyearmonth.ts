@@ -18,7 +18,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
   ) {
     const year = ES.ToIntegerWithTruncation(isoYear);
     const month = ES.ToIntegerWithTruncation(isoMonth);
-    const calendar = ES.CanonicalizeCalendar(calendarParam === undefined ? 'iso8601' : ES.RequireString(calendarParam));
+    const calendar = ES.CanonicalizeCalendar(ES.RequireString(calendarParam));
     const day = ES.ToIntegerWithTruncation(referenceISODay);
 
     ES.RejectISODate(year, month, day);
