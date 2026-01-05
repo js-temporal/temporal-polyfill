@@ -325,10 +325,7 @@ function formatRange(this: DateTimeFormatImpl, aParam: Params['formatRange'][0],
   const b = toDateTimeFormattable(bParam);
   let formatArgs = [a, b] as const;
   let formatter;
-  if (isTemporalObject(a) !== isTemporalObject(b)) {
-    throw new TypeError('Intl.DateTimeFormat.formatRange accepts two values of the same type');
-  }
-  if (isTemporalObject(a)) {
+  if (isTemporalObject(a) || isTemporalObject(b)) {
     if (!sameTemporalType(a, b)) {
       throw new TypeError('Intl.DateTimeFormat.formatRange accepts two values of the same type');
     }
@@ -358,10 +355,7 @@ function formatRangeToParts(
   const b = toDateTimeFormattable(bParam);
   let formatArgs = [a, b] as const;
   let formatter;
-  if (isTemporalObject(a) !== isTemporalObject(b)) {
-    throw new TypeError('Intl.DateTimeFormat.formatRangeToParts accepts two values of the same type');
-  }
-  if (isTemporalObject(a)) {
+  if (isTemporalObject(a) || isTemporalObject(b)) {
     if (!sameTemporalType(a, b)) {
       throw new TypeError('Intl.DateTimeFormat.formatRangeToParts accepts two values of the same type');
     }
