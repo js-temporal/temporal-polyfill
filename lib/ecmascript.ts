@@ -845,7 +845,7 @@ export function ToTemporalPartialDurationRecord(temporalDurationLike: Temporal.D
 }
 
 export function AdjustDateDurationRecord(
-  { years, months, weeks, days }: DateDuration,
+  { years, months, weeks }: DateDuration,
   newDays: number,
   newWeeks?: number,
   newMonths?: number
@@ -854,7 +854,7 @@ export function AdjustDateDurationRecord(
     years,
     months: newMonths ?? months,
     weeks: newWeeks ?? weeks,
-    days: newDays ?? days
+    days: newDays
   };
 }
 
