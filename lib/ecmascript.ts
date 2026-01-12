@@ -212,10 +212,7 @@ export function ToIntegerWithTruncation(value: unknown): number {
 function ToPositiveIntegerWithTruncation(valueParam: unknown, property?: string): number {
   const integer = ToIntegerWithTruncation(valueParam);
   if (integer <= 0) {
-    if (property !== undefined) {
-      throw new RangeError(`property '${property}' cannot be a a number less than one`);
-    }
-    throw new RangeError('Cannot convert a number less than one to a positive integer');
+    throw new RangeError(`property '${property}' cannot be a a number less than one`);
   }
   return integer;
 }
@@ -282,9 +279,9 @@ const BUILTIN_CASTS: Partial<Record<FieldKey, BuiltinCastFunction>> = {
   era: ToString,
   eraYear: ToIntegerWithTruncation,
   year: ToIntegerWithTruncation,
-  month: ToPositiveIntegerWithTruncation,
+  month: (value) => ToPositiveIntegerWithTruncation(value, 'month'),
   monthCode: ToMonthCode,
-  day: ToPositiveIntegerWithTruncation,
+  day: (value) => ToPositiveIntegerWithTruncation(value, 'day'),
   hour: ToIntegerWithTruncation,
   minute: ToIntegerWithTruncation,
   second: ToIntegerWithTruncation,
