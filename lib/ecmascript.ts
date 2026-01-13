@@ -2948,7 +2948,6 @@ function GetNamedTimeZoneEpochNanoseconds(id: string, isoDateTime: ISODateTime) 
 }
 
 export function LeapYear(year: number) {
-  if (undefined === year) return false;
   const isDiv4 = year % 4 === 0;
   const isDiv100 = year % 100 === 0;
   const isDiv400 = year % 400 === 0;
