@@ -2353,7 +2353,10 @@ abstract class ChineseBaseHelper extends HelperBase {
     fromLegacyDate = false
   ): FullCalendarDate {
     let { year, month, monthExtra, day, monthCode } = calendarDate;
-    if (year === undefined) throw new TypeError('Missing property: year');
+    assert(
+      year !== undefined,
+      `adjustCalendarDate called on date ${JSON.stringify(calendarDate)} with undefined year property`
+    );
     if (fromLegacyDate) {
       // Legacy Date output returns a string that's an integer with an optional
       // "bis" suffix used only by the Chinese/Dangi calendar to indicate a leap
@@ -2362,9 +2365,7 @@ abstract class ChineseBaseHelper extends HelperBase {
       const monthCode = CreateMonthCode(month as number, monthExtra !== undefined);
       const months = this.getMonthList(year, cache);
       month = months[monthCode];
-      if (month === undefined) {
-        throw new RangeError(`Unmatched month ${month}${monthExtra || ''} in ${this.id} year ${year}`);
-      }
+      assert(month !== undefined, `Unmatched month ${month}${monthExtra || ''} in ${this.id} year ${year}`);
       return { year, month, day: day as number, monthCode };
     } else {
       // When called without input coming from legacy Date output,
@@ -2396,14 +2397,12 @@ abstract class ChineseBaseHelper extends HelperBase {
           day = ES.ConstrainToRange(day, 1, this.maximumMonthLength());
         }
         monthCode = months[month].monthCode;
-        if (monthCode === undefined) {
-          throw new RangeError(`Invalid month ${month} in ${this.id} year ${year}`);
-        }
+        assert(monthCode !== undefined, `Invalid month ${month} in ${this.id} year ${year}`);
       } else {
         // Both month and monthCode are present. Make sure they don't conflict.
         const months = this.getMonthList(year, cache);
         const monthIndex = months[monthCode];
-        if (!monthIndex) throw new RangeError(`Unmatched monthCode ${monthCode} in ${this.id} year ${year}`);
+        assert(monthIndex !== undefined, `Unmatched monthCode ${monthCode} in ${this.id} year ${year}`);
         if (month !== monthIndex) {
           throw new RangeError(
             `monthCode ${monthCode} doesn't correspond to month ${month} in ${this.id} year ${year}`
