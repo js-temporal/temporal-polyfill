@@ -1182,10 +1182,8 @@ abstract class HelperBase {
       case 'year': {
         // Sign is -1 if calendarTwo < calendarOne, 1 if calendarTwo > calendarOne
         const sign = this.compareCalendarDates(calendarTwo, calendarOne);
-        // If dates are equal, return 0 date duration
-        if (!sign) {
-          return { years: 0, months: 0, weeks: 0, days: 0 };
-        }
+        // If dates were equal, this would have been checked in CalendarDateUntil
+        assert(sign !== 0, 'equal dates should have been checked earlier');
         // Take the difference between the years of the two dates
         const diffYears = calendarTwo.year - calendarOne.year;
         // Take the difference between the days of the two dates

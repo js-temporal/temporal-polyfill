@@ -2037,6 +2037,9 @@ function CalendarDateUntil(
   isoOtherDate: ISODate,
   largestUnit: Temporal.DateUnit
 ) {
+  if (CompareISODate(isoDate, isoOtherDate) === 0) {
+    return { years: 0, months: 0, weeks: 0, days: 0 };
+  }
   return calendarImplForID(calendar).dateUntil(isoDate, isoOtherDate, largestUnit);
 }
 
