@@ -199,7 +199,7 @@ impl['iso8601'] = {
   },
   dateUntil(one, two, largestUnit) {
     const sign = -ES.CompareISODate(one, two);
-    if (sign === 0) return { years: 0, months: 0, weeks: 0, days: 0 };
+    assert(sign !== 0, 'this case was checked in CalendarDateUntil');
     ES.uncheckedAssertNarrowedType<-1 | 1>(sign, "the - operator's return type is number");
 
     let years = 0;
