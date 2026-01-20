@@ -649,7 +649,8 @@ abstract class HelperBase {
     code: '',
     genericName: '',
     anchorEpoch: { year: 0, month: 1, day: 1 },
-    isoEpoch: { year: 0, month: 1, day: 1 }
+    isoEpoch: { year: 0, month: 1, day: 1 },
+    startingYear: 1
   };
   checkIcuBugs?(isoDate: ISODate): void;
   private formatter?: globalThis.Intl.DateTimeFormat;
@@ -858,14 +859,14 @@ abstract class HelperBase {
         }
         // last era always gets all "leftover" (older than epoch) years,
         // so no need for a comparison like below.
-        eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
+        eraYear = year - e.anchorEpoch.year + e.startingYear;
         return true;
       }
       // FIXME: This cast may not be correct. I think month and day are always
       // present when we get here, but the type system does not prove it
       const comparison = this.compareCalendarDates(calendarDate as CalendarYMD, e.anchorEpoch);
       if (comparison >= 0) {
-        eraYear = year - e.anchorEpoch.year + (e.hasYearZero ? 0 : 1);
+        eraYear = year - e.anchorEpoch.year + e.startingYear;
         return true;
       }
       return false;
@@ -898,7 +899,7 @@ abstract class HelperBase {
       if (matchingEra.reverseOf) {
         year = matchingEra.anchorEpoch.year - eraYear;
       } else {
-        year = eraYear + matchingEra.anchorEpoch.year - (matchingEra.hasYearZero ? 0 : 1);
+        year = eraYear + matchingEra.anchorEpoch.year - matchingEra.startingYear;
       }
       // We'll accept dates where the month/day is earlier than the start of
       // the era or after its end as long as it's in the same year. If that
@@ -1795,10 +1796,10 @@ interface InputEra {
   reverseOf?: string;
 
   /**
-   * If true, the era's years are 0-based. If omitted or false,
-   * then the era's years are 1-based.
-   * */
-  hasYearZero?: boolean;
+   * Number of the era's starting year (for example, 0 if there's a Year 0).
+   * If omitted, the era's years are 1-based.
+   */
+  startingYear?: number;
 
   /**
    * Override if this era is the anchor. Not normally used because
@@ -1850,10 +1851,10 @@ interface Era {
   reverseOf?: Era;
 
   /**
-   * If true, the era's years are 0-based. If omitted or false,
-   * then the era's years are 1-based.
-   * */
-  hasYearZero?: boolean;
+   * Number of the era's starting year (for example, 0 if there's a Year 0).
+   * If omitted, the era's years are 1-based.
+   */
+  startingYear: number;
 
   /**
    * Override if this era is the anchor. Not normally used because
@@ -1888,10 +1889,11 @@ function adjustEras(erasParam: InputEra[]): { eras: Era[]; anchorEra: Era } {
   // anchor.
   let anchorEra: Era | InputEra | undefined;
   eras.forEach((e) => {
+    e.startingYear ??= 1;
     if (e.isAnchor || (!e.anchorEpoch && !e.reverseOf)) {
       assert(!anchorEra, 'Invalid era data: cannot have multiple anchor eras');
       anchorEra = e;
-      e.anchorEpoch = { year: e.hasYearZero ? 0 : 1 };
+      e.anchorEpoch = { year: e.startingYear };
     } else {
       assert(e.code !== '', 'Invalid era data: if era name is blank, it must be the anchor era');
     }
@@ -1990,7 +1992,7 @@ abstract class GregorianBaseHelper extends HelperBase {
     const calendarDate = this.adjustCalendarDate(calendarDateParam);
     const { year, month, day } = calendarDate;
     const { anchorEra } = this;
-    const isoYearEstimate = year + anchorEra.isoEpoch.year - (anchorEra.hasYearZero ? 0 : 1);
+    const isoYearEstimate = year + anchorEra.isoEpoch.year - anchorEra.startingYear;
     return ES.RegulateISODate(isoYearEstimate, month, day, 'constrain');
   }
 }
@@ -2127,7 +2129,7 @@ class GregoryHelper extends SameMonthDayAsGregorianBaseHelper {
 }
 
 // NOTE: Only the 5 modern eras (Meiji and later) are included. For dates
-// before Meiji 1, the `ce` and `bce` eras are used. Challenges with pre-Meiji
+// before Meiji 6, the `ce` and `bce` eras are used. Challenges with pre-Meiji
 // eras include:
 // - Start/end dates of older eras are not precisely defined, which is
 //   challenging given Temporal's need for precision
@@ -2135,10 +2137,10 @@ class GregoryHelper extends SameMonthDayAsGregorianBaseHelper {
 // - As historical research proceeds, new eras are discovered and existing era
 //   dates are modified, leading to considerable churn which is not good for
 //   Temporal use.
-//  - The earliest era (in 645 CE) may not end up being the earliest depending
-//    on future historical scholarship
-//  - Before Meiji, Japan used a lunar (or lunisolar?) calendar but AFAIK
-//    that's not reflected in the ICU implementation.
+// - The earliest era (in 645 CE) may not end up being the earliest depending
+//   on future historical scholarship
+// - Before Meiji, Japan used a lunisolar calendar but that's not reflected in
+//   the ICU implementation.
 //
 // For more discussion: https://github.com/tc39/proposal-temporal/issues/526.
 //
@@ -2148,13 +2150,8 @@ class GregoryHelper extends SameMonthDayAsGregorianBaseHelper {
 //
 // NOTE: Japan started using the Gregorian calendar in 6 Meiji, replacing a
 // lunisolar calendar. So the day before January 1 of 6 Meiji (1873) was not
-// December 31, but December 2, of 5 Meiji (1872). The existing Ecma-402
-// Japanese calendar doesn't seem to take this into account, so neither do we:
-// > args = ['en-ca-u-ca-japanese', { era: 'short' }]
-// > new Date('1873-01-01T12:00').toLocaleString(...args)
-// '1 1, 6 Meiji, 12:00:00 PM'
-// > new Date('1872-12-31T12:00').toLocaleString(...args)
-// '12 31, 5 Meiji, 12:00:00 PM'
+// December 31, but M12-02, of 5 Meiji (1872). To avoid confusion between
+// lunisolar and solar dates we count years prior to 1872 as CE.
 class JapaneseHelper extends SameMonthDayAsGregorianBaseHelper {
   constructor() {
     super('japanese', [
@@ -2164,7 +2161,7 @@ class JapaneseHelper extends SameMonthDayAsGregorianBaseHelper {
       { code: 'heisei', isoEpoch: { year: 1989, month: 1, day: 8 }, anchorEpoch: { year: 1989, month: 1, day: 8 } },
       { code: 'showa', isoEpoch: { year: 1926, month: 12, day: 25 }, anchorEpoch: { year: 1926, month: 12, day: 25 } },
       { code: 'taisho', isoEpoch: { year: 1912, month: 7, day: 30 }, anchorEpoch: { year: 1912, month: 7, day: 30 } },
-      { code: 'meiji', isoEpoch: { year: 1868, month: 10, day: 23 }, anchorEpoch: { year: 1868, month: 10, day: 23 } },
+      { code: 'meiji', isoEpoch: { year: 1873, month: 1, day: 1 }, anchorEpoch: { year: 1873 }, startingYear: 6 },
       { code: 'ce', isoEpoch: { year: 1, month: 1, day: 1 } },
       { code: 'bce', reverseOf: 'ce' }
     ]);
