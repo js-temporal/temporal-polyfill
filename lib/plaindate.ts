@@ -2,7 +2,7 @@ import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import { CALENDAR, GetSlot, ISO_DATE, TIME } from './slots';
 import type { Temporal } from '..';
-import { DateTimeFormat } from './intl';
+import { CreateDateTimeFormat } from './intl';
 import type { CalendarDateRecord, PlainDateParams as Params, PlainDateReturn as Return } from './internaltypes';
 
 export class PlainDate implements Temporal.PlainDate {
@@ -139,7 +139,7 @@ export class PlainDate implements Temporal.PlainDate {
     options: Params['toLocaleString'][1] = undefined
   ): string {
     ES.CheckReceiver(this, ES.IsTemporalDate);
-    return new DateTimeFormat(locales, options).format(this);
+    return CreateDateTimeFormat(locales, options, 'date').format(this);
   }
   valueOf(): never {
     ES.ValueOfThrows('PlainDate');

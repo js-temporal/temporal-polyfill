@@ -3,7 +3,7 @@ import { MakeIntrinsicClass } from './intrinsicclass';
 
 import { GetSlot, TIME } from './slots';
 import type { Temporal } from '..';
-import { DateTimeFormat } from './intl';
+import { CreateDateTimeFormat } from './intl';
 import type { PlainTimeParams as Params, PlainTimeReturn as Return } from './internaltypes';
 
 export class PlainTime implements Temporal.PlainTime {
@@ -136,7 +136,7 @@ export class PlainTime implements Temporal.PlainTime {
     options: Params['toLocaleString'][1] = undefined
   ): string {
     ES.CheckReceiver(this, ES.IsTemporalTime);
-    return new DateTimeFormat(locales, options).format(this);
+    return CreateDateTimeFormat(locales, options, 'time').format(this);
   }
   valueOf(): never {
     ES.ValueOfThrows('PlainTime');

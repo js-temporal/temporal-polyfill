@@ -2,7 +2,7 @@ import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import { CALENDAR, GetSlot, ISO_DATE } from './slots';
 import type { Temporal } from '..';
-import { DateTimeFormat } from './intl';
+import { CreateDateTimeFormat } from './intl';
 import type { CalendarDateRecord, PlainMonthDayParams as Params, PlainMonthDayReturn as Return } from './internaltypes';
 
 export class PlainMonthDay implements Temporal.PlainMonthDay {
@@ -75,7 +75,7 @@ export class PlainMonthDay implements Temporal.PlainMonthDay {
     options: Params['toLocaleString'][1] = undefined
   ): string {
     ES.CheckReceiver(this, ES.IsTemporalMonthDay);
-    return new DateTimeFormat(locales, options).format(this);
+    return CreateDateTimeFormat(locales, options, 'date').format(this);
   }
   valueOf(): never {
     ES.ValueOfThrows('PlainMonthDay');

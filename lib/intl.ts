@@ -62,10 +62,11 @@ function getSlotLazy(obj: DateTimeFormatImpl, slot: LazySlot) {
   return val;
 }
 
-function createDateTimeFormat(
+function internalCreateDateTimeFormat(
   dtf: DateTimeFormatImpl,
   locale: Params['constructor'][0],
-  optionsParam: Params['constructor'][1]
+  optionsParam: Params['constructor'][1],
+  required: 'date' | 'time' | 'any'
 ) {
   const hasOptions = typeof optionsParam !== 'undefined';
   let options: Intl.DateTimeFormatOptions;
@@ -167,10 +168,35 @@ function createDateTimeFormat(
   SetSlot(dtf, ORIGINAL, original);
   SetSlot(dtf, TZ_CANONICAL, ro.timeZone);
   SetSlot(dtf, CAL_ID, ro.calendar);
-  SetSlot(dtf, DATE, dateAmend);
-  SetSlot(dtf, YM, yearMonthAmend);
-  SetSlot(dtf, MD, monthDayAmend);
-  SetSlot(dtf, TIME_FMT, timeAmend);
+
+  if (options.dateStyle !== undefined || options.timeStyle !== undefined) {
+    if (options.dateStyle !== undefined) {
+      if (required === 'time') {
+        throw new TypeError('toLocaleString of Temporal.PlainTime does not support dateStyle option');
+      }
+      SetSlot(dtf, DATE, dateAmend);
+      SetSlot(dtf, YM, yearMonthAmend);
+      SetSlot(dtf, MD, monthDayAmend);
+    } else {
+      SetSlot(dtf, DATE, null);
+      SetSlot(dtf, YM, null);
+      SetSlot(dtf, MD, null);
+    }
+    if (options.timeStyle !== undefined) {
+      if (required === 'date') {
+        throw new TypeError('toLocaleString of a Temporal date type does not support timeStyle option');
+      }
+      SetSlot(dtf, TIME_FMT, timeAmend);
+    } else {
+      SetSlot(dtf, TIME_FMT, null);
+    }
+  } else {
+    SetSlot(dtf, DATE, dateAmend);
+    SetSlot(dtf, YM, yearMonthAmend);
+    SetSlot(dtf, MD, monthDayAmend);
+    SetSlot(dtf, TIME_FMT, timeAmend);
+  }
+
   SetSlot(dtf, DATETIME, datetimeAmend);
   SetSlot(dtf, INST, instantAmend);
 
@@ -201,7 +227,7 @@ function IsPatchedDateTimeFormat(item: unknown): item is DateTimeFormatImpl {
 
 class DateTimeFormatImpl {
   constructor(locales: Params['constructor'][0] = undefined, options: Params['constructor'][1] = undefined) {
-    createDateTimeFormat(this, locales, options);
+    internalCreateDateTimeFormat(this, locales, options, 'any');
   }
 
   get format() {
@@ -274,6 +300,21 @@ Object.defineProperty(DateTimeFormat, 'prototype', {
 });
 DateTimeFormat.supportedLocalesOf = OriginalIntlDateTimeFormat.supportedLocalesOf;
 MakeIntrinsicClass(DateTimeFormat as unknown as typeof Intl.DateTimeFormat, 'Intl.DateTimeFormat');
+
+// This corresponds to the spec operation CreateDateTimeFormat in that it
+// creates a new instance and does all the required initialization on it.
+// However, most of the spec operation is in internalCreateDateTimeFormat() so
+// that we can call it in the DateTimeFormat constructor, where we already have
+// the uninitialized instance.
+export function CreateDateTimeFormat(
+  locales: Params['constructor'][0],
+  options: Params['constructor'][1],
+  required: 'date' | 'time' | 'any'
+) {
+  const instance = Object.create(DateTimeFormat.prototype);
+  internalCreateDateTimeFormat(instance, locales, options, required);
+  return instance;
+}
 
 function resolvedOptions(this: DateTimeFormatImpl): Return['resolvedOptions'] {
   const resolved = GetSlot(this, ORIGINAL).resolvedOptions();
@@ -645,9 +686,11 @@ function extractOverrides(temporalObj: number | Date | TypesWithToLocaleString |
       isoDate: { year: 1970, month: 1, day: 1 },
       time: GetSlot(temporalObj, TIME)
     };
+    const formatter = getSlotLazy(main, TIME_FMT);
+    if (!formatter) throw new TypeError('cannot format PlainTime with only date options');
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
-      formatter: getSlotLazy(main, TIME_FMT)
+      formatter
     };
   }
 
@@ -660,9 +703,11 @@ function extractOverrides(temporalObj: number | Date | TypesWithToLocaleString |
       );
     }
     const isoDateTime = ES.CombineISODateAndTimeRecord(GetSlot(temporalObj, ISO_DATE), ES.NoonTimeRecord());
+    const formatter = getSlotLazy(main, YM);
+    if (!formatter) throw new TypeError('cannot format PlainYearMonth with only time options');
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
-      formatter: getSlotLazy(main, YM)
+      formatter
     };
   }
 
@@ -675,9 +720,11 @@ function extractOverrides(temporalObj: number | Date | TypesWithToLocaleString |
       );
     }
     const isoDateTime = ES.CombineISODateAndTimeRecord(GetSlot(temporalObj, ISO_DATE), ES.NoonTimeRecord());
+    const formatter = getSlotLazy(main, MD);
+    if (!formatter) throw new TypeError('cannot format PlainMonthDay with only time options');
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
-      formatter: getSlotLazy(main, MD)
+      formatter
     };
   }
 
@@ -688,9 +735,11 @@ function extractOverrides(temporalObj: number | Date | TypesWithToLocaleString |
       throw new RangeError(`cannot format PlainDate with calendar ${calendar} in locale with calendar ${mainCalendar}`);
     }
     const isoDateTime = ES.CombineISODateAndTimeRecord(GetSlot(temporalObj, ISO_DATE), ES.NoonTimeRecord());
+    const formatter = getSlotLazy(main, DATE);
+    if (!formatter) throw new TypeError('cannot format PlainDate with only time options');
     return {
       epochNs: ES.GetEpochNanosecondsFor(GetSlot(main, TZ_CANONICAL), isoDateTime, 'compatible'),
-      formatter: getSlotLazy(main, DATE)
+      formatter
     };
   }
 
