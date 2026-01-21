@@ -2,7 +2,7 @@ import * as ES from './ecmascript';
 import { MakeIntrinsicClass } from './intrinsicclass';
 import { CALENDAR, GetSlot, ISO_DATE } from './slots';
 import type { Temporal } from '..';
-import { DateTimeFormat } from './intl';
+import { CreateDateTimeFormat } from './intl';
 import type {
   CalendarDateRecord,
   PlainYearMonthParams as Params,
@@ -117,7 +117,7 @@ export class PlainYearMonth implements Temporal.PlainYearMonth {
     options: Params['toLocaleString'][1] = undefined
   ): string {
     ES.CheckReceiver(this, ES.IsTemporalYearMonth);
-    return new DateTimeFormat(locales, options).format(this);
+    return CreateDateTimeFormat(locales, options, 'date').format(this);
   }
   valueOf(): never {
     ES.ValueOfThrows('PlainYearMonth');

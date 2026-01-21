@@ -92,10 +92,10 @@ interface Slots extends SlotInfoRecord {
   [NANOSECONDS]: SlotInfo<number, Temporal.Duration>;
 
   // DateTimeFormatImpl
-  [DATE]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
-  [YM]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
-  [MD]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
-  [TIME_FMT]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
+  [DATE]: SlotInfo<FormatterOrAmender | null, DateTimeFormatImpl>;
+  [YM]: SlotInfo<FormatterOrAmender | null, DateTimeFormatImpl>;
+  [MD]: SlotInfo<FormatterOrAmender | null, DateTimeFormatImpl>;
+  [TIME_FMT]: SlotInfo<FormatterOrAmender | null, DateTimeFormatImpl>;
   [DATETIME]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
   [INST]: SlotInfo<FormatterOrAmender, DateTimeFormatImpl>;
   [ORIGINAL]: SlotInfo<globalThis.Intl.DateTimeFormat, DateTimeFormatImpl>;
