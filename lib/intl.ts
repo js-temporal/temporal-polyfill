@@ -645,7 +645,7 @@ type TypesWithToLocaleString =
   | Temporal.ZonedDateTime
   | Temporal.Instant;
 
-function extractOverrides(temporalObj: Params['format'][0], main: DateTimeFormatImpl) {
+function extractOverrides(temporalObj: number | Date | TypesWithToLocaleString | undefined, main: DateTimeFormatImpl) {
   if (ES.IsTemporalTime(temporalObj)) {
     const isoDateTime = {
       isoDate: { year: 1970, month: 1, day: 1 },
