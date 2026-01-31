@@ -41,14 +41,7 @@ If you've found a bug in this polyfill&mdash;meaning that the implementation her
 
 ## Documentation
 
-Reference documentation and examples for the Temporal API can be found [here](https://tc39.es/proposal-temporal/docs/index.html).
-
-A cookbook to help you get started and learn the ins and outs of Temporal is available [here](https://tc39.es/proposal-temporal/docs/index.html)
-
-If you find a bug in the documentation, please file a bug over in the [tc39/proposal-temporal issue tracker](https://github.com/tc39/proposal-temporal/issues) issue tracker.
-
-Note that the Temporal documentation is in the process of being migrated to [MDN](https://developer.mozilla.org/en-US/docs/Web/JavaScript).
-You can track the progress of the MDN migration [here](https://github.com/tc39/proposal-temporal/issues/1449).
+Please visit the API documentation on [**MDN**](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal), the main API reference going forward.
 
 ## Usage
 
