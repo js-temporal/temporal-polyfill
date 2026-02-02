@@ -43,6 +43,8 @@ If you've found a bug in this polyfill&mdash;meaning that the implementation her
 
 Please visit the API documentation on [**MDN**](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Temporal), the main API reference going forward.
 
+For developers new to Temporal, there is a [**cookbook**](https://tc39.es/proposal-temporal/docs/index.html) with recipes for how to do common tasks using Temporal.
+
 ## Usage
 
 To install:
