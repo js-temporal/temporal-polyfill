@@ -1934,8 +1934,13 @@ class CopticHelper extends OrthodoxBaseHelper {
 class EthiopicHelper extends OrthodoxBaseHelper {
   constructor() {
     super('ethiopic', [
-      { code: 'ethioaa', names: ['ethiopic-amete-alem', 'mundi'], isoEpoch: { year: -5492, month: 7, day: 17 } },
-      { code: 'ethiopic', names: ['incar'], isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
+      { code: 'ethioaa', names: ['ethiopic-amete-alem', 'mundi', 'aa'], isoEpoch: { year: -5492, month: 7, day: 17 } },
+      {
+        code: 'ethiopic',
+        names: ['incar', 'am'],
+        isoEpoch: { year: 8, month: 8, day: 27 },
+        anchorEpoch: { year: 5501 }
+      }
     ]);
   }
 }
