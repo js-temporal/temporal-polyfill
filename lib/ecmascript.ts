@@ -35,6 +35,7 @@ import type {
 import { GetIntrinsic } from './intrinsicclass';
 import { ApplyUnsignedRoundingMode, FMAPowerOf10, GetUnsignedRoundingMode, TruncatingDivModByPowerOf10 } from './math';
 import { CreateMonthCode, ParseMonthCode } from './monthcode';
+import { ToPrimitiveRequireString } from './primitive';
 import { TimeDuration } from './timeduration';
 import {
   CreateSlots,
@@ -254,20 +255,8 @@ function ToMonthCode(value: unknown) {
 }
 
 function ToOffsetString(valueParam: unknown) {
-  const value = RequireString(ToPrimitive(valueParam, String));
+  const value = ToPrimitiveRequireString(valueParam);
   ParseDateTimeUTCOffset(value);
-  return value;
-}
-
-// Limited implementation of ToPrimitive that only handles the string case,
-// because that's all that's used in this polyfill.
-function ToPrimitive(value: unknown, preferredType: typeof String): string | number {
-  assertExists(preferredType === String);
-  if (IsObject(value)) {
-    const result = value?.toString();
-    if (typeof result === 'string' || typeof result === 'number') return result;
-    throw new TypeError('Cannot convert object to primitive value');
-  }
   return value;
 }
 
@@ -1510,7 +1499,7 @@ export function ToTemporalInstant(itemParam: InstantParams['from'][0]) {
     if (IsTemporalInstant(itemParam) || IsTemporalZonedDateTime(itemParam)) {
       return CreateTemporalInstant(GetSlot(itemParam, EPOCHNANOSECONDS));
     }
-    item = ToPrimitive(itemParam, String);
+    item = ToPrimitiveRequireString(itemParam);
   } else {
     item = itemParam;
   }
