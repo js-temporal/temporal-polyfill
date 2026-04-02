@@ -6,7 +6,7 @@
     "lib": ["ES2021"],
     "types": ["node"],
     "module": "NodeNext",
-    "moduleResolution": "node",
+    "moduleResolution": "NodeNext",
     "allowSyntheticDefaultImports": true,
     "target": "es2021"
   }
