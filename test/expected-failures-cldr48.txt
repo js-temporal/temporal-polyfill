@@ -1,0 +1,30 @@
+# Tests in this file are expected to fail for Node 20 LTS, Node 22 LTS, and
+# Node 24 LTS.
+
+# CLDR 48 introduced "Mo1" through "Mo12" English month names in the Chinese
+# calendar, which the polyfill won't handle until a later rebase.
+intl402/Temporal/PlainDate/from/calendar-not-supporting-eras.js
+intl402/Temporal/PlainDate/prototype/until/until-across-lunisolar-leap-months.js
+intl402/Temporal/PlainDateTime/from/calendar-not-supporting-eras.js
+intl402/Temporal/PlainMonthDay/from/calendar-not-supporting-eras.js
+intl402/Temporal/PlainMonthDay/from/constrain-to-leap-day.js
+intl402/Temporal/PlainYearMonth/from/calendar-not-supporting-eras.js
+intl402/Temporal/PlainYearMonth/from/reference-day-chinese.js
+intl402/Temporal/ZonedDateTime/from/calendar-not-supporting-eras.js
+staging/Intl402/Temporal/old/addition-across-lunisolar-leap-months-chinese.js
+staging/Intl402/Temporal/old/non-iso-calendars-chinese.js
+staging/Intl402/Temporal/old/non-iso-calendars-dangi.js
+staging/sm/Temporal/PlainMonthDay/from-chinese-leap-month-common.js
+staging/sm/Temporal/PlainMonthDay/from-chinese.js
+
+# CLDR 48 provides new era code, which the polyfill won't handle until a later
+# rebase.
+staging/sm/Temporal/PlainDate/withCalendar.js
+
+# Tests incorrect, expecting old era codes
+staging/Intl402/Temporal/old/non-iso-calendars-coptic.js
+staging/Intl402/Temporal/old/non-iso-calendars-ethioaa.js
+staging/Intl402/Temporal/old/non-iso-calendars-indian.js
+
+# Needs further investigation if a later rebase doesn't fix:
+staging/sm/Temporal/PlainDate/non-positive-era-year.js
