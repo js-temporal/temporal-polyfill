@@ -1,4 +1,4 @@
-import { assert } from './assert';
+import { assert, assertNotReached } from './assert';
 import * as ES from './ecmascript';
 import { DefineIntrinsic } from './intrinsicclass';
 import type { Temporal } from '..';
@@ -730,7 +730,9 @@ abstract class HelperBase {
         }
       }
       if (type === 'month') {
-        const matches = /^([0-9]*)(.*?)$/.exec(value);
+        // Newer ICU data has some formats with "Mo11" / "Mo9bis" for Chinese
+        // and Dangi months
+        const matches = /^(?:Mo)?([0-9]*)(.*?)$/.exec(value);
         if (!matches || matches.length != 3 || (!matches[1] && !matches[2])) {
           throw new RangeError(`Unexpected month: ${value}`);
         }
@@ -776,6 +778,17 @@ abstract class HelperBase {
           .replace(/ /g, '-')
           .toLowerCase();
       }
+    }
+    if (hasEra && !result.era) {
+      // Work around ICU bug that neglects to provide an era code for negative
+      // eraYear in the coptic calendar
+      if (this.id !== 'coptic') {
+        // If missing from any other calendar, it's an as-yet-unknown bug
+        throw new RangeError(`Intl.DateTimeFormat.formatToParts lacks era in ${this.id} calendar.`);
+      }
+      // eraYear is also reversed, but using the legacy era code will set it
+      // right
+      result.era = 'era0';
     }
     if (hasEra && result.eraYear === undefined) {
       // Node 12 has outdated ICU data that lacks the `relatedYear` field in the
@@ -1133,7 +1146,7 @@ abstract class HelperBase {
     if (overflow === 'reject' && calendarDate.day !== day) {
       throw new RangeError(`Day ${day} does not exist in resulting calendar month`);
     }
-    return calendarDate;
+    return this.regulateDate(calendarDate, overflow, cache);
   }
   addCalendar(
     calendarDate: CalendarYMD & { monthCode: string },
@@ -1151,7 +1164,7 @@ abstract class HelperBase {
       years += cycleCount * cycleInfo.years;
       months %= cycleInfo.months;
     }
-    const addedYears = this.adjustCalendarDate({ year: year + years, monthCode, day }, cache);
+    const addedYears = this.adjustCalendarDate({ year: year + years, monthCode, day }, cache, overflow);
     const addedMonths = this.addMonthsCalendar(addedYears, months, overflow, cache);
     const initialDays = days + weeks * 7;
     const addedDays = this.addDaysCalendar(addedMonths, initialDays, cache);
@@ -1179,21 +1192,40 @@ abstract class HelperBase {
       }
       case 'month':
       case 'year': {
+        // Sign is -1 if calendarTwo < calendarOne, 1 if calendarTwo > calendarOne
         const sign = this.compareCalendarDates(calendarTwo, calendarOne);
+        // If dates are equal, return 0 date duration
         if (!sign) {
           return { years: 0, months: 0, weeks: 0, days: 0 };
         }
+        // Take the difference between the years of the two dates
         const diffYears = calendarTwo.year - calendarOne.year;
+        // Take the difference between the days of the two dates
         const diffDays = calendarTwo.day - calendarOne.day;
+        // Get list of additional months, and possibly cycle info
         const monthInfo = monthCodeInfo[this.id];
         const cycleInfo = monthInfo ? monthInfo.cycleInfo : { years: 1, months: 12 };
+        // Compute years difference if necessary
         if (diffYears && (largestUnit === 'year' || cycleInfo)) {
+          // diffInYearSign is the result of comparing the month-day of calendarOne
+          // and the month-day of calendarTwo, in the forwards direction
           let diffInYearSign = 0;
+          // If calendarTwo's month is greater than calendarOne's month,
+          // then the years difference should be positive (or negative if sign < 0).
           if (calendarTwo.monthCode > calendarOne.monthCode) diffInYearSign = 1;
+          // If calendarTwo's month is less than calendarOne's month,
+          // then the years difference should be negative (or positive if sign < 0).
           if (calendarTwo.monthCode < calendarOne.monthCode) diffInYearSign = -1;
+          // If the two months are equal, the sign of the years difference should be
+          // the sign of the days difference.
           if (!diffInYearSign) diffInYearSign = Math.sign(diffDays);
-          const isOneFurtherInYear = diffInYearSign * sign < 0;
-          years = isOneFurtherInYear ? diffYears - sign : diffYears;
+          // isCalendarOneFurtherInYear is true iff the ordering of the years
+          // doesn't match the ordering of the month/days.
+          const isCalendarOneFurtherInYear = diffInYearSign * sign < 0;
+          // Add either 1 or -1 to years if isCalendarOneFurtherInYear is true.
+          // If monthday-two is later in the year than monthday-one, need
+          // to correct diffYears because it's gone one too far.
+          years = isCalendarOneFurtherInYear ? diffYears - sign : diffYears;
         }
         // Try to skip ahead as many months as possible for this calendar
         // without adding month by month in a loop
@@ -1204,13 +1236,27 @@ abstract class HelperBase {
           }
           years = 0;
         }
+
+        // intermediate should be a date between calendarOne and calendarTwo,
+        // that is within a year of calendarTwo.
         const intermediate =
           years || months ? this.addCalendar(calendarOne, { years, months }, 'constrain', cache) : calendarOne;
+
+        // At this point, intermediate could fail to be in between calendarOne and calendarTwo
+        // due to leap years.
+        // In that case, add or subtract an extra year from years,
+        // so that the months can be totaled up correctly.
+        if (this.compareCalendarDates(intermediate, calendarTwo) * sign > 0) {
+          years -= sign;
+        }
+
         // Now we have less than one cycle remaining. Add one month at a time
         // until we go over the target, then back up one month and calculate
         // remaining days.
-        let current;
-        let next: CalendarYMD = intermediate;
+        let current: CalendarYMD;
+        // Need to re-add years and months because years might have changed
+        let next: CalendarYMD =
+          years || months ? this.addCalendar(calendarOne, { years, months }, 'constrain', cache) : calendarOne;
         do {
           months += sign;
           current = next;
@@ -1224,6 +1270,10 @@ abstract class HelperBase {
         months -= sign; // correct for loop above which overshoots by 1
         const remainingDays = this.calendarDaysUntil(current, calendarTwo, cache);
         days = remainingDays;
+
+        // This may return a duration like <P12M11D> that appears to have unbalanced months.
+        // But that's fine, because subtracting <P12M11D> from a date may have different
+        // results than subtracting <P1Y11D> from the same date, in the presence of leap months.
         break;
       }
     }
@@ -1295,24 +1345,31 @@ abstract class HelperBase {
     return 1972;
   }
   monthDayFromFields(fields: MonthDayFromFieldsObject, overflow: Overflow, cache: OneObjectCache): ISODate {
-    let { era, eraYear, year, month, monthCode, day } = fields;
+    let { eraYear, year, monthCode, day } = fields;
     const hasEra = CalendarSupportsEra(this.id);
-    if (month !== undefined && year === undefined && (!hasEra || era === undefined || eraYear === undefined)) {
-      throw new TypeError('when month is present, year (or era and eraYear) are required');
-    }
     if (monthCode === undefined || year !== undefined || (hasEra && eraYear !== undefined)) {
       // Apply overflow behaviour to year/month/day, to get correct monthCode/day
       ({ monthCode, day } = this.isoToCalendarDate(this.calendarToIsoDate(fields, overflow, cache), cache));
     }
 
-    let isoYear, isoMonth, isoDay;
-    let closestCalendar, closestIso;
+    // Shape of property bag is correct, check valid input and apply overflow
+    if (!IsValidMonthCodeForCalendar(this.id, monthCode)) {
+      throw new RangeError(`Invalid monthCode: ${monthCode} does not exist in calendar ${this.id}`);
+    }
+    const maxDayForMonthCode = this.maxLengthOfMonthCodeInAnyYear(monthCode);
+    if (day > maxDayForMonthCode) {
+      if (overflow === 'reject') {
+        throw new RangeError(`No ${this.id} year with monthCode ${monthCode} and day ${day}`);
+      }
+      day = maxDayForMonthCode;
+    }
+
     // Look backwards starting from one of the calendar years spanning ISO year
     // 1972, up to 20 calendar years prior, to find a year that has this month
     // and day. Normal months and days will match immediately, but for leap days
     // and leap months we may have to look for a while. For searches longer than
     // 20 years, override the start date in monthDaySearchStartYear.
-    const startDateIso = {
+    const startDateIso: ISODate = {
       year: this.monthDaySearchStartYear(monthCode, day),
       month: 12,
       day: 31
@@ -1331,34 +1388,11 @@ abstract class HelperBase {
       );
       const isoDate = this.calendarToIsoDate(testCalendarDate, 'constrain', cache);
       const roundTripCalendarDate = this.isoToCalendarDate(isoDate, cache);
-      ({ year: isoYear, month: isoMonth, day: isoDay } = isoDate);
       if (roundTripCalendarDate.monthCode === monthCode && roundTripCalendarDate.day === day) {
-        return { month: isoMonth, day: isoDay, year: isoYear };
-      } else if (overflow === 'constrain') {
-        // If the requested day is never present in any instance of this month
-        // code, and the round trip date is an instance of this month code with
-        // the most possible days, we are as close as we can get.
-        const maxDayForMonthCode = this.maxLengthOfMonthCodeInAnyYear(roundTripCalendarDate.monthCode);
-        if (
-          roundTripCalendarDate.monthCode === monthCode &&
-          roundTripCalendarDate.day === maxDayForMonthCode &&
-          day > maxDayForMonthCode
-        ) {
-          return { month: isoMonth, day: isoDay, year: isoYear };
-        }
-        // non-ISO constrain algorithm tries to find the closest date in a matching month
-        if (
-          closestCalendar === undefined ||
-          (roundTripCalendarDate.monthCode === closestCalendar.monthCode &&
-            roundTripCalendarDate.day > closestCalendar.day)
-        ) {
-          closestCalendar = roundTripCalendarDate;
-          closestIso = isoDate;
-        }
+        return isoDate;
       }
     }
-    if (overflow === 'constrain' && closestIso !== undefined) return closestIso;
-    throw new RangeError(`No recent ${this.id} year with monthCode ${monthCode} and day ${day}`);
+    assertNotReached(`no recent ${this.id} year with ${monthCode}-${day}, adjust monthDaySearchStartYear`);
   }
   getFirstDayOfWeek(): number | undefined {
     return undefined;
@@ -1398,7 +1432,9 @@ class HebrewHelper extends HelperBase {
     // Given that these can be calculated by counting the number of days in
     // those months, I assume that these DO NOT need to be exposed as
     // Hebrew-only prototype fields or methods.
-    return (7 * year + 1) % 19 < 7;
+    let cycleYear = (7 * year + 1) % 19;
+    if (cycleYear < 0) cycleYear += 19;
+    return cycleYear < 7;
   }
   monthsInYear(calendarDate: CalendarYearOnly) {
     return this.inLeapYear(calendarDate) ? 13 : 12;
@@ -1549,6 +1585,7 @@ abstract class IslamicBaseHelper extends HelperBase {
     super(eraData);
   }
   abstract override id: BuiltinCalendarId;
+  abstract tabular: boolean;
   calendarType = 'lunar' as const;
   inLeapYear(calendarDate: CalendarYearOnly, cache: OneObjectCache) {
     const startOfYearCalendar = { year: calendarDate.year, month: 1, monthCode: 'M01', day: 1 };
@@ -1565,8 +1602,10 @@ abstract class IslamicBaseHelper extends HelperBase {
   maximumMonthLength(/* calendarDate */) {
     return 30;
   }
-  maxLengthOfMonthCodeInAnyYear(/* monthCode */) {
-    return 30;
+  maxLengthOfMonthCodeInAnyYear(monthCode: string) {
+    if (!this.tabular) return 30; // if observational, any month can have 29 or 30 days
+    const month = ParseMonthCode(monthCode).monthNumber;
+    return [0, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 30][month];
   }
   DAYS_PER_ISLAMIC_YEAR = 354 + 11 / 30;
   DAYS_PER_ISO_YEAR = 365.2425;
@@ -1582,24 +1621,28 @@ abstract class IslamicBaseHelper extends HelperBase {
 // is identical.
 class IslamicUmalquraHelper extends IslamicBaseHelper {
   id = 'islamic-umalqura' as const;
+  tabular = false;
   constructor() {
     super(20);
   }
 }
 class IslamicTblaHelper extends IslamicBaseHelper {
   id = 'islamic-tbla' as const;
+  tabular = true;
   constructor() {
     super(19);
   }
 }
 class IslamicCivilHelper extends IslamicBaseHelper {
   id = 'islamic-civil' as const;
+  tabular = true;
   constructor() {
     super(20);
   }
 }
 class IslamicCcHelper extends IslamicBaseHelper {
   id = 'islamicc' as const;
+  tabular = true;
   constructor() {
     super(20);
   }
@@ -1718,8 +1761,9 @@ class IndianHelper extends HelperBase {
   // calendar output to fail for all dates before 0001-01-01 ISO.  For example,
   // in Node 12 0000-01-01 is calculated as 6146/12/-583 instead of 10/11/-79 as
   // expected.
-  vulnerableToBceBug =
-    new Date('0000-01-01T00:00Z').toLocaleDateString('en-US-u-ca-indian', { timeZone: 'UTC' }) !== '10/11/-79 Saka';
+  vulnerableToBceBug = !new Date('0000-01-01T00:00Z')
+    .toLocaleDateString('en-US-u-ca-indian', { timeZone: 'UTC' })
+    .startsWith('10/11/-79');
   override checkIcuBugs(isoDate: ISODate) {
     if (this.vulnerableToBceBug && isoDate.year < 1) {
       throw new RangeError(
@@ -2044,7 +2088,7 @@ abstract class OrthodoxBaseHelper extends GregorianBaseHelper {
 //   two use negative year numbers before epoch)
 // - Coptic has a different epoch date
 // - Ethiopic has an additional second era that starts at the same date as the
-//   zero era of ethioaa.
+//   zero era of ethioaa, which is the anchor era
 class EthioaaHelper extends OrthodoxBaseHelper {
   constructor() {
     super('ethioaa', [{ code: 'aa', isoEpoch: { year: -5492, month: 7, day: 17 } }]);
@@ -2066,13 +2110,11 @@ class CopticHelper extends OrthodoxBaseHelper {
   }
 }
 
-// Anchor is currently the older era to match ethioaa, but should it be the newer era?
-// See https://github.com/tc39/ecma402/issues/534 for discussion.
 class EthiopicHelper extends OrthodoxBaseHelper {
   constructor() {
     super('ethiopic', [
-      { code: 'aa', isoEpoch: { year: -5492, month: 7, day: 17 } },
-      { code: 'am', isoEpoch: { year: 8, month: 8, day: 27 }, anchorEpoch: { year: 5501 } }
+      { code: 'aa', isoEpoch: { year: -5492, month: 7, day: 17 }, anchorEpoch: { year: -5499 } },
+      { code: 'am', isoEpoch: { year: 8, month: 8, day: 27 } }
     ]);
   }
 }
@@ -2192,7 +2234,7 @@ abstract class ChineseBaseHelper extends HelperBase {
     const { month, year } = calendarDate;
     const matchingMonthEntry = this.getMonthList(year, cache)[month];
     if (matchingMonthEntry === undefined) {
-      throw new RangeError(`Invalid month ${month} in Chinese year ${year}`);
+      throw new RangeError(`Invalid month ${month} in ${this.id} year ${year}`);
     }
     return matchingMonthEntry.daysInMonth;
   }
@@ -2268,7 +2310,11 @@ abstract class ChineseBaseHelper extends HelperBase {
         if (type === 'day' || type === ('relatedYear' as Intl.DateTimeFormatPartTypes)) {
           calendarFields[type as 'day' | 'relatedYear'] = +value;
         } else if (type === 'month') {
-          calendarFields.monthString = value;
+          if (value.startsWith('Mo')) {
+            calendarFields.monthString = value.slice(2);
+          } else {
+            calendarFields.monthString = value;
+          }
         }
       }
       if (calendarFields.relatedYear === undefined) {
@@ -2341,7 +2387,7 @@ abstract class ChineseBaseHelper extends HelperBase {
       const months = this.getMonthList(year, cache);
       month = months[monthCode];
       if (month === undefined) {
-        throw new RangeError(`Unmatched month ${month}${monthExtra || ''} in Chinese year ${year}`);
+        throw new RangeError(`Unmatched month ${month}${monthExtra || ''} in ${this.id} year ${year}`);
       }
       return { year, month, day: day as number, monthCode };
     } else {
@@ -2361,7 +2407,7 @@ abstract class ChineseBaseHelper extends HelperBase {
           monthCode = adjustedMonthCode;
         }
         if (month === undefined) {
-          throw new RangeError(`Unmatched month ${monthCode} in Chinese year ${year}`);
+          throw new RangeError(`Unmatched month ${monthCode} in ${this.id} year ${year}`);
         }
       } else if (monthCode === undefined) {
         const months = this.getMonthList(year, cache);
@@ -2375,15 +2421,17 @@ abstract class ChineseBaseHelper extends HelperBase {
         }
         monthCode = months[month].monthCode;
         if (monthCode === undefined) {
-          throw new RangeError(`Invalid month ${month} in Chinese year ${year}`);
+          throw new RangeError(`Invalid month ${month} in ${this.id} year ${year}`);
         }
       } else {
         // Both month and monthCode are present. Make sure they don't conflict.
         const months = this.getMonthList(year, cache);
         const monthIndex = months[monthCode];
-        if (!monthIndex) throw new RangeError(`Unmatched monthCode ${monthCode} in Chinese year ${year}`);
+        if (!monthIndex) throw new RangeError(`Unmatched monthCode ${monthCode} in ${this.id} year ${year}`);
         if (month !== monthIndex) {
-          throw new RangeError(`monthCode ${monthCode} doesn't correspond to month ${month} in Chinese year ${year}`);
+          throw new RangeError(
+            `monthCode ${monthCode} doesn't correspond to month ${month} in ${this.id} year ${year}`
+          );
         }
       }
       return { ...calendarDate, year, month, monthCode, day: day as number };
@@ -2414,10 +2462,32 @@ class NonIsoCalendar implements CalendarImpl {
     }
     return [];
   }
-  resolveFields(fields: CalendarFieldsRecord /* , type */) {
+  resolveFields<Type extends ISODateToFieldsType>(
+    fields: CalendarFieldsRecord,
+    type: Type
+  ): asserts fields is ResolveFieldsReturn<Type> {
+    if ((type === 'date' || type === 'year-month') && fields.year === undefined) {
+      if (!CalendarSupportsEra(this.helper.id)) {
+        throw new TypeError('year is required');
+      } else if (fields.era === undefined || fields.eraYear === undefined) {
+        throw new TypeError('year (or era and eraYear) are required');
+      }
+    }
+    if ((type === 'date' || type === 'month-day') && fields.day === undefined) {
+      throw new TypeError('day is required');
+    }
+    if (type === 'month-day' && fields.month !== undefined && fields.year === undefined) {
+      if (!CalendarSupportsEra(this.helper.id)) {
+        throw new TypeError('when month is present, year is required');
+      } else if (fields.era === undefined || fields.eraYear === undefined) {
+        throw new TypeError('when month is present, year (or era and eraYear) are required');
+      }
+    }
     if (this.helper.calendarType !== 'lunisolar') {
       resolveNonLunisolarMonth(fields, this.helper.id);
     }
+    // Note: Lunisolar calendars go on to resolve month/monthCode in their
+    // adjustCalendarDate implementations
   }
   dateToISO(fields: CalendarDateFields, overflow: Overflow) {
     const cache = new OneObjectCache(this.helper.id);

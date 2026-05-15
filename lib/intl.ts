@@ -387,6 +387,7 @@ type MaybeFalseOptions = {
 function amend(optionsParam: Intl.DateTimeFormatOptions = {}, amended: MaybeFalseOptions = {}) {
   const options = Object.assign({}, optionsParam);
   const props = [
+    'era',
     'year',
     'month',
     'day',
@@ -413,6 +414,7 @@ type OptionsType<T extends TypesWithToLocaleString> = NonNullable<Parameters<T['
 
 function timeAmend(originalOptions: OptionsType<Temporal.PlainTime>) {
   const options = amend(originalOptions, {
+    era: false,
     year: false,
     month: false,
     day: false,
@@ -462,7 +464,7 @@ function yearMonthAmend(originalOptions: OptionsType<Temporal.PlainYearMonth>) {
     delete options.dateStyle;
     Object.assign(options, dateStyleHacks[style]);
   }
-  if (!('year' in options || 'month' in options || 'era' in options)) {
+  if (!('year' in options || 'month' in options)) {
     if (hasAnyDateTimeOptions(originalOptions)) {
       throw new TypeError(`cannot format PlainYearMonth with options [${Object.keys(originalOptions)}]`);
     }
@@ -577,14 +579,7 @@ function instantAmend(optionsParam: OptionsType<Temporal.Instant>) {
 }
 
 function hasDateOptions(options: OptionsType<TypesWithToLocaleString>) {
-  return (
-    'year' in options ||
-    'month' in options ||
-    'day' in options ||
-    'weekday' in options ||
-    'dateStyle' in options ||
-    'era' in options
-  );
+  return 'year' in options || 'month' in options || 'day' in options || 'weekday' in options || 'dateStyle' in options;
 }
 
 function hasTimeOptions(options: OptionsType<TypesWithToLocaleString>) {
