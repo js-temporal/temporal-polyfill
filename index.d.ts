@@ -984,15 +984,13 @@ export namespace Temporal {
     calendar?: CalendarLike;
   };
 
+  // ToTemporalZonedDateTime requires timeZone on property bags. with() still uses
+  // ZonedDateTimeLike so a partial update does not have to (and must not) pass timeZone.
+  type ZonedDateTimeConvertible = Temporal.ZonedDateTime | (ZonedDateTimeLike & { timeZone: TimeZoneLike }) | string;
+
   export class ZonedDateTime {
-    static from(
-      item: Temporal.ZonedDateTime | ZonedDateTimeLike | string,
-      options?: ZonedDateTimeAssignmentOptions
-    ): ZonedDateTime;
-    static compare(
-      one: Temporal.ZonedDateTime | ZonedDateTimeLike | string,
-      two: Temporal.ZonedDateTime | ZonedDateTimeLike | string
-    ): ComparisonResult;
+    static from(item: ZonedDateTimeConvertible, options?: ZonedDateTimeAssignmentOptions): ZonedDateTime;
+    static compare(one: ZonedDateTimeConvertible, two: ZonedDateTimeConvertible): ComparisonResult;
     constructor(epochNanoseconds: bigint, timeZone: string, calendar?: string);
     readonly era: string | undefined;
     readonly eraYear: number | undefined;
@@ -1022,7 +1020,7 @@ export namespace Temporal {
     readonly offset: string;
     readonly epochMilliseconds: number;
     readonly epochNanoseconds: bigint;
-    equals(other: Temporal.ZonedDateTime | ZonedDateTimeLike | string): boolean;
+    equals(other: ZonedDateTimeConvertible): boolean;
     with(zonedDateTimeLike: ZonedDateTimeLike, options?: ZonedDateTimeAssignmentOptions): Temporal.ZonedDateTime;
     withPlainTime(timeLike?: Temporal.PlainTime | PlainTimeLike | string): Temporal.ZonedDateTime;
     withCalendar(calendar: CalendarLike): Temporal.ZonedDateTime;
@@ -1033,13 +1031,13 @@ export namespace Temporal {
       options?: ArithmeticOptions
     ): Temporal.ZonedDateTime;
     until(
-      other: Temporal.ZonedDateTime | ZonedDateTimeLike | string,
+      other: ZonedDateTimeConvertible,
       options?: Temporal.DifferenceOptions<
         'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'
       >
     ): Temporal.Duration;
     since(
-      other: Temporal.ZonedDateTime | ZonedDateTimeLike | string,
+      other: ZonedDateTimeConvertible,
       options?: Temporal.DifferenceOptions<
         'year' | 'month' | 'week' | 'day' | 'hour' | 'minute' | 'second' | 'millisecond' | 'microsecond' | 'nanosecond'
       >

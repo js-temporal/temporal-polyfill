@@ -21,6 +21,7 @@ ignorePatterns:
   - dist/
   - tsc-out/
   - test262/
+  - test/*.ts
 rules:
   array-element-newline:
     - error
