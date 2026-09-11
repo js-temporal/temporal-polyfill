@@ -42,7 +42,7 @@
     "prettierfix": "prettier lib/* ./test/*.mjs ./*.md ./*.json ./*.d.ts ./*.js ./.*.yml  --check --write",
     "eslintfix": "eslint . --ext ts,js,mjs,.d.ts --fix",
     "fix": "npm run eslintfix && npm run prettierfix",
-    "tscheck": "tsc index.d.ts --noEmit --types --strict --lib ESNext"
+    "tscheck": "tsc index.d.ts --noEmit --types --strict --lib ESNext && tsc test/with-types.ts --noEmit --strict --lib ESNext --types --skipLibCheck --module esnext --moduleResolution bundler"
   },
   "keywords": [
     "Calendar",

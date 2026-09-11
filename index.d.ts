@@ -30,6 +30,19 @@ export namespace Temporal {
   };
 
   /**
+   * Property bag accepted by `with()`. Unlike `from()`, `with()` does not
+   * accept Temporal objects or `calendar`/`timeZone` fields. Use
+   * `withPlainTime()`, `withCalendar()`, or `withTimeZone()` instead.
+   */
+  export type WithLike<T extends object> = {
+    [P in Exclude<keyof T, 'calendar' | 'timeZone'>]?: T[P];
+  } & {
+    calendar?: never;
+    timeZone?: never;
+    [Symbol.toStringTag]?: never;
+  };
+
+  /**
    * Options for assigning fields using `Duration.prototype.with()` or entire
    * objects with `Duration.from()`, and for arithmetic with
    * `Duration.prototype.add()` and `Duration.prototype.subtract()`.
@@ -662,7 +675,7 @@ export namespace Temporal {
     readonly monthsInYear: number;
     readonly inLeapYear: boolean;
     equals(other: Temporal.PlainDate | PlainDateLike | string): boolean;
-    with(dateLike: PlainDateLike, options?: AssignmentOptions): Temporal.PlainDate;
+    with(dateLike: WithLike<PlainDateLike>, options?: AssignmentOptions): Temporal.PlainDate;
     withCalendar(calendar: CalendarLike): Temporal.PlainDate;
     add(durationLike: Temporal.Duration | DurationLike | string, options?: ArithmeticOptions): Temporal.PlainDate;
     subtract(durationLike: Temporal.Duration | DurationLike | string, options?: ArithmeticOptions): Temporal.PlainDate;
@@ -762,7 +775,7 @@ export namespace Temporal {
     readonly monthsInYear: number;
     readonly inLeapYear: boolean;
     equals(other: Temporal.PlainDateTime | PlainDateTimeLike | string): boolean;
-    with(dateTimeLike: PlainDateTimeLike, options?: AssignmentOptions): Temporal.PlainDateTime;
+    with(dateTimeLike: WithLike<PlainDateTimeLike>, options?: AssignmentOptions): Temporal.PlainDateTime;
     withPlainTime(timeLike?: Temporal.PlainTime | PlainTimeLike | string): Temporal.PlainDateTime;
     withCalendar(calendar: CalendarLike): Temporal.PlainDateTime;
     add(durationLike: Temporal.Duration | DurationLike | string, options?: ArithmeticOptions): Temporal.PlainDateTime;
@@ -822,7 +835,7 @@ export namespace Temporal {
     readonly day: number;
     readonly calendarId: string;
     equals(other: Temporal.PlainMonthDay | PlainMonthDayLike | string): boolean;
-    with(monthDayLike: PlainMonthDayLike, options?: AssignmentOptions): Temporal.PlainMonthDay;
+    with(monthDayLike: WithLike<PlainMonthDayLike>, options?: AssignmentOptions): Temporal.PlainMonthDay;
     toPlainDate(year: { year: number }): Temporal.PlainDate;
     toLocaleString(locales?: LocalesArgument, options?: globalThis.Intl.DateTimeFormatOptions): string;
     toJSON(): string;
@@ -876,7 +889,7 @@ export namespace Temporal {
     readonly microsecond: number;
     readonly nanosecond: number;
     equals(other: Temporal.PlainTime | PlainTimeLike | string): boolean;
-    with(timeLike: Temporal.PlainTime | PlainTimeLike, options?: AssignmentOptions): Temporal.PlainTime;
+    with(timeLike: WithLike<PlainTimeLike>, options?: AssignmentOptions): Temporal.PlainTime;
     add(durationLike: Temporal.Duration | DurationLike | string, options?: ArithmeticOptions): Temporal.PlainTime;
     subtract(durationLike: Temporal.Duration | DurationLike | string, options?: ArithmeticOptions): Temporal.PlainTime;
     until(
@@ -944,7 +957,7 @@ export namespace Temporal {
     readonly monthsInYear: number;
     readonly inLeapYear: boolean;
     equals(other: Temporal.PlainYearMonth | PlainYearMonthLike | string): boolean;
-    with(yearMonthLike: PlainYearMonthLike, options?: AssignmentOptions): Temporal.PlainYearMonth;
+    with(yearMonthLike: WithLike<PlainYearMonthLike>, options?: AssignmentOptions): Temporal.PlainYearMonth;
     add(durationLike: Temporal.Duration | DurationLike | string, options?: ArithmeticOptions): Temporal.PlainYearMonth;
     subtract(
       durationLike: Temporal.Duration | DurationLike | string,
@@ -1023,7 +1036,10 @@ export namespace Temporal {
     readonly epochMilliseconds: number;
     readonly epochNanoseconds: bigint;
     equals(other: Temporal.ZonedDateTime | ZonedDateTimeLike | string): boolean;
-    with(zonedDateTimeLike: ZonedDateTimeLike, options?: ZonedDateTimeAssignmentOptions): Temporal.ZonedDateTime;
+    with(
+      zonedDateTimeLike: WithLike<ZonedDateTimeLike>,
+      options?: ZonedDateTimeAssignmentOptions
+    ): Temporal.ZonedDateTime;
     withPlainTime(timeLike?: Temporal.PlainTime | PlainTimeLike | string): Temporal.ZonedDateTime;
     withCalendar(calendar: CalendarLike): Temporal.ZonedDateTime;
     withTimeZone(timeZone: TimeZoneLike): Temporal.ZonedDateTime;
