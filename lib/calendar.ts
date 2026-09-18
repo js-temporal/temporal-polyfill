@@ -637,13 +637,65 @@ function simpleDateDiff(one: CalendarYMD, two: CalendarYMD) {
 }
 
 function clampISODate(iso: ISODate): ISODate {
-  if (iso.year < -271821 || (iso.year === -271821 && (iso.month < 4 || (iso.month === 4 && iso.day < 19)))) {
-    return { year: -271821, month: 4, day: 19 };
-  }
-  if (iso.year > 275760 || (iso.year === 275760 && (iso.month > 9 || (iso.month === 9 && iso.day > 13)))) {
-    return { year: 275760, month: 9, day: 13 };
-  }
+  const cmp = compareISODateToLegacyDateRange(iso);
+  if (cmp < 0) return { year: -271821, month: 4, day: 19 };
+  if (cmp > 0) return { year: 275760, month: 9, day: 13 };
   return iso;
+}
+
+function compareISODateToLegacyDateRange(isoDate: ISODate) {
+  const { year, month, day } = isoDate;
+  if (year < -271821 || (year === -271821 && (month < 4 || (month === 4 && day < 19)))) return -1;
+  if (year > 275760 || (year === 275760 && (month > 9 || (month === 9 && day > 13)))) return 1;
+  return 0;
+}
+
+function makeShiftedIsoToCalendarDate(cycleYears: number) {
+  return function isoToCalendarDate(this: HelperBase, isoDate: ISODate, cache: OneObjectCache): FullCalendarDate {
+    if (compareISODateToLegacyDateRange(isoDate) === 0) {
+      return HelperBase.prototype.isoToCalendarDate.call(this, isoDate, cache);
+    }
+    const offset = Math.round((isoDate.year - 2000) / cycleYears) * cycleYears;
+    const safeIsoDate = { ...isoDate, year: isoDate.year - offset };
+    const result = HelperBase.prototype.isoToCalendarDate.call(this, safeIsoDate, cache);
+    const adjusted = { ...result, year: result.year + offset };
+    if (adjusted.eraYear !== undefined) adjusted.eraYear += offset;
+    const key = OneObjectCache.generateISOToCalendarKey(isoDate);
+    cache.set(key, adjusted);
+    (['constrain', 'reject'] as const).forEach((overflow) => {
+      cache.set(OneObjectCache.generateCalendarToISOKey(adjusted, overflow), isoDate);
+    });
+    return adjusted;
+  };
+}
+
+function makeDayShiftedIsoToCalendarDate(cycleDays: number, cycleYears: number) {
+  return function isoToCalendarDate(this: HelperBase, isoDate: ISODate, cache: OneObjectCache): FullCalendarDate {
+    if (compareISODateToLegacyDateRange(isoDate) === 0) {
+      return HelperBase.prototype.isoToCalendarDate.call(this, isoDate, cache);
+    }
+    // Shift by the minimum number of cycles to bring the date within the
+    // legacy Date range. Using a minimal shift avoids accumulated errors for
+    // calendars where the cycle length is approximate (e.g., islamic-umalqura).
+    const direction = isoDate.year > 0 ? 1 : -1;
+    const approxDaysBeyond = Math.abs(isoDate.year - direction * 2000) * 365;
+    let numCycles = Math.max(1, Math.floor(approxDaysBeyond / cycleDays));
+    let safeIsoDate = addDaysISO(isoDate, -numCycles * cycleDays * direction);
+    while (compareISODateToLegacyDateRange(safeIsoDate) !== 0) {
+      numCycles++;
+      safeIsoDate = addDaysISO(isoDate, -numCycles * cycleDays * direction);
+    }
+    const yearShift = numCycles * cycleYears * direction;
+    const result = HelperBase.prototype.isoToCalendarDate.call(this, safeIsoDate, cache);
+    const adjusted = { ...result, year: result.year + yearShift };
+    if (adjusted.eraYear !== undefined) adjusted.eraYear += yearShift;
+    const key = OneObjectCache.generateISOToCalendarKey(isoDate);
+    cache.set(key, adjusted);
+    (['constrain', 'reject'] as const).forEach((overflow) => {
+      cache.set(OneObjectCache.generateCalendarToISOKey(adjusted, overflow), isoDate);
+    });
+    return adjusted;
+  };
 }
 
 /**
@@ -1584,6 +1636,7 @@ abstract class IslamicBaseHelper extends HelperBase {
     const { year } = this.adjustCalendarDate(calendarDate);
     return { year: Math.floor((year * this.DAYS_PER_ISLAMIC_YEAR) / this.DAYS_PER_ISO_YEAR) + 622, month: 1, day: 1 };
   }
+  override isoToCalendarDate = makeDayShiftedIsoToCalendarDate(10631, 30);
 }
 
 // There are 4 Islamic calendars with the same implementation in this polyfill.
@@ -1743,6 +1796,7 @@ class IndianHelper extends HelperBase {
     // 'shaka'; return it unconditionally as there is only one era
     return { era: 'shaka', eraYear: calendarDate.eraYear };
   }
+  override isoToCalendarDate = makeShiftedIsoToCalendarDate(4);
 }
 
 /**
@@ -2046,6 +2100,7 @@ abstract class OrthodoxBaseHelper extends GregorianBaseHelper {
   override minimumMonthLength = OrthodoxOps.minimumMonthLength;
   override maximumMonthLength = OrthodoxOps.maximumMonthLength;
   override maxLengthOfMonthCodeInAnyYear = OrthodoxOps.maxLengthOfMonthCodeInAnyYear;
+  override isoToCalendarDate = makeDayShiftedIsoToCalendarDate(1461, 4);
 }
 
 // `coptic` and `ethiopic` calendars are very similar to `ethioaa` calendar,
