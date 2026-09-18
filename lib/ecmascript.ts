@@ -2242,7 +2242,9 @@ function GetPossibleEpochNanoseconds(timeZone: string, isoDateTime: ISODateTime)
   // UTC fast path
   if (timeZone === 'UTC') {
     CheckISODaysRange(isoDateTime.isoDate);
-    return [GetUTCEpochNanoseconds(isoDateTime)];
+    const epochNs = GetUTCEpochNanoseconds(isoDateTime);
+    ValidateEpochNanoseconds(epochNs);
+    return [epochNs];
   }
 
   const offsetMinutes = ParseTimeZoneIdentifier(timeZone).offsetMinutes;
