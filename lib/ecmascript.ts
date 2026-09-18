@@ -2772,9 +2772,10 @@ export function GetNamedTimeZoneNextTransition(id: string, epochNanoseconds: JSB
   let rightMs = leftMs;
   let rightOffsetNs = leftOffsetNs;
   const searchWindow = searchWindowForTransitions(id);
-  while (leftOffsetNs === rightOffsetNs && leftMs < uppercap) {
-    rightMs = leftMs + searchWindow;
-    if (rightMs > MS_MAX) return null;
+  // Search the last, partial window up to MS_MAX instead of giving up, so that
+  // a transition at or before nsMaxInstant is still found.
+  while (leftOffsetNs === rightOffsetNs && leftMs < uppercap && leftMs < MS_MAX) {
+    rightMs = Math.min(leftMs + searchWindow, MS_MAX);
     rightOffsetNs = GetNamedTimeZoneOffsetNanosecondsImpl(id, rightMs);
     if (leftOffsetNs === rightOffsetNs) {
       leftMs = rightMs;
