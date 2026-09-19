@@ -81,7 +81,9 @@ const DATETIME_NS_MAX = JSBI.subtract(JSBI.add(NS_MAX, DAY_NANOS_JSBI), ONE);
 const MS_IN_400_YEAR_CYCLE = (400 * 365 + 97) * DAY_MS;
 const YEAR_MIN = -271821;
 const YEAR_MAX = 275760;
-const BEFORE_FIRST_DST = Date.UTC(1847, 0, 1); // 1847-01-01T00:00:00Z
+// The first transition in the TZDB is on 1844-12-31, when Asia/Manila and some
+// Pacific zones moved across the date line.
+const BEFORE_FIRST_DST = Date.UTC(1844, 0, 1); // 1844-01-01T00:00:00Z
 
 const BUILTIN_CALENDAR_IDS = [
   'iso8601',
