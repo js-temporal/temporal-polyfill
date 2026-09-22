@@ -34,6 +34,7 @@ jobs:
         with:
           node-version: ${{ matrix.version }}
       - run: npm ci
+      - run: node -p process.versions.cldr
       - run: npm run test262
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
