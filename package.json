@@ -90,7 +90,7 @@
   "devDependencies": {
     "@babel/core": "^7.29.0",
     "@babel/preset-env": "^7.29.2",
-    "@js-temporal/temporal-test262-runner": "^0.10.1",
+    "@js-temporal/temporal-test262-runner": "js-temporal/temporal-test262-runner#main",
     "@rollup/plugin-babel": "^7.0.0",
     "@rollup/plugin-commonjs": "^29.0.2",
     "@rollup/plugin-node-resolve": "^16.0.3",
