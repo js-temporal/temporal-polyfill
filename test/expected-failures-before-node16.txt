@@ -21,3 +21,12 @@ intl402/Temporal/PlainYearMonth/prototype/toLocaleString/lone-options-accepted.j
 
 # Bug where lone dayPeriod pulls in default date options
 intl402/Temporal/PlainTime/prototype/toLocaleString/lone-options-accepted.js
+
+# For some reason, the Node 14 job is running these tests even though it's not
+# supposed to
+intl402/DurationFormat/prototype/format/taint-temporal-duration-prototype.js
+intl402/DurationFormat/prototype/format/temporal-duration-object-arg.js
+intl402/DurationFormat/prototype/format/temporal-duration-string-arg.js
+intl402/DurationFormat/prototype/formatToParts/taint-temporal-duration-prototype.js
+intl402/DurationFormat/prototype/formatToParts/temporal-duration-object-arg.js
+intl402/DurationFormat/prototype/formatToParts/temporal-duration-string-arg.js
