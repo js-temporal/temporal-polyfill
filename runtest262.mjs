@@ -28,14 +28,15 @@ yargs(hideBin(process.argv))
       }
 
       const nodeVersion = parseInt(process.versions.node.split('.')[0]);
-      if (nodeVersion < 18) expectedFailureFiles.push('test/expected-failures-before-node18.txt');
       if (nodeVersion < 16) expectedFailureFiles.push('test/expected-failures-before-node16.txt');
+      if (nodeVersion < 18) expectedFailureFiles.push('test/expected-failures-before-node18.txt');
       if (nodeVersion < 20) expectedFailureFiles.push('test/expected-failures-before-node20.txt');
       if (nodeVersion < 22) expectedFailureFiles.push('test/expected-failures-before-node22.txt');
       if (nodeVersion < 24) expectedFailureFiles.push('test/expected-failures-before-node24.txt');
-      // Eventually this should be fixed and this condition should be updated.
-      if (nodeVersion >= 18 && nodeVersion < 26) expectedFailureFiles.push('test/expected-failures-cldr42.txt');
+      if (nodeVersion < 26) expectedFailureFiles.push('test/expected-failures-before-node26.txt');
+      if (nodeVersion == 18) expectedFailureFiles.push('test/expected-failures-cldr44.txt');
       if (nodeVersion >= 20) expectedFailureFiles.push('test/expected-failures-cldr48.txt');
+      if (nodeVersion >= 18 && nodeVersion < 26) expectedFailureFiles.push('test/expected-failures-node18-25.txt');
 
       // As we migrate commits from proposal-temporal, remove expected failures from here.
       expectedFailureFiles.push('test/expected-failures-todo-migrated-code.txt');

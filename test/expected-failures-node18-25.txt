@@ -1,0 +1,9 @@
+# This file is a special case for Node versions 18.x through 25.x. These tests
+# were previously thought to be a CLDR-specific regression
+# (https://issues.chromium.org/issues/40893567) but pass in Node 26.x whereas
+# the regression hasn't been fixed yet, and 26.x is still on CLDR 48. So they
+# must have been some other bug.
+staging/Intl402/Temporal/old/datetime-toLocaleString.js
+staging/Intl402/Temporal/old/instant-toLocaleString.js
+staging/Intl402/Temporal/old/time-toLocaleString.js
+intl402/DateTimeFormat/prototype/format/temporal-objects-resolved-time-zone.js
