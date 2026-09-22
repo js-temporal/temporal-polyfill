@@ -1,8 +1,3 @@
-# These seem to fail only in CLDR 44 which is currently only in Node 18.x, of
-# the supported LTS versions
-intl402/DateTimeFormat/prototype/formatToParts/chinese-calendar-dates.js
-intl402/DateTimeFormat/prototype/formatToParts/dangi-calendar-dates.js
-
 # A regression in V8 (https://issues.chromium.org/issues/40893567) caused
 # these tests to fail. We don't know when a fix is expected, but when it's fixed
 # then these tests should start passing again.
