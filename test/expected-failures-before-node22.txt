@@ -1,8 +1,13 @@
-# Fails until CLDR 46 (released 2024-10-24) makes its way into a Node.js release
-staging/Intl402/Temporal/old/non-iso-calendars-iso8601.js
-
 # These rely on Intl.DateTimeFormat supporting offset time zones.
 intl402/DateTimeFormat/prototype/format/offset-timezone-gmt-same.js
 intl402/DateTimeFormat/prototype/formatToParts/offset-timezone-correct.js
 intl402/DateTimeFormat/prototype/resolvedOptions/offset-timezone-basic.js
 intl402/DateTimeFormat/prototype/resolvedOptions/offset-timezone-change.js
+intl402/Temporal/ZonedDateTime/prototype/toLocaleString/offset-time-zones.js
+
+# These fail on old behaviour of the hour12 option (hour12: false would print
+# midnight times as 24:00, etc.) https://github.com/nodejs/node/issues/33089
+intl402/Temporal/Instant/prototype/toLocaleString/hourcycle.js
+intl402/Temporal/PlainDateTime/prototype/toLocaleString/hourcycle.js
+intl402/Temporal/PlainTime/prototype/toLocaleString/hourcycle.js
+intl402/Temporal/ZonedDateTime/prototype/toLocaleString/hourcycle.js

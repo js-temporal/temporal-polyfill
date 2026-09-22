@@ -1,22 +1,38 @@
 # timeZoneName: 'shortOffset' is only available starting in Node 18
 intl402/DateTimeFormat/constructor-options-timeZoneName-valid.js
+intl402/DateTimeFormat/prototype/format/temporal-plaindate-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/format/temporal-plaindatetime-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/format/temporal-plainmonthday-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/format/temporal-plaintime-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/format/temporal-plainyearmonth-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatRange/temporal-plaindate-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatRange/temporal-plaindatetime-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatRange/temporal-plainmonthday-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatRange/temporal-plaintime-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatRange/temporal-plainyearmonth-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-plaindate-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-plaindatetime-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-plainmonthday-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-plaintime-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatRangeToParts/temporal-plainyearmonth-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatToParts/temporal-plaindate-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatToParts/temporal-plaindatetime-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatToParts/temporal-plainmonthday-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatToParts/temporal-plaintime-formatting-timezonename.js
+intl402/DateTimeFormat/prototype/formatToParts/temporal-plainyearmonth-formatting-timezonename.js
 
 # Intl.supportedValuesOf is only available starting in Node 18
 intl402/Temporal/ZonedDateTime/from/timezone-case-insensitive.js
 intl402/Temporal/ZonedDateTime/prototype/equals/canonical-not-equal.js
 intl402/Temporal/ZonedDateTime/prototype/equals/timezone-case-insensitive.js
 intl402/Temporal/ZonedDateTime/prototype/getTimeZoneTransition/transition-at-instant-boundaries.js
+intl402/Temporal/ZonedDateTime/prototype/toString/timezone.js
 intl402/Temporal/ZonedDateTime/supported-values-of.js
 intl402/Temporal/ZonedDateTime/timezone-case-insensitive.js
 intl402/DateTimeFormat/timezone-case-insensitive.js
-staging/sm/Temporal/Calendar/compare-to-datetimeformat.js
-staging/sm/Temporal/PlainDate/withCalendar.js
 
 intl402/Temporal/PlainDate/prototype/toLocaleString/calendar-mismatch.js
 intl402/Temporal/PlainDateTime/prototype/toLocaleString/calendar-mismatch.js
 intl402/Temporal/PlainMonthDay/prototype/toLocaleString/calendar-mismatch.js
 intl402/Temporal/PlainYearMonth/prototype/toLocaleString/calendar-mismatch.js
 intl402/Temporal/ZonedDateTime/prototype/toLocaleString/calendar-mismatch.js
-
-# America/Ciudad_Juarez added
-staging/sm/Temporal/ZonedDateTime/zones-and-links.js
