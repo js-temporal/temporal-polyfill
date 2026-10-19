@@ -10,7 +10,7 @@ declare namespace Intl {
   type DurationDisplay = 'auto' | 'always';
 
   interface DurationFormatOptions {
-    localeMatcher?: 'best fit' | 'basic' | undefined;
+    localeMatcher?: 'best fit' | 'lookup' | undefined;
     numberingSystem?: string | undefined;
     style?: 'long' | 'short' | 'narrow' | 'digital' | undefined;
     years?: DurationCalendarUnitStyle | undefined;
