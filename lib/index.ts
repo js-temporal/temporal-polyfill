@@ -5,9 +5,20 @@
 // as `if (typeof Temporal === 'undefined')` in the wild, until browsers start
 // shipping the finalized API.
 
-import * as Temporal from './temporal';
+import * as temporal from './temporal';
 import * as Intl from './intl';
 import { toTemporalInstant } from './legacydate';
+
+const Temporal: typeof temporal = Object.create(Object.getPrototypeOf(temporal));
+for (const key of Reflect.ownKeys(temporal)) {
+  const descriptor = Object.getOwnPropertyDescriptor(temporal, key) as PropertyDescriptor;
+  if (key === 'Now') {
+    descriptor.configurable = true;
+    descriptor.enumerable = false;
+    descriptor.writable = true;
+  }
+  Object.defineProperty(Temporal, key, descriptor);
+}
 
 // Work around https://github.com/babel/babel/issues/2025.
 const types = [
